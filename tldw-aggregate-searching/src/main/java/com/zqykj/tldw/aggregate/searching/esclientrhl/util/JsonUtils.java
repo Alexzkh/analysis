@@ -2,6 +2,7 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl.util;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class JsonUtils {
      * @return: T
      **/
     public static <T> T string2Obj(String str,Class<T> clazz){
-        if (StringUtils.isEmpty(str) || clazz == null){
+        if (ObjectUtils.isEmpty(str) || clazz == null){
             return null;
         }
         try {

@@ -6,6 +6,7 @@ import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESMetaData;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.DataType;
 
 import java.io.Serializable;
+import java.lang.annotation.Documented;
 import java.util.Date;
 
 /**

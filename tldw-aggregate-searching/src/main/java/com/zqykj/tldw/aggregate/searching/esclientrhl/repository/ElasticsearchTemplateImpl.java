@@ -83,7 +83,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * description: Elasticsearch基础功能组件实现类
+ * Index structure basic method interface impl
  **/
 @Component
 public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T, M> {
@@ -107,7 +107,6 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public boolean save(T t, String routing) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         String id = Tools.getESId(t);
         IndexRequest indexRequest = null;
         if (ObjectUtils.isEmpty(id)) {
@@ -125,7 +124,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
         if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
             logger.info("INDEX CREATE SUCCESS");
-            //异步执行rollover
+            // asyc execute rollover
             elasticsearchIndex.rollover(t.getClass(), true);
         } else if (indexResponse.getResult() == DocWriteResponse.Result.UPDATED) {
             logger.info("INDEX UPDATE SUCCESS");
@@ -184,7 +183,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
                     .source(sourceJsonStr, XContentType.JSON));
         }
         BulkResponse bulkResponse = client.bulk(rrr, RequestOptions.DEFAULT);
-        //异步执行rollover
+        // asyc execute rollover 
         elasticsearchIndex.rollover(clazz, true);
         return bulkResponse;
     }
@@ -196,7 +195,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         }
         T t = list.get(0);
         if (Tools.checkNested(t)) {
-            throw new Exception("nested对象更新，请使用覆盖更新");
+            throw new Exception("please using cover index update for nest object !");
         }
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
@@ -211,7 +210,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         }
         T t = list.get(0);
         if (Tools.checkNested(t)) {
-            throw new Exception("nested对象更新，请使用覆盖更新");
+            throw new Exception("please using cover index update for nest object !");
         }
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
@@ -247,7 +246,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
             throw new Exception("ID cannot be empty");
         }
         if (Tools.checkNested(t)) {
-            throw new Exception("nested对象更新，请使用覆盖更新");
+            throw new Exception("please using cover index update for nest object !");
         }
         UpdateRequest updateRequest = new UpdateRequest(indexname, id);
         updateRequest.doc(Tools.getFieldValue(t));
@@ -272,7 +271,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
             throw new NullPointerException();
         }
         if (Tools.checkNested(t)) {
-            throw new Exception("nested对象更新，请使用覆盖更新");
+            throw new Exception("please using cover index update for nest object !");
         }
         if (Tools.getESId(t) == null || "".equals(Tools.getESId(t))) {
             PageSortHighLight psh = new PageSortHighLight(1, limitcount);
@@ -295,7 +294,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
                 return batchUpdate(pageList.getList(), indexname, indextype, t);
             }
         } else {
-            throw new Exception("批量更新请不要给主键传值");
+            throw new Exception("Batch update, please do not pass value to primary key");
         }
     }
 
@@ -388,7 +387,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         SearchHit[] searchHits = hits.getHits();
         for (SearchHit hit : searchHits) {
             T t = JsonUtils.string2Obj(hit.getSourceAsString(), clazz);
-            //将_id字段重新赋值给@ESID注解的字段
+            // The _id field is reassigned to the field of the @ ESID annotation primary key
             correctID(clazz, t, (M) hit.getId());
             list.add(t);
         }
@@ -422,8 +421,8 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         Response response = request(request);
         String responseBody = EntityUtils.toString(response.getEntity());
         if (metaData.isPrintLog()) {
-            logger.info("searchUri请求报文：" + "/" + indexname + "/" + indextype + "/_search/?" + uri);
-            logger.info("searchUri返回报文：" + responseBody);
+            logger.info("searchUri request message ：" + "/" + indexname + "/" + indextype + "/_search/?" + uri);
+            logger.info("searchUri return message：" + responseBody);
         }
         UriResponse uriResponse = JsonUtils.string2Obj(responseBody, UriResponse.class);
 
@@ -434,7 +433,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
             Object obj = BeanTools.mapToObject((Map) uriResponse.getHits().getHits().get(i).get_source(), clazz);
             //将Object属性拷贝
             BeanUtils.copyProperties(obj, t);
-            //将_id字段重新赋值给@ESID注解的字段
+            //The _id field is reassigned to the field of the @ ESID annotation primary key
             correctID(clazz, t, (M) uriResponse.getHits().getHits().get(i).get_id());
             ts[i] = t;
         }
@@ -528,11 +527,10 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public boolean exists(M id, Class<T> clazz) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(clazz);
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
         }
-        GetRequest getRequest = new GetRequest(indexname, indextype, id.toString());
+        GetRequest getRequest = new GetRequest(indexname, id.toString());
         GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
         if (getResponse.isExists()) {
             return true;
@@ -1292,11 +1290,10 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public boolean deleteById(M id, Class<T> clazz) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(clazz);
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
         }
-        DeleteRequest deleteRequest = new DeleteRequest(indexname, indextype, id.toString());
+        DeleteRequest deleteRequest = new DeleteRequest(indexname, id.toString());
         DeleteResponse deleteResponse = null;
         deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
         if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
@@ -1375,14 +1372,14 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
                 }
             }
             //高亮
-            //https://www.elastic.co/guide/en/elasticsearch/reference/7.12/highlighting.html
-            //https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.12/java-rest-high-search.html#java-rest-high-search-request-highlighting
+            //https://www.elastic.co/guide/en/elasticsearch/reference/7.9/highlighting.html
+            //https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.9/java-rest-high-search.html#java-rest-high-search-request-highlighting
             HighLight highLight = pageSortHighLight.getHighLight();
             if (highLight != null && highLight.getHighlightBuilder() != null) {
                 searchSourceBuilder.highlighter(highLight.getHighlightBuilder());
             } else if (highLight != null && highLight.getHighLightList() != null && highLight.getHighLightList().size() != 0) {
                 HighlightBuilder highlightBuilder = new HighlightBuilder();
-                if (!ObjectUtils.isEmpty(highLight.getPreTag()) && !StringUtils.isEmpty(highLight.getPostTag())) {
+                if (!ObjectUtils.isEmpty(highLight.getPreTag()) && !ObjectUtils.isEmpty(highLight.getPostTag())) {
                     highlightBuilder.preTags(highLight.getPreTag());
                     highlightBuilder.postTags(highLight.getPostTag());
                 }
@@ -1434,7 +1431,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         SearchHit[] searchHits = hits.getHits();
         for (SearchHit hit : searchHits) {
             T t = JsonUtils.string2Obj(hit.getSourceAsString(), clazz);
-            //将_id字段重新赋值给@ESID注解的字段
+            //The _id field is reassigned to the field of the @ ESID annotation primary key
             correctID(clazz, t, (M) hit.getId());
             //替换高亮字段
             if (highLightFlag) {
@@ -1466,7 +1463,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     private static Map<Class, String> classIDMap = new ConcurrentHashMap();
 
     /**
-     * 将_id字段重新赋值给@ESID注解的字段
+     * The _id field is reassigned to the field of the @ ESID annotation primary key
      *
      * @param clazz
      * @param t
@@ -1638,7 +1635,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         //第一把查询出的结果
         for (SearchHit hit : searchHits) {
             T t = JsonUtils.string2Obj(hit.getSourceAsString(), clazz);
-            //将_id字段重新赋值给@ESID注解的字段
+            //The _id field is reassigned to the field of the @ ESID annotation primary key
             correctID(clazz, t, (M) hit.getId());
             list.add(t);
         }
@@ -1657,7 +1654,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         List<T> list = new ArrayList<>();
         for (SearchHit hit : searchHits) {
             T t = JsonUtils.string2Obj(hit.getSourceAsString(), clazz);
-            //将_id字段重新赋值给@ESID注解的字段
+            //The _id field is reassigned to the field of the @ ESID annotation primary key
             correctID(clazz, t, (M) hit.getId());
             list.add(t);
         }

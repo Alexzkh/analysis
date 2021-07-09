@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author liuyi
  */
 @SpringBootApplication
-@EnableESTools(basePackages = "com.zqykj.tldw.aggregate.searching.esclientrhl")
 public class AnalysisServiceApplication {
 
     public static void main(String[] args) {

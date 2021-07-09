@@ -3,6 +3,7 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl.util;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESID;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESMapping;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.DataType;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 
@@ -102,7 +103,7 @@ public class Tools {
         }
         boolean flag = false;
         for (int i = 0; i < objs.length; i++) {
-            if (!StringUtils.isEmpty(objs[i])) {
+            if (!ObjectUtils.isEmpty(objs[i])) {
                 flag = true;
             }
         }
