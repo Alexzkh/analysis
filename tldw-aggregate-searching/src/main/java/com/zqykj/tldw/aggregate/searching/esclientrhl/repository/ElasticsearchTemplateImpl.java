@@ -147,8 +147,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         T t = list.get(0);
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
-        return savePart(list, indexname, indextype);
+        return savePart(list, indexname);
     }
 
     @Override
@@ -159,16 +158,15 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         T t = list.get(0);
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         List<List<T>> lists = Tools.splitList(list, true);
         BulkResponse[] bulkResponses = new BulkResponse[lists.size()];
         for (int i = 0; i < lists.size(); i++) {
-            bulkResponses[i] = savePart(lists.get(i), indexname, indextype);
+            bulkResponses[i] = savePart(lists.get(i), indexname);
         }
         return bulkResponses;
     }
 
-    private BulkResponse savePart(List<T> list, String indexname, String indextype) throws Exception {
+    private BulkResponse savePart(List<T> list, String indexname) throws Exception {
         BulkRequest rrr = new BulkRequest();
         Class clazz = null;
         for (int i = 0; i < list.size(); i++) {
@@ -199,8 +197,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         }
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
-        return updatePart(list, indexname, indextype);
+        return updatePart(list, indexname);
     }
 
     @Override
@@ -214,16 +211,15 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
         }
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         List<List<T>> lists = Tools.splitList(list, true);
         BulkResponse[] bulkResponses = new BulkResponse[lists.size()];
         for (int i = 0; i < lists.size(); i++) {
-            bulkResponses[i] = updatePart(lists.get(i), indexname, indextype);
+            bulkResponses[i] = updatePart(lists.get(i), indexname);
         }
         return bulkResponses;
     }
 
-    private BulkResponse updatePart(List<T> list, String indexname, String indextype) throws Exception {
+    private BulkResponse updatePart(List<T> list, String indexname) throws Exception {
         BulkRequest rrr = new BulkRequest();
         for (int i = 0; i < list.size(); i++) {
             T tt = list.get(i);
@@ -240,7 +236,6 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public boolean update(T t) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         String id = Tools.getESId(t);
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
@@ -266,7 +261,6 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public BulkResponse batchUpdate(QueryBuilder queryBuilder, T t, Class clazz, int limitcount, boolean asyn) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         if (queryBuilder == null) {
             throw new NullPointerException();
         }
@@ -283,7 +277,7 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
             if (asyn) {
                 new Thread(() -> {
                     try {
-                        batchUpdate(pageList.getList(), indexname, indextype, t);
+                        batchUpdate(pageList.getList(), indexname, t);
                         logger.info("asyn batch finished update");
                     } catch (Exception e) {
                         logger.error("asyn batch update fail", e);
@@ -291,14 +285,14 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
                 }).start();
                 return null;
             } else {
-                return batchUpdate(pageList.getList(), indexname, indextype, t);
+                return batchUpdate(pageList.getList(), indexname, t);
             }
         } else {
             throw new Exception("Batch update, please do not pass value to primary key");
         }
     }
 
-    private BulkResponse batchUpdate(List<T> list, String indexname, String indextype, T tot) throws Exception {
+    private BulkResponse batchUpdate(List<T> list, String indexname, T tot) throws Exception {
         Map map = Tools.getFieldValue(tot);
         BulkRequest rrr = new BulkRequest();
         for (int i = 0; i < list.size(); i++) {
@@ -325,7 +319,6 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public boolean delete(T t, String routing) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         String id = Tools.getESId(t);
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
@@ -371,7 +364,6 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     @Override
     public List<T> search(QueryBuilder queryBuilder, Class<T> clazz, String... indexs) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-        String indextype = metaData.getIndextype();
         List<T> list = new ArrayList<>();
         SearchRequest searchRequest = new SearchRequest(indexs);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -490,7 +482,6 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public T getById(M id, Class<T> clazz) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(clazz);
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
         }
@@ -506,7 +497,6 @@ public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T,
     public List<T> mgetById(M[] ids, Class<T> clazz) throws Exception {
         MetaData metaData = elasticsearchIndex.getMetaData(clazz);
         String indexname = metaData.getIndexname();
-        String indextype = metaData.getIndextype();
         MultiGetRequest request = new MultiGetRequest();
         for (int i = 0; i < ids.length; i++) {
             request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));

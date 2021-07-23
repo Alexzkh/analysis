@@ -6,13 +6,9 @@
     <modules>
         <module>tldw-aggregate-searching</module>
         <module>tldw-analysis-server</module>
+        <module>tldw-analysis-app</module>
+        <module>tldw-analysis-domain</module>
     </modules>
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.4.3</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
 
     <groupId>com.zqykj</groupId>
     <artifactId>analysis-service</artifactId>
@@ -31,24 +27,6 @@
         <jackson.version>2.9.7</jackson.version>
         <spring-boot.version>2.4.3</spring-boot.version>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!--<dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>-->
-    </dependencies>
 
 
     <dependencyManagement>

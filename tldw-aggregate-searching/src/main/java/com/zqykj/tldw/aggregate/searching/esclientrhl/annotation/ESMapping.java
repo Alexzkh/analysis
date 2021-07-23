@@ -13,6 +13,7 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD})
 @Documented
 public @interface ESMapping {
+    String field_name() default "";
     /**
      * Data type (include keyword type )
      */

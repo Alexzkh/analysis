@@ -126,9 +126,10 @@ public class IndexTools {
         }
         field.setAccessible(true);
         MappingData mappingData = new MappingData();
-        mappingData.setField_name(field.getName());
+        //mappingData.setField_name(field.getName());
         if(field.getAnnotation(ESMapping.class) != null){
             ESMapping esMapping = field.getAnnotation(ESMapping.class);
+            mappingData.setField_name(esMapping.field_name());
             mappingData.setDatatype(getType(esMapping.datatype()));
             mappingData.setAnalyzer(esMapping.analyzer().toString());
             mappingData.setNgram(esMapping.ngram());

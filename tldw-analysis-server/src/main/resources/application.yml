@@ -13,3 +13,15 @@ elasticsearch:
 
 server:
   port: 18087
+aggregate:
+  operate: es
+
+spring:
+  redis:
+    host: 172.30.6.31
+    port: 6379
+  data:
+    hbase:
+      quorum: 172.30.6.31:2181
+      rootDir: file:///hbase
+      nodeParent: /hbase
