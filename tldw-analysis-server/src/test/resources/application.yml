@@ -1,0 +1,15 @@
+
+elasticsearch:
+  host: 172.30.6.31:9208
+  username:
+  password:
+  max_connect_total: 30
+  max_connect_per_route: 10
+  connection_request_timeout_millis: 2000
+  socket_timeout_millis: 30000
+  connect_timeout_millis: 2000
+  index:
+    prefix:
+
+server:
+  port: 18087
