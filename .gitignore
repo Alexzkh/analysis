@@ -1,0 +1,14 @@
+.classpath
+.project
+.settings/
+target/
+**/.idea/
+log/
+.iml
+**/dependency-reduced-pom.xml
+dist/
+tldw*/lib
+tldw-graph-server/solr/
+**/git.properties
+**/*.properties
+**/*.iml
