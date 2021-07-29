@@ -26,9 +26,4 @@ public class AggregateOperateService {
         return ServerResponse.createBySuccess(iAggregateOperate.count(StandardBankTransactionFlow.class));
     }
 
-
-    
-
-
-
 }
