@@ -3,6 +3,7 @@ package com.zqykj.infrastructure.storage;
 import com.zqykj.infrastructure.storage.kv.FileKvStorage;
 import com.zqykj.infrastructure.storage.kv.KvStorage;
 import com.zqykj.infrastructure.storage.kv.MemoryKvStorage;
+import com.zqykj.infrastructure.storage.kv.RocksDBKvStorage;
 
 /**
  * Key-value Storage factory.
@@ -26,6 +27,7 @@ public final class StorageFactory {
             case Memory:
                 return new MemoryKvStorage();
             case RocksDB:
+                return new RocksDBKvStorage(baseDir);
             default:
                 throw new IllegalArgumentException("this kv type : [" + type.name() + "] not support");
         }

@@ -10,10 +10,6 @@ import java.util.List;
  * but a useful option to enhance testability, as it can easily be mocked or stubbed.
  *
  */
-
-/**
- * desc: copy from spring data hadoop hbase, modified by JThink, remove the unuse interface
- */
 public interface HbaseOperations {
 
     /**
