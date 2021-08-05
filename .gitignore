@@ -3,27 +3,22 @@
 .settings/
 target/
 **/.idea/
-log/
-.iml
 **/dependency-reduced-pom.xml
 dist/
 tldw*/lib
 tldw-graph-server/solr/
 **/git.properties
 **/*.properties
-**/*.iml
+*.iml
 
 HELP.md
-target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**
 !**/src/test/**
 
 ### STS ###
 .apt_generated
-.classpath
 .factorypath
-.project
 .settings
 .springBeans
 .sts4-cache
@@ -31,7 +26,6 @@ target/
 ### IntelliJ IDEA ###
 .idea
 *.iws
-*.iml
 *.ipr
 
 ### NetBeans ###
