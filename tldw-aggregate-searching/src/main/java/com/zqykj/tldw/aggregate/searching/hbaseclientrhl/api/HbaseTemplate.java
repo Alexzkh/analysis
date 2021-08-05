@@ -78,6 +78,7 @@ public class HbaseTemplate implements HbaseOperations {
         Scan scan = new Scan();
         scan.setCaching(5000);
         scan.addColumn(Bytes.toBytes(family), Bytes.toBytes(qualifier));
+
         return this.find(tableName, scan, action);
     }
 
