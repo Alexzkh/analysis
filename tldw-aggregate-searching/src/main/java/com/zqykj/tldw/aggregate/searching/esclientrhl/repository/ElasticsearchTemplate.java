@@ -1,5 +1,6 @@
 package com.zqykj.tldw.aggregate.searching.esclientrhl.repository;
 
+import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.AggsType;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.SqlFormat;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.response.ScrollResponse;
@@ -58,6 +59,7 @@ public interface ElasticsearchTemplate<T, M> {
      * @param list index pojo list
      */
     public BulkResponse save(List<T> list) throws Exception;
+
 
     /**
      * New index set (batch mode, improve performance, prevent es service memory overflow, default 5000 pieces of data per batch)
