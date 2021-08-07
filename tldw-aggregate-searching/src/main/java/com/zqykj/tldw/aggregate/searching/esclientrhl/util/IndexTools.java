@@ -16,10 +16,12 @@ import java.util.Date;
 /**
  *  Index information operator tools class
  **/
-@Component
+//@Component
 public class IndexTools {
-    @Autowired
-    private ElasticsearchProperties elasticsearchProperties;
+
+//    private ElasticsearchProperties elasticsearchProperties;
+
+
 
     ///**
     // * 获取索引元数据：indexname、indextype
@@ -83,13 +85,13 @@ public class IndexTools {
             number_of_replicas = clazz.getAnnotation(ESMetaData.class).number_of_replicas();
             metaData = new MetaData(indexname,indextype,number_of_shards,number_of_replicas);
             // If suffix is configured, the suffix is automatically added to the index name
-            if(clazz.getAnnotation(ESMetaData.class).suffix()) {
-                metaData.setSuffix(elasticsearchProperties.getSuffix());
-                if(metaData.getSuffix() != null && !"".equals(metaData.getSuffix())){
-                    metaData.setIndexname(metaData.getIndexname()+"_"+metaData.getSuffix());
-                    indexname = metaData.getIndexname();
-                }
-            }
+//            if(clazz.getAnnotation(ESMetaData.class).suffix()) {
+//                metaData.setSuffix(elasticsearchProperties.getSuffix());
+//                if(metaData.getSuffix() != null && !"".equals(metaData.getSuffix())){
+//                    metaData.setIndexname(metaData.getIndexname()+"_"+metaData.getSuffix());
+//                    indexname = metaData.getIndexname();
+//                }
+//            }
             metaData.setPrintLog(clazz.getAnnotation(ESMetaData.class).printLog());
             if(Tools.arrayISNULL(clazz.getAnnotation(ESMetaData.class).searchIndexNames())) {
                 metaData.setSearchIndexNames(new String[]{indexname});

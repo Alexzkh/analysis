@@ -27,8 +27,9 @@ import java.util.Map;
  * <p>
  * The {@link org.springframework.core.annotation.Order} default is the lowest priority. The lower the value, the higher the priority.
  **/
-@Configuration
+//@Configuration
 @Order(1)
+
 public class CreateIndex implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 

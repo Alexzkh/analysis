@@ -7,6 +7,7 @@ import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.AggsType;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.DataType;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.SqlFormat;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndex;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndexImpl;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.response.ScrollResponse;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.response.UriResponse;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.*;
@@ -22,10 +23,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.Request;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.common.unit.TimeValue;
@@ -69,9 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 
 
 import java.io.IOException;
@@ -85,16 +81,21 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Index structure basic method interface impl
  **/
-@Component
 public class ElasticsearchTemplateImpl<T, M> implements ElasticsearchTemplate<T, M> {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     RestHighLevelClient client;
 
-    @Autowired
     ElasticsearchIndex elasticsearchIndex;
 
+    public ElasticsearchTemplateImpl( RestHighLevelClient client){
+        this.client = client;
+        this.elasticsearchIndex = new ElasticsearchIndexImpl(client);
+    }
+
+    public static ElasticsearchTemplateImpl open(final RestHighLevelClient config)  {
+        return new ElasticsearchTemplateImpl(config);
+    }
 
     @Override
     public Response request(Request request) throws Exception {

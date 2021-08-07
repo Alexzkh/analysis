@@ -1,4 +1,4 @@
-package com.zqykj.tldw.aggregate.searching.esclientrhl.config;
+package com.zqykj.app.service.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 /**
  * Elasticsearch properties .
  **/
-//@Component
+@Component
 public class ElasticsearchProperties {
     @Value("${elasticsearch.host:127.0.0.1:9200}")
     private String host;

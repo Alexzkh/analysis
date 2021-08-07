@@ -35,16 +35,21 @@ import java.util.stream.Stream;
 /**
  * Index structure basic method {@link com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndex} implementation class
  **/
-@Component
+//@Component
 public class ElasticsearchIndexImpl<T> implements ElasticsearchIndex<T> {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    @Autowired
+
     RestHighLevelClient client;
 
     private static final String NESTED = "nested";
 
-    @Autowired
     private IndexTools indexTools;
+
+    public ElasticsearchIndexImpl(RestHighLevelClient client){
+        this.client =client;
+        this.indexTools = new IndexTools();
+    }
+
 
     @Override
     public void createIndex(Class<T> clazz) throws Exception {

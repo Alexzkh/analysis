@@ -21,19 +21,19 @@ import org.springframework.util.ObjectUtils;
 /**
  * automatic autowired restHighLevelClient .
  **/
-@Configuration
-@ComponentScan("com.zqykj.tldw.aggregate.searching.esclientrhl")
+//@Configuration
+//@ComponentScan("com.zqykj.tldw.aggregate.searching.esclientrhl")
 public class ElasticSearchConfiguration {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
+    //    @Autowired
     ElasticsearchProperties elasticsearchProperties;
 
     private RestHighLevelClient restHighLevelClient;
 
 
-    @Bean(destroyMethod = "close")
-    @Scope("singleton")
+    //    @Bean(destroyMethod = "close")
+//    @Scope("singleton")
     public RestHighLevelClient createInstance() {
         String host = elasticsearchProperties.getHost();
         String username = elasticsearchProperties.getUsername();

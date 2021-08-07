@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  *Rollover at Regular time.
  * @see {https://www.elastic.co/guide/en/elasticsearch/reference/7.9/indices-rollover-index.html}
  **/
-@Configuration
+//@Configuration
 @Order(2)
 public class ScheduleRollover implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
     private Logger logger = LoggerFactory.getLogger(this.getClass());

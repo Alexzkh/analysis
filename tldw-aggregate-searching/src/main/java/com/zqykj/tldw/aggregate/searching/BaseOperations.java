@@ -17,6 +17,15 @@ import java.util.Optional;
  */
 public interface BaseOperations<T, M> {
 
+    enum DatasoureType {
+        Elasticsearch,
+
+        MongoDB,
+
+        Solr,
+
+        HBase
+    }
 
     /**
      * Save the object to the collection for the entity type of the object to save.

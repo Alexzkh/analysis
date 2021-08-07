@@ -3,11 +3,7 @@ package com.zqykj.analysis.controller;
 import com.zqykj.app.service.IStandardBankTransactionFlowService;
 import com.zqykj.app.service.impl.StandardBankTransactionFlowServiceImpl;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
-import com.zqykj.infrastructure.core.ServerResponse;
-import com.zqykj.app.service.AggregateOperateService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
