@@ -4,12 +4,14 @@ import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESID;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndex;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndexImpl;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.ElasticsearchTemplateImpl;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Constant;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.JsonUtils;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.MetaData;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Tools;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -27,61 +29,106 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ObjectUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Description: TODO
+ * @Description: Es operations commons api .
  * @Author zhangkehou
- * @Date 2021/8/5
+ * @Date 2021/8/9
  */
-//@Component
-public class EsOperationsTempleate<T, M> implements ElasticsearchTemplateOperations<T, M> {
+public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperations<T, M> {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    //    @Autowired
     RestHighLevelClient client;
 
-    //    @Autowired
     ElasticsearchIndex elasticsearchIndex;
 
-    public EsOperationsTempleate( RestHighLevelClient client){
+    public EsOperationsTemplate(RestHighLevelClient client) {
         this.client = client;
         this.elasticsearchIndex = new ElasticsearchIndexImpl(client);
     }
 
-    public static EsOperationsTempleate open(final RestHighLevelClient client)  {
-        return new EsOperationsTempleate(client);
+    public static EsOperationsTemplate open(final RestHighLevelClient client) {
+        return new EsOperationsTemplate(client);
     }
 
 
-
     @Override
-    public <T1> void create(Class<T1> clazz) {
+    public <T> void create(T clazz) {
+    }
 
+    public boolean create(T t, String routing) throws Exception {
+        MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
+        String indexname = metaData.getIndexname();
+        String id = Tools.getESId(t);
+        IndexRequest indexRequest = null;
+        if (ObjectUtils.isEmpty(id)) {
+            indexRequest = new IndexRequest(indexname);
+        } else {
+            indexRequest = new IndexRequest(indexname);
+            indexRequest.id(id);
+        }
+        String source = JsonUtils.obj2String(t);
+        indexRequest.source(source, XContentType.JSON);
+        if (!ObjectUtils.isEmpty(routing)) {
+            indexRequest.routing(routing);
+        }
+        IndexResponse indexResponse = null;
+        indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+        if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
+            logger.info("INDEX CREATE SUCCESS");
+            // asyc execute rollover
+            elasticsearchIndex.rollover(t.getClass(), true);
+        } else if (indexResponse.getResult() == DocWriteResponse.Result.UPDATED) {
+            logger.info("INDEX UPDATE SUCCESS");
+        } else {
+            return false;
+        }
+        return true;
     }
 
     @Override
-    public long deleteByID(M id, String name) {
-        return 0;
+    public boolean deleteByID(M id, Class<T> clazz) throws Exception {
+
+        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
+        String indexname = metaData.getIndexname();
+        if (ObjectUtils.isEmpty(id)) {
+            throw new Exception("ID cannot be empty");
+        }
+        DeleteRequest deleteRequest = new DeleteRequest(indexname, id.toString());
+        DeleteResponse deleteResponse = null;
+        try {
+            deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
+            logger.info("INDEX DELETE SUCCESS");
+            return true;
+        }
+        return false;
     }
 
-    @Override
-    public long batchDelteByID(Collection<M> ids, String name) {
-        return 0;
-    }
 
     @Override
-    public Optional<T> findById(M id, String name) {
-        return Optional.empty();
-    }
-
-    @Override
-    public List<T> findAllByIDs(Collection<M> ids, String name) {
+    public Optional<T> findById(M id, Class<T> clazz) throws Exception {
+        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
+        String indexname = metaData.getIndexname();
+        if (ObjectUtils.isEmpty(id)) {
+            throw new Exception("ID cannot be empty");
+        }
+        GetRequest getRequest = new GetRequest(indexname, id.toString());
+        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+        if (getResponse.isExists()) {
+            return Optional.of(JsonUtils.string2Obj(getResponse.getSourceAsString(), clazz));
+        }
         return null;
     }
+
 
     @Override
     public boolean updateByID(M id, T t, String name) throws Exception {
@@ -229,5 +276,30 @@ public class EsOperationsTempleate<T, M> implements ElasticsearchTemplateOperati
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * @param ids: the list of id .
+     * @param clazz: the query entity .
+     * @return: java.util.List<T>
+     **/
+    public List<T> mgetById(M[] ids, Class<T> clazz) throws Exception {
+        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
+        String indexname = metaData.getIndexname();
+        MultiGetRequest request = new MultiGetRequest();
+        for (int i = 0; i < ids.length; i++) {
+            request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
+        }
+        MultiGetResponse response = client.mget(request, RequestOptions.DEFAULT);
+        List<T> list = new ArrayList<>();
+        for (int i = 0; i < response.getResponses().length; i++) {
+            MultiGetItemResponse item = response.getResponses()[i];
+            GetResponse getResponse = item.getResponse();
+            if (getResponse.isExists()) {
+                list.add(JsonUtils.string2Obj(getResponse.getSourceAsString(), clazz));
+            }
+        }
+        return list;
     }
 }

@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GenerateClientManager {
 
     // k-->data source type  v--> the implementions of ElasticsearchTemplateOperations
-    private final Map<BaseOperations.DatasoureType, ElasticsearchTemplateOperations> templateMap = new ConcurrentHashMap<>();
+    private final Map<BaseOperations.DatasoureType, Object> templateMap = new ConcurrentHashMap<>();
     private static GenerateClientManager instance = null;
 
     public GenerateClientManager(ElasticsearchOperationClientProperties config) {
@@ -24,6 +24,7 @@ public class GenerateClientManager {
         templateMap.put(BaseOperations.DatasoureType.Elasticsearch, estemplate);
     }
 
+    // initialize the manager class .
     private synchronized void initialize() {
         if (null != instance) {
             final String errMsg = "GenerateClientManager should be instantiated once";
@@ -32,11 +33,12 @@ public class GenerateClientManager {
         instance = this;
     }
 
+
     public static GenerateClientManager getInstance() {
         return instance;
     }
 
-    public ElasticsearchTemplateOperations getTemplete(BaseOperations.DatasoureType datasoureType) {
+    public Object getTemplete(BaseOperations.DatasoureType datasoureType) {
         return templateMap.get(datasoureType);
     }
 
@@ -45,7 +47,7 @@ public class GenerateClientManager {
         templateMap.remove(templateName);
     }
 
-    public ElasticsearchTemplateOperations getTemplate(BaseOperations.DatasoureType datasoureType) {
+    public Object getTemplate(BaseOperations.DatasoureType datasoureType) {
         return templateMap.get(datasoureType);
     }
 }

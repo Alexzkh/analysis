@@ -4,7 +4,7 @@ import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.ElasticsearchTemplateImpl;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Constant;
-import com.zqykj.tldw.aggregate.searching.impl.EsOperationsTempleate;
+import com.zqykj.tldw.aggregate.searching.impl.EsOperationsTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -29,21 +29,13 @@ public class DataOpertionClientFactory {
     // k-->Data Source Type v--> data operate client 
     private static final Map<BaseOperations.DatasoureType, Object> clientMap = new ConcurrentHashMap<>(4);
 
+    // k-->the interface of Es operations ,v -->the implemention
+    private static final Map<Class<?>, Class<?>> mapping = new ConcurrentHashMap<>(4);
 
-    /**
-     * @param elasticsearchOperationClientProperties: The client creates the required configuration.
-     * @return: com.zqykj.tldw.aggregate.searching.esclientrhl.repository.ElasticsearchTemplateImpl: Elasticsearhch data operation implemention.
-     * <p>
-     * Generate the {@link RestHighLevelClient} according to the configuration at first .
-     * And then building the {@link BaseOperations} implemention with {@link ElasticsearchTemplateImpl},
-     * finally return it .
-     * <p>
-     **/
-//    public static ElasticsearchTemplateImpl open(ElasticsearchOperationClientProperties elasticsearchOperationClientProperties) {
-//        RestHighLevelClient restHighLevelClient = createInstance(elasticsearchOperationClientProperties);
-//        clientMap.put(BaseOperations.DatasoureType.Elasticsearch, restHighLevelClient);
-//        return ElasticsearchTemplateImpl.open(restHighLevelClient);
-//    }
+    static {
+        mapping.put(ElasticsearchTemplateOperations.class, EsOperationsTemplate.class);
+    }
+
 
     /**
      * @param elasticsearchOperationClientProperties: The client creates the required configuration.
@@ -57,9 +49,8 @@ public class DataOpertionClientFactory {
     public static ElasticsearchTemplateOperations open(ElasticsearchOperationClientProperties elasticsearchOperationClientProperties) {
         RestHighLevelClient restHighLevelClient = createInstance(elasticsearchOperationClientProperties);
         clientMap.put(BaseOperations.DatasoureType.Elasticsearch, restHighLevelClient);
-        return EsOperationsTempleate.open(restHighLevelClient);
+        return EsOperationsTemplate.open(restHighLevelClient);
     }
-
 
     /**
      * Generate the {@link RestHighLevelClient} according to the configuration

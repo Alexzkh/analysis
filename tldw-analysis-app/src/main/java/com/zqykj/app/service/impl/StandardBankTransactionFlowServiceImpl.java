@@ -7,8 +7,6 @@ import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.config.ElasticsearchOperationClientProperties;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.config.GenerateClientManager;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.ElasticsearchTemplate;
-import com.zqykj.tldw.aggregate.searching.impl.EsOperationsTempleate;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +47,7 @@ public class StandardBankTransactionFlowServiceImpl implements IStandardBankTran
                 .build();
 
         GenerateClientManager generateClientManager = new GenerateClientManager(elasticsearchOperationClientProperties);
-        elasticsearchTemplate = generateClientManager.getTemplete(BaseOperations.DatasoureType.Elasticsearch);
+        elasticsearchTemplate = (ElasticsearchTemplateOperations) generateClientManager.getTemplete(BaseOperations.DatasoureType.Elasticsearch);
 
 
     }

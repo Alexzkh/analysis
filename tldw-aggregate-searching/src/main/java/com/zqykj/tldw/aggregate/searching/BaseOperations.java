@@ -33,47 +33,28 @@ public interface BaseOperations<T, M> {
      * @param clazz the object to store in the collection. Must not be null.
      * @return none .
      */
-    <T> void create(Class<T> clazz) throws Exception;
+    <T> void create(T clazz) throws Exception;
 
 
     /**
      * Remove all data that match the key of id from the table used to store the entity class.
      *
-     * @param id   the key of id .
-     * @param name the operate table name ,it might be the mongo collection name 、elasticsearch index name or solr document name 、 hbase table name .
+     * @param id    the key of id .
+     * @param clazz the operate entity .
      * @return long the number of documents (collections、indexes..)deleted .
      */
-    long deleteByID(M id, String name) throws Exception;
-
-
-    /**
-     * Remove all data that match the key of id from the table used to store the entity class.
-     *
-     * @param ids  the number of keys of id .
-     * @param name the operate table name ,it might be the mongo collection name 、elasticsearch index name or solr document name 、 hbase table name .
-     * @return long the number of documents (collections、indexes..)deleted .
-     */
-    long batchDelteByID(Collection<M> ids, String name) throws Exception;
+    boolean deleteByID(M id, Class<T> clazz) throws Exception;
 
 
     /**
      * Search all data that match the key of id from the table used to store the entity class.
      *
      * @param id   the key of id .
-     * @param name the operate table name ,it might be the mongo collection name 、elasticsearch index name or solr document name 、 hbase table name .
+     * @param clazz the operate entity.
      * @return the converted object or null if the result does not exist .
      */
-    Optional<T> findById(M id, String name) throws Exception;
+    Optional<T> findById(M id, Class<T> clazz) throws Exception;
 
-
-    /**
-     * Search all data that match the key of id from the table used to store the entity class.
-     *
-     * @param ids  the number of keys  of id .
-     * @param name the operate table name ,it might be the mongo collection name 、elasticsearch index name or solr document name 、 hbase table name .
-     * @return return the results in a list or  null if the results does not exist .
-     */
-    List<T> findAllByIDs(Collection<M> ids, String name) throws Exception;
 
 
     /**
