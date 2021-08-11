@@ -20,11 +20,17 @@ import com.zqykj.infrastructure.serialize.SerializeFactory;
 import com.zqykj.infrastructure.serialize.Serializer;
 import org.junit.Assert;
 import org.junit.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+@SpringBootTest
 public class SerializeFactoryTest {
+
+    @Test
+    public void contextLoads() {
+    }
 
     @Test
     public void testListSerialize() throws Exception {

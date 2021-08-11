@@ -3,6 +3,7 @@ package com.zqykj.infrastructure;
 import com.zqykj.infrastructure.id.SnowFlowerIdGenerator;
 import org.junit.Assert;
 import org.junit.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.StandardEnvironment;
 
 /**
@@ -11,7 +12,12 @@ import org.springframework.core.env.StandardEnvironment;
  * @Author zhangkehou
  * @Date 2021/7/28 15:05
  */
+@SpringBootTest
 public class SnowFlowerIdGeneratorTest {
+
+    @Test
+    public void contextLoads() {
+    }
 
     @Test
     public void test_idGenerator() {

@@ -16,7 +16,7 @@ public interface AggregateRepositoryQuery {
      * @return execution result. Can be {@literal null}.
      */
     @Nullable
-    Object execute(Object[] parameters);
+    Object execute(Object[] parameters,Method method);
 
     /**
      * <h2> 返回指定关联的method </h2>

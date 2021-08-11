@@ -4,8 +4,8 @@
 package com.zqykj.tldw.aggregate.data.support;
 
 
+import com.zqykj.infrastructure.util.ApplicationUtils;
 import com.zqykj.tldw.aggregate.data.query.AbstractAggregateRepositoryQuery;
-import com.zqykj.tldw.aggregate.util.ApplicationUtils;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
@@ -75,6 +75,6 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
         stringQuery.setMethod(method);
         stringQuery.setQuery(query);
         stringQuery.setRepositoryInformation(repositoryInformation);
-        return stringQuery.execute(parameters);
+        return stringQuery.execute(parameters, method);
     }
 }

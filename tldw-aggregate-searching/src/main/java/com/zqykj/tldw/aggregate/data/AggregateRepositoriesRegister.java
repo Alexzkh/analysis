@@ -38,6 +38,8 @@ import java.util.stream.StreamSupport;
 
 /**
  * <h1>扫描当前启动类所在的包以及子包下的指定接口,获取相关的BeanDefinition并包装成FactoryBean的子类</h1>
+ *
+ * @author Mcj
  */
 @Slf4j
 public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegistrar,
@@ -63,7 +65,7 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
             Objects.requireNonNull(candidate.getBeanClassName());
             String beanClassName = candidate.getBeanClassName();
             try {
-//                Class<?> repositoryInterface = ClassUtils.forName(beanClassName, ClassUtils.getDefaultClassLoader());
+                // Class<?> repositoryInterface = ClassUtils.forName(beanClassName, ClassUtils.getDefaultClassLoader());
                 // 注册Bean定义信息
                 BeanDefinitionBuilder definitionBuilder = generateBeanDefinitionBuilder(candidate);
                 AbstractBeanDefinition beanDefinition = definitionBuilder.getBeanDefinition();
@@ -173,8 +175,8 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
                                    BeanNameGenerator beanNameGenerator,
                                    BeanDefinitionRegistry registry) {
 
-        AnnotatedBeanDefinition beanDefinition = definition instanceof AnnotatedBeanDefinition //
-                ? (AnnotatedBeanDefinition) definition //
+        AnnotatedBeanDefinition beanDefinition = definition instanceof AnnotatedBeanDefinition
+                ? (AnnotatedBeanDefinition) definition
                 : new AnnotatedGenericBeanDefinition(getRepositoryInterfaceFrom(definition));
         return beanNameGenerator.generateBeanName(beanDefinition, registry);
     }

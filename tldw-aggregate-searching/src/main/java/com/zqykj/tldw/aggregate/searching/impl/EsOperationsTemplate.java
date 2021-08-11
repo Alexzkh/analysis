@@ -1,7 +1,6 @@
 package com.zqykj.tldw.aggregate.searching.impl;
 
 import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESID;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndex;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndexImpl;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Constant;
@@ -234,13 +233,13 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
             for (int i = 0; i < clazz.getDeclaredFields().length; i++) {
                 Field field = clazz.getDeclaredFields()[i];
                 field.setAccessible(true);
-                if (field.getAnnotation(ESID.class) != null) {
-                    classIDMap.put(clazz, field.getName());
-                    //这里不支持非String类型的赋值，如果用默认的id，则id的类型一定是String类型的
-                    if (field.get(t) == null) {
-                        field.set(t, _id);
-                    }
-                }
+//                if (field.getAnnotation(ESID.class) != null) {
+//                    classIDMap.put(clazz, field.getName());
+//                    //这里不支持非String类型的赋值，如果用默认的id，则id的类型一定是String类型的
+//                    if (field.get(t) == null) {
+//                        field.set(t, _id);
+//                    }
+//                }
             }
         } catch (Exception e) {
             logger.error("correctID error!", e);

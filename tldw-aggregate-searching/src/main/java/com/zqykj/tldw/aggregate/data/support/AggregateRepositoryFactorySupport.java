@@ -4,9 +4,9 @@
 package com.zqykj.tldw.aggregate.data.support;
 
 import com.sun.istack.NotNull;
+import com.zqykj.infrastructure.util.ReflectionUtils;
 import com.zqykj.tldw.aggregate.repository.TestRepository;
 import com.zqykj.tldw.aggregate.repository.impl.TestRepositoryImpl;
-import com.zqykj.tldw.aggregate.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
@@ -15,7 +15,6 @@ import org.springframework.util.Assert;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 

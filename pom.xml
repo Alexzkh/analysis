@@ -8,6 +8,7 @@
         <module>tldw-analysis-server</module>
         <module>tldw-analysis-app</module>
         <module>tldw-analysis-domain</module>
+        <module>tldw-analysis-common</module>
     </modules>
 
     <groupId>com.zqykj</groupId>
@@ -19,24 +20,33 @@
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
         <slf4j.version>1.7.25</slf4j.version>
         <guava.version>25.1-jre</guava.version>
         <elasticsearch.version>7.3.1</elasticsearch.version>
-        <spring.version>5.1.3.RELEASE</spring.version>
         <jackson.version>2.9.7</jackson.version>
-        <spring-boot.version>2.4.3</spring-boot.version>
         <compiler.source>1.8</compiler.source>
         <compiler.target>1.8</compiler.target>
+        <spring-cloud.version>2020.0.1</spring-cloud.version>
     </properties>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.4.3</version>
+    </parent>
+
+    <dependencies>
+
+
+    </dependencies>
 
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -65,10 +75,6 @@
                     <skip>false</skip>
                 </configuration>
             </plugin>
-                <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.6.1</version>

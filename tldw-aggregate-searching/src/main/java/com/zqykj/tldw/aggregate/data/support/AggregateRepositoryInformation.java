@@ -3,7 +3,7 @@
  */
 package com.zqykj.tldw.aggregate.data.support;
 
-import com.zqykj.tldw.aggregate.annotations.Query;
+import com.zqykj.annotations.Query;
 import com.zqykj.tldw.aggregate.repository.TestRepository;
 import org.springframework.core.annotation.AnnotationUtils;
 

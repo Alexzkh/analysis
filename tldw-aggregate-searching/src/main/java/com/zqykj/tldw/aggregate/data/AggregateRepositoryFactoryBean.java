@@ -3,9 +3,9 @@
  */
 package com.zqykj.tldw.aggregate.data;
 
+import com.zqykj.infrastructure.util.Lazy;
 import com.zqykj.tldw.aggregate.repository.TestRepository;
 import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryFactorySupport;
-import com.zqykj.tldw.aggregate.util.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -14,6 +14,8 @@ import java.util.function.Supplier;
 
 /**
  * <h1>实现FactoryBean,动态获取实例(代理类)</h1>
+ *
+ * @author Mcj
  */
 @Slf4j
 public class AggregateRepositoryFactoryBean<T extends TestRepository> extends AggregateRepositoryFactorySupport

@@ -25,7 +25,6 @@ import java.util.List;
  * @Author zhangkehou
  * @Date 2021/7/6 19:27
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class TestElasticsearchImpl {
 
