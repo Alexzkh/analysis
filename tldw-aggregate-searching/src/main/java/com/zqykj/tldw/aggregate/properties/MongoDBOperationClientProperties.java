@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate.searching.esclientrhl.config;
+package com.zqykj.tldw.aggregate.properties;
 
 
 import lombok.AllArgsConstructor;
@@ -17,6 +17,8 @@ import java.io.Serializable;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@ConfigurationProperties(prefix = "mongodb.data.source")
+@Component
 public class MongoDBOperationClientProperties implements Serializable {
 
     /**
@@ -42,7 +44,7 @@ public class MongoDBOperationClientProperties implements Serializable {
     /**
      * UserName.
      */
-    private String username;
+    private String userName;
 
     /**
      * Password

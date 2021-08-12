@@ -39,10 +39,12 @@ import java.util.stream.Stream;
 public class ElasticsearchIndexImpl<T> implements ElasticsearchIndex<T> {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    @Autowired
     RestHighLevelClient client;
 
     private static final String NESTED = "nested";
 
+    @Autowired
     private IndexTools indexTools;
 
     public ElasticsearchIndexImpl(RestHighLevelClient client){

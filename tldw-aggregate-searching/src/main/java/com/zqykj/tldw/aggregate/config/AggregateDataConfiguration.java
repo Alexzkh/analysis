@@ -1,11 +1,12 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate.data.config;
+package com.zqykj.tldw.aggregate.config;
 
 import com.mongodb.client.MongoClient;
 import com.zqykj.annotations.Document;
-import com.zqykj.tldw.aggregate.datasourceconfig.AggregationDataSourceProperties;
+import com.zqykj.tldw.aggregate.properties.ElasticsearchOperationClientProperties;
+import com.zqykj.tldw.aggregate.properties.MongoDBOperationClientProperties;
 import com.zqykj.tldw.aggregate.index.domain.EntityScanner;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticPersistentEntityIndexCreator;
@@ -33,8 +34,9 @@ public class AggregateDataConfiguration {
      * <h2> mongodb context initialization </h2>
      */
     @Bean
+    @ConditionalOnBean(MongoDBOperationClientProperties.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('mongodb')")
-    SimpleMongodbMappingContext simpleMongodbMappingContext(ApplicationContext applicationContext, AggregationDataSourceProperties properties) throws ClassNotFoundException {
+    SimpleMongodbMappingContext simpleMongodbMappingContext(ApplicationContext applicationContext, MongoDBOperationClientProperties properties) throws ClassNotFoundException {
         SimpleMongodbMappingContext context = new SimpleMongodbMappingContext();
         // 是否自动创建索引
         context.setAutoIndexCreation(properties.getAutoIndexCreation());
@@ -44,9 +46,10 @@ public class AggregateDataConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(ElasticsearchOperationClientProperties.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
     SimpleElasticsearchMappingContext simpleElasticsearchMappingContext(ApplicationContext applicationContext,
-                                                                        AggregationDataSourceProperties properties) throws ClassNotFoundException {
+                                                                        ElasticsearchOperationClientProperties properties) throws ClassNotFoundException {
         SimpleElasticsearchMappingContext context = new SimpleElasticsearchMappingContext();
         context.setAutoIndexCreation(properties.getAutoIndexCreation());
         context.setInitialEntitySet(new EntityScanner(applicationContext).scan(Document.class));
@@ -54,20 +57,12 @@ public class AggregateDataConfiguration {
         return context;
     }
 
-    /**
-     * <h2> mongodb 已经实现 org.springframework.data.convert.CustomConversions, 无需额外实现 </h2>
-     */
-//    @Bean
-//    @ConditionalOnMissingBean
-//    MongoCustomConversions mongoCustomConversions() {
-//        return new MongoCustomConversions(Collections.emptyList());
-//    }
     @Bean
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('mongodb')")
-    @ConditionalOnBean({SimpleMongodbMappingContext.class})
+    @ConditionalOnBean({SimpleMongodbMappingContext.class, MongoClient.class})
     MongodbIndexOperations mongodbIndexOperations(SimpleMongodbMappingContext simpleMongodbMappingContext,
                                                   MongoClient mongoClient,
-                                                  AggregationDataSourceProperties properties) {
+                                                  MongoDBOperationClientProperties properties) {
         MongodbIndexOperations mongodbIndexOperations = new MongodbIndexOperations(mongoClient, simpleMongodbMappingContext, properties);
         // 若开启自动创建索引
         if (simpleMongodbMappingContext.isAutoIndexCreation()) {
@@ -80,7 +75,7 @@ public class AggregateDataConfiguration {
 
     @Bean
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
-    @ConditionalOnBean({SimpleElasticsearchMappingContext.class})
+    @ConditionalOnBean({SimpleElasticsearchMappingContext.class, RestHighLevelClient.class})
     ElasticsearchIndexOperations elasticsearchIndexOperations(SimpleElasticsearchMappingContext simpleElasticsearchMappingContext,
                                                               RestHighLevelClient restHighLevelClient) {
         ElasticsearchIndexOperations elasticsearchIndexOperations =

@@ -1,17 +1,20 @@
-package com.zqykj.tldw.aggregate.searching.esclientrhl.config;
+package com.zqykj.tldw.aggregate.config;
 
+import com.zqykj.tldw.aggregate.Exception.DataOperationClientException;
+import com.zqykj.tldw.aggregate.properties.ElasticsearchOperationClientProperties;
 import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.config.exception.DataOperationClientException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Description: Generate corresponding data source instance according to type.
+ * * <p> it was deprecated because loading implementions by configuration. you can check {@link AggregateDataConfiguration} in detail .
  * @Author zhangkehou
  * @Date 2021/8/7
  */
+@Deprecated
 public class GenerateClientManager {
 
     // k-->data source type  v--> the implementions of ElasticsearchTemplateOperations

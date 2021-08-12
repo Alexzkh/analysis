@@ -1,6 +1,8 @@
-package com.zqykj.tldw.aggregate.searching.esclientrhl.config;
+package com.zqykj.tldw.aggregate.properties;
 
 import lombok.*;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 
@@ -14,6 +16,8 @@ import java.io.Serializable;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ConfigurationProperties(prefix = "elasticsearch.data.source")
+@Component
 public class ElasticsearchOperationClientProperties implements Serializable {
 
     /**
@@ -24,7 +28,7 @@ public class ElasticsearchOperationClientProperties implements Serializable {
     /**
      * UserName.
      */
-    private String username;
+    private String userName;
 
     /**
      * Password
@@ -63,4 +67,7 @@ public class ElasticsearchOperationClientProperties implements Serializable {
 
     /** 是否自动创建索引 */
     private Boolean autoIndexCreation = true;
+
+
+    private String scheme;
 }
