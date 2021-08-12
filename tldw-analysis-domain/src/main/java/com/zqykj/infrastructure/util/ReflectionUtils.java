@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate.util;
+package com.zqykj.infrastructure.util;
 
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;

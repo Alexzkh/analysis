@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.zqykj.tldw.aggregate.util;
+package com.zqykj.tldw.aggregate.index.mapping;
 
-public enum IndexDirection {
-    ASCENDING, DESCENDING;
+/**
+ * Callback interface to do something with all plain {@link PersistentProperty} instances <em>except</em> associations
+ * and transient properties.
+ *
+ * @author Jon Brisbin <jbrisbin@vmware.com>
+ */
+public interface PropertyHandler<P extends PersistentProperty<P>> {
+
+	void doWithPersistentProperty(P persistentProperty);
 }
