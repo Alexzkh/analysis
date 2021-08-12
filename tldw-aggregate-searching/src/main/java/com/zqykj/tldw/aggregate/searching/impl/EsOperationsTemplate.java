@@ -1,5 +1,7 @@
 package com.zqykj.tldw.aggregate.searching.impl;
 
+import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
+import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndex;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndexImpl;
@@ -46,6 +48,10 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 
     ElasticsearchIndex elasticsearchIndex;
 
+    ElasticsearchIndexOperations elasticsearchIndexOperations;
+
+    SimpleElasticsearchMappingContext mappingContext;
+
     public EsOperationsTemplate(RestHighLevelClient client) {
         this.client = client;
         this.elasticsearchIndex = new ElasticsearchIndexImpl(client);
@@ -61,6 +67,7 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
     }
 
     public boolean create(T t, String routing) throws Exception {
+        mappingContext.getPersistentEntity(t.getClass()).getIndexName();
         MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
         String indexname = metaData.getIndexname();
         String id = Tools.getESId(t);

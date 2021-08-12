@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
  * <p> 目前提供了Mongodb 与 ElasticSearch Client,若需要切换其他数据源自行补充</p>
  */
 @Configuration
-@ConditionalOnBean(value = AggregationDataSourceProperties.class)
 public class AggregationDataSourceClientConfiguration {
 
     private AggregationDataSourceProperties properties;
@@ -45,7 +44,7 @@ public class AggregationDataSourceClientConfiguration {
     }
 
     @Bean(destroyMethod = "close") // bean 销毁的同时,释放资源
-    @ConditionalOnExpression("'${enable.datasource.type}'.equals('mongodb')")
+    @ConditionalOnBean(value = AggregationDataSourceProperties.class)
     public MongoClient mongoClient() {
         MongoCredential credential = MongoCredential.createCredential(properties.getUserName(),
                 properties.getDatabase(), properties.getPassword().toCharArray());

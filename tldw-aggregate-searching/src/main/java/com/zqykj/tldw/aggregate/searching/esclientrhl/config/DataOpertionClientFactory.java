@@ -48,6 +48,7 @@ public class DataOpertionClientFactory {
      **/
     public static ElasticsearchTemplateOperations open(ElasticsearchOperationClientProperties elasticsearchOperationClientProperties) {
         RestHighLevelClient restHighLevelClient = createInstance(elasticsearchOperationClientProperties);
+
         clientMap.put(BaseOperations.DatasoureType.Elasticsearch, restHighLevelClient);
         return EsOperationsTemplate.open(restHighLevelClient);
     }

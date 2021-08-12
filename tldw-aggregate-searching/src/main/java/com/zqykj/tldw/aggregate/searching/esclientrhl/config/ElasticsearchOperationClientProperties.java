@@ -61,5 +61,6 @@ public class ElasticsearchOperationClientProperties implements Serializable {
      */
     private String suffix;
 
-
+    /** 是否自动创建索引 */
+    private Boolean autoIndexCreation = true;
 }
