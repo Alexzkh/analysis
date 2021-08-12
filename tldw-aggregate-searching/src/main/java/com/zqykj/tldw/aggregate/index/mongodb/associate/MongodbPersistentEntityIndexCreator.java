@@ -5,7 +5,7 @@ package com.zqykj.tldw.aggregate.index.mongodb.associate;
 
 import com.mongodb.client.MongoClient;
 import com.zqykj.annotations.Document;
-import com.zqykj.tldw.aggregate.datasourceconfig.AggregationDataSourceProperties;
+import com.zqykj.tldw.aggregate.properties.MongoDBOperationClientProperties;
 import com.zqykj.tldw.aggregate.index.context.AbstractMappingContext;
 import com.zqykj.tldw.aggregate.index.context.AggregateDataSourceMappingContextEvent;
 import com.zqykj.tldw.aggregate.index.mapping.BasicPersistentEntity;
@@ -27,7 +27,7 @@ public class MongodbPersistentEntityIndexCreator implements
     public MongodbPersistentEntityIndexCreator(AbstractMappingContext<?, ?> mappingContext,
                                                IndexResolver indexResolver, MongoClient mongoClient,
                                                IndexOperations indexOperations,
-                                               AggregationDataSourceProperties properties) {
+                                               MongoDBOperationClientProperties properties) {
         Assert.notNull(mappingContext, "MongoMappingContext must not be null!");
         Assert.notNull(indexResolver, "IndexResolver must not be null!");
         Assert.notNull(mongoClient, "MongoClient must not be null!");

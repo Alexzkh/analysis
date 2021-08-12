@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate.datasourceconfig;
+package com.zqykj.tldw.aggregate.config;
 
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
@@ -9,6 +9,8 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.connection.ClusterConnectionMode;
+import com.zqykj.tldw.aggregate.properties.ElasticsearchOperationClientProperties;
+import com.zqykj.tldw.aggregate.properties.MongoDBOperationClientProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -35,21 +37,26 @@ import java.util.stream.Collectors;
  * <p> 目前提供了Mongodb 与 ElasticSearch Client,若需要切换其他数据源自行补充</p>
  */
 @Configuration
-public class AggregationDataSourceClientConfiguration {
+public class AggregateDataSourceClientConfiguration {
 
-    private AggregationDataSourceProperties properties;
+    private ElasticsearchOperationClientProperties elasticsearchOperationClientProperties;
 
-    public AggregationDataSourceClientConfiguration(AggregationDataSourceProperties properties) {
-        this.properties = properties;
+    private MongoDBOperationClientProperties mongoDBOperationClientProperties;
+
+    public AggregateDataSourceClientConfiguration(ElasticsearchOperationClientProperties properties,
+                                                  MongoDBOperationClientProperties mongoDBOperationClientProperties) {
+        this.elasticsearchOperationClientProperties = properties;
+        this.mongoDBOperationClientProperties = mongoDBOperationClientProperties;
     }
 
     @Bean(destroyMethod = "close") // bean 销毁的同时,释放资源
-    @ConditionalOnBean(value = AggregationDataSourceProperties.class)
+    @ConditionalOnBean(value = MongoDBOperationClientProperties.class)
+    @ConditionalOnExpression("'${enable.datasource.type}'.equals('mongodb')")
     public MongoClient mongoClient() {
-        MongoCredential credential = MongoCredential.createCredential(properties.getUserName(),
-                properties.getDatabase(), properties.getPassword().toCharArray());
+        MongoCredential credential = MongoCredential.createCredential(mongoDBOperationClientProperties.getUserName(),
+                mongoDBOperationClientProperties.getDatabase(), mongoDBOperationClientProperties.getPassword().toCharArray());
 
-        String hosts = properties.getHost();
+        String hosts = mongoDBOperationClientProperties.getHost();
         hosts = hosts.contains("http://") ? hosts.replace("http://", "") : hosts;
         // 指定多个主机地址
         List<ServerAddress> serverAddressList = Arrays.stream(hosts.split(",")).map(host -> {
@@ -76,37 +83,38 @@ public class AggregationDataSourceClientConfiguration {
     }
 
     @Bean(destroyMethod = "close") // bean 销毁的同时,释放资源
+    @ConditionalOnBean(value = ElasticsearchOperationClientProperties.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
     public RestHighLevelClient restHighLevelClient() {
 
-        String hosts = properties.getHost();
+        String hosts = elasticsearchOperationClientProperties.getHost();
         hosts = hosts.contains("http://") ? hosts.replace("http://", "") : hosts;
         // 拆分地址
         HttpHost[] httpHosts = Arrays.stream(hosts.split(",")).map(host -> {
             int index = host.indexOf(":");
-            return new HttpHost(host.substring(0, index), Integer.parseInt(host.substring(index + 1)), properties.getScheme());
+            return new HttpHost(host.substring(0, index), Integer.parseInt(host.substring(index + 1)), elasticsearchOperationClientProperties.getScheme());
         }).toArray(HttpHost[]::new);
         RestClientBuilder builder = RestClient.builder(httpHosts);
 
         // 若账号密码存在,使用账号密码链接
-        if (StringUtils.isNotBlank(properties.getPassword())) {
+        if (StringUtils.isNotBlank(elasticsearchOperationClientProperties.getPassword())) {
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(properties.getUserName(), properties.getPassword()));
+            credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(elasticsearchOperationClientProperties.getUserName(), elasticsearchOperationClientProperties.getPassword()));
             builder.setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
         }
 
         // 异步连接延时配置
         builder.setRequestConfigCallback(requestConfigBuilder -> {
-            requestConfigBuilder.setConnectTimeout(properties.getConnectTimeout());
-            requestConfigBuilder.setSocketTimeout(properties.getSocketTimeout());
-            requestConfigBuilder.setConnectionRequestTimeout(properties.getConnectionRequestTimeout());
+            requestConfigBuilder.setConnectTimeout(elasticsearchOperationClientProperties.getConnectTimeoutMillis());
+            requestConfigBuilder.setSocketTimeout(elasticsearchOperationClientProperties.getSocketTimeoutMillis());
+            requestConfigBuilder.setConnectionRequestTimeout(elasticsearchOperationClientProperties.getConnectionRequestTimeoutMillis());
             return requestConfigBuilder;
         });
 
         // 异步连接数配置
         builder.setHttpClientConfigCallback(httpClientBuilder -> {
-            httpClientBuilder.setMaxConnTotal(properties.getMaxConnectTotal());
-            httpClientBuilder.setMaxConnPerRoute(properties.getMaxConnectPerRoute());
+            httpClientBuilder.setMaxConnTotal(elasticsearchOperationClientProperties.getMaxConnectTotal());
+            httpClientBuilder.setMaxConnPerRoute(elasticsearchOperationClientProperties.getMaxConnectPerRoute());
             return httpClientBuilder;
         });
         return new RestHighLevelClient(builder);

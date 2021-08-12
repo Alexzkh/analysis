@@ -3,12 +3,10 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl.util;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESID;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESMapping;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESMetaData;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.config.ElasticsearchProperties;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.DataType;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
+
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -16,7 +14,7 @@ import java.util.Date;
 /**
  *  Index information operator tools class
  **/
-//@Component
+@Component
 public class IndexTools {
 
 //    private ElasticsearchProperties elasticsearchProperties;

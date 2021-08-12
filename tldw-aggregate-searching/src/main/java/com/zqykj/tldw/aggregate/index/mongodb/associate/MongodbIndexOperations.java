@@ -7,7 +7,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
-import com.zqykj.tldw.aggregate.datasourceconfig.AggregationDataSourceProperties;
+import com.zqykj.tldw.aggregate.properties.MongoDBOperationClientProperties;
 import com.zqykj.tldw.aggregate.index.convert.IndexConverters;
 import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.mongodb.SimpleMongoPersistentEntity;
@@ -28,13 +28,13 @@ public class MongodbIndexOperations extends AbstractDefaultIndexOperations {
 
     private final MongoClient mongoClient;
     // 该properties 需要替换成专用的mongodb properties
-    private final AggregationDataSourceProperties properties;
+    private final MongoDBOperationClientProperties properties;
     private final IndexResolver indexResolver;
 
 
     public MongodbIndexOperations(MongoClient mongoClient,
                                   SimpleMongodbMappingContext mappingContext,
-                                  AggregationDataSourceProperties properties) {
+                                  MongoDBOperationClientProperties properties) {
         this.mongoClient = mongoClient;
         this.properties = properties;
         this.indexResolver = IndexResolver.create(mappingContext);

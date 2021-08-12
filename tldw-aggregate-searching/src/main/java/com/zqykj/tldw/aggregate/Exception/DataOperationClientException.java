@@ -1,4 +1,4 @@
-package com.zqykj.tldw.aggregate.searching.esclientrhl.config.exception;
+package com.zqykj.tldw.aggregate.Exception;
 
 
 public class DataOperationClientException extends RuntimeException {

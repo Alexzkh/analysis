@@ -2,7 +2,6 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl.repository;
 
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESID;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.annotation.ESMapping;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.config.ElasticsearchProperties;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.AggsType;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.DataType;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.enums.SqlFormat;

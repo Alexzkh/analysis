@@ -1,5 +1,6 @@
-package com.zqykj.tldw.aggregate.searching.esclientrhl.config;
+package com.zqykj.tldw.aggregate.config;
 
+import com.zqykj.tldw.aggregate.properties.ElasticsearchOperationClientProperties;
 import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.ElasticsearchTemplateImpl;
@@ -21,10 +22,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Description: Data operate client factory .it used to generating {@link BaseOperations} the implementions.
+ * <p> it was deprecated because loading implementions by configuration. you can check {@link AggregateDataConfiguration} in detail .
  * @Author zhangkehou
  * @Date 2021/8/6
  */
 @Slf4j
+@Deprecated
 public class DataOpertionClientFactory {
     // k-->Data Source Type v--> data operate client 
     private static final Map<BaseOperations.DatasoureType, Object> clientMap = new ConcurrentHashMap<>(4);
@@ -62,7 +65,7 @@ public class DataOpertionClientFactory {
     public static RestHighLevelClient createInstance(ElasticsearchOperationClientProperties elasticsearchOperationClientProperties) {
         RestHighLevelClient restHighLevelClient;
         String host = elasticsearchOperationClientProperties.getHost();
-        String username = elasticsearchOperationClientProperties.getUsername();
+        String username = elasticsearchOperationClientProperties.getUserName();
         String password = elasticsearchOperationClientProperties.getPassword();
         Integer maxConnectTotal = elasticsearchOperationClientProperties.getMaxConnectTotal();
         Integer maxConnectPerRoute = elasticsearchOperationClientProperties.getMaxConnectPerRoute();

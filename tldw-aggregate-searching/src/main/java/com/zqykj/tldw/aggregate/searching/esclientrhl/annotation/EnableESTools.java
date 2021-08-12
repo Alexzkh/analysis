@@ -1,7 +1,6 @@
 package com.zqykj.tldw.aggregate.searching.esclientrhl.annotation;
 
 import com.zqykj.tldw.aggregate.searching.esclientrhl.auto.ESCRegistrar;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.config.ElasticSearchConfiguration;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;
@@ -9,7 +8,7 @@ import java.lang.annotation.*;
 /**
  * An annotation are used to identify the following actions to be down on the Application:
  * <p>
- * RestHighLevelClient with auto configuration by {@link com.zqykj.tldw.aggregate.searching.esclientrhl.config.ElasticSearchConfiguration};
+ * RestHighLevelClient with auto configuration by {@link ElasticSearchConfiguration};
  * Realize the function of the interface of the cut (refer to JPA Implementation) by{@link com.zqykj.tldw.aggregate.searching.esclientrhl.auto.ESCRegistrar}
  * Configure path to identify elasticsearch entity automatically create indexes and mapping,
  * (if not configured, scan according to the path package of main application method)

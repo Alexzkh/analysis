@@ -7,7 +7,6 @@ import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndex;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.index.ElasticsearchIndexImpl;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Constant;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.JsonUtils;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.util.MetaData;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Tools;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -28,6 +27,7 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 
 import java.io.IOException;
@@ -44,12 +44,16 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    @Autowired
     RestHighLevelClient client;
 
+    @Autowired
     ElasticsearchIndex elasticsearchIndex;
 
+    @Autowired
     ElasticsearchIndexOperations elasticsearchIndexOperations;
 
+    @Autowired
     SimpleElasticsearchMappingContext mappingContext;
 
     public EsOperationsTemplate(RestHighLevelClient client) {
@@ -67,9 +71,7 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
     }
 
     public boolean create(T t, String routing) throws Exception {
-        mappingContext.getPersistentEntity(t.getClass()).getIndexName();
-        MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
-        String indexname = metaData.getIndexname();
+        String indexname = mappingContext.getPersistentEntity(t.getClass()).getIndexName();
         String id = Tools.getESId(t);
         IndexRequest indexRequest = null;
         if (ObjectUtils.isEmpty(id)) {
@@ -100,8 +102,7 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
     @Override
     public boolean deleteByID(M id, Class<T> clazz) throws Exception {
 
-        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-        String indexname = metaData.getIndexname();
+        String indexname = mappingContext.getPersistentEntity(clazz).getIndexName();
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
         }
@@ -122,8 +123,7 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 
     @Override
     public Optional<T> findById(M id, Class<T> clazz) throws Exception {
-        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-        String indexname = metaData.getIndexname();
+        String indexname = mappingContext.getPersistentEntity(clazz).getIndexName();
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
         }
@@ -154,8 +154,7 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 
     @Override
     public boolean update(T t, String name) throws Exception {
-        MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
-        String indexname = metaData.getIndexname();
+        String indexname = mappingContext.getPersistentEntity(t.getClass()).getIndexName();
         String id = Tools.getESId(t);
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
@@ -184,14 +183,15 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 
     @Override
     public List<T> search(QueryBuilder queryBuilder, Class<T> clazz) throws Exception {
-        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-        String[] indexname = metaData.getSearchIndexNames();
-        return search(queryBuilder, clazz, indexname);
+//        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
+//        String[] indexname = metaData.getSearchIndexNames();
+//        return search(queryBuilder, clazz, indexname);
+        return null;
     }
 
     @Override
     public List<T> search(QueryBuilder queryBuilder, Class<T> clazz, String... indexs) throws Exception {
-        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
+//        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
         List<T> list = new ArrayList<>();
         SearchRequest searchRequest = new SearchRequest(indexs);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -199,9 +199,9 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
         searchSourceBuilder.from(0);
         searchSourceBuilder.size(Constant.DEFALT_PAGE_SIZE);
         searchRequest.source(searchSourceBuilder);
-        if (metaData.isPrintLog()) {
-            logger.info(searchSourceBuilder.toString());
-        }
+//        if (metaData.isPrintLog()) {
+//            logger.info(searchSourceBuilder.toString());
+//        }
         SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
         SearchHits hits = searchResponse.getHits();
         SearchHit[] searchHits = hits.getHits();
@@ -255,8 +255,7 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 
 
     public boolean save(T t, String routing) throws Exception {
-        MetaData metaData = elasticsearchIndex.getMetaData(t.getClass());
-        String indexname = metaData.getIndexname();
+        String indexname = mappingContext.getPersistentEntity(t.getClass()).getIndexName();
         String id = Tools.getESId(t);
         IndexRequest indexRequest = null;
         if (ObjectUtils.isEmpty(id)) {
@@ -286,13 +285,12 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 
 
     /**
-     * @param ids: the list of id .
+     * @param ids:   the list of id .
      * @param clazz: the query entity .
      * @return: java.util.List<T>
      **/
     public List<T> mgetById(M[] ids, Class<T> clazz) throws Exception {
-        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-        String indexname = metaData.getIndexname();
+        String indexname = mappingContext.getPersistentEntity(clazz.getClass()).getIndexName();
         MultiGetRequest request = new MultiGetRequest();
         for (int i = 0; i < ids.length; i++) {
             request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
