@@ -6,8 +6,13 @@ package com.zqykj.tldw.aggregate.data.support;
 
 import com.zqykj.infrastructure.util.ApplicationUtils;
 import com.zqykj.tldw.aggregate.data.query.AbstractAggregateRepositoryQuery;
+import com.zqykj.tldw.aggregate.data.query.elasticsearch.AggregateElasticsearchRepositoryStringQuery;
+import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
+import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
+import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.elasticsearch.client.RestHighLevelClient;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -21,17 +26,13 @@ import java.util.stream.Collectors;
  */
 public class QueryExecutorMethodInterceptor implements MethodInterceptor {
 
-
-    private final Class<?> repositoryInterface;
     /**
      * 存储Query 注解的Method 和 Value
      */
     private final Map<Method, String> queries;
+    private final RepositoryInformation repositoryInformation;
 
-    private final AggregateRepositoryInformation repositoryInformation;
-
-    public QueryExecutorMethodInterceptor(Class<?> repositoryInterface, AggregateRepositoryInformation repositoryInformation) {
-        this.repositoryInterface = repositoryInterface;
+    public QueryExecutorMethodInterceptor(RepositoryInformation repositoryInformation) {
         this.repositoryInformation = repositoryInformation;
         this.queries = mapMethodsToQuery(repositoryInformation.getQueryMethods());
     }
@@ -69,12 +70,19 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
      * <h2> 对@Query value 解析并构建Search </h2>
      */
     public Object execute(Method method, Object[] parameters, String query) {
-        // 这里处理@Query 注解方法实现,由于不同数据源根据对应client 实现方式不一致,因此需要抽象多个实现
-        // TODO 目前先实现Elasticsearch
-        AbstractAggregateRepositoryQuery stringQuery = ApplicationUtils.getBean(AbstractAggregateRepositoryQuery.class);
-        stringQuery.setMethod(method);
-        stringQuery.setQuery(query);
-        stringQuery.setRepositoryInformation(repositoryInformation);
-        return stringQuery.execute(parameters, method);
+        // 需要根据repositoryInterface 实现对应数据源的@Query 实现方式
+        AbstractAggregateRepositoryQuery stringQuery = null;
+        if (repositoryInformation.getRepositoryInterface().isAssignableFrom(ElasticsearchTemplateOperations.class)) {
+            stringQuery = new AggregateElasticsearchRepositoryStringQuery(
+                    ApplicationUtils.getBean(RestHighLevelClient.class),
+                    repositoryInformation,
+                    ApplicationUtils.getBean(SimpleElasticsearchMappingContext.class),
+                    method,
+                    query
+            );
+        } else {
+
+        }
+        return stringQuery.execute(parameters);
     }
 }

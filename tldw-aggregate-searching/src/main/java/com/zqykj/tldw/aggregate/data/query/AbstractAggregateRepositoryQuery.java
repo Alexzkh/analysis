@@ -8,13 +8,9 @@ import com.zqykj.domain.page.Pageable;
 import com.zqykj.domain.page.Sort;
 import com.zqykj.infrastructure.util.ClassTypeInformation;
 import com.zqykj.infrastructure.util.TypeInformation;
-import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryInformation;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.NumberUtils;
 
@@ -26,27 +22,16 @@ import java.util.stream.Stream;
 /**
  * @author Mcj
  */
-@Setter
-@Getter
 public abstract class AbstractAggregateRepositoryQuery implements AggregateRepositoryQuery {
 
-    public static final String ENABLE_TYPE = "enable.datasource.type";
-    public static final String MONGODBTYPE = "mongodb";
-    public static final String ELASTICSEARCHTYPE = "elasticsearch";
     // 该正则表达式 用来匹配@Query 注解内 value 值
     protected static final Pattern PARAMETER_PLACEHOLDER = Pattern.compile("\\?(\\d+)");
-    // @Query 注解内 value 值
-    private String query;
-    private Method method;
-    private AggregateRepositoryInformation repositoryInformation;
-    private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
+    protected static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
+    protected final Method method;
 
-    @Override
-    @Nullable
-    public abstract Object execute(Object[] parameters, Method method);
-
-    @Override
-    public abstract Method getQueryMethod();
+    public AbstractAggregateRepositoryQuery(Method method) {
+        this.method = method;
+    }
 
     protected String replacePlaceHolders(String input, Object[] parameters) {
 
@@ -77,7 +62,7 @@ public abstract class AbstractAggregateRepositoryQuery implements AggregateRepos
      */
     protected boolean isPageQuery() {
 
-        return ClassUtils.isAssignable(Page.class, potentiallyUnwrapReturnTypeFor(method));
+        return ClassUtils.isAssignable(Page.class, potentiallyUnwrapReturnTypeFor(this.method));
     }
 
     /**
@@ -92,7 +77,7 @@ public abstract class AbstractAggregateRepositoryQuery implements AggregateRepos
      * <h2> 方法返回类型是否是 Stream类型包装</h2>
      */
     protected boolean isStreamQuery() {
-        return Stream.class.isAssignableFrom(potentiallyUnwrapReturnTypeFor(method));
+        return Stream.class.isAssignableFrom(potentiallyUnwrapReturnTypeFor(this.method));
     }
 
     private static Class<?> potentiallyUnwrapReturnTypeFor(Method method) {
@@ -110,7 +95,7 @@ public abstract class AbstractAggregateRepositoryQuery implements AggregateRepos
         if (isPageQuery()) {
             return false;
         }
-        Class<?> unwrappedReturnType = potentiallyUnwrapReturnTypeFor(method);
+        Class<?> unwrappedReturnType = potentiallyUnwrapReturnTypeFor(this.method);
         return ClassTypeInformation.from(unwrappedReturnType).isCollectionLike();
     }
 

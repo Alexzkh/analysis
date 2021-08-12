@@ -3,7 +3,7 @@
  */
 package com.zqykj.tldw.aggregate.data;
 
-import com.zqykj.tldw.aggregate.repository.TestRepository;
+import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Configuration;
@@ -15,9 +15,9 @@ import org.springframework.context.annotation.Import;
  * @author Mcj
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(TestRepository.class)
+@ConditionalOnClass(BaseOperations.class)
 @ConditionalOnMissingBean(AggregateRepositoryFactoryBean.class)
 @Import(AggregateRepositoriesRegister.class)
 public class AggregateRepositoriesAutoConfiguration {
-    
+
 }

@@ -4,12 +4,13 @@
 package com.zqykj.tldw.aggregate.data;
 
 import com.zqykj.infrastructure.util.Lazy;
-import com.zqykj.tldw.aggregate.repository.TestRepository;
 import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryFactorySupport;
+import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 
+import java.io.Serializable;
 import java.util.function.Supplier;
 
 /**
@@ -18,8 +19,8 @@ import java.util.function.Supplier;
  * @author Mcj
  */
 @Slf4j
-public class AggregateRepositoryFactoryBean<T extends TestRepository> extends AggregateRepositoryFactorySupport
-        implements FactoryBean<T>, InitializingBean {
+public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M extends Serializable>
+        extends AggregateRepositoryFactorySupport implements FactoryBean<T>, InitializingBean {
 
     private Class<? extends T> repositoryInterface;
 

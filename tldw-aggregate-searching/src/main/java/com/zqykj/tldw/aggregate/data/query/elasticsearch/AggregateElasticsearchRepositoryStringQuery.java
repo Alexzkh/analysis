@@ -12,10 +12,8 @@ import com.zqykj.annotations.Highlight;
 import com.zqykj.tldw.aggregate.data.query.AbstractAggregateRepositoryQuery;
 import com.zqykj.tldw.aggregate.data.query.AggregateRepositoryQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.*;
+import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
-import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryInformation;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -47,39 +45,42 @@ import static org.elasticsearch.index.query.QueryBuilders.wrapperQuery;
  *
  * @author Mcj
  */
-@Setter
-@Getter
 @Slf4j
 public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggregateRepositoryQuery
         implements AggregateRepositoryQuery {
 
     private final RestHighLevelClient restHighLevelClient;
-    private final AggregateRepositoryInformation aggregateRepositoryInformation;
+    private final RepositoryInformation repositoryInformation;
     private final SimpleElasticsearchMappingContext mappingContext;
+    private final String query;
     static final Integer INDEX_MAX_RESULT_WINDOW = 10_000;
     protected static final int DEFAULT_STREAM_BATCH_SIZE = 500;
 
     public AggregateElasticsearchRepositoryStringQuery(RestHighLevelClient restHighLevelClient,
-                                                       @Nullable AggregateRepositoryInformation aggregateRepositoryInformation,
-                                                       SimpleElasticsearchMappingContext mappingContext) {
-        this.aggregateRepositoryInformation = aggregateRepositoryInformation;
+                                                       RepositoryInformation repositoryInformation,
+                                                       SimpleElasticsearchMappingContext mappingContext,
+                                                       Method method,
+                                                       String query) {
+        super(method);
         Assert.notNull(restHighLevelClient, "Elasticsearch high rest client cannot be empty!");
+        this.repositoryInformation = repositoryInformation;
         this.restHighLevelClient = restHighLevelClient;
         this.mappingContext = mappingContext;
+        this.query = query;
     }
 
     @Override
-    public Object execute(Object[] parameters, Method method) {
+    public Object execute(Object[] parameters) {
 
         // 当前domain
-        Class<?> domainType = this.getAggregateRepositoryInformation().getDomainType();
+        Class<?> domainType = this.repositoryInformation.getDomainType();
         // 获取domainType 的Index 名称
         String indexName = mappingContext.getRequiredPersistentEntity(domainType).getIndexName();
         // 构建查询参数
         ElasticsearchStringQuery stringQuery = createQuery(parameters);
         // 查看此时的method 是否有高亮注解(Highlight)
-        if (method.isAnnotationPresent(Highlight.class)) {
-            Highlight highlight = method.getAnnotation(Highlight.class);
+        if (this.method.isAnnotationPresent(Highlight.class)) {
+            Highlight highlight = this.method.getAnnotation(Highlight.class);
             stringQuery.setHighlightQuery(getHighlightQuery(highlight, domainType));
         }
         Object result;
@@ -116,7 +117,7 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
         }
 
         // 最后解析包装类型
-        return !isSearchHitMethod(method) ? unwrapSearchHits(result) : result;
+        return !isSearchHitMethod(this.method) ? unwrapSearchHits(result) : result;
     }
 
     protected Object unwrapSearchHits(Object result) {
@@ -299,11 +300,6 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
         T doWith(@Nullable ElasticsearchDocument document);
     }
 
-    @Override
-    public Method getQueryMethod() {
-        return super.getMethod();
-    }
-
     protected interface SearchDocumentResponseCallback<T> {
         T doWith(SearchDocumentResponse response);
     }
@@ -312,7 +308,7 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
      * <h2> 构建Elasticsearch Query查询 </h2>
      */
     private ElasticsearchStringQuery createQuery(Object[] parameters) {
-        String queryString = replacePlaceHolders(getQuery(), parameters);
+        String queryString = replacePlaceHolders(this.query, parameters);
         return new ElasticsearchStringQuery(queryString);
     }
 

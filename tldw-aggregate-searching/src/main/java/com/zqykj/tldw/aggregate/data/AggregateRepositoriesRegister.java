@@ -3,7 +3,7 @@
  */
 package com.zqykj.tldw.aggregate.data;
 
-import com.zqykj.tldw.aggregate.repository.TestRepository;
+import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -131,7 +131,7 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
     protected List<BeanDefinition> getCandidates() {
         ClassPathScanningCandidateComponentProvider scanner =
                 this.createClassPathScanningCandidateComponentProvider();
-        scanner.addIncludeFilter(new InterfaceTypeFilter(TestRepository.class));
+        scanner.addIncludeFilter(new InterfaceTypeFilter(BaseOperations.class));
         // 由于迭代器没有 spliterator() 方法,需要特殊处理
         return StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(getPackages(),

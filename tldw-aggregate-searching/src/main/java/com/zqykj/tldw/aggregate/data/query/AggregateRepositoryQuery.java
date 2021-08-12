@@ -5,8 +5,6 @@ package com.zqykj.tldw.aggregate.data.query;
 
 import org.springframework.lang.Nullable;
 
-import java.lang.reflect.Method;
-
 public interface AggregateRepositoryQuery {
 
     /**
@@ -16,10 +14,8 @@ public interface AggregateRepositoryQuery {
      * @return execution result. Can be {@literal null}.
      */
     @Nullable
-    Object execute(Object[] parameters,Method method);
+    default Object execute(Object[] parameters) {
+        return null;
+    }
 
-    /**
-     * <h2> 返回指定关联的method </h2>
-     */
-    Method getQueryMethod();
 }

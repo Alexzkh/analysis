@@ -49,6 +49,10 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         this.elasticsearchMappingBuilder = new ElasticsearchMappingBuilder(mappingContext);
     }
 
+    public final RestHighLevelClient getClient() {
+        return client;
+    }
+
     /**
      * <h2> Es暂不支持此索引创建操作</h2>
      */
