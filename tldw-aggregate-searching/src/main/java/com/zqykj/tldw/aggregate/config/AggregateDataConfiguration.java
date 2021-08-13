@@ -58,8 +58,8 @@ public class AggregateDataConfiguration {
     }
 
     @Bean
-    @ConditionalOnExpression("'${enable.datasource.type}'.equals('mongodb')")
-    @ConditionalOnBean({SimpleMongodbMappingContext.class, MongoClient.class})
+//    @ConditionalOnExpression("'${enable.datasource.type}'.equals('mongodb')")
+    @ConditionalOnBean({SimpleMongodbMappingContext.class})
     MongodbIndexOperations mongodbIndexOperations(SimpleMongodbMappingContext simpleMongodbMappingContext,
                                                   MongoClient mongoClient,
                                                   MongoDBOperationClientProperties properties) {
@@ -74,8 +74,8 @@ public class AggregateDataConfiguration {
     }
 
     @Bean
-    @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
-    @ConditionalOnBean({SimpleElasticsearchMappingContext.class, RestHighLevelClient.class})
+//    @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
+    @ConditionalOnBean({SimpleElasticsearchMappingContext.class})
     ElasticsearchIndexOperations elasticsearchIndexOperations(SimpleElasticsearchMappingContext simpleElasticsearchMappingContext,
                                                               RestHighLevelClient restHighLevelClient) {
         ElasticsearchIndexOperations elasticsearchIndexOperations =

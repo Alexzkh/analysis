@@ -42,16 +42,23 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
 
     private final RestHighLevelClient client;
     private final ElasticsearchMappingBuilder elasticsearchMappingBuilder;
+    private final SimpleElasticsearchMappingContext mappingContext;
 
     public ElasticsearchIndexOperations(RestHighLevelClient restHighLevelClient,
                                         SimpleElasticsearchMappingContext mappingContext) {
         this.client = restHighLevelClient;
         this.elasticsearchMappingBuilder = new ElasticsearchMappingBuilder(mappingContext);
+        this.mappingContext = mappingContext;
     }
 
     public final RestHighLevelClient getClient() {
         return client;
     }
+
+    public final SimpleElasticsearchMappingContext getMappingContext() {
+        return mappingContext;
+    }
+
 
     /**
      * <h2> Es暂不支持此索引创建操作</h2>

@@ -1,5 +1,7 @@
 package com.zqykj.tldw.aggregate.searching;
 
+import com.zqykj.annotations.NoRepositoryBean;
+
 import java.util.Optional;
 
 /**
@@ -13,6 +15,7 @@ import java.util.Optional;
  * @Author zhangkehou
  * @Date 2021/8/5
  */
+@NoRepositoryBean
 public interface BaseOperations<T, M> {
 
     enum DatasoureType {

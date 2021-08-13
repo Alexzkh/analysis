@@ -76,5 +76,5 @@ public class MongoDBOperationClientProperties implements Serializable {
      */
     private Integer connectTimeoutMillis;
 
-
+    private String enableDatasourceType = "mongodb";
 }

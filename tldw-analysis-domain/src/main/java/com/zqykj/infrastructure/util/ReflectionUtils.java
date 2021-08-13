@@ -48,10 +48,9 @@ public final class ReflectionUtils {
             }
 
             // Type check if argument is not null, 且类型是否匹配
-            if (null != argument && ClassUtils.isAssignableValue(argumentType, argument)) {
+            if (null != argument && !ClassUtils.isAssignableValue(argumentType, argument)) {
                 return false;
             }
-
             index++;
         }
 

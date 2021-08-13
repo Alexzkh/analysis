@@ -39,9 +39,9 @@ import java.util.stream.Collectors;
 @Configuration
 public class AggregateDataSourceClientConfiguration {
 
-    private ElasticsearchOperationClientProperties elasticsearchOperationClientProperties;
+    private final ElasticsearchOperationClientProperties elasticsearchOperationClientProperties;
 
-    private MongoDBOperationClientProperties mongoDBOperationClientProperties;
+    private final MongoDBOperationClientProperties mongoDBOperationClientProperties;
 
     public AggregateDataSourceClientConfiguration(ElasticsearchOperationClientProperties properties,
                                                   MongoDBOperationClientProperties mongoDBOperationClientProperties) {
@@ -82,8 +82,7 @@ public class AggregateDataSourceClientConfiguration {
         return MongoClients.create(settings);
     }
 
-    @Bean(destroyMethod = "close") // bean 销毁的同时,释放资源
-    @ConditionalOnBean(value = ElasticsearchOperationClientProperties.class)
+    @Bean
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
     public RestHighLevelClient restHighLevelClient() {
 

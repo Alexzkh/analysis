@@ -1,5 +1,6 @@
 package com.zqykj.tldw.aggregate.searching;
 
+import com.zqykj.annotations.NoRepositoryBean;
 import org.elasticsearch.index.query.QueryBuilder;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
  * @see {https://www.elastic.co/guide/en/elasticsearch/reference/7.9/getting-started.html}
  **/
 @SuppressWarnings("unchecked")
+@NoRepositoryBean
 public interface ElasticsearchTemplateOperations<T, M> extends BaseOperations<T, M> {
     /**
      * create index

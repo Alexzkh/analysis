@@ -1,15 +1,19 @@
-
 elasticsearch:
-  host: 172.30.6.31:9208
-  username:
-  password:
-  max_connect_total: 30
-  max_connect_per_route: 10
-  connection_request_timeout_millis: 2000
-  socket_timeout_millis: 30000
-  connect_timeout_millis: 2000
-  index:
-    prefix:
-
+  data:
+    source:
+      host: http://121.196.30.215:9200
 server:
   port: 18087
+
+
+spring:
+  data:
+    hbase:
+      quorum: hbase.zookeeper.quorum
+      rootDir: hbase.rootdir
+      nodeParent: zookeeper.znode.parent
+
+
+enable:
+  datasource:
+    type: elasticsearch

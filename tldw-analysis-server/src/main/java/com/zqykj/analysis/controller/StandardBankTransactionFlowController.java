@@ -1,9 +1,7 @@
 package com.zqykj.analysis.controller;
 
 import com.zqykj.app.service.IStandardBankTransactionFlowService;
-import com.zqykj.app.service.impl.StandardBankTransactionFlowServiceImpl;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +13,7 @@ import java.util.List;
  * @Author zhangkehou
  * @Date 2021/7/14 14:04
  */
-@RestController
+//@RestController
 public class StandardBankTransactionFlowController {
 
 //    @Autowired
@@ -90,10 +88,11 @@ public class StandardBankTransactionFlowController {
 
     private final IStandardBankTransactionFlowService iStandardBankTransactionFlowService;
 
-    @Autowired
-    public StandardBankTransactionFlowController(StandardBankTransactionFlowServiceImpl standardBankTransactionFlowService){
-        this.iStandardBankTransactionFlowService =standardBankTransactionFlowService;
+    public StandardBankTransactionFlowController(IStandardBankTransactionFlowService iStandardBankTransactionFlowService) {
+
+        this.iStandardBankTransactionFlowService = iStandardBankTransactionFlowService;
     }
+
 
     @RequestMapping(value = "/print")
     public String print() throws Exception {
@@ -102,11 +101,6 @@ public class StandardBankTransactionFlowController {
         List<StandardBankTransactionFlow> result = iStandardBankTransactionFlowService.standardBankTransactionFlowList();
         return "success";
     }
-
-
-
-
-
 
 
 }

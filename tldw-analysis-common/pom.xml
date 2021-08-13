@@ -34,9 +34,11 @@
             <version>3.0</version>
         </dependency>
 
+        <!-- JSON 处理工具 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.31</version>
         </dependency>
 
         <dependency>
@@ -52,8 +54,7 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-test</artifactId>
-            <scope>test</scope>
+            <artifactId>spring-boot-starter-test</artifactId>
         </dependency>
 
         <!-- lombok 工具通过在代码编译时期动态的将注解替换为具体的代码,

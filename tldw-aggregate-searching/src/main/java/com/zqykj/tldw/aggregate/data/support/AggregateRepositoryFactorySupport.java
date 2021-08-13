@@ -42,7 +42,7 @@ public abstract class AggregateRepositoryFactorySupport {
      * <h2> 返回给定接口的实例 </h2>
      */
     @SuppressWarnings({"unchecked"})
-    protected <T> T getRepository(Class<T> repositoryInterface) {
+    protected <T> T getRepository(Class<T> repositoryInterface, ElasticsearchIndexOperations elasticsearchIndexOperations) {
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing repository instance for = {} …", repositoryInterface.getName());
@@ -56,7 +56,7 @@ public abstract class AggregateRepositoryFactorySupport {
         // 生成特定 Repository Interface information,并注入到实现类中
         RepositoryInformation repositoryInformation = getRepositoryInformation(metadata, repositoryInterface);
 
-        Object target = getTargetRepository(repositoryInformation);
+        Object target = getTargetRepository(repositoryInformation, elasticsearchIndexOperations);
 
         // create proxy
         ProxyFactory result = new ProxyFactory();
@@ -89,7 +89,7 @@ public abstract class AggregateRepositoryFactorySupport {
     protected Class<?> getRepositoryBaseClass(Class<?> repositoryInterface) {
 
         // 根据 repositoryInterface 拿到对应的 impl Class
-        if (repositoryInterface.isAssignableFrom(ElasticsearchTemplateOperations.class)) {
+        if (ElasticsearchTemplateOperations.class.isAssignableFrom(repositoryInterface)) {
             return EsOperationsTemplate.class;
         }
         //TODO 其他数据源的顶级RepositoryInterface.class 判断
@@ -117,14 +117,12 @@ public abstract class AggregateRepositoryFactorySupport {
     /**
      * <h2> 根据目标Repository 生成 对应的Impl </h2>
      */
-    protected Object getTargetRepository(RepositoryInformation metadata) {
+    protected Object getTargetRepository(RepositoryInformation metadata, ElasticsearchIndexOperations elasticsearchIndexOperations) {
 
         // 生成对应实现类想要的client
-        if (metadata.getRepositoryInterface().isAssignableFrom(ElasticsearchTemplateOperations.class)) {
+        if (ElasticsearchTemplateOperations.class.isAssignableFrom(metadata.getRepositoryInterface())) {
             // 生成Es 实现类构造函数想要的Object
-            ElasticsearchIndexOperations elasticsearchIndexOperations = ApplicationUtils.getBean(ElasticsearchIndexOperations.class);
-            SimpleElasticsearchMappingContext simpleElasticsearchMappingContext = ApplicationUtils.getBean(SimpleElasticsearchMappingContext.class);
-            return getTargetRepositoryViaReflection(metadata, elasticsearchIndexOperations, simpleElasticsearchMappingContext);
+            return getTargetRepositoryViaReflection(metadata, metadata, elasticsearchIndexOperations, elasticsearchIndexOperations.getMappingContext());
         }
         // TODO 其他数据源实现类 构造函数需要注入的...
 //        else if(...){

@@ -5,9 +5,17 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersisten
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Constant;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.util.*;
 
@@ -41,16 +49,6 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
     @Override
     public boolean save(T t) {
         return false;
-    }
-
-    @Override
-    public List<T> search(QueryBuilder queryBuilder, Class<T> clazz) throws Exception {
-        return null;
-    }
-
-    @Override
-    public List<T> search(QueryBuilder queryBuilder, Class<T> clazz, String... indexs) throws Exception {
-        return null;
     }
 
     @Override
@@ -203,37 +201,29 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 //        return this.save(t, null);
 //    }
 //
-//    @Override
-//    public List<T> search(QueryBuilder queryBuilder, Class<T> clazz) throws Exception {
-//        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-//        String[] indexname = metaData.getSearchIndexNames();
-//        return search(queryBuilder, clazz, indexname);
-//    }
-//
-//    @Override
-//    public List<T> search(QueryBuilder queryBuilder, Class<T> clazz, String... indexs) throws Exception {
-//        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-//        List<T> list = new ArrayList<>();
-//        SearchRequest searchRequest = new SearchRequest(indexs);
-//        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-//        searchSourceBuilder.query(queryBuilder);
-//        searchSourceBuilder.from(0);
-//        searchSourceBuilder.size(Constant.DEFALT_PAGE_SIZE);
-//        searchRequest.source(searchSourceBuilder);
-//        if (metaData.isPrintLog()) {
-//            log.info(searchSourceBuilder.toString());
-//        }
-//        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-//        SearchHits hits = searchResponse.getHits();
-//        SearchHit[] searchHits = hits.getHits();
-//        for (SearchHit hit : searchHits) {
-//            T t = JsonUtils.string2Obj(hit.getSourceAsString(), clazz);
-//            // The _id field is reassigned to the field of the @ ESID annotation primary key
-//            correctID(clazz, t, (M) hit.getId());
-//            list.add(t);
-//        }
-//        return list;
-//    }
+    @Override
+    public List<T> search(QueryBuilder queryBuilder, Class<T> clazz) throws Exception {
+        return search(queryBuilder, clazz, persistentEntity.getIndexName());
+    }
+
+    @Override
+    public List<T> search(QueryBuilder queryBuilder, Class<T> clazz, String... indexs) throws Exception {
+        List<T> list = new ArrayList<>();
+        SearchRequest searchRequest = new SearchRequest(indexs);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(queryBuilder);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(Constant.DEFALT_PAGE_SIZE);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        SearchHits hits = searchResponse.getHits();
+        SearchHit[] searchHits = hits.getHits();
+        for (SearchHit hit : searchHits) {
+            T t = JsonUtils.string2Obj(hit.getSourceAsString(), clazz);
+            list.add(t);
+        }
+        return list;
+    }
 //
 //    private static Map<Class, String> classIDMap = new ConcurrentHashMap();
 //

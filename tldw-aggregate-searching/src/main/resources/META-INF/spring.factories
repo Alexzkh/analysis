@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.zqykj.tldw.aggregate.searching.hbaseclientrhl.boot.HbaseAutoConfiguration
+com.zqykj.tldw.aggregate.searching.hbaseclientrhl.boot.HbaseAutoConfiguration,\
+com.zqykj.tldw.aggregate.data.AggregateRepositoriesAutoConfiguration

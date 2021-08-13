@@ -5,10 +5,12 @@ package com.zqykj.tldw.aggregate.data;
 
 import com.zqykj.infrastructure.util.Lazy;
 import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryFactorySupport;
+import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.lang.Nullable;
 
 import java.io.Serializable;
 import java.util.function.Supplier;
@@ -23,6 +25,13 @@ public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M
         extends AggregateRepositoryFactorySupport implements FactoryBean<T>, InitializingBean {
 
     private Class<? extends T> repositoryInterface;
+
+    @Nullable
+    private ElasticsearchIndexOperations elasticsearchIndexOperations;
+
+    public void setElasticsearchIndexOperations(ElasticsearchIndexOperations elasticsearchIndexOperations) {
+        this.elasticsearchIndexOperations = elasticsearchIndexOperations;
+    }
 
     /**
      * AggregateRepositoryFactoryBean 真正返回的instance
@@ -55,10 +64,9 @@ public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M
         return repositoryInterface;
     }
 
-
     @Override
     public void afterPropertiesSet() {
         // 只有调用Lazy.get()才会触发生成代理对象逻辑(延迟加载), Lazy 实现了 Supplier
-        this.repository = Lazy.of(() -> this.getRepository(repositoryInterface));
+        this.repository = Lazy.of(() -> this.getRepository(repositoryInterface,elasticsearchIndexOperations));
     }
 }

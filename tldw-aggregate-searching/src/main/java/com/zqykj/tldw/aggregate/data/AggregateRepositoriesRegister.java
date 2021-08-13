@@ -3,6 +3,7 @@
  */
 package com.zqykj.tldw.aggregate.data;
 
+import com.zqykj.annotations.NoRepositoryBean;
 import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
+import org.springframework.beans.factory.parsing.BeanComponentDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -19,6 +21,7 @@ import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.ResourceLoaderAware;
+import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.env.Environment;
@@ -26,7 +29,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
+import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StopWatch;
@@ -61,7 +66,8 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
         // 获取指定接口的BeanDefinition
         StopWatch watch = new StopWatch();
         watch.start();
-        for (BeanDefinition candidate : getCandidates()) {
+        List<BeanComponentDefinition> definitions = new ArrayList<>();
+        for (BeanDefinition candidate : getCandidates(registry)) {
             Objects.requireNonNull(candidate.getBeanClassName());
             String beanClassName = candidate.getBeanClassName();
             try {
@@ -71,7 +77,9 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
                 AbstractBeanDefinition beanDefinition = definitionBuilder.getBeanDefinition();
                 beanDefinition.setAttribute(FACTORY_BEAN_OBJECT_TYPE, beanClassName);
                 // 向容器注册beanDefinition
-                registry.registerBeanDefinition(this.generateBeanName(beanDefinition, beanNameGenerator, registry), beanDefinition);
+                String beanName = this.generateBeanName(beanDefinition, beanNameGenerator, registry);
+                registry.registerBeanDefinition(beanName, beanDefinition);
+                definitions.add(new BeanComponentDefinition(beanDefinition, beanName));
             } catch (Exception | LinkageError e) {
                 log.warn(String.format(" Could not load type %s using class loader %s.",
                         beanClassName, ClassUtils.getDefaultClassLoader()), e);
@@ -110,28 +118,87 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
     /**
      * <h2> 获取当前启动类下的所在包名称 </h2>
      */
-    protected Iterator<String> getPackages() {
-        return AutoConfigurationPackages.get(this.beanFactory).iterator();
+    private Iterator<String> getPackages() {
+        return AutoConfigurationPackages.get(beanFactory).iterator();
     }
 
-    /**
-     * <h2>创建扫描包的定义类</h2>
-     */
-    protected ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider() {
+    static class RepositoryComponentProvider extends ClassPathScanningCandidateComponentProvider {
 
-        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
-        scanner.setEnvironment(environment);
-        scanner.setResourceLoader(resourceLoader);
-        return scanner;
+        private boolean considerNestedRepositoryInterfaces;
+
+        public RepositoryComponentProvider(Iterable<? extends TypeFilter> includeFilters,
+                                           BeanDefinitionRegistry registry) {
+
+            super(false);
+
+            Assert.notNull(includeFilters, "Include filters must not be null!");
+            Assert.notNull(registry, "BeanDefinitionRegistry must not be null!");
+
+            if (includeFilters.iterator().hasNext()) {
+                for (TypeFilter filter : includeFilters) {
+                    addIncludeFilter(filter);
+                }
+            } else {
+                super.addIncludeFilter(new InterfaceTypeFilter(BaseOperations.class));
+            }
+            addExcludeFilter(new AnnotationTypeFilter(NoRepositoryBean.class));
+        }
+
+        @Override
+        protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+
+            boolean isNonRepositoryInterface = !BaseOperations.class.getName().equals(beanDefinition.getBeanClassName());
+            boolean isTopLevelType = !beanDefinition.getMetadata().hasEnclosingClass();
+            boolean isConsiderNestedRepositories = isConsiderNestedRepositoryInterfaces();
+
+            return isNonRepositoryInterface && (isTopLevelType || isConsiderNestedRepositories);
+        }
+
+        boolean isConsiderNestedRepositoryInterfaces() {
+            return considerNestedRepositoryInterfaces;
+        }
+
+        public void setConsiderNestedRepositoryInterfaces(boolean considerNestedRepositoryInterfaces) {
+            this.considerNestedRepositoryInterfaces = considerNestedRepositoryInterfaces;
+        }
+
+        private static class InterfaceTypeFilter extends AssignableTypeFilter {
+
+            InterfaceTypeFilter(Class<?> targetType) {
+                super(targetType);
+            }
+
+            @Override
+            public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
+                    throws IOException {
+
+                return metadataReader.getClassMetadata().isInterface() && super.match(metadataReader, metadataReaderFactory);
+            }
+        }
+
+        @Override
+        public Set<BeanDefinition> findCandidateComponents(String basePackage) {
+
+            Set<BeanDefinition> candidates = super.findCandidateComponents(basePackage);
+
+            for (BeanDefinition candidate : candidates) {
+                if (candidate instanceof AnnotatedBeanDefinition) {
+                    AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
+                }
+            }
+
+            return candidates;
+        }
     }
 
     /**
      * <h2> 获取扫描指定Repository的 beanDefinition </h2>
      */
-    protected List<BeanDefinition> getCandidates() {
-        ClassPathScanningCandidateComponentProvider scanner =
-                this.createClassPathScanningCandidateComponentProvider();
-        scanner.addIncludeFilter(new InterfaceTypeFilter(BaseOperations.class));
+    private List<BeanDefinition> getCandidates(BeanDefinitionRegistry registry) {
+        RepositoryComponentProvider scanner = new RepositoryComponentProvider(Collections.emptySet(), registry);
+        scanner.setConsiderNestedRepositoryInterfaces(false);
+        scanner.setEnvironment(environment);
+        scanner.setResourceLoader(resourceLoader);
         // 由于迭代器没有 spliterator() 方法,需要特殊处理
         return StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(getPackages(),
@@ -140,40 +207,20 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
                 .collect(Collectors.toList());
     }
 
-
-    /**
-     * <h2> 指定类型过滤器(此处需要的是interface) </h2>
-     */
-    private static class InterfaceTypeFilter extends AssignableTypeFilter {
-        /**
-         * Creates a new {@link InterfaceTypeFilter}.
-         *
-         * @param targetType 指定需要扫描的类
-         */
-        public InterfaceTypeFilter(Class<?> targetType) {
-            super(targetType);
-        }
-
-        @Override
-        public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
-                throws IOException {
-            return metadataReader.getClassMetadata().isInterface() && super.match(metadataReader, metadataReaderFactory);
-        }
-    }
-
-
-    public BeanDefinitionBuilder generateBeanDefinitionBuilder(BeanDefinition beanDefinition) {
+    private BeanDefinitionBuilder generateBeanDefinitionBuilder(BeanDefinition beanDefinition) {
 
         Assert.notNull(beanDefinition, "BeanDefinitionRegistry must not be null!");
         BeanDefinitionBuilder builder = BeanDefinitionBuilder
                 .rootBeanDefinition(AggregateRepositoryFactoryBean.class);
         builder.addConstructorArgValue(beanDefinition.getBeanClassName());
+        //TODO
+        builder.addPropertyReference("elasticsearchIndexOperations", "elasticsearchIndexOperations");
         return builder;
     }
 
-    public String generateBeanName(BeanDefinition definition,
-                                   BeanNameGenerator beanNameGenerator,
-                                   BeanDefinitionRegistry registry) {
+    private String generateBeanName(BeanDefinition definition,
+                                    BeanNameGenerator beanNameGenerator,
+                                    BeanDefinitionRegistry registry) {
 
         AnnotatedBeanDefinition beanDefinition = definition instanceof AnnotatedBeanDefinition
                 ? (AnnotatedBeanDefinition) definition

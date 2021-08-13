@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Import;
  *
  * @author Mcj
  */
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @ConditionalOnClass(BaseOperations.class)
 @ConditionalOnMissingBean(AggregateRepositoryFactoryBean.class)
 @Import(AggregateRepositoriesRegister.class)

@@ -28,7 +28,6 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 @Slf4j
 @SuppressWarnings({"rawtypes", "unchecked"})
-@Component
 public class ElasticsearchMappingBuilder {
 
     private final AbstractMappingContext<?, ?> mappingContext;
