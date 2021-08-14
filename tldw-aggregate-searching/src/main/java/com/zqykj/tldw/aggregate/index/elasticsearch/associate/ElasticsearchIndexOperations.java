@@ -24,6 +24,7 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ import static org.springframework.util.StringUtils.hasText;
  * <h2> ElasticSearch Index Operations</h2>
  */
 @Slf4j
+@Component
 public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         implements IndexOperations {
 

@@ -1,8 +1,11 @@
 elasticsearch:
   data:
     source:
-      host: http://121.196.30.215:9200
+      # es link
+      host: http://172.30.6.31:9208
+      # userName if elasticsearch open ssl
       username:
+      # password if elasticsearch open ssl
       password:
       max_connect_total: 30
       max_connect_per_route: 10
@@ -25,3 +28,11 @@ spring:
       quorum: 172.30.6.31:2181
       rootDir: file:///hbase
       nodeParent: /hbase
+  main:
+    # ensure that there is only one bean with the same name
+    allow-bean-definition-overriding: true
+    # inject bean condition
+enable:
+  datasource:
+    type: elasticsearch
+

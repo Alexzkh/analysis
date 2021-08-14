@@ -8,6 +8,10 @@ import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Constant;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetItemResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -296,27 +300,26 @@ public class EsOperationsTemplate<T, M> implements ElasticsearchTemplateOperatio
 //    }
 //
 //
-//    /**
-//     * @param ids:   the list of id .
-//     * @param clazz: the query entity .
-//     * @return: java.util.List<T>
-//     **/
-//    public List<T> mgetById(M[] ids, Class<T> clazz) throws Exception {
-//        MetaData metaData = elasticsearchIndex.getMetaData(clazz);
-//        String indexname = metaData.getIndexname();
-//        MultiGetRequest request = new MultiGetRequest();
-//        for (int i = 0; i < ids.length; i++) {
-//            request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
-//        }
-//        MultiGetResponse response = restHighLevelClient.mget(request, RequestOptions.DEFAULT);
-//        List<T> list = new ArrayList<>();
-//        for (int i = 0; i < response.getResponses().length; i++) {
-//            MultiGetItemResponse item = response.getResponses()[i];
-//            GetResponse getResponse = item.getResponse();
-//            if (getResponse.isExists()) {
-//                list.add(JsonUtils.string2Obj(getResponse.getSourceAsString(), clazz));
-//            }
-//        }
-//        return list;
-//    }
+    /**
+     * @param ids:   the list of id .
+     * @param clazz: the query entity .
+     * @return: java.util.List<T>
+     **/
+    public List<T> mgetById(M[] ids, Class<T> clazz) throws Exception {
+        String indexname =  persistentEntity.getIndexName();
+        MultiGetRequest request = new MultiGetRequest();
+        for (int i = 0; i < ids.length; i++) {
+            request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
+        }
+        MultiGetResponse response = client.mget(request, RequestOptions.DEFAULT);
+        List<T> list = new ArrayList<>();
+        for (int i = 0; i < response.getResponses().length; i++) {
+            MultiGetItemResponse item = response.getResponses()[i];
+            GetResponse getResponse = item.getResponse();
+            if (getResponse.isExists()) {
+                list.add(JsonUtils.string2Obj(getResponse.getSourceAsString(), clazz));
+            }
+        }
+        return list;
+    }
 }

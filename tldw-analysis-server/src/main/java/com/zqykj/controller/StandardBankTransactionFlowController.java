@@ -1,9 +1,8 @@
-package com.zqykj.analysis.controller;
+package com.zqykj.controller;
 
 import com.zqykj.app.service.IStandardBankTransactionFlowService;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
