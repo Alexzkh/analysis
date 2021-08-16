@@ -38,7 +38,6 @@ import static org.springframework.util.StringUtils.hasText;
  * <h2> ElasticSearch Index Operations</h2>
  */
 @Slf4j
-@Component
 public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         implements IndexOperations {
 
