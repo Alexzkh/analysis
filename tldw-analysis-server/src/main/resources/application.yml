@@ -25,3 +25,7 @@ spring:
       quorum: 172.30.6.31:2181
       rootDir: file:///hbase
       nodeParent: /hbase
+
+enable:
+  datasource:
+    type: elasticsearch

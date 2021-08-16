@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 import java.util.function.Supplier;
@@ -21,7 +22,7 @@ import java.util.function.Supplier;
  * @author Mcj
  */
 @Slf4j
-public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M extends Serializable>
+public class AggregateRepositoryFactoryBean<T>
         extends AggregateRepositoryFactorySupport implements FactoryBean<T>, InitializingBean {
 
     private Class<? extends T> repositoryInterface;
@@ -64,9 +65,13 @@ public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M
         return repositoryInterface;
     }
 
+    public boolean isSingleton() {
+        return true;
+    }
+
     @Override
     public void afterPropertiesSet() {
         // 只有调用Lazy.get()才会触发生成代理对象逻辑(延迟加载), Lazy 实现了 Supplier
-        this.repository = Lazy.of(() -> this.getRepository(repositoryInterface,elasticsearchIndexOperations));
+        this.repository = Lazy.of(() -> this.getRepository(repositoryInterface, elasticsearchIndexOperations));
     }
 }

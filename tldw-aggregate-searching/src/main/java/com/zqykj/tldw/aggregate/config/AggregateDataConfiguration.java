@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * <h1> Aggregate Data Mapping Context initialization</h1>
  */
-@Configuration(proxyBeanMethods = false)
+@Configuration
 public class AggregateDataConfiguration {
 
     /**
@@ -46,7 +46,7 @@ public class AggregateDataConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(ElasticsearchOperationClientProperties.class)
+//    @ConditionalOnBean(ElasticsearchOperationClientProperties.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
     SimpleElasticsearchMappingContext simpleElasticsearchMappingContext(ApplicationContext applicationContext,
                                                                         ElasticsearchOperationClientProperties properties) throws ClassNotFoundException {

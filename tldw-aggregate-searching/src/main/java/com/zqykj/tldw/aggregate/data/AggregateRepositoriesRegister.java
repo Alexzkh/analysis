@@ -21,9 +21,7 @@ import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.ResourceLoaderAware;
-import org.springframework.context.annotation.AnnotationConfigUtils;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
@@ -211,9 +209,9 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
 
         Assert.notNull(beanDefinition, "BeanDefinitionRegistry must not be null!");
         BeanDefinitionBuilder builder = BeanDefinitionBuilder
-                .rootBeanDefinition(AggregateRepositoryFactoryBean.class);
+                .rootBeanDefinition(AggregateRepositoryFactoryBean.class.getName());
         builder.addConstructorArgValue(beanDefinition.getBeanClassName());
-        //TODO
+        builder.setLazyInit(false);
         builder.addPropertyReference("elasticsearchIndexOperations", "elasticsearchIndexOperations");
         return builder;
     }
@@ -225,7 +223,13 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
         AnnotatedBeanDefinition beanDefinition = definition instanceof AnnotatedBeanDefinition
                 ? (AnnotatedBeanDefinition) definition
                 : new AnnotatedGenericBeanDefinition(getRepositoryInterfaceFrom(definition));
-        return beanNameGenerator.generateBeanName(beanDefinition, registry);
+        return getDefaultBeanNameGenerator(beanNameGenerator).generateBeanName(beanDefinition, registry);
+    }
+
+    private BeanNameGenerator getDefaultBeanNameGenerator(BeanNameGenerator generator) {
+        return generator == null || ConfigurationClassPostProcessor.IMPORT_BEAN_NAME_GENERATOR.equals(generator) //
+                ? new AnnotationBeanNameGenerator() //
+                : generator;
     }
 
 
