@@ -83,6 +83,7 @@ public class AggregateDataSourceClientConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(value = ElasticsearchOperationClientProperties.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
     public RestHighLevelClient restHighLevelClient() {
 
