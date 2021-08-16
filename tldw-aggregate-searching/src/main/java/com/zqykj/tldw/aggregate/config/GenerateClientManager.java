@@ -1,13 +1,5 @@
 package com.zqykj.tldw.aggregate.config;
 
-import com.zqykj.tldw.aggregate.Exception.DataOperationClientException;
-import com.zqykj.tldw.aggregate.properties.ElasticsearchOperationClientProperties;
-import com.zqykj.tldw.aggregate.searching.BaseOperations;
-import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * @Description: Generate corresponding data source instance according to type.
  * * <p> it was deprecated because loading implementions by configuration. you can check {@link AggregateDataConfiguration} in detail .
@@ -17,13 +9,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Deprecated
 public class GenerateClientManager {
 
-    // k-->data source type  v--> the implementions of ElasticsearchTemplateOperations
+    // k-->data source type  v--> the implementions of ElasticsearchOperationsTemplete
 //    private final Map<BaseOperations.DatasoureType, Object> templateMap = new ConcurrentHashMap<>();
 //    private static GenerateClientManager instance = null;
 //
 //    public GenerateClientManager(ElasticsearchOperationClientProperties config) {
 //        initialize();
-//        ElasticsearchTemplateOperations estemplate = DataOpertionClientFactory.open(config);
+//        ElasticsearchOperationsTemplete estemplate = DataOpertionClientFactory.open(config);
 //        templateMap.put(BaseOperations.DatasoureType.Elasticsearch, estemplate);
 //    }
 //

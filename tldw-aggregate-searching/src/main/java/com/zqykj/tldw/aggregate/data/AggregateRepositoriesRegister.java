@@ -4,8 +4,8 @@
 package com.zqykj.tldw.aggregate.data;
 
 import com.zqykj.annotations.NoRepositoryBean;
-import com.zqykj.tldw.aggregate.searching.BaseOperations;
-import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
+import com.zqykj.tldw.aggregate.BaseOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -213,8 +213,8 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
                 .rootBeanDefinition(AggregateRepositoryFactoryBean.class.getName());
         builder.addConstructorArgValue(beanDefinition.getBeanClassName());
         builder.setLazyInit(false);
-        /** ElasticsearchTemplateOperations(Elasticsearch 数据源顶级接口实现类需要注入的bean依赖 {@link EsOperationsTemplate} */
-        if (ElasticsearchTemplateOperations.class.isAssignableFrom(Class.forName(beanDefinition.getBeanClassName()))) {
+        /** ElasticsearchOperationsTemplete(Elasticsearch 数据源顶级接口实现类需要注入的bean依赖 {@link EsOperationsTemplate} */
+        if (ElasticsearchOperations.class.isAssignableFrom(Class.forName(beanDefinition.getBeanClassName()))) {
             builder.addPropertyReference("elasticsearchIndexOperations", "elasticsearchIndexOperations");
         }
         // 其他数据源接口 实现类需要注入的bean 依赖自行补充

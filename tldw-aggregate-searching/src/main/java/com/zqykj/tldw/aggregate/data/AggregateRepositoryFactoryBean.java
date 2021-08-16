@@ -6,14 +6,11 @@ package com.zqykj.tldw.aggregate.data;
 import com.zqykj.infrastructure.util.Lazy;
 import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryFactorySupport;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
-import com.zqykj.tldw.aggregate.searching.BaseOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.lang.Nullable;
-import org.springframework.stereotype.Component;
 
-import java.io.Serializable;
 import java.util.function.Supplier;
 
 /**

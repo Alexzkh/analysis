@@ -7,6 +7,16 @@ package com.zqykj.infrastructure.constant;
  */
 public class Constants {
 
+    /**
+     * Default page size without pageable
+     */
+    public static int DEFALT_PAGE_SIZE = 200;
+
+    /**
+     * Batch update (New) number of pieces per batch
+     **/
+    public static int BULK_COUNT = 5000;
+
     public static final String ENCODE = "UTF-8";
     /**
      * 用户数的 redis key
