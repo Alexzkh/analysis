@@ -1,4 +1,4 @@
-package com.zqykj.analysis.config;
+package com.zqykj.config;
 
 
 import com.zqykj.app.service.IAggregateOperate;
