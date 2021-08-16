@@ -72,7 +72,7 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
     public Object execute(Method method, Object[] parameters, String query) {
         // 需要根据repositoryInterface 实现对应数据源的@Query 实现方式
         AbstractAggregateRepositoryQuery stringQuery = null;
-        if (repositoryInformation.getRepositoryInterface().isAssignableFrom(ElasticsearchTemplateOperations.class)) {
+        if (ElasticsearchTemplateOperations.class.isAssignableFrom(repositoryInformation.getRepositoryInterface())) {
             stringQuery = new AggregateElasticsearchRepositoryStringQuery(
                     ApplicationUtils.getBean(RestHighLevelClient.class),
                     repositoryInformation,

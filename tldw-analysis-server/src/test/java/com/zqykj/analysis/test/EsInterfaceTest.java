@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.List;
+
 @SpringBootTest
 public class EsInterfaceTest {
 
@@ -23,6 +25,8 @@ public class EsInterfaceTest {
 
     @Test
     public void testEsInterface() throws Exception {
-        System.out.println(testDao.search(new MatchAllQueryBuilder(), StandardBankTransactionFlow.class).size());
+//        System.out.println(testDao.search(new MatchAllQueryBuilder(), StandardBankTransactionFlow.class).size());
+
+        List<StandardBankTransactionFlow> cash_mark = testDao.existsByField("cash_mark");
     }
 }
