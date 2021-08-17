@@ -1,24 +1,8 @@
 package com.zqykj.tldw.aggregate.config;
 
-import com.zqykj.tldw.aggregate.properties.ElasticsearchOperationClientProperties;
-import com.zqykj.tldw.aggregate.searching.BaseOperations;
-import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
+import com.zqykj.tldw.aggregate.BaseOperations;
 //import com.zqykj.tldw.aggregate.searching.esclientrhl.repository.ElasticsearchTemplateImpl;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.util.Constant;
-import com.zqykj.tldw.aggregate.searching.impl.EsOperationsTemplate;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.util.ObjectUtils;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Description: Data operate client factory .it used to generating {@link BaseOperations} the implementions.
@@ -36,7 +20,7 @@ public class DataOpertionClientFactory {
 //    private static final Map<Class<?>, Class<?>> mapping = new ConcurrentHashMap<>(4);
 //
 //    static {
-//        mapping.put(ElasticsearchTemplateOperations.class, EsOperationsTemplate.class);
+//        mapping.put(ElasticsearchOperationsTemplete.class, ElasticsearchOperationsTemplete.class);
 //    }
 //
 //
@@ -49,11 +33,11 @@ public class DataOpertionClientFactory {
 //     * finally return it .
 //     * <p>
 //     **/
-//    public static ElasticsearchTemplateOperations open(ElasticsearchOperationClientProperties elasticsearchOperationClientProperties) {
+//    public static ElasticsearchOperationsTemplete open(ElasticsearchOperationClientProperties elasticsearchOperationClientProperties) {
 //        RestHighLevelClient restHighLevelClient = createInstance(elasticsearchOperationClientProperties);
 //
 //        clientMap.put(BaseOperations.DatasoureType.Elasticsearch, restHighLevelClient);
-//        return EsOperationsTemplate.open(restHighLevelClient);
+//        return ElasticsearchOperationsTemplete.open(restHighLevelClient);
 //    }
 //
 //    /**

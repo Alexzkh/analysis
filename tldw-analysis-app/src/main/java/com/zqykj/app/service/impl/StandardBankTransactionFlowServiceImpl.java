@@ -44,7 +44,7 @@ public class StandardBankTransactionFlowServiceImpl implements IStandardBankTran
 ////                .build();
 ////
 ////        GenerateClientManager generateClientManager = new GenerateClientManager(elasticsearchOperationClientProperties);
-////        elasticsearchTemplate = (ElasticsearchTemplateOperations) generateClientManager.getTemplete(BaseOperations.DatasoureType.Elasticsearch);
+////        elasticsearchTemplate = (ElasticsearchOperationsTemplete) generateClientManager.getTemplete(BaseOperations.DatasoureType.Elasticsearch);
 ////
 ////
 ////    }
@@ -52,7 +52,7 @@ public class StandardBankTransactionFlowServiceImpl implements IStandardBankTran
     public List<StandardBankTransactionFlow> standardBankTransactionFlowList() {
         List<StandardBankTransactionFlow> standardBankTransactionFlows = new ArrayList<StandardBankTransactionFlow>();
         try {
-            standardBankTransactionFlows = elasticTestD.search(new MatchAllQueryBuilder(), StandardBankTransactionFlow.class);
+            standardBankTransactionFlows = elasticTestD.search(new MatchAllQueryBuilder());
 //            standardBankTransactionFlows.stream().limit(10).collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();

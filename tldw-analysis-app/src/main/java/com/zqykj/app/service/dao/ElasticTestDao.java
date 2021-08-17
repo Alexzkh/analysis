@@ -5,11 +5,11 @@ package com.zqykj.app.service.dao;
 
 import com.zqykj.annotations.Query;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
-import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 
 import java.util.List;
 
-public interface ElasticTestDao extends ElasticsearchTemplateOperations<StandardBankTransactionFlow, String> {
+public interface ElasticTestDao extends ElasticsearchOperations<StandardBankTransactionFlow, String> {
 
 
     @Query("{\"bool\" : {\"must\" : {\"exists\" : {\"field\" : \"?0\"}}}}")

@@ -3,7 +3,6 @@
  */
 package com.zqykj.controller;
 
-import com.zqykj.domain.bank.StandardBankTransactionFlow;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,8 @@ public class TestController {
 
     @GetMapping("/test")
     public int test() throws Exception {
-        return testDao.search(new MatchAllQueryBuilder(), StandardBankTransactionFlow.class).size();
+        return testDao.search(new MatchAllQueryBuilder()).size();
     }
+
+
 }

@@ -12,6 +12,7 @@ import com.zqykj.annotations.Mapping;
 import com.zqykj.annotations.Setting;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
+import com.zqykj.tldw.aggregate.index.elasticsearch.index.ElasticsearchIndexOperate;
 import com.zqykj.tldw.aggregate.index.elasticsearch.util.ElasticsearchMappingBuilder;
 import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.operation.AbstractDefaultIndexOperations;
@@ -39,7 +40,7 @@ import static org.springframework.util.StringUtils.hasText;
  */
 @Slf4j
 public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
-        implements IndexOperations {
+        implements ElasticsearchIndexOperate {
 
     private final RestHighLevelClient client;
     private final ElasticsearchMappingBuilder elasticsearchMappingBuilder;
@@ -184,6 +185,18 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         builder.endObject() // root object
                 .close();
         return builder.getOutputStream().toString();
+    }
+
+    @Override
+    public void rollover(boolean isAsyn) throws Exception {
+
+
+
+    }
+
+    @Override
+    public String getIndexName() {
+        return null;
     }
 
     @FunctionalInterface

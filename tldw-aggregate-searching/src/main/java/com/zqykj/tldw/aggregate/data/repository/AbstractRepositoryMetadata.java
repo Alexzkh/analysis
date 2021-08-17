@@ -6,7 +6,7 @@ package com.zqykj.tldw.aggregate.data.repository;
 import com.zqykj.infrastructure.util.ClassTypeInformation;
 import com.zqykj.infrastructure.util.TypeInformation;
 import com.zqykj.tldw.aggregate.data.repository.elasticsearch.ElasticsearchRepositoryMetadata;
-import com.zqykj.tldw.aggregate.searching.BaseOperations;
+import com.zqykj.tldw.aggregate.BaseOperations;
 import org.springframework.core.KotlinDetector;
 import org.springframework.util.Assert;
 

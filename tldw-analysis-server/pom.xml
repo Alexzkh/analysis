@@ -13,7 +13,7 @@
     <artifactId>analysis-server</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>analysis-server</name>
+    <name>tldw-analysis-server</name>
     <description>数据分析服务</description>
 
     <properties>

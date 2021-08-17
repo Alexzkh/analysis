@@ -4,17 +4,15 @@
 package com.zqykj.tldw.aggregate.data.support;
 
 import com.sun.istack.NotNull;
-import com.zqykj.infrastructure.util.ApplicationUtils;
 import com.zqykj.infrastructure.util.ReflectionUtils;
 import com.zqykj.tldw.aggregate.data.repository.AbstractRepositoryMetadata;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryMetadata;
 import com.zqykj.tldw.aggregate.data.repository.elasticsearch.ElasticsearchRepositoryInformation;
-import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
-import com.zqykj.tldw.aggregate.searching.BaseOperations;
-import com.zqykj.tldw.aggregate.searching.ElasticsearchTemplateOperations;
-import com.zqykj.tldw.aggregate.searching.impl.EsOperationsTemplate;
+import com.zqykj.tldw.aggregate.BaseOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.impl.ElasticsearchOperationsTemplete;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
@@ -89,15 +87,15 @@ public abstract class AggregateRepositoryFactorySupport {
     protected Class<?> getRepositoryBaseClass(Class<?> repositoryInterface) {
 
         // 根据 repositoryInterface 拿到对应的 impl Class
-        if (ElasticsearchTemplateOperations.class.isAssignableFrom(repositoryInterface)) {
-            return EsOperationsTemplate.class;
+        if (ElasticsearchOperations.class.isAssignableFrom(repositoryInterface)) {
+            return ElasticsearchOperationsTemplete.class;
         }
         //TODO 其他数据源的顶级RepositoryInterface.class 判断
 //        else if (....){
 //
 //        }
         // 默认使用Es
-        return EsOperationsTemplate.class;
+        return ElasticsearchOperationsTemplete.class;
     }
 
     /**
@@ -120,7 +118,7 @@ public abstract class AggregateRepositoryFactorySupport {
     protected Object getTargetRepository(RepositoryInformation metadata, ElasticsearchIndexOperations elasticsearchIndexOperations) {
 
         // 生成对应实现类想要的client
-        if (ElasticsearchTemplateOperations.class.isAssignableFrom(metadata.getRepositoryInterface())) {
+        if (ElasticsearchOperations.class.isAssignableFrom(metadata.getRepositoryInterface())) {
             // 生成Es 实现类构造函数想要的Object
             return getTargetRepositoryViaReflection(metadata, metadata, elasticsearchIndexOperations, elasticsearchIndexOperations.getMappingContext());
         }

@@ -8,4 +8,8 @@ package com.zqykj.tldw.aggregate.index.operation;
  */
 public abstract class AbstractDefaultIndexOperations implements IndexOperations {
 
+
+
+
+
 }

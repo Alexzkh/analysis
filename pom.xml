@@ -14,7 +14,7 @@
     <groupId>com.zqykj</groupId>
     <artifactId>analysis-service</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>analysis-service</name>
+    <name>tldw-analysis-service</name>
     <description>数据分析服务</description>
 
     <properties>

@@ -6,7 +6,7 @@ package com.zqykj.tldw.aggregate.data.repository.elasticsearch;
 import com.zqykj.infrastructure.util.TypeInformation;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryMetadata;
-import com.zqykj.tldw.aggregate.searching.BaseOperations;
+import com.zqykj.tldw.aggregate.BaseOperations;
 import org.springframework.util.Assert;
 
 import java.lang.reflect.Method;

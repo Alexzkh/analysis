@@ -11,7 +11,7 @@
     <artifactId>tldw-aggregate-searching</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>aggregate-searching</name>
+    <name>tldw-aggregate-searching</name>
     <description>聚合查询服务</description>
 
     <properties>
