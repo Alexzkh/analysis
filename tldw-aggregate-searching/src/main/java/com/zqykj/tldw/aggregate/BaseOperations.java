@@ -1,8 +1,6 @@
 package com.zqykj.tldw.aggregate;
 
-import com.zqykj.annotations.NoRepositoryBean;
-
-import java.util.Optional;
+import org.springframework.stereotype.Indexed;
 
 /**
  * @param <T> the domain type .
@@ -15,9 +13,8 @@ import java.util.Optional;
  * @Author zhangkehou
  * @Date 2021/8/5
  */
-@NoRepositoryBean
+@Indexed
 public interface BaseOperations<T, M> {
-
 
 }
 
