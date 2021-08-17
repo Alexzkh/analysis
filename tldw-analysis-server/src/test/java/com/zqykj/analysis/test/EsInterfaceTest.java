@@ -12,13 +12,16 @@ import com.zqykj.domain.page.Page;
 import com.zqykj.domain.page.PageRequest;
 import com.zqykj.domain.page.Sort;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
 
 @SpringBootTest
+@RunWith(SpringRunner.class)
 public class EsInterfaceTest {
 
     @Autowired
@@ -26,11 +29,6 @@ public class EsInterfaceTest {
 
     @Autowired
     private TeacherInfoDao teacherInfoDao;
-
-    @Test
-    public void context() {
-
-    }
 
     @Test
     public void testEsInterface() throws Exception {
