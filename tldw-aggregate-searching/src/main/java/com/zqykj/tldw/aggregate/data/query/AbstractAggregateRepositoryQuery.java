@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * @author Mcj
+ *
  */
 public abstract class AbstractAggregateRepositoryQuery implements AggregateRepositoryQuery {
 
@@ -47,7 +47,7 @@ public abstract class AbstractAggregateRepositoryQuery implements AggregateRepos
     }
 
     private String getParameterWithIndex(int index, Object[] parameters) {
-        if (index < parameters.length - 1 || index > parameters.length - 1) {
+        if (index < 0 || index > parameters.length - 1) {
             throw new IllegalArgumentException("Invalid parameter index! You seem to have declared too little query method parameters!");
         }
         Object parameter = parameters[index];

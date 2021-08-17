@@ -8,6 +8,9 @@ import org.springframework.lang.Nullable;
 
 import java.lang.annotation.Annotation;
 
+/**
+ * <h1> persistent entity information interface </h1>
+ */
 public interface PersistentEntity<T, P extends PersistentProperty<P>> extends Iterable<P> {
 
     String getName();

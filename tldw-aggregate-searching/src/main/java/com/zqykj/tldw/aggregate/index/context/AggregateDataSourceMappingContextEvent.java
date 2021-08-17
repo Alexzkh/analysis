@@ -9,9 +9,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.util.Assert;
 
 /**
- * @author Mcj
- *
- * <h2> 用来发布Event的包装类 </h2>
+ * <h1> 用来发布Event的包装类 </h1>
  */
 public class AggregateDataSourceMappingContextEvent<E extends PersistentEntity<?, P>, P extends PersistentProperty<P>> extends
         ApplicationEvent {

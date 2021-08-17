@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author Mcj
+ *
  */
 public class SearchHit<T> {
 

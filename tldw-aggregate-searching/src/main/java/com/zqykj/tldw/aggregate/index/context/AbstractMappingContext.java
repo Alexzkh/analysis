@@ -33,9 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 /**
- * @author Mcj
- *
- * <h2>  索引类扫描后保存的entity和property 抽象映射关系 </h2>
+ * <h1>  索引类扫描后保存的entity和property 抽象映射关系 </h1>
  */
 @Setter
 @Getter

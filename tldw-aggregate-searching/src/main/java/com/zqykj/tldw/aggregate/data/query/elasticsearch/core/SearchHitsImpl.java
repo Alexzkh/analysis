@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author Mcj
+ *
  */
 public class SearchHitsImpl<T> implements SearchHits<T> {
     private final long totalHits;

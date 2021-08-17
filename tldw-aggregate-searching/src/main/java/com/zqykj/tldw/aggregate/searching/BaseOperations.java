@@ -1,6 +1,7 @@
 package com.zqykj.tldw.aggregate.searching;
 
 import com.zqykj.annotations.NoRepositoryBean;
+import org.springframework.stereotype.Indexed;
 
 import java.util.Optional;
 
@@ -15,7 +16,7 @@ import java.util.Optional;
  * @Author zhangkehou
  * @Date 2021/8/5
  */
-@NoRepositoryBean
+@Indexed
 public interface BaseOperations<T, M> {
 
     enum DatasoureType {
