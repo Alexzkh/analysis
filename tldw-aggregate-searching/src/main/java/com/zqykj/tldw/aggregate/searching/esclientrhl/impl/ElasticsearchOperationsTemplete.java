@@ -11,6 +11,8 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndex
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.*;
@@ -230,6 +232,37 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
             }
         }
         return list;
+    }
+
+    @Override
+    public BulkResponse save(List<T> list) throws Exception {
+        if (list == null || list.size() == 0) {
+            return null;
+        }
+        String indexname = persistentEntity.getIndexName();
+        return savePart(list,indexname);
+    }
+
+    /**
+     * @param list: pojo list
+     * @param indexname:  operate index
+     * @return: org.elasticsearch.action.bulk.BulkResponse
+     **/
+    private BulkResponse savePart(List<T> list,String indexname) throws Exception {
+        BulkRequest bulkRequest  = new BulkRequest();
+        for (int i = 0; i < list.size(); i++) {
+            T tt = list.get(i);
+            String id = Tools.getESId(tt);
+            String sourceJsonStr = JsonUtils.obj2String(tt);
+            IndexRequest indexRequest = new IndexRequest(indexname);
+            indexRequest.id(id);
+            indexRequest.source(sourceJsonStr,XContentType.JSON);
+
+            bulkRequest.add(indexRequest);
+        }
+        BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+
+        return bulkResponse;
     }
 
     @Override

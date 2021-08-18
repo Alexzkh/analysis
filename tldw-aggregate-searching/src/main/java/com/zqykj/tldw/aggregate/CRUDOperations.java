@@ -5,15 +5,12 @@ import com.zqykj.annotations.NoRepositoryBean;
 import java.util.Optional;
 
 /**
- * @param <T> the domain type .
- * @param <M> the type of id of the domain entity .
- * @Description: The basic data operations.
- * <p>
- * The implementions or successors can be mongodb 、solr 、elasticsearch even hbase.
- * you can also do something special in your operations what the implementions of this.
- * <p>
+ * Interface for generic CRUD operations on a operations for a specific type.
+ *
+ * @param <T> the domain type the operations manages
+ * @param <M> the type of the id of the entity the operations manages
  * @Author zhangkehou
- * @Date 2021/8/5
+ * @Date 2021/8/17
  */
 @NoRepositoryBean
 public interface CRUDOperations<T, M> extends BaseOperations<T,M> {

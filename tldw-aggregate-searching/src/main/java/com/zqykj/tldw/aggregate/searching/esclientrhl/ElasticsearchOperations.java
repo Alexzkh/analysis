@@ -3,6 +3,7 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl;
 import com.zqykj.annotations.NoRepositoryBean;
 import com.zqykj.tldw.aggregate.BaseOperations;
 import com.zqykj.tldw.aggregate.CRUDOperations;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 
@@ -76,5 +77,12 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
 
 
 
+
+
+    /**
+     * save index collection
+     * @param list index pojo collection
+     */
+    public BulkResponse save(List<T> list) throws Exception;
 
 }

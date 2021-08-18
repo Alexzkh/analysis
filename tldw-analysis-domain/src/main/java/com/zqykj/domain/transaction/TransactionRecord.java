@@ -16,30 +16,30 @@ import java.util.Date;
  * @Date 2021/7/6 19:45
  */
 @Data
-@Document(indexName = "transaction_record", shards = 3)
+@Document(indexName = "transaction_record_info", shards = 2)
 public class TransactionRecord {
 
-    @Field(type = FieldType.Keyword)
-    private String account_card;
+    @Field(type = FieldType.Keyword,name = "account_card")
+    private String accountCard;
 
     @Field(type = FieldType.Keyword)
     private String bank;
 
-    @Field(type = FieldType.Keyword)
-    private String case_id;
+    @Field(type = FieldType.Keyword,name = "case_id")
+    private String caseId;
 
-    @Field(type = FieldType.Double)
-    private Double trade_amount;
+    @Field(type = FieldType.Double,name = "trade_amount")
+    private Double tradeAmount;
 
-    @Field(type = FieldType.Double)
-    private Double trade_balance;
+    @Field(type = FieldType.Double,name = "trade_balance")
+    private Double tradeBalance;
 
-    @Field(type = FieldType.Double)
-    private Double trade_opposite_balance;
+    @Field(type = FieldType.Double,name = "trade_opposite_balance")
+    private Double tradeOppositeBalance;
 
-    @Field(type = FieldType.Date)
+    @Field(type = FieldType.Date ,name ="trade_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date trade_time;
+    private Date tradeTime;
 
 
 
