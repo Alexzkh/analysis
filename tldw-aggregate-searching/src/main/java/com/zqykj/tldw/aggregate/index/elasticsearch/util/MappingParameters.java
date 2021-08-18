@@ -29,8 +29,6 @@ import java.lang.annotation.Annotation;
 /**
  * A class to hold the mapping parameters that might be set on
  * {@link Field }
- *
- * @since 4.0
  */
 public final class MappingParameters {
 
@@ -38,7 +36,7 @@ public final class MappingParameters {
     public static final String TYPE_VALUE_KEYWORD = "keyword";
     static final String FIELD_PARAM_COERCE = "coerce";
     static final String FIELD_PARAM_COPY_TO = "copy_to";
-	private final String datePattern;
+    private final String datePattern;
     static final String FIELD_PARAM_DATA = "fielddata";
     static final String FIELD_PARAM_DOC_VALUES = "doc_values";
     static final String FIELD_PARAM_EAGER_GLOBAL_ORDINALS = "eager_global_ordinals";
@@ -113,7 +111,7 @@ public final class MappingParameters {
         store = field.store();
         fielddata = field.fielddata();
         type = field.type();
-		datePattern = field.pattern();
+        datePattern = field.pattern();
         format = field.format();
         analyzer = field.analyzer();
         searchAnalyzer = field.searchAnalyzer();

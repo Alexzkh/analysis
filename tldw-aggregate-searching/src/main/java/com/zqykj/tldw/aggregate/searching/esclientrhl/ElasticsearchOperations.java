@@ -1,7 +1,6 @@
 package com.zqykj.tldw.aggregate.searching.esclientrhl;
 
 import com.zqykj.annotations.NoRepositoryBean;
-import com.zqykj.tldw.aggregate.BaseOperations;
 import com.zqykj.tldw.aggregate.CRUDOperations;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.index.query.QueryBuilder;

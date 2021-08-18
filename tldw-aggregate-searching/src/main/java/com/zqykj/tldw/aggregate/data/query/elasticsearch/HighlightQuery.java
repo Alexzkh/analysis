@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 
 /**
  * <h1> 高亮查询定义 </h1>
- *
- * @author Mcj
  */
 public class HighlightQuery {
 

@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.*;
 
 /**
- * @author Mcj
+ *
  */
 public interface ElasticsearchDocument extends Map<String, Object> {
 

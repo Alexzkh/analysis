@@ -12,6 +12,9 @@ import org.springframework.lang.Nullable;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * <h1> 查询对象返回包装顶级接口 </h1>
+ */
 public interface Query {
 
     int DEFAULT_PAGE_SIZE = 10;

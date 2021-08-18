@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author Mcj
+ * <h1> Elasticsearch persistent entity property information describe</h1>
  */
 public class SimpleElasticSearchPersistentProperty extends AbstractPersistentProperty<SimpleElasticSearchPersistentProperty> {
 

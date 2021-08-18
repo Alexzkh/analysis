@@ -1,8 +1,6 @@
 package com.zqykj.tldw.aggregate;
 
-import com.zqykj.annotations.NoRepositoryBean;
-
-import java.util.Optional;
+import org.springframework.stereotype.Indexed;
 
 /**
  * Central operations marker interface. Captures the domain type to manage as well as the domain type's id type. General
@@ -18,9 +16,8 @@ import java.util.Optional;
  * @Author zhangkehou
  * @Date 2021/8/17
  */
-@NoRepositoryBean
+@Indexed
 public interface BaseOperations<T, M> {
-
 
 }
 

@@ -19,7 +19,7 @@ import java.util.Optional;
 import static java.util.Collections.addAll;
 
 /**
- * @author Mcj
+ * <h1> 针对Elasticsearch @Query 注解查询使用 </h1>
  */
 public class ElasticsearchStringQuery implements Query {
 

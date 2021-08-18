@@ -9,7 +9,7 @@ import org.springframework.core.annotation.AliasFor;
 import java.lang.annotation.*;
 
 /**
- * <h2> 用于扫描指定packages 下的 data source Entity</h2>
+ * <h1> 用于扫描指定packages 下的 data source Entity</h1>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

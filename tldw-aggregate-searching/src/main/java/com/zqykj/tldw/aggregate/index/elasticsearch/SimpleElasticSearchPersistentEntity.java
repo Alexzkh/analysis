@@ -18,7 +18,7 @@ import java.util.Map;
 import com.zqykj.annotations.Document;
 
 /**
- * @author Mcj
+ * <h1> Elasticsearch persistent entity information describe</h1>
  */
 @Setter
 @Getter

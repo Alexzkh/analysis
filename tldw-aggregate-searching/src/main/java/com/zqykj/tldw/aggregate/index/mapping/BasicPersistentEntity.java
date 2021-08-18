@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author Mcj
+ * <h1> Universal Base persistent entity describe </h1>
  */
 public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implements PersistentEntity<T, P> {
 

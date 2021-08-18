@@ -13,6 +13,8 @@ import com.zqykj.tldw.aggregate.data.query.AbstractAggregateRepositoryQuery;
 import com.zqykj.tldw.aggregate.data.query.AggregateRepositoryQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.*;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
+import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
+import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentProperty;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.ClearScrollRequest;
@@ -42,8 +44,6 @@ import static org.elasticsearch.index.query.QueryBuilders.wrapperQuery;
 
 /**
  * <h1> 处理@Query 注解的query <h1/>
- *
- * @author Mcj
  */
 @Slf4j
 public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggregateRepositoryQuery
@@ -216,7 +216,19 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
             Assert.notNull(type, "type is null");
             this.type = type;
             // 将es的hit 数据转换成 index Class
-            delegate = document -> JSON.parseObject(JSON.toJSONString(document), type);
+            delegate = document -> {
+                if (null == document) {
+                    return null;
+                }
+                SimpleElasticSearchPersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(type);
+                if (null != persistentEntity) {
+                    SimpleElasticSearchPersistentProperty idProperty = persistentEntity.getIdProperty();
+                    if (null != idProperty) {
+                        document.put(idProperty.getFieldName(), document.getId());
+                    }
+                }
+                return JSON.parseObject(JSON.toJSONString(document), type);
+            };
         }
 
         @Override

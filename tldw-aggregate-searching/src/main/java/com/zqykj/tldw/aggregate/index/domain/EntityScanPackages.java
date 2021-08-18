@@ -20,10 +20,8 @@ import java.util.function.Supplier;
  * Class for storing {@link EntityScan @EntityScan} specified packages for reference later
  * (e.g. by JPA auto-configuration).
  *
- * @author Phillip Webb
  * @see EntityScan
  * @see EntityScanner
- * @since 1.4.0
  */
 public class EntityScanPackages {
 

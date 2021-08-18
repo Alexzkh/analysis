@@ -7,8 +7,6 @@ import org.springframework.lang.Nullable;
 
 /**
  * <h1> Elasticsearch 内嵌套数据 </h1>
- *
- * @author Mcj
  */
 public class NestedMetaData {
 

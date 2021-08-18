@@ -41,9 +41,9 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * <h1>扫描当前启动类所在的包以及子包下的指定接口,获取相关的BeanDefinition并包装成FactoryBean的子类</h1>
- *
- * @author Mcj
+ * <h1>扫描当前启动类所在的包以及子包下的指定接口 {@link BaseOperations} 子接口 </h1>
+ * <p>
+ * 标记 {@link NoRepositoryBean} 此注解的interface 不会生成beanDefinition
  */
 @Slf4j
 public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegistrar,
@@ -78,6 +78,8 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
                 // 向容器注册beanDefinition
                 String beanName = this.generateBeanName(beanDefinition, beanNameGenerator, registry);
                 registry.registerBeanDefinition(beanName, beanDefinition);
+                // 如果 beanDefinition 有propertyReference bean 依赖,必须用  BeanComponentDefinition 包装
+                // 否则依赖的bean 无法注入
                 definitions.add(new BeanComponentDefinition(beanDefinition, beanName));
             } catch (Exception | LinkageError e) {
                 log.warn(String.format(" Could not load type %s using class loader %s.",
