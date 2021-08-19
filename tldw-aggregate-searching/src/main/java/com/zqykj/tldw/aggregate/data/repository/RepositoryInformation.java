@@ -5,9 +5,6 @@ package com.zqykj.tldw.aggregate.data.repository;
 
 
 import com.zqykj.annotations.Query;
-import com.zqykj.infrastructure.util.ClassTypeInformation;
-import com.zqykj.infrastructure.util.TypeInformation;
-import org.springframework.core.KotlinDetector;
 import org.springframework.core.annotation.AnnotationUtils;
 
 import java.lang.reflect.Method;
@@ -23,11 +20,9 @@ import java.util.stream.Collectors;
 public abstract class RepositoryInformation implements RepositoryMetadata {
 
     private final List<Method> methods;
-    private final TypeInformation<?> typeInformation;
 
     public RepositoryInformation(Class<?> repositoryInterface) {
         this.methods = Arrays.asList(repositoryInterface.getMethods());
-        this.typeInformation = ClassTypeInformation.from(repositoryInterface);
     }
 
     /**
@@ -53,19 +48,6 @@ public abstract class RepositoryInformation implements RepositoryMetadata {
     public String getAnnotatedQuery(Method method) {
         Optional<Query> optionalQuery = Optional.ofNullable(AnnotationUtils.getAnnotation(method, Query.class));
         return optionalQuery.map(Query::value).orElseThrow(() -> new RuntimeException("@Query value must not null!"));
-    }
-
-    public TypeInformation<?> getReturnType(Method method) {
-
-        TypeInformation<?> returnType;
-//        if (KotlinDetector.isKotlinType(method.getDeclaringClass()) && KotlinReflectionUtils.isSuspend(method)) {
-//
-//            // the last parameter is Continuation<? super T> or Continuation<? super Flow<? super T>>
-//            List<TypeInformation<?>> types = typeInformation.getParameterTypes(method);
-//            returnType = types.get(types.size() - 1).getComponentType();
-//        }
-        returnType = typeInformation.getReturnType(method);
-        return returnType;
     }
 
     public abstract Class<?> getRepositoryBaseClass();

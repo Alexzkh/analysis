@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/tldw-analysis-server/analysis-server.iml" filepath="$PROJECT_DIR$/tldw-analysis-server/analysis-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/analysis-service.iml" filepath="$PROJECT_DIR$/analysis-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tldw-aggregate-searching/tldw-aggregate-searching.iml" filepath="$PROJECT_DIR$/tldw-aggregate-searching/tldw-aggregate-searching.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tldw-analysis-app/tldw-analysis-app.iml" filepath="$PROJECT_DIR$/tldw-analysis-app/tldw-analysis-app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tldw-analysis-common/tldw-analysis-common.iml" filepath="$PROJECT_DIR$/tldw-analysis-common/tldw-analysis-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tldw-analysis-domain/tldw-analysis-domain.iml" filepath="$PROJECT_DIR$/tldw-analysis-domain/tldw-analysis-domain.iml" />
+    </modules>
+  </component>
+</project>
