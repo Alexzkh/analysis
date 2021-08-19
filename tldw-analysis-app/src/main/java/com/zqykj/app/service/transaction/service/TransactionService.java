@@ -40,7 +40,7 @@ public class TransactionService {
 //        transactionRecordOperations.save(transactionRecord);
 
         List<TransactionRecord> list = new ArrayList<>();
-        for (int i = 0; i <10 ; i++) {
+        for (int i = 0; i < 10 ; i++) {
             TransactionRecord transactionRecord = new TransactionRecord();
             transactionRecord.setAccountCard("77777"+i);
             transactionRecord.setBank("中国银行"+i);

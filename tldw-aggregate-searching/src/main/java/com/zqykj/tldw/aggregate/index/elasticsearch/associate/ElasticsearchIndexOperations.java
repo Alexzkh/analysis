@@ -16,16 +16,20 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.index.ElasticsearchIndexOper
 import com.zqykj.tldw.aggregate.index.elasticsearch.util.ElasticsearchMappingBuilder;
 import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.operation.AbstractDefaultIndexOperations;
-import com.zqykj.tldw.aggregate.index.operation.IndexOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ClientCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.client.indices.rollover.RolloverRequest;
+import org.elasticsearch.client.indices.rollover.RolloverResponse;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
@@ -81,10 +85,29 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
                 log.warn("Index name  = {} already exists!", elasticPersistentEntity.getIndexName());
                 return false;
             }
-            CreateIndexRequest createIndexRequest = new CreateIndexRequest(elasticPersistentEntity.getIndexName());
+//             CreateIndexRequest createIndexRequest = null;
+            Boolean createIndex =false;
+            if (elasticPersistentEntity.isRollover()){
+                if(elasticPersistentEntity.getRolloverMaxIndexAgeCondition() == 0
+                        && elasticPersistentEntity.getRolloverMaxIndexDocsCondition() == 0
+                        && elasticPersistentEntity.getRolloverMaxIndexSizeCondition() == 0) {
+                    throw new RuntimeException("rolloverMaxIndexAgeCondition is zero OR rolloverMaxIndexDocsCondition is zero OR rolloverMaxIndexSizeCondition is zero");
+                }
+                CreateIndexRequest createIndexRequest = new CreateIndexRequest("<"+elasticPersistentEntity.getIndexName()+"-{now/d}-000001>");
+
+                Alias alias = new Alias(elasticPersistentEntity.getIndexName());
+                alias.writeIndex(true);
+                createIndexRequest.alias(alias);
+                createIndexRequest.settings(createSettings(elasticPersistentEntity));
+                createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
+                elasticPersistentEntity.setIndexName("<"+elasticPersistentEntity.getIndexName()+"-{now/d}-000001>");
+            }else{
+                CreateIndexRequest createIndexRequest = new CreateIndexRequest((elasticPersistentEntity.getIndexName()));
+                createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
+            }
             // 若存在映射文件,则创建索引的同时,也会根据Settings 映射创建mapping
-            createIndexRequest.settings(createSettings(elasticPersistentEntity));
-            Boolean createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
+//            createIndexRequest.settings(createSettings(elasticPersistentEntity));
+//            Boolean createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
             // index create success
             if (createIndex) {
                 // 根据PersistentEntity 构建出mapping
@@ -109,6 +132,8 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return mappingMap;
     }
 
+
+
     /**
      * <h2> 创建索引映射结构 </h2>
      */
@@ -117,6 +142,7 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
             throw new RuntimeException("PersistentEntity is null!");
         }
         Map<String, Object> mapping = buildMapping(clazz);
+
         PutMappingRequest request = new PutMappingRequest(clazz.getIndexName());
         request.source(mapping);
         return execute(client -> client.indices().putMapping(request, RequestOptions.DEFAULT).isAcknowledged());
@@ -187,21 +213,71 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return builder.getOutputStream().toString();
     }
 
+
+
+
     @Override
-    public void rollover(boolean isAsyn) throws Exception {
+    public void rollover(PersistentEntity<?, ?> persistentEntity, boolean isAsyn) throws Exception {
+        if (persistentEntity instanceof SimpleElasticSearchPersistentEntity) {
+            SimpleElasticSearchPersistentEntity<?> elasticPersistentEntity = (SimpleElasticSearchPersistentEntity<?>) persistentEntity;
 
 
+            if (!elasticPersistentEntity.isRollover()) {
+                return;
+            }
+
+            if (elasticPersistentEntity.isAutoRollover()) {
+                rollover(elasticPersistentEntity);
+                return;
+            } else {
+                if (isAsyn) {
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(1024);
+                            rollover(elasticPersistentEntity);
+                        } catch (Exception e) {
+                            log.error("rollover error {}", e);
+                        }
+
+                    }).start();
+                } else {
+                    rollover(elasticPersistentEntity);
+                }
+            }
+        }
+    }
+
+
+    public void rollover(SimpleElasticSearchPersistentEntity<?> persistentEntity) {
+
+        RolloverRequest rolloverRequest = new RolloverRequest(persistentEntity.getIndexName(), null);
+        if (persistentEntity.getRolloverMaxIndexAgeCondition() != 0) {
+            rolloverRequest.addMaxIndexAgeCondition(new TimeValue(persistentEntity.getRolloverMaxIndexAgeCondition(),
+                    persistentEntity.getRolloverMaxIndexAgeTimeUnit()));
+
+        }
+
+        if (persistentEntity.getRolloverMaxIndexDocsCondition() != 0) {
+            rolloverRequest.addMaxIndexDocsCondition(persistentEntity.getRolloverMaxIndexDocsCondition());
+        }
+
+        if (persistentEntity.getRolloverMaxIndexSizeCondition() != 0) {
+            rolloverRequest.addMaxIndexSizeCondition(new ByteSizeValue(persistentEntity.getRolloverMaxIndexSizeCondition(),
+                    persistentEntity.getRolloverMaxIndexSizeByteSizeUnit()));
+        }
+
+        try {
+            RolloverResponse rolloverResponse = client.indices().rollover(rolloverRequest, RequestOptions.DEFAULT);
+            log.info("rollover alias[" + persistentEntity.getIndexName() + "]结果：" + rolloverResponse.isAcknowledged());
+        } catch (IOException e) {
+            log.error("rollover error {}", e);
+        }
 
     }
 
     @Override
     public String getIndexName() {
         return null;
-    }
-
-    @FunctionalInterface
-    public interface ClientCallback<T> {
-        T doWithClient(RestHighLevelClient client) throws IOException;
     }
 
     public <T> T execute(ClientCallback<T> callback) {

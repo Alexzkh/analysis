@@ -8,9 +8,11 @@ import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ClientCallback;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -24,6 +26,10 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.rollover.RolloverRequest;
+import org.elasticsearch.client.indices.rollover.RolloverResponse;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -31,8 +37,10 @@ import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,14 +78,32 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
     }
 
 
-    @Override
-    public boolean save(T t) throws Exception {
+    /**
+     * Execute a callback with the {@link RestHighLevelClient}
+     *
+     * @param callback the callback to execute, must not be {@literal null}
+     * @param <T>      the type returned from the callback
+     * @return the callback result
+     */
+    public <T> T execute(ClientCallback<T> callback) {
 
-        return save(t,null);
+        Assert.notNull(callback, "callback must not be null");
+
+        try {
+            return callback.doWithClient(client);
+        } catch (IOException | RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public boolean save(T t,String routing) throws Exception {
+    public boolean save(T t) throws Exception {
+
+        return save(t, null);
+    }
+
+    @Override
+    public boolean save(T t, String routing) throws Exception {
         String indexName = persistentEntity.getIndexName();
         String id = Tools.getESId(entityClass);
         IndexRequest indexRequest = new IndexRequest(indexName);
@@ -90,7 +116,7 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
         if (!ObjectUtils.isEmpty(routing)) {
             indexRequest.routing(routing);
         }
-        IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+        IndexResponse indexResponse = execute(client -> client.index(indexRequest, RequestOptions.DEFAULT)) ;
         if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
             log.info("Index create success !");
         } else if (indexResponse.getResult() == DocWriteResponse.Result.UPDATED) {
@@ -118,7 +144,7 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
         searchSourceBuilder.size(Constants.DEFALT_PAGE_SIZE);
         searchRequest.source(searchSourceBuilder);
 
-        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        SearchResponse searchResponse = execute(client->client.search(searchRequest, RequestOptions.DEFAULT));
         SearchHits hits = searchResponse.getHits();
         SearchHit[] searchHits = hits.getHits();
         for (SearchHit hit : searchHits) {
@@ -183,8 +209,9 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
         if (!ObjectUtils.isEmpty(routing)) {
             deleteRequest.routing(routing);
         }
-        DeleteResponse deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
+        DeleteResponse deleteResponse = execute(client ->client.delete(deleteRequest, RequestOptions.DEFAULT));
         if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
+            refresh(indexname);
             log.info("Index delete success !");
         } else {
             return false;
@@ -197,7 +224,8 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
         String indexname = persistentEntity.getIndexName();
         DeleteByQueryRequest request = new DeleteByQueryRequest(indexname);
         request.setQuery(queryBuilder);
-        BulkByScrollResponse bulkResponse = client.deleteByQuery(request, RequestOptions.DEFAULT);
+        BulkByScrollResponse bulkResponse =execute(client ->client.deleteByQuery(request, RequestOptions.DEFAULT)) ;
+        refresh(indexname);
         return bulkResponse;
     }
 
@@ -208,7 +236,7 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
             throw new Exception("ID cannot be empty");
         }
         GetRequest getRequest = new GetRequest(indexname, id.toString());
-        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+        GetResponse getResponse =execute(client->client.get(getRequest, RequestOptions.DEFAULT)) ;
         if (getResponse.isExists()) {
             return Optional.of(JsonUtils.string2Obj(getResponse.getSourceAsString(), entityClass));
         }
@@ -222,7 +250,7 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
         for (int i = 0; i < ids.length; i++) {
             request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
         }
-        MultiGetResponse response = client.mget(request, RequestOptions.DEFAULT);
+        MultiGetResponse response = execute(client ->client.mget(request, RequestOptions.DEFAULT));
         List<T> list = new ArrayList<>();
         for (int i = 0; i < response.getResponses().length; i++) {
             MultiGetItemResponse item = response.getResponses()[i];
@@ -240,28 +268,38 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
             return null;
         }
         String indexname = persistentEntity.getIndexName();
-        return savePart(list,indexname);
+        return savePart(list, indexname);
+    }
+
+    @Override
+    public void refresh(String... indexName) throws Exception {
+        Assert.notNull(indexName, "No index defined for refresh()");
+        RefreshRequest refreshRequest = new RefreshRequest(indexName);
+        execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
+
     }
 
     /**
-     * @param list: pojo list
-     * @param indexname:  operate index
+     * @param list:      pojo list
+     * @param indexname: operate index
      * @return: org.elasticsearch.action.bulk.BulkResponse
      **/
-    private BulkResponse savePart(List<T> list,String indexname) throws Exception {
-        BulkRequest bulkRequest  = new BulkRequest();
+    private BulkResponse savePart(List<T> list, String indexname) throws Exception {
+        BulkRequest bulkRequest = new BulkRequest();
         for (int i = 0; i < list.size(); i++) {
             T tt = list.get(i);
             String id = Tools.getESId(tt);
             String sourceJsonStr = JsonUtils.obj2String(tt);
             IndexRequest indexRequest = new IndexRequest(indexname);
             indexRequest.id(id);
-            indexRequest.source(sourceJsonStr,XContentType.JSON);
+            indexRequest.source(sourceJsonStr, XContentType.JSON);
 
             bulkRequest.add(indexRequest);
         }
-        BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+        BulkResponse bulkResponse = execute(client->client.bulk(bulkRequest,RequestOptions.DEFAULT));
 
+        refresh(indexname);
+//        rollover(true);
         return bulkResponse;
     }
 
@@ -276,7 +314,8 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
 
         UpdateRequest updateRequest = new UpdateRequest(indexname, id.toString());
 
-        UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
+        UpdateResponse updateResponse = execute(client -> client.update(updateRequest, RequestOptions.DEFAULT));
+        refresh(indexname);
         if (updateResponse.getResult() == DocWriteResponse.Result.CREATED) {
             log.info("Index update success !");
         } else if (updateResponse.getResult() == DocWriteResponse.Result.UPDATED) {
@@ -287,5 +326,59 @@ public class ElasticsearchOperationsTemplete<T, M> implements ElasticsearchOpera
         return true;
     }
 
+
+
+
+
+    //    @Override
+//    public void rollover(boolean isAsyn) throws Exception {
+//        if (!persistentEntity.isRollover()) {
+//            return;
+//        }
+//
+//        if (persistentEntity.isAutoRollover()) {
+//            rollover();
+//            return;
+//        }else {
+//            if (isAsyn){
+//                new Thread (() ->{
+//                    try {
+//                        Thread.sleep(1024);
+//                        rollover();
+//                    } catch (Exception e) {
+//                       log.error("rollover error {}",e);
+//                    }
+//
+//                }).start();
+//            } else {
+//                 rollover();
+//            }
+//        }
+//    }
+
+    //    private void rollover() {
+//
+//        RolloverRequest rolloverRequest = new RolloverRequest(persistentEntity.getIndexName(), null);
+//        if (persistentEntity.getRolloverMaxIndexAgeCondition() != 0) {
+//            rolloverRequest.addMaxIndexAgeCondition(new TimeValue(persistentEntity.getRolloverMaxIndexAgeCondition(),
+//                    persistentEntity.getRolloverMaxIndexAgeTimeUnit()));
+//
+//        }
+//
+//        if (persistentEntity.getRolloverMaxIndexDocsCondition() != 0) {
+//            rolloverRequest.addMaxIndexDocsCondition(persistentEntity.getRolloverMaxIndexDocsCondition());
+//        }
+//
+//        if (persistentEntity.getRolloverMaxIndexSizeCondition() != 0) {
+//            rolloverRequest.addMaxIndexSizeCondition(new ByteSizeValue(persistentEntity.getRolloverMaxIndexSizeCondition(),
+//                    persistentEntity.getRolloverMaxIndexSizeByteSizeUnit()));
+//        }
+//
+//
+//        RolloverResponse rolloverResponse = execute(client ->client.indices().rollover(rolloverRequest, RequestOptions.DEFAULT));
+//        log.info("rollover alias[" + persistentEntity.getIndexName() + "]结果：" + rolloverResponse.isAcknowledged());
+//
+//
+//    }
 
 }

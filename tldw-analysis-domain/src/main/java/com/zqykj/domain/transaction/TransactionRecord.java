@@ -16,7 +16,7 @@ import java.util.Date;
  * @Date 2021/7/6 19:45
  */
 @Data
-@Document(indexName = "transaction_record_info", shards = 2)
+@Document(indexName = "transaction_record_info",shards = 2)
 public class TransactionRecord {
 
     @Field(type = FieldType.Keyword,name = "account_card")
