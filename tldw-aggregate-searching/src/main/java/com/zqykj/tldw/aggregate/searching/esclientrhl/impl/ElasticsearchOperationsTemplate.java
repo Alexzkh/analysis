@@ -124,7 +124,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         if (!ObjectUtils.isEmpty(routing)) {
             indexRequest.routing(routing);
         }
-        IndexResponse indexResponse = execute(client -> client.index(indexRequest, RequestOptions.DEFAULT)) ;
+        IndexResponse indexResponse = execute(client -> client.index(indexRequest, RequestOptions.DEFAULT));
         if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
             log.info("Index create success !");
         } else if (indexResponse.getResult() == DocWriteResponse.Result.UPDATED) {
@@ -152,7 +152,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         searchSourceBuilder.size(Constants.DEFALT_PAGE_SIZE);
         searchRequest.source(searchSourceBuilder);
 
-        SearchResponse searchResponse = execute(client->client.search(searchRequest, RequestOptions.DEFAULT));
+        SearchResponse searchResponse = execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         SearchHits hits = searchResponse.getHits();
         SearchHit[] searchHits = hits.getHits();
         for (SearchHit hit : searchHits) {
@@ -217,7 +217,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         if (!ObjectUtils.isEmpty(routing)) {
             deleteRequest.routing(routing);
         }
-        DeleteResponse deleteResponse = execute(client ->client.delete(deleteRequest, RequestOptions.DEFAULT));
+        DeleteResponse deleteResponse = execute(client -> client.delete(deleteRequest, RequestOptions.DEFAULT));
         if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
             refresh(indexname);
             log.info("Index delete success !");
@@ -232,7 +232,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         String indexname = persistentEntity.getIndexName();
         DeleteByQueryRequest request = new DeleteByQueryRequest(indexname);
         request.setQuery(queryBuilder);
-        BulkByScrollResponse bulkResponse =execute(client ->client.deleteByQuery(request, RequestOptions.DEFAULT)) ;
+        BulkByScrollResponse bulkResponse = execute(client -> client.deleteByQuery(request, RequestOptions.DEFAULT));
         refresh(indexname);
         return bulkResponse;
     }
@@ -244,7 +244,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
             throw new Exception("ID cannot be empty");
         }
         GetRequest getRequest = new GetRequest(indexname, id.toString());
-        GetResponse getResponse =execute(client->client.get(getRequest, RequestOptions.DEFAULT)) ;
+        GetResponse getResponse = execute(client -> client.get(getRequest, RequestOptions.DEFAULT));
         if (getResponse.isExists()) {
             return Optional.of(JsonUtils.string2Obj(getResponse.getSourceAsString(), entityClass));
         }
@@ -258,7 +258,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         for (int i = 0; i < ids.length; i++) {
             request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
         }
-        MultiGetResponse response = execute(client ->client.mget(request, RequestOptions.DEFAULT));
+        MultiGetResponse response = execute(client -> client.mget(request, RequestOptions.DEFAULT));
         List<T> list = new ArrayList<>();
         for (int i = 0; i < response.getResponses().length; i++) {
             MultiGetItemResponse item = response.getResponses()[i];
@@ -277,8 +277,6 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         }
         String indexname = persistentEntity.getIndexName();
         return savePart(list, indexname);
-<<<<<<< HEAD:tldw-aggregate-searching/src/main/java/com/zqykj/tldw/aggregate/searching/esclientrhl/impl/ElasticsearchOperationsTemplate.java
-=======
     }
 
     @Override
@@ -286,8 +284,6 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         Assert.notNull(indexName, "No index defined for refresh()");
         RefreshRequest refreshRequest = new RefreshRequest(indexName);
         execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
-
->>>>>>> d3dca9a691c598b285f8af5dbbdffb72c967841d:tldw-aggregate-searching/src/main/java/com/zqykj/tldw/aggregate/searching/esclientrhl/impl/ElasticsearchOperationsTemplete.java
     }
 
     /**
@@ -307,7 +303,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
 
             bulkRequest.add(indexRequest);
         }
-        BulkResponse bulkResponse = execute(client->client.bulk(bulkRequest,RequestOptions.DEFAULT));
+        BulkResponse bulkResponse = execute(client -> client.bulk(bulkRequest, RequestOptions.DEFAULT));
 
         refresh(indexname);
 //        rollover(true);
@@ -336,9 +332,6 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         }
         return true;
     }
-
-
-
 
 
     //    @Override
