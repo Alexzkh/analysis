@@ -46,7 +46,7 @@ public class AggregateDataConfiguration {
     }
 
     @Bean
-//    @ConditionalOnBean(ElasticsearchOperationClientProperties.class)
+    @ConditionalOnBean(ElasticsearchOperationClientProperties.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
     SimpleElasticsearchMappingContext simpleElasticsearchMappingContext(ApplicationContext applicationContext,
                                                                         ElasticsearchOperationClientProperties properties) throws ClassNotFoundException {
@@ -63,14 +63,13 @@ public class AggregateDataConfiguration {
     MongodbIndexOperations mongodbIndexOperations(SimpleMongodbMappingContext simpleMongodbMappingContext,
                                                   MongoClient mongoClient,
                                                   MongoDBOperationClientProperties properties) {
-        MongodbIndexOperations mongodbIndexOperations = new MongodbIndexOperations(mongoClient, simpleMongodbMappingContext, properties);
-        // 若开启自动创建索引
-        if (simpleMongodbMappingContext.isAutoIndexCreation()) {
-            new MongodbPersistentEntityIndexCreator(simpleMongodbMappingContext,
-                    IndexResolver.create(simpleMongodbMappingContext),
-                    mongoClient, mongodbIndexOperations, properties);
-        }
-        return mongodbIndexOperations;
+        // TODO 迁移到具体实现类中(需要创建Mongodb 数据源顶级接口 与 对应实现类)
+//        if (simpleMongodbMappingContext.isAutoIndexCreation()) {
+//            new MongodbPersistentEntityIndexCreator(simpleMongodbMappingContext,
+//                    IndexResolver.create(simpleMongodbMappingContext),
+//                    mongoClient, mongodbIndexOperations, properties);
+//        }
+        return new MongodbIndexOperations(mongoClient, simpleMongodbMappingContext, properties);
     }
 
     @Bean
@@ -78,11 +77,10 @@ public class AggregateDataConfiguration {
     @ConditionalOnBean({SimpleElasticsearchMappingContext.class})
     ElasticsearchIndexOperations elasticsearchIndexOperations(SimpleElasticsearchMappingContext simpleElasticsearchMappingContext,
                                                               RestHighLevelClient restHighLevelClient) {
-        ElasticsearchIndexOperations elasticsearchIndexOperations =
-                new ElasticsearchIndexOperations(restHighLevelClient, simpleElasticsearchMappingContext);
-        if (simpleElasticsearchMappingContext.isAutoIndexCreation()) {
-            new ElasticPersistentEntityIndexCreator(elasticsearchIndexOperations, simpleElasticsearchMappingContext);
-        }
-        return elasticsearchIndexOperations;
+        // 迁移到具体数据源的实现类中(保证扫描的索引类 有对应的repository 并且 es配置类中 启动了自动创建索引 且 索引在es中不存在的时候才会创建
+//        if (simpleElasticsearchMappingContext.isAutoIndexCreation()) {
+//            new ElasticPersistentEntityIndexCreator(elasticsearchIndexOperations, simpleElasticsearchMappingContext);
+//        }
+        return new ElasticsearchIndexOperations(restHighLevelClient, simpleElasticsearchMappingContext);
     }
 }

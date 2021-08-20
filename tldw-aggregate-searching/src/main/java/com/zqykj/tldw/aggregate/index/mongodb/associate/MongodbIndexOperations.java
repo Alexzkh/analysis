@@ -19,17 +19,21 @@ import org.bson.Document;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
+import java.util.Objects;
+
 /**
  * <h2> Mongodb Index Operations</h2>
  */
 @Slf4j
 @SuppressWarnings({"rawtypes"})
-public class MongodbIndexOperations extends AbstractDefaultIndexOperations {
+public class MongodbIndexOperations extends AbstractDefaultIndexOperations
+        implements MongodbIndexOperate {
 
     private final MongoClient mongoClient;
     // 该properties 需要替换成专用的mongodb properties
     private final MongoDBOperationClientProperties properties;
     private final IndexResolver indexResolver;
+    private final SimpleMongodbMappingContext mappingContext;
 
 
     public MongodbIndexOperations(MongoClient mongoClient,
@@ -37,9 +41,9 @@ public class MongodbIndexOperations extends AbstractDefaultIndexOperations {
                                   MongoDBOperationClientProperties properties) {
         this.mongoClient = mongoClient;
         this.properties = properties;
+        this.mappingContext = mappingContext;
         this.indexResolver = IndexResolver.create(mappingContext);
     }
-
 
     @Override
     public boolean createIndex(PersistentEntity<?, ?> entity) {
@@ -88,6 +92,12 @@ public class MongodbIndexOperations extends AbstractDefaultIndexOperations {
             return null;
         }
     }
+
+    @Override
+    public String getIndexCoordinatesFor(Class<?> clazz) {
+        return mappingContext.getRequiredPersistentEntity(clazz).getCollection();
+    }
+
 
     /**
      * 用来操作Mongodb Collection

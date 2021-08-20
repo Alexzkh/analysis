@@ -357,4 +357,5 @@ public abstract class AbstractMappingContext<E extends BasicPersistentEntity<?, 
 
         throw new RuntimeException(String.format("Couldn't find PersistentEntity for type %s!", type));
     }
+
 }

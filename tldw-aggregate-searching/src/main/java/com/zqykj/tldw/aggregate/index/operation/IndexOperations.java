@@ -12,6 +12,4 @@ import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 public interface IndexOperations {
 
     boolean createIndex(PersistentEntity<?, ?> persistentEntity);
-
-
 }

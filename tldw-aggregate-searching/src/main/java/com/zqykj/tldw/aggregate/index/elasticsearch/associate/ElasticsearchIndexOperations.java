@@ -12,20 +12,18 @@ import com.zqykj.annotations.Mapping;
 import com.zqykj.annotations.Setting;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
-import com.zqykj.tldw.aggregate.index.elasticsearch.index.ElasticsearchIndexOperate;
 import com.zqykj.tldw.aggregate.index.elasticsearch.util.ElasticsearchMappingBuilder;
 import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.operation.AbstractDefaultIndexOperations;
-import com.zqykj.tldw.aggregate.index.operation.IndexOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
@@ -95,6 +93,28 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return false;
     }
 
+    @Override
+    public void rollover(boolean isAsyn) throws Exception {
+
+    }
+
+    @Override
+    public boolean exists(String... indexNames) {
+        GetIndexRequest getIndexRequest = new GetIndexRequest(indexNames);
+        return execute(client -> client.indices().exists(getIndexRequest, RequestOptions.DEFAULT));
+    }
+
+    @Override
+    public void refresh(String... indexNames) {
+        RefreshRequest refreshRequest = new RefreshRequest(indexNames);
+        execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
+    }
+
+    @Override
+    public String getIndexCoordinatesFor(Class<?> clazz) {
+        return mappingContext.getRequiredPersistentEntity(clazz).getIndexName();
+    }
+
     private Map<String, ?> createSettings(SimpleElasticSearchPersistentEntity<?> entity) {
         Map<String, ?> mappingMap = null;
         if (entity.isAnnotationPresent(Setting.class)) {
@@ -151,13 +171,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         }
     }
 
-    /**
-     * <h2> 判断索引是否存在 </h2>
-     */
-    public boolean indexIsExists(GetIndexRequest getIndexRequest) throws IOException {
-        return client.indices().exists(getIndexRequest, RequestOptions.DEFAULT);
-    }
-
     private Map<String, Object> loadSettings(String settingPath) {
         if (hasText(settingPath)) {
             String settingsFile = ResourceUtil.readFileFromClasspath(settingPath);
@@ -185,18 +198,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         builder.endObject() // root object
                 .close();
         return builder.getOutputStream().toString();
-    }
-
-    @Override
-    public void rollover(boolean isAsyn) throws Exception {
-
-
-
-    }
-
-    @Override
-    public String getIndexName() {
-        return null;
     }
 
     @FunctionalInterface

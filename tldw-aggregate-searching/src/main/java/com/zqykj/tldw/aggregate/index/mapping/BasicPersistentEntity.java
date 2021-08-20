@@ -25,10 +25,10 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
     private final List<P> persistentPropertiesCache;
     private final Map<String, P> propertyCache;
     private final MultiValueMap<Class<? extends Annotation>, P> propertyAnnotationCache;
-    private @Nullable
-    P idProperty;
-    private @Nullable
-    P versionProperty;
+    @Nullable
+    private P idProperty;
+    @Nullable
+    private P versionProperty;
     private final Map<Class<? extends Annotation>, Optional<Annotation>> annotationCache;
 
     public BasicPersistentEntity(TypeInformation<T> information) {
@@ -57,6 +57,7 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
         return idProperty != null && idProperty.equals(property);
     }
 
+    @Nullable
     @Override
     public P getIdProperty() {
         return idProperty;

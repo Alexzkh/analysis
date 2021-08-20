@@ -49,7 +49,7 @@ public class AggregateDataTest {
 
     @Test
     public void testOptionalQuery() {
-        Optional<List<TeacherInfo>> teacherInfos = teacherInfoDao.matchAllofOptional();
+        Optional<List<TeacherInfo>> teacherInfos = teacherInfoDao.matchAllOfOptional();
         System.out.println(JSON.toJSONString(teacherInfos.orElse(new ArrayList<>())));
     }
 

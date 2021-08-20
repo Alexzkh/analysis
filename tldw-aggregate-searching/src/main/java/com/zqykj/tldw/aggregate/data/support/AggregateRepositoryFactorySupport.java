@@ -12,7 +12,7 @@ import com.zqykj.tldw.aggregate.data.repository.elasticsearch.ElasticsearchRepos
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.impl.ElasticsearchOperationsTemplete;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.impl.ElasticsearchOperationsTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
@@ -88,14 +88,14 @@ public abstract class AggregateRepositoryFactorySupport {
 
         // 根据 repositoryInterface 拿到对应的 impl Class
         if (ElasticsearchOperations.class.isAssignableFrom(repositoryInterface)) {
-            return ElasticsearchOperationsTemplete.class;
+            return ElasticsearchOperationsTemplate.class;
         }
         //TODO 其他数据源的顶级RepositoryInterface.class 判断
 //        else if (....){
 //
 //        }
         // 默认使用Es
-        return ElasticsearchOperationsTemplete.class;
+        return ElasticsearchOperationsTemplate.class;
     }
 
     /**

@@ -9,15 +9,12 @@ import com.zqykj.annotations.Sharded;
 import com.zqykj.tldw.aggregate.index.mapping.BasicPersistentEntity;
 import com.zqykj.tldw.aggregate.index.mongodb.associate.ShardKey;
 import com.zqykj.tldw.aggregate.index.mongodb.associate.ShardingStrategy;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
-@Setter
-@Getter
-public class SimpleMongoPersistentEntity<T> extends BasicPersistentEntity<T, SimpleMongodbPersistentProperty> {
+public class SimpleMongoPersistentEntity<T>
+        extends BasicPersistentEntity<T, SimpleMongodbPersistentProperty> implements MongodbPersistentEntity<T> {
 
     private static final SpelExpressionParser PARSER = new SpelExpressionParser();
     private final String collection;

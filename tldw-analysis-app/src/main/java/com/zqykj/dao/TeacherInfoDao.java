@@ -29,7 +29,7 @@ public interface TeacherInfoDao extends ElasticsearchOperations<TeacherInfo, Str
     Page<TeacherInfo> testAggregate(Pageable pageable, Route route);
 
     @Query("{\"match_all\" : {}}")
-    Optional<List<TeacherInfo>> matchAllofOptional();
+    Optional<List<TeacherInfo>> matchAllOfOptional();
 
     @Query("{\"match_all\" : {}}")
     List<TeacherInfo> matchAllofList();
