@@ -1,5 +1,6 @@
 package com.zqykj.tldw.aggregate.index.elasticsearch.associate;
 
+import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.operation.IndexOperations;
 
 /**
@@ -15,7 +16,7 @@ public interface ElasticsearchIndexOperate extends IndexOperations {
      * @param isAsyn Asynchronous or not
      * @throws Exception
      */
-    public void rollover(boolean isAsyn) throws Exception;
+    public void rollover(PersistentEntity<?, ?> persistentEntity, boolean isAsyn) throws Exception;
 
     /**
      * <h2> 查看indexNames 是否在Elasticsearch 中存在 </h2>

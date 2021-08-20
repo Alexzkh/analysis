@@ -15,16 +15,10 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingCo
 import com.zqykj.tldw.aggregate.index.elasticsearch.util.ElasticsearchMappingBuilder;
 import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.operation.AbstractDefaultIndexOperations;
-<<<<<<< HEAD
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-=======
-import com.zqykj.tldw.aggregate.searching.esclientrhl.ClientCallback;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.indices.alias.Alias;
->>>>>>> d3dca9a691c598b285f8af5dbbdffb72c967841d
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -91,22 +85,22 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
                 return false;
             }
 //             CreateIndexRequest createIndexRequest = null;
-            Boolean createIndex =false;
-            if (elasticPersistentEntity.isRollover()){
-                if(elasticPersistentEntity.getRolloverMaxIndexAgeCondition() == 0
+            Boolean createIndex = false;
+            if (elasticPersistentEntity.isRollover()) {
+                if (elasticPersistentEntity.getRolloverMaxIndexAgeCondition() == 0
                         && elasticPersistentEntity.getRolloverMaxIndexDocsCondition() == 0
                         && elasticPersistentEntity.getRolloverMaxIndexSizeCondition() == 0) {
                     throw new RuntimeException("rolloverMaxIndexAgeCondition is zero OR rolloverMaxIndexDocsCondition is zero OR rolloverMaxIndexSizeCondition is zero");
                 }
-                CreateIndexRequest createIndexRequest = new CreateIndexRequest("<"+elasticPersistentEntity.getIndexName()+"-{now/d}-000001>");
+                CreateIndexRequest createIndexRequest = new CreateIndexRequest("<" + elasticPersistentEntity.getIndexName() + "-{now/d}-000001>");
 
                 Alias alias = new Alias(elasticPersistentEntity.getIndexName());
                 alias.writeIndex(true);
                 createIndexRequest.alias(alias);
                 createIndexRequest.settings(createSettings(elasticPersistentEntity));
                 createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
-                elasticPersistentEntity.setIndexName("<"+elasticPersistentEntity.getIndexName()+"-{now/d}-000001>");
-            }else{
+                elasticPersistentEntity.setIndexName("<" + elasticPersistentEntity.getIndexName() + "-{now/d}-000001>");
+            } else {
                 CreateIndexRequest createIndexRequest = new CreateIndexRequest((elasticPersistentEntity.getIndexName()));
                 createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
             }
@@ -121,11 +115,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         }
         log.warn("entity does not belong to SimpleElasticSearchPersistentEntity, can not auto create index!");
         return false;
-    }
-
-    @Override
-    public void rollover(boolean isAsyn) throws Exception {
-
     }
 
     @Override
@@ -158,7 +147,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         }
         return mappingMap;
     }
-
 
 
     /**
@@ -233,12 +221,10 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return builder.getOutputStream().toString();
     }
 
-<<<<<<< HEAD
     @FunctionalInterface
     public interface ClientCallback<T> {
         T doWithClient(RestHighLevelClient client) throws IOException;
-=======
-
+    }
 
 
     @Override
@@ -298,12 +284,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
             log.error("rollover error {}", e);
         }
 
-    }
-
-    @Override
-    public String getIndexName() {
-        return null;
->>>>>>> d3dca9a691c598b285f8af5dbbdffb72c967841d
     }
 
     public <T> T execute(ClientCallback<T> callback) {
