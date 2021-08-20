@@ -75,13 +75,18 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
     public List<T> multiGetById(M[] ids) throws Exception;
 
 
-
-
-
     /**
      * save index collection
      * @param list index pojo collection
      */
     public BulkResponse save(List<T> list) throws Exception;
 
+
+    /**
+     * A refresh request making all operations performed since the last refresh available for search. The (near) real-time
+     * capabilities depends on the index engine used. For example, the internal one requires refresh to be called, but by
+     * default a refresh is scheduled periodically.
+     * @param indexName index pojo collection
+     */
+    public void refresh (String... indexName) throws Exception ;
 }

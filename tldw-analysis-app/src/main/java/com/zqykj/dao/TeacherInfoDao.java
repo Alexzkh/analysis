@@ -7,11 +7,7 @@ import com.zqykj.annotations.Query;
 import com.zqykj.domain.aggregate.TeacherInfo;
 import com.zqykj.domain.page.Page;
 import com.zqykj.domain.page.Pageable;
-import com.zqykj.domain.routing.Route;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * <h1> 聚合查询测试类 </h1>
@@ -23,6 +19,7 @@ public interface TeacherInfoDao extends ElasticsearchOperations<TeacherInfo, Str
      */
     @Query("{\"match_all\" : {}}")
     Page<TeacherInfo> matchAll(Pageable pageable);
+<<<<<<< HEAD
 
     //    @Query("{\"aggs\" : { \"salary_status\" : { \"stats\" : {\"field\" : \"salary\"}}}}")
     @Query("{\"match_all\" : {}}")
@@ -33,4 +30,6 @@ public interface TeacherInfoDao extends ElasticsearchOperations<TeacherInfo, Str
 
     @Query("{\"match_all\" : {}}")
     List<TeacherInfo> matchAllofList();
+=======
+>>>>>>> d3dca9a691c598b285f8af5dbbdffb72c967841d
 }

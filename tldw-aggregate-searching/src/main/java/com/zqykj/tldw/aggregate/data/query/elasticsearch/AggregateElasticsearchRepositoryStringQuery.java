@@ -61,7 +61,7 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
                                                        SimpleElasticsearchMappingContext mappingContext,
                                                        Method method,
                                                        String query) {
-        super(method, repositoryInformation);
+        super(method);
         Assert.notNull(restHighLevelClient, "Elasticsearch high rest client cannot be empty!");
         this.repositoryInformation = repositoryInformation;
         this.restHighLevelClient = restHighLevelClient;
@@ -84,9 +84,8 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
             stringQuery.setHighlightQuery(getHighlightQuery(highlight, domainType));
         }
         Object result;
-        // 查询的时候添加routing
-        stringQuery.setRoute(getRouting(parameters).getRouting());
         // 判断是Page 分页查询、stream流查询、collection查询、普通查询方式
+
         if (isPageQuery()) {
 
             // 如果method 有分页参数需要设置的话
@@ -409,6 +408,7 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
     protected <T> SearchHits<T> search(Query query, Class<T> type, String index) {
         SearchRequest searchRequest = createSearchRequest(query, type, index);
         SearchResponse response = execute(client -> restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT));
+        // response 就是根据
         SearchDocumentResponseCallback<SearchHits<T>> searchDocumentResponseCallback =
                 new ReadSearchDocumentResponseCallback<>(type, index);
         return searchDocumentResponseCallback.doWith(SearchDocumentResponse.from(response));
@@ -419,6 +419,7 @@ public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggrega
         SearchRequest searchRequest = prepareSearchRequest(query, clazz, index);
         QueryBuilder queryBuilder = getQuery(query);
 //        QueryBuilder elasticsearchFilter = getFilter(query);
+
         searchRequest.source().query(queryBuilder);
         return searchRequest;
     }

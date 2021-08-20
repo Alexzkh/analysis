@@ -5,7 +5,6 @@ package com.zqykj.tldw.aggregate.data.support;
 
 
 import com.zqykj.infrastructure.util.ApplicationUtils;
-import com.zqykj.infrastructure.util.QueryExecutionConverters;
 import com.zqykj.tldw.aggregate.data.query.AbstractAggregateRepositoryQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.AggregateElasticsearchRepositoryStringQuery;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
@@ -14,7 +13,6 @@ import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.util.ConcurrentReferenceHashMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,19 +31,16 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
      */
     private final Map<Method, String> queries;
     private final RepositoryInformation repositoryInformation;
-    private final Map<Method, RepositoryMethodInvoker> invocationMetadataCache = new ConcurrentReferenceHashMap<>();
-    private final QueryExecutionResultHandler resultHandler;
 
     public QueryExecutorMethodInterceptor(RepositoryInformation repositoryInformation) {
         this.repositoryInformation = repositoryInformation;
         this.queries = mapMethodsToQuery(repositoryInformation.getQueryMethods());
-        this.resultHandler = new QueryExecutionResultHandler(QueryExecutionConverters.CONVERSION_SERVICE);
     }
 
     @Nullable
     @Override
     public Object invoke(@Nonnull MethodInvocation invocation) throws Throwable {
-        return resultHandler.postProcessInvocationResult(doInvoke(invocation), invocation.getMethod());
+        return doInvoke(invocation);
     }
 
     private Map<Method, String> mapMethodsToQuery(List<Method> methods) {
@@ -55,19 +50,13 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
 
     @Nullable
     private Object doInvoke(MethodInvocation invocation) throws Throwable {
+
         Method method = invocation.getMethod();
+
         // 如果method 上带有@Query 注解(需要特殊处理实现)
         if (hasQueryFor(method)) {
 
-            RepositoryMethodInvoker invocationMetadata = invocationMetadataCache.get(method);
-
-            if (invocationMetadata == null) {
-                invocationMetadata = RepositoryMethodInvoker.forRepositoryQuery(method,
-                        getAggregateRepositoryQuery(method, queries.get(method)));
-                invocationMetadataCache.put(method, invocationMetadata);
-            }
-
-            return invocationMetadata.invoke(repositoryInformation.getRepositoryInterface(), invocation.getArguments());
+            return execute(method, invocation.getArguments(), queries.get(method));
         }
         // 否则走代理实现类方法
         return invocation.proceed();
@@ -80,11 +69,11 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
     /**
      * <h2> 对@Query value 解析并构建Search </h2>
      */
-    public AbstractAggregateRepositoryQuery getAggregateRepositoryQuery(Method method, String query) {
+    public Object execute(Method method, Object[] parameters, String query) {
         // 需要根据repositoryInterface 实现对应数据源的@Query 实现方式
-        AbstractAggregateRepositoryQuery repositoryQuery = null;
+        AbstractAggregateRepositoryQuery stringQuery = null;
         if (ElasticsearchOperations.class.isAssignableFrom(repositoryInformation.getRepositoryInterface())) {
-            repositoryQuery = new AggregateElasticsearchRepositoryStringQuery(
+            stringQuery = new AggregateElasticsearchRepositoryStringQuery(
                     ApplicationUtils.getBean(RestHighLevelClient.class),
                     repositoryInformation,
                     ApplicationUtils.getBean(SimpleElasticsearchMappingContext.class),
@@ -92,8 +81,8 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
                     query
             );
         } else {
-            //TODO 其他数据源@Query 注解处理类
+
         }
-        return repositoryQuery;
+        return stringQuery.execute(parameters);
     }
 }

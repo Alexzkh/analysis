@@ -146,10 +146,6 @@ public class ElasticsearchStringQuery implements Query {
         return route;
     }
 
-    public void setRoute(String route) {
-        this.route = route;
-    }
-
     public String getSource() {
         return source;
     }

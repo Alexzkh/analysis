@@ -5,9 +5,7 @@ import com.zqykj.domain.transaction.TransactionRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -40,7 +38,7 @@ public class TransactionService {
 //        transactionRecordOperations.save(transactionRecord);
 
         List<TransactionRecord> list = new ArrayList<>();
-        for (int i = 0; i <10 ; i++) {
+        for (int i = 0; i < 10 ; i++) {
             TransactionRecord transactionRecord = new TransactionRecord();
             transactionRecord.setAccountCard("77777"+i);
             transactionRecord.setBank("中国银行"+i);
