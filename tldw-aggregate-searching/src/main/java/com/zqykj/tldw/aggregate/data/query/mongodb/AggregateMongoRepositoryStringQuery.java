@@ -27,7 +27,7 @@ public class AggregateMongoRepositoryStringQuery extends AbstractAggregateReposi
                                                @Nullable RepositoryInformation repositoryInformation,
                                                Method method,
                                                String query) {
-        super(method);
+        super(method, repositoryInformation);
         Assert.notNull(mongoClient, "Mongodb client cannot be empty!");
         this.repositoryInformation = repositoryInformation;
         this.mongoClient = mongoClient;
@@ -37,7 +37,7 @@ public class AggregateMongoRepositoryStringQuery extends AbstractAggregateReposi
 
     @Override
     public Object execute(Object[] parameters) {
-        //TODO
+        //TODO  Mongodb 处理 @Query 注解查询 逻辑
         return null;
     }
 }
