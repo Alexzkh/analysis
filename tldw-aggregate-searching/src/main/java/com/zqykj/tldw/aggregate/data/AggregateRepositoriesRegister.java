@@ -215,9 +215,9 @@ public class AggregateRepositoriesRegister implements ImportBeanDefinitionRegist
                 .rootBeanDefinition(AggregateRepositoryFactoryBean.class.getName());
         builder.addConstructorArgValue(beanDefinition.getBeanClassName());
         builder.setLazyInit(false);
-        /** ElasticsearchOperationsTemplete(Elasticsearch 数据源顶级接口实现类需要注入的bean依赖 {@link EsOperationsTemplate} */
+        // 如果是es数据源的子接口,默认实现类 SimpleElasticsearchOperations 需要注入 ElasticsearchRestTemplate
         if (ElasticsearchOperations.class.isAssignableFrom(Class.forName(beanDefinition.getBeanClassName()))) {
-            builder.addPropertyReference("elasticsearchIndexOperations", "elasticsearchIndexOperations");
+            builder.addPropertyReference("elasticsearchRestTemplate", "elasticsearchRestTemplate");
         }
         // 其他数据源接口 实现类需要注入的bean 依赖自行补充
         // else if (....){}

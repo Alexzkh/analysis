@@ -11,6 +11,7 @@ import com.zqykj.tldw.aggregate.data.query.elasticsearch.AggregateElasticsearchR
 import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -85,9 +86,8 @@ public class QueryExecutorMethodInterceptor implements MethodInterceptor {
         AbstractAggregateRepositoryQuery repositoryQuery = null;
         if (ElasticsearchOperations.class.isAssignableFrom(repositoryInformation.getRepositoryInterface())) {
             repositoryQuery = new AggregateElasticsearchRepositoryStringQuery(
-                    ApplicationUtils.getBean(RestHighLevelClient.class),
+                    ApplicationUtils.getBean(ElasticsearchRestTemplate.class),
                     repositoryInformation,
-                    ApplicationUtils.getBean(SimpleElasticsearchMappingContext.class),
                     method,
                     query
             );

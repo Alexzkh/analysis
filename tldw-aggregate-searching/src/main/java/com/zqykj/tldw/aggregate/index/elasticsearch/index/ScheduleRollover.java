@@ -6,9 +6,11 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersisten
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.index.model.SimpleTypeHolder;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
@@ -29,8 +31,9 @@ import java.util.stream.Collectors;
 @Configuration
 @Slf4j
 public class ScheduleRollover implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
+
     @Autowired
-    private ElasticsearchIndexOperations elasticsearchIndexOperations;
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
     private ApplicationContext applicationContext;
 
@@ -65,10 +68,8 @@ public class ScheduleRollover implements ApplicationListener<ContextRefreshedEve
                     context.getPersistentEntities().forEach(c -> {
                         c.getIndexName().equals(s.getValue().getClass().getAnnotation(Document.class).indexName());
                         if (c instanceof SimpleElasticSearchPersistentEntity<?>) {
-                            elasticsearchIndexOperations.rollover(c);
+                            elasticsearchRestTemplate.indexOps(c.getType()).rollover(c);
                         }
-
-
                     });
                 } catch (Exception e) {
                     log.error("ScheduleRollover scheduleAtFixedRate error", e);

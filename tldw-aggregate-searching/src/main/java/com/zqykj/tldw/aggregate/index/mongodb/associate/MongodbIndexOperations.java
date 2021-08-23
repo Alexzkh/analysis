@@ -3,7 +3,6 @@
  */
 package com.zqykj.tldw.aggregate.index.mongodb.associate;
 
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
@@ -13,13 +12,12 @@ import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.mongodb.SimpleMongoPersistentEntity;
 import com.zqykj.tldw.aggregate.index.mongodb.SimpleMongodbMappingContext;
 import com.zqykj.tldw.aggregate.index.operation.AbstractDefaultIndexOperations;
+import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-
-import java.util.Objects;
 
 /**
  * <h2> Mongodb Index Operations</h2>
@@ -29,19 +27,18 @@ import java.util.Objects;
 public class MongodbIndexOperations extends AbstractDefaultIndexOperations
         implements MongodbIndexOperate {
 
-    private final MongoClient mongoClient;
+    private final MongoRestTemplate restTemplate;
     // 该properties 需要替换成专用的mongodb properties
     private final MongoDBOperationClientProperties properties;
     private final IndexResolver indexResolver;
     private final SimpleMongodbMappingContext mappingContext;
 
 
-    public MongodbIndexOperations(MongoClient mongoClient,
-                                  SimpleMongodbMappingContext mappingContext,
-                                  MongoDBOperationClientProperties properties) {
-        this.mongoClient = mongoClient;
-        this.properties = properties;
-        this.mappingContext = mappingContext;
+    public MongodbIndexOperations(MongoRestTemplate mongoRestTemplate) {
+        super(null);
+        this.restTemplate = mongoRestTemplate;
+        this.properties = mongoRestTemplate.getMongoDBOperationClientProperties();
+        this.mappingContext = mongoRestTemplate.getMappingContext();
         this.indexResolver = IndexResolver.create(mappingContext);
     }
 
@@ -83,7 +80,7 @@ public class MongodbIndexOperations extends AbstractDefaultIndexOperations
         Assert.notNull(callback, "CollectionCallback must not be null!");
         Assert.notNull(properties.getDatabase(), "databaseName must not be null!");
         try {
-            MongoDatabase db = mongoClient.getDatabase(properties.getDatabase());
+            MongoDatabase db = restTemplate.execute(client -> client.getDatabase(properties.getDatabase()));
             MongoCollection<Document> collection = db.getCollection(entity.getCollection(), Document.class);
             return callback.doInCollection(collection);
         } catch (Exception e) {
@@ -92,12 +89,6 @@ public class MongodbIndexOperations extends AbstractDefaultIndexOperations
             return null;
         }
     }
-
-    @Override
-    public String getIndexCoordinatesFor(Class<?> clazz) {
-        return mappingContext.getRequiredPersistentEntity(clazz).getCollection();
-    }
-
 
     /**
      * 用来操作Mongodb Collection

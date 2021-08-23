@@ -8,7 +8,7 @@ import com.zqykj.annotations.Query;
 import com.zqykj.domain.aggregate.TeacherInfo;
 import com.zqykj.domain.page.Page;
 import com.zqykj.domain.page.Pageable;
-import com.zqykj.domain.routing.Route;
+import com.zqykj.domain.routing.Routing;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 
 import java.util.List;
@@ -26,11 +26,11 @@ public interface TeacherInfoDao extends ElasticsearchOperations<TeacherInfo, Str
     Page<TeacherInfo> matchAll(Pageable pageable);
 
     @Query("{\"aggs\" : { \"salary_status\" : { \"stats\" : {\"field\" : \"salary\"}}}}")
-    Page<TeacherInfo> testAggregate(Pageable pageable, Route route);
+    Page<TeacherInfo> testAggregate(Pageable pageable, Routing routing);
 
     @Query("{\"match_all\" : {}}")
     Optional<List<TeacherInfo>> matchAllofOptional();
 
     @Query("{\"match_all\" : {}}")
-    List<TeacherInfo> matchAllofList();
+    Page<TeacherInfo> matchAllofList(Pageable pageable);
 }

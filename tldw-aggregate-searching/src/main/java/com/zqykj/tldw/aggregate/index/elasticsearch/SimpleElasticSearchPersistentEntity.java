@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.TimeUnit;
+
 import com.zqykj.annotations.Document;
 
 /**
@@ -50,6 +51,8 @@ public class SimpleElasticSearchPersistentEntity<T>
     private long rolloverMaxIndexDocsCondition;
     private long rolloverMaxIndexSizeCondition;
     private ByteSizeUnit rolloverMaxIndexSizeByteSizeUnit;
+    private SimpleElasticSearchPersistentProperty routingFieldProperty;
+
     public SimpleElasticSearchPersistentEntity(TypeInformation<T> typeInformation) {
 
         super(typeInformation);

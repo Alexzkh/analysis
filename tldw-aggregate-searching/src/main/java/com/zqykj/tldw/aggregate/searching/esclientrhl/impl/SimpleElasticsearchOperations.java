@@ -10,6 +10,7 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingCo
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ClientCallback;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -37,6 +38,7 @@ import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
@@ -52,30 +54,30 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Date 2021/8/9
  */
 @Slf4j
-public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOperations<T, M> {
+public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperations<T, M> {
 
 
     private final ElasticsearchIndexOperations indexOperations;
     private final SimpleElasticsearchMappingContext mappingContext;
-    private final RestHighLevelClient client;
     private final RepositoryInformation information;
     private final Class<T> entityClass;
+    private final ElasticsearchRestTemplate restTemplate;
     private final SimpleElasticSearchPersistentEntity<?> persistentEntity;
 
 
     private static Map<Class, String> classIDMap = new ConcurrentHashMap();
 
     @SuppressWarnings("unchecked")
-    public ElasticsearchOperationsTemplate(RepositoryInformation information,
-                                           ElasticsearchIndexOperations indexOperations,
-                                           SimpleElasticsearchMappingContext mappingContext) {
+    public SimpleElasticsearchOperations(RepositoryInformation information,
+                                         ElasticsearchRestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
         this.information = information;
-        this.indexOperations = indexOperations;
-        this.mappingContext = mappingContext;
-        this.client = indexOperations.getClient();
+        this.mappingContext = restTemplate.getMappingContext();
         this.persistentEntity = mappingContext.getRequiredPersistentEntity(information.getDomainType());
         Objects.requireNonNull(persistentEntity);
         this.entityClass = (Class<T>) information.getDomainType();
+        // 获取一个索引操作类
+        this.indexOperations = restTemplate.indexOps(entityClass);
         // 自动构建索引与mapping (每当注入一个 extends ElasticsearchOperations) 且开启自动创建与映射配置、索引名称在es中不存在 触发此操作
         if (mappingContext.isAutoIndexCreation() && !indexOperations.exists(persistentEntity.getIndexName())) {
             // 创建索引
@@ -85,55 +87,104 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         }
     }
 
+//    @Override
+//    public boolean save(T t) throws Exception {
+//
+//        return save(t, null);
+//    }
+
+    @Override
+    public <S extends T> S save(S entity) {
+
+        Assert.notNull(entity, "Cannot save 'null' entity.");
+
+        // 保存并刷新索引,否则新增的数据不会被立刻检索到
+        return executeAndRefresh(restTemplate -> restTemplate.save(entity, getIndexCoordinates()));
+    }
+
+    @Override
+    public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+
+        Assert.notNull(entities, "Cannot insert 'null' as a List.");
+        String indexCoordinates = getIndexCoordinates();
+        executeAndRefresh(restTemplate -> restTemplate.save(entities, indexCoordinates));
+        return entities;
+    }
+
+    @Override
+    public Optional<T> findById(M id) {
+        return Optional.ofNullable(
+                restTemplate.get(Objects.toString(id, null), entityClass, getIndexCoordinates()));
+    }
+
+//    @Override
+//    public Optional<T> findById(M id) throws Exception {
+//        String indexname = persistentEntity.getIndexName();
+//        if (ObjectUtils.isEmpty(id)) {
+//            throw new Exception("ID cannot be empty");
+//        }
+//        GetRequest getRequest = new GetRequest(indexname, id.toString());
+//        GetResponse getResponse = restTemplate(execute(client -> client.get(getRequest, RequestOptions.DEFAULT)));
+//        if (getResponse.isExists()) {
+//            return Optional.of(JsonUtils.string2Obj(getResponse.getSourceAsString(), entityClass));
+//        }
+//        return Optional.empty();
+//    }
+
 
     /**
-     * Execute a callback with the {@link RestHighLevelClient}
-     *
-     * @param callback the callback to execute, must not be {@literal null}
-     * @param <T>      the type returned from the callback
-     * @return the callback result
+     * <h2> 获取当前entityClass 的 indexName </h2>
      */
-    public <T> T execute(ClientCallback<T> callback) {
-
-        Assert.notNull(callback, "callback must not be null");
-
-        try {
-            return callback.doWithClient(client);
-        } catch (IOException | RuntimeException e) {
-            throw new RuntimeException(e);
-        }
+    private String getIndexCoordinates() {
+        return restTemplate.getIndexCoordinatesFor(entityClass);
     }
 
-    @Override
-    public boolean save(T t) throws Exception {
-
-        return save(t, null);
+    @FunctionalInterface
+    public interface OperationsCallback<R> {
+        @Nullable
+        R doWithOperations(ElasticsearchRestTemplate restTemplate);
     }
 
-    @Override
-    public boolean save(T t, String routing) throws Exception {
-        String indexName = persistentEntity.getIndexName();
-        String id = Tools.getESId(entityClass);
-        IndexRequest indexRequest = new IndexRequest(indexName);
-        if (ObjectUtils.isEmpty(id)) {
-            indexRequest.id(id);
-        }
-
-        String source = JsonUtils.obj2String(t);
-        indexRequest.source(source, XContentType.JSON);
-        if (!ObjectUtils.isEmpty(routing)) {
-            indexRequest.routing(routing);
-        }
-        IndexResponse indexResponse = execute(client -> client.index(indexRequest, RequestOptions.DEFAULT));
-        if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
-            log.info("Index create success !");
-        } else if (indexResponse.getResult() == DocWriteResponse.Result.UPDATED) {
-            log.info("Index update success !");
-        } else {
-            return false;
-        }
-        return true;
+    @Nullable
+    public <R> R execute(OperationsCallback<R> callback) {
+        return callback.doWithOperations(restTemplate);
     }
+
+    @Nullable
+    public <R> R executeAndRefresh(OperationsCallback<R> callback) {
+        R result = callback.doWithOperations(restTemplate);
+        refresh();
+        return result;
+    }
+
+    public void refresh(String... indexName) {
+        indexOperations.refresh(indexName);
+    }
+
+//    @Override
+//    public boolean save(T t, String routing) throws Exception {
+//        String indexName = persistentEntity.getIndexName();
+//        String id = Tools.getESId(entityClass);
+//        IndexRequest indexRequest = new IndexRequest(indexName);
+//        if (ObjectUtils.isEmpty(id)) {
+//            indexRequest.id(id);
+//        }
+//
+//        String source = JsonUtils.obj2String(t);
+//        indexRequest.source(source, XContentType.JSON);
+//        if (!ObjectUtils.isEmpty(routing)) {
+//            indexRequest.routing(routing);
+//        }
+//        IndexResponse indexResponse = execute(client -> client.index(indexRequest, RequestOptions.DEFAULT));
+//        if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
+//            log.info("Index create success !");
+//        } else if (indexResponse.getResult() == DocWriteResponse.Result.UPDATED) {
+//            log.info("Index update success !");
+//        } else {
+//            return false;
+//        }
+//        return true;
+//    }
 
     @Override
     public List<T> search(QueryBuilder queryBuilder) throws Exception {
@@ -152,7 +203,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         searchSourceBuilder.size(Constants.DEFALT_PAGE_SIZE);
         searchRequest.source(searchSourceBuilder);
 
-        SearchResponse searchResponse = execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        SearchResponse searchResponse = restTemplate.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         SearchHits hits = searchResponse.getHits();
         SearchHit[] searchHits = hits.getHits();
         for (SearchHit hit : searchHits) {
@@ -217,7 +268,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         if (!ObjectUtils.isEmpty(routing)) {
             deleteRequest.routing(routing);
         }
-        DeleteResponse deleteResponse = execute(client -> client.delete(deleteRequest, RequestOptions.DEFAULT));
+        DeleteResponse deleteResponse = restTemplate.execute(client -> client.delete(deleteRequest, RequestOptions.DEFAULT));
         if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
             refresh(indexname);
             log.info("Index delete success !");
@@ -232,23 +283,9 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         String indexname = persistentEntity.getIndexName();
         DeleteByQueryRequest request = new DeleteByQueryRequest(indexname);
         request.setQuery(queryBuilder);
-        BulkByScrollResponse bulkResponse = execute(client -> client.deleteByQuery(request, RequestOptions.DEFAULT));
+        BulkByScrollResponse bulkResponse = restTemplate.execute(client -> client.deleteByQuery(request, RequestOptions.DEFAULT));
         refresh(indexname);
         return bulkResponse;
-    }
-
-    @Override
-    public Optional<T> findById(M id) throws Exception {
-        String indexname = persistentEntity.getIndexName();
-        if (ObjectUtils.isEmpty(id)) {
-            throw new Exception("ID cannot be empty");
-        }
-        GetRequest getRequest = new GetRequest(indexname, id.toString());
-        GetResponse getResponse = execute(client -> client.get(getRequest, RequestOptions.DEFAULT));
-        if (getResponse.isExists()) {
-            return Optional.of(JsonUtils.string2Obj(getResponse.getSourceAsString(), entityClass));
-        }
-        return Optional.empty();
     }
 
     @Override
@@ -258,7 +295,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         for (int i = 0; i < ids.length; i++) {
             request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
         }
-        MultiGetResponse response = execute(client -> client.mget(request, RequestOptions.DEFAULT));
+        MultiGetResponse response = restTemplate.execute(client -> client.mget(request, RequestOptions.DEFAULT));
         List<T> list = new ArrayList<>();
         for (int i = 0; i < response.getResponses().length; i++) {
             MultiGetItemResponse item = response.getResponses()[i];
@@ -270,21 +307,14 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
         return list;
     }
 
-    @Override
-    public BulkResponse save(List<T> list) throws Exception {
-        if (list == null || list.size() == 0) {
-            return null;
-        }
-        String indexname = persistentEntity.getIndexName();
-        return savePart(list, indexname);
-    }
-
-    @Override
-    public void refresh(String... indexName) throws Exception {
-        Assert.notNull(indexName, "No index defined for refresh()");
-        RefreshRequest refreshRequest = new RefreshRequest(indexName);
-        execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
-    }
+//    @Override
+//    public BulkResponse save(List<T> list) throws Exception {
+//        if (list == null || list.size() == 0) {
+//            return null;
+//        }
+//        String indexname = persistentEntity.getIndexName();
+//        return savePart(list, indexname);
+//    }
 
     /**
      * @param list:      pojo list
@@ -303,7 +333,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
 
             bulkRequest.add(indexRequest);
         }
-        BulkResponse bulkResponse = execute(client -> client.bulk(bulkRequest, RequestOptions.DEFAULT));
+        BulkResponse bulkResponse = restTemplate.execute(client -> client.bulk(bulkRequest, RequestOptions.DEFAULT));
 
         refresh(indexname);
 //        rollover(true);
@@ -321,7 +351,7 @@ public class ElasticsearchOperationsTemplate<T, M> implements ElasticsearchOpera
 
         UpdateRequest updateRequest = new UpdateRequest(indexname, id.toString());
 
-        UpdateResponse updateResponse = execute(client -> client.update(updateRequest, RequestOptions.DEFAULT));
+        UpdateResponse updateResponse = restTemplate.execute(client -> client.update(updateRequest, RequestOptions.DEFAULT));
         refresh(indexname);
         if (updateResponse.getResult() == DocWriteResponse.Result.CREATED) {
             log.info("Index update success !");

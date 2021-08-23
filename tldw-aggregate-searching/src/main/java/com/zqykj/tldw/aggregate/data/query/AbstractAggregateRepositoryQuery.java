@@ -6,7 +6,7 @@ package com.zqykj.tldw.aggregate.data.query;
 import com.zqykj.domain.page.Page;
 import com.zqykj.domain.page.Pageable;
 import com.zqykj.domain.page.Sort;
-import com.zqykj.domain.routing.Route;
+import com.zqykj.domain.routing.Routing;
 import com.zqykj.infrastructure.util.ClassTypeInformation;
 import com.zqykj.infrastructure.util.QueryExecutionConverters;
 import com.zqykj.infrastructure.util.TypeInformation;
@@ -140,14 +140,14 @@ public abstract class AbstractAggregateRepositoryQuery implements AggregateRepos
         return parameters[index] == null ? Pageable.unpaged() : (Pageable) parameters[index];
     }
 
-    protected Route getRouting(Object[] parameters) {
+    protected Routing getRouting(Object[] parameters) {
 
         // 获取Method Pageable 参数 Index
-        Integer index = getSpecifiedParameterTypeIndex(Route.class);
+        Integer index = getSpecifiedParameterTypeIndex(Routing.class);
         if (null == index) {
-            return Route.unRoute();
+            return Routing.unRoute();
         }
-        return parameters[index] == null ? Route.unRoute() : (Route) parameters[index];
+        return parameters[index] == null ? Routing.unRoute() : (Routing) parameters[index];
     }
 
     protected Sort getSort(Object[] parameters) {

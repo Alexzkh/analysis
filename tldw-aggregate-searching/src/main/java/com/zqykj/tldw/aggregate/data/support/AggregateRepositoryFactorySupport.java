@@ -12,7 +12,9 @@ import com.zqykj.tldw.aggregate.data.repository.elasticsearch.ElasticsearchRepos
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.impl.ElasticsearchOperationsTemplate;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.impl.SimpleElasticsearchOperations;
+import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
@@ -31,16 +33,26 @@ import java.util.stream.Collectors;
 public abstract class AggregateRepositoryFactorySupport {
 
     private ClassLoader classLoader;
+    private Optional<ElasticsearchRestTemplate> elasticsearchRestTemplate = Optional.empty();
+    private Optional<MongoRestTemplate> mongoRestTemplate = Optional.empty();
 
     public AggregateRepositoryFactorySupport() {
         this.classLoader = org.springframework.util.ClassUtils.getDefaultClassLoader();
+    }
+
+    protected void setElasticsearchTemplate(ElasticsearchRestTemplate elasticsearchRestTemplate) {
+        this.elasticsearchRestTemplate = Optional.of(elasticsearchRestTemplate);
+    }
+
+    protected void setMongoTemplate(MongoRestTemplate mongoTemplate) {
+        this.mongoRestTemplate = Optional.of(mongoTemplate);
     }
 
     /**
      * <h2> 返回给定接口的实例 </h2>
      */
     @SuppressWarnings({"unchecked"})
-    protected <T> T getRepository(Class<T> repositoryInterface, ElasticsearchIndexOperations elasticsearchIndexOperations) {
+    protected <T> T getRepository(Class<T> repositoryInterface) {
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing repository instance for = {} …", repositoryInterface.getName());
@@ -54,7 +66,7 @@ public abstract class AggregateRepositoryFactorySupport {
         // 生成特定 Repository Interface information,并注入到实现类中
         RepositoryInformation repositoryInformation = getRepositoryInformation(metadata, repositoryInterface);
 
-        Object target = getTargetRepository(repositoryInformation, elasticsearchIndexOperations);
+        Object target = getTargetRepository(repositoryInformation);
 
         // create proxy
         ProxyFactory result = new ProxyFactory();
@@ -88,14 +100,14 @@ public abstract class AggregateRepositoryFactorySupport {
 
         // 根据 repositoryInterface 拿到对应的 impl Class
         if (ElasticsearchOperations.class.isAssignableFrom(repositoryInterface)) {
-            return ElasticsearchOperationsTemplate.class;
+            return SimpleElasticsearchOperations.class;
         }
         //TODO 其他数据源的顶级RepositoryInterface.class 判断
 //        else if (....){
 //
 //        }
         // 默认使用Es
-        return ElasticsearchOperationsTemplate.class;
+        return SimpleElasticsearchOperations.class;
     }
 
     /**
@@ -115,12 +127,12 @@ public abstract class AggregateRepositoryFactorySupport {
     /**
      * <h2> 根据目标Repository 生成 对应的Impl </h2>
      */
-    protected Object getTargetRepository(RepositoryInformation metadata, ElasticsearchIndexOperations elasticsearchIndexOperations) {
+    protected Object getTargetRepository(RepositoryInformation metadata) {
 
         // 生成对应实现类想要的client
         if (ElasticsearchOperations.class.isAssignableFrom(metadata.getRepositoryInterface())) {
             // 生成Es 实现类构造函数想要的Object
-            return getTargetRepositoryViaReflection(metadata, metadata, elasticsearchIndexOperations, elasticsearchIndexOperations.getMappingContext());
+            return getTargetRepositoryViaReflection(metadata, metadata, elasticsearchRestTemplate.orElse(null));
         }
         // TODO 其他数据源实现类 构造函数需要注入的...
 //        else if(...){

@@ -3,7 +3,9 @@
  */
 package com.zqykj.tldw.aggregate.index.mapping;
 
+import com.zqykj.domain.routing.Routing;
 import com.zqykj.infrastructure.util.TypeInformation;
+import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentProperty;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -29,7 +31,10 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
     private P idProperty;
     @Nullable
     private P versionProperty;
+    @Nullable
     private final Map<Class<? extends Annotation>, Optional<Annotation>> annotationCache;
+    @Nullable
+    private SimpleElasticSearchPersistentProperty routingFieldProperty;
 
     public BasicPersistentEntity(TypeInformation<T> information) {
         this(information, null);
@@ -50,6 +55,11 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
     @Override
     public String getName() {
         return getType().getName();
+    }
+
+    @Nullable
+    public SimpleElasticSearchPersistentProperty getRoutingFieldProperty() {
+        return routingFieldProperty;
     }
 
     @Override
@@ -162,6 +172,27 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
 //            }
 //            this.versionProperty = property;
 //        }
+        Class<?> actualType = this.getActualTypeOrNull(property);
+        if (actualType == Routing.class) {
+            SimpleElasticSearchPersistentProperty joinProperty = this.routingFieldProperty;
+
+            if (joinProperty != null) {
+                throw new RuntimeException(
+                        String.format(
+                                "Attempt to add Join property %s but already have property %s registered "
+                                        + "as Join property. Check your entity configuration!",
+                                property.getField(), joinProperty.getField()));
+            }
+            this.routingFieldProperty = (SimpleElasticSearchPersistentProperty) property;
+        }
+    }
+
+    protected Class<?> getActualTypeOrNull(P property) {
+        try {
+            return property.getActualType();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

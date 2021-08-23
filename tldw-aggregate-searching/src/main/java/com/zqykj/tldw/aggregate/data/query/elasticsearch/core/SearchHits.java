@@ -31,7 +31,7 @@ public interface SearchHits<T> extends Streamable<SearchHit<T>> {
     SearchHit<T> getSearchHit(int index);
 
     /**
-     * @return the contained {@link com.zqykj.tldw.aggregate.data.query.elasticsearch.core.SearchHit}s.
+     * @return the contained {@link SearchHit}s.
      */
     List<SearchHit<T>> getSearchHits();
 

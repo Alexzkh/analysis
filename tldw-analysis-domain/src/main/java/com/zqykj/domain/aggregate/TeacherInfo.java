@@ -43,4 +43,5 @@ public class TeacherInfo implements Serializable {
 
     @Field(type = FieldType.Float)
     private BigDecimal salary;
+
 }

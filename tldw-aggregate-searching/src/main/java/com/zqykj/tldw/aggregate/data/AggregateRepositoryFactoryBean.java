@@ -7,6 +7,8 @@ import com.zqykj.infrastructure.util.Lazy;
 import com.zqykj.tldw.aggregate.BaseOperations;
 import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryFactorySupport;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
+import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,10 +29,18 @@ public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M
     private Class<? extends T> repositoryInterface;
 
     @Nullable
-    private ElasticsearchIndexOperations elasticsearchIndexOperations;
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
-    public void setElasticsearchIndexOperations(ElasticsearchIndexOperations elasticsearchIndexOperations) {
-        this.elasticsearchIndexOperations = elasticsearchIndexOperations;
+    @Nullable
+    private MongoRestTemplate mongoRestTemplate;
+
+    public void setElasticsearchRestTemplate(ElasticsearchRestTemplate elasticsearchRestTemplate) {
+        this.elasticsearchRestTemplate = elasticsearchRestTemplate;
+    }
+
+    public void setMongoRestTemplate(MongoRestTemplate mongoRestTemplate) {
+        this.mongoRestTemplate = mongoRestTemplate;
+
     }
 
     /**
@@ -71,6 +81,6 @@ public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M
     @Override
     public void afterPropertiesSet() {
         // 只有调用Lazy.get()才会触发生成代理对象逻辑(延迟加载), Lazy 实现了 Supplier
-        this.repository = Lazy.of(() -> this.getRepository(repositoryInterface, elasticsearchIndexOperations));
+        this.repository = Lazy.of(() -> this.getRepository(repositoryInterface));
     }
 }

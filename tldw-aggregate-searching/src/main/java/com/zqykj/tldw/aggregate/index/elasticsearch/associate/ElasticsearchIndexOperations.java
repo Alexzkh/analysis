@@ -11,16 +11,15 @@ import com.zqykj.annotations.FieldType;
 import com.zqykj.annotations.Mapping;
 import com.zqykj.annotations.Setting;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
-import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.util.ElasticsearchMappingBuilder;
 import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
 import com.zqykj.tldw.aggregate.index.operation.AbstractDefaultIndexOperations;
+import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
@@ -45,25 +44,15 @@ import static org.springframework.util.StringUtils.hasText;
 public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         implements ElasticsearchIndexOperate {
 
-    private final RestHighLevelClient client;
     private final ElasticsearchMappingBuilder elasticsearchMappingBuilder;
-    private final SimpleElasticsearchMappingContext mappingContext;
+    private final ElasticsearchRestTemplate restTemplate;
 
-    public ElasticsearchIndexOperations(RestHighLevelClient restHighLevelClient,
-                                        SimpleElasticsearchMappingContext mappingContext) {
-        this.client = restHighLevelClient;
-        this.elasticsearchMappingBuilder = new ElasticsearchMappingBuilder(mappingContext);
-        this.mappingContext = mappingContext;
+    public ElasticsearchIndexOperations(ElasticsearchRestTemplate restTemplate,
+                                        Class<?> boundClass) {
+        super(boundClass);
+        this.restTemplate = restTemplate;
+        this.elasticsearchMappingBuilder = new ElasticsearchMappingBuilder(restTemplate.getMappingContext());
     }
-
-    public final RestHighLevelClient getClient() {
-        return client;
-    }
-
-    public final SimpleElasticsearchMappingContext getMappingContext() {
-        return mappingContext;
-    }
-
 
     /**
      * <h2> Es暂不支持此索引创建操作</h2>
@@ -79,7 +68,7 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
             // 判断索引是否存在
             GetIndexRequest getIndexRequest = new GetIndexRequest(elasticPersistentEntity.getIndexName());
             // 如果设置了Mapping 映射结构,可以在Persistent Entity 上打上Settings 注解,指定映射文件路径
-            Boolean exists = execute(client -> client.indices().exists(getIndexRequest, RequestOptions.DEFAULT));
+            Boolean exists = restTemplate.execute(client -> client.indices().exists(getIndexRequest, RequestOptions.DEFAULT));
             if (exists) {
                 log.warn("Index name  = {} already exists!", elasticPersistentEntity.getIndexName());
                 return false;
@@ -98,11 +87,11 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
                 alias.writeIndex(true);
                 createIndexRequest.alias(alias);
                 createIndexRequest.settings(createSettings(elasticPersistentEntity));
-                createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
+                createIndex = restTemplate.execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
                 elasticPersistentEntity.setIndexName("<" + elasticPersistentEntity.getIndexName() + "-{now/d}-000001>");
             } else {
                 CreateIndexRequest createIndexRequest = new CreateIndexRequest((elasticPersistentEntity.getIndexName()));
-                createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
+                createIndex = restTemplate.execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
             }
             // 若存在映射文件,则创建索引的同时,也会根据Settings 映射创建mapping
 //            createIndexRequest.settings(createSettings(elasticPersistentEntity));
@@ -120,18 +109,16 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
     @Override
     public boolean exists(String... indexNames) {
         GetIndexRequest getIndexRequest = new GetIndexRequest(indexNames);
-        return execute(client -> client.indices().exists(getIndexRequest, RequestOptions.DEFAULT));
+        return restTemplate.execute(client -> client.indices().exists(getIndexRequest, RequestOptions.DEFAULT));
     }
 
     @Override
     public void refresh(String... indexNames) {
-        RefreshRequest refreshRequest = new RefreshRequest(indexNames);
-        execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
-    }
 
-    @Override
-    public String getIndexCoordinatesFor(Class<?> clazz) {
-        return mappingContext.getRequiredPersistentEntity(clazz).getIndexName();
+        Assert.notNull(indexNames, "No index defined for refresh()");
+
+        RefreshRequest refreshRequest = new RefreshRequest(indexNames);
+        restTemplate.execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
     }
 
     private Map<String, ?> createSettings(SimpleElasticSearchPersistentEntity<?> entity) {
@@ -160,7 +147,7 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
 
         PutMappingRequest request = new PutMappingRequest(clazz.getIndexName());
         request.source(mapping);
-        return execute(client -> client.indices().putMapping(request, RequestOptions.DEFAULT).isAcknowledged());
+        return restTemplate.execute(client -> client.indices().putMapping(request, RequestOptions.DEFAULT).isAcknowledged());
     }
 
     protected Map<String, Object> buildMapping(SimpleElasticSearchPersistentEntity<?> clazz) {
@@ -221,12 +208,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return builder.getOutputStream().toString();
     }
 
-    @FunctionalInterface
-    public interface ClientCallback<T> {
-        T doWithClient(RestHighLevelClient client) throws IOException;
-    }
-
-
     @Override
     public void rollover(PersistentEntity<?, ?> persistentEntity, boolean isAsyn) throws Exception {
         if (persistentEntity instanceof SimpleElasticSearchPersistentEntity) {
@@ -278,20 +259,10 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         }
 
         try {
-            RolloverResponse rolloverResponse = client.indices().rollover(rolloverRequest, RequestOptions.DEFAULT);
+            RolloverResponse rolloverResponse = restTemplate.execute(client -> client.indices().rollover(rolloverRequest, RequestOptions.DEFAULT));
             log.info("rollover alias[" + persistentEntity.getIndexName() + "]结果：" + rolloverResponse.isAcknowledged());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("rollover error {}", e);
-        }
-
-    }
-
-    public <T> T execute(ClientCallback<T> callback) {
-        Assert.notNull(callback, "callback must not be null");
-        try {
-            return callback.doWithClient(client);
-        } catch (IOException | RuntimeException e) {
-            throw new RuntimeException(e);
         }
     }
 }

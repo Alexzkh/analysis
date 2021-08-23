@@ -146,7 +146,7 @@ public class ElasticsearchStringQuery implements Query {
         return route;
     }
 
-    public void setRoute(String route) {
+    public void setRoute(@Nullable String route) {
         this.route = route;
     }
 

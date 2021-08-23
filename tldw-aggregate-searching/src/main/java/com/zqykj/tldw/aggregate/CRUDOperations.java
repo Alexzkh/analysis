@@ -13,7 +13,7 @@ import java.util.Optional;
  * @Date 2021/8/17
  */
 @NoRepositoryBean
-public interface CRUDOperations<T, M> extends BaseOperations<T,M> {
+public interface CRUDOperations<T, M> extends BaseOperations<T, M> {
 
     enum DatasoureType {
         Elasticsearch,
@@ -25,12 +25,23 @@ public interface CRUDOperations<T, M> extends BaseOperations<T,M> {
         HBase
     }
 
+    <S extends T> S save(S entity);
+
+    <S extends T> Iterable<S> saveAll(Iterable<S> entities);
+
+    /**
+     * Search all data that match the key of id from the table used to store the entity class.
+     *
+     * @param id the key of id .
+     * @return the converted object or null if the result does not exist .
+     */
+    Optional<T> findById(M id) throws Exception;
 
     /**
      * insert data
      * @param t data
      */
-    public boolean save(T t) throws Exception;
+//    public boolean save(T t) throws Exception;
 
 
     /**
@@ -42,24 +53,12 @@ public interface CRUDOperations<T, M> extends BaseOperations<T,M> {
 
 
     /**
-     * Search all data that match the key of id from the table used to store the entity class.
-     *
-     * @param id   the key of id .
-     * @return the converted object or null if the result does not exist .
-     */
-    Optional<T> findById(M id) throws Exception;
-
-
-
-    /**
      * Start creating an update operation for the given id and domainType .
      *
-     * @param id     the key of id .
-     * @param name   the operate table name .
+     * @param id   the key of id .
+     * @param name the operate table name .
      */
     boolean updateByID(M id, String name) throws Exception;
-
-
 
 
 }

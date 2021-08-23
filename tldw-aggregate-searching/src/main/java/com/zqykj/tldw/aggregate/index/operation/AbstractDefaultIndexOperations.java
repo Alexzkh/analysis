@@ -4,6 +4,7 @@
 package com.zqykj.tldw.aggregate.index.operation;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 
 
 /**
@@ -12,6 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractDefaultIndexOperations implements IndexOperations {
 
+    @Nullable
+    protected final Class<?> boundClass;
 
-    public abstract String getIndexCoordinatesFor(Class<?> clazz);
+    public AbstractDefaultIndexOperations(Class<?> boundClass) {
+        this.boundClass = boundClass;
+    }
+
 }

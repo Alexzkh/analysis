@@ -18,13 +18,15 @@ import java.util.List;
 @NoRepositoryBean
 public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
 
+
     /**
      * description：Create index for specified route
-     * @param  t domain data
+     *
+     * @param t        domain data
      * @param routing: specified route
      * @return: boolean
      **/
-    public boolean save( T t ,String routing) throws Exception;
+//    public boolean save(T t, String routing) throws Exception;
 
     /**
      * Non paged query
@@ -48,17 +50,19 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
 
     /**
      * delete index (routing)
-     * @param id  _id
+     *
+     * @param id      _id
      * @param routing routing information (_id is the default routing )
      * @return
      * @throws Exception
      */
-    public boolean delete(M id ,String routing) throws Exception;
+    public boolean delete(M id, String routing) throws Exception;
 
 
     /**
      * Delte index by condition
      * https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-document-delete-by-query.html#java-rest-high-document-delete-by-query-response
+     *
      * @param queryBuilder query condition
      * @return
      * @throws Exception
@@ -68,6 +72,7 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
 
     /**
      * Multi get data by ids
+     *
      * @param ids ids array
      * @return
      * @throws Exception
@@ -77,16 +82,8 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
 
     /**
      * save index collection
+     *
      * @param list index pojo collection
      */
-    public BulkResponse save(List<T> list) throws Exception;
-
-
-    /**
-     * A refresh request making all operations performed since the last refresh available for search. The (near) real-time
-     * capabilities depends on the index engine used. For example, the internal one requires refresh to be called, but by
-     * default a refresh is scheduled periodically.
-     * @param indexName index pojo collection
-     */
-    public void refresh (String... indexName) throws Exception ;
+//    public BulkResponse save(List<T> list) throws Exception;
 }

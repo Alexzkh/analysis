@@ -1,5 +1,6 @@
 package com.zqykj.app.service.transaction.service;
 
+import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.operation.TransactionRecordOperations;
 import com.zqykj.domain.transaction.TransactionRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,8 @@ public class TransactionService {
     @Autowired
     private TransactionRecordOperations transactionRecordOperations;
 
+    @Autowired
+    private TeacherInfoDao teacherInfoDao;
 
 
     public void test() throws Exception {
@@ -38,16 +41,16 @@ public class TransactionService {
 //        transactionRecordOperations.save(transactionRecord);
 
         List<TransactionRecord> list = new ArrayList<>();
-        for (int i = 0; i < 10 ; i++) {
+        for (int i = 0; i < 10; i++) {
             TransactionRecord transactionRecord = new TransactionRecord();
-            transactionRecord.setAccountCard("77777"+i);
-            transactionRecord.setBank("中国银行"+i);
-            transactionRecord.setCaseId("2132"+i);
+            transactionRecord.setAccountCard("77777" + i);
+            transactionRecord.setBank("中国银行" + i);
+            transactionRecord.setCaseId("2132" + i);
             transactionRecord.setTradeAmount(660.09d);
-            transactionRecord.setTradeOppositeBalance( 888.09d);
+            transactionRecord.setTradeOppositeBalance(888.09d);
             transactionRecord.setTradeBalance(33.33d);
             list.add(transactionRecord);
         }
-        transactionRecordOperations.save(list);
+        transactionRecordOperations.saveAll(list);
     }
 }
