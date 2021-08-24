@@ -6,7 +6,7 @@ package com.zqykj.tldw.aggregate.data.query.elasticsearch;
 import com.zqykj.domain.page.*;
 import com.zqykj.infrastructure.util.CloseableIterator;
 import com.zqykj.infrastructure.util.StreamUtils;
-import com.zqykj.tldw.aggregate.SearchHitsIterator;
+import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.SearchHitsIterator;
 import com.zqykj.annotations.Highlight;
 import com.zqykj.tldw.aggregate.data.query.AbstractAggregateRepositoryQuery;
 import com.zqykj.tldw.aggregate.data.query.AggregateRepositoryQuery;
@@ -15,12 +15,6 @@ import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.search.ClearScrollRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -31,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * <h1> 处理@Query 注解的query <h1/>
+ * <h1> Elasticsearch 处理@Query 注解的query <h1/>
  */
 @Slf4j
 public class AggregateElasticsearchRepositoryStringQuery extends AbstractAggregateRepositoryQuery

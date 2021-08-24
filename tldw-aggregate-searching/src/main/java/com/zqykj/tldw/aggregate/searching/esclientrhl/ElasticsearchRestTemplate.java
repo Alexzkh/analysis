@@ -7,7 +7,7 @@ import com.alibaba.fastjson.JSON;
 import com.zqykj.infrastructure.util.QueryExecutionConverters;
 import com.zqykj.infrastructure.util.Streamable;
 import com.zqykj.tldw.aggregate.Exception.ElasticsearchExceptionTranslator;
-import com.zqykj.tldw.aggregate.SearchHitsIterator;
+import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.SearchHitsIterator;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.Query;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.*;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
@@ -33,6 +33,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * <h1> Elasticsearch rest template </h1>
+ */
 @Slf4j
 public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
 
@@ -80,6 +83,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         List<IndexRequest> indexRequests = Streamable.of(entities).stream().map(entity -> getIndexRequest(entity, indexName)).collect(Collectors.toList());
         BulkRequest bulkRequest = getBulkRequest(indexRequests, BulkOptions.defaultOptions(), indexName);
 
+        // 检查bulk 操作
         checkForBulkOperationFailure(execute(client -> client.bulk(bulkRequest, RequestOptions.DEFAULT)));
 
         // 返回数据

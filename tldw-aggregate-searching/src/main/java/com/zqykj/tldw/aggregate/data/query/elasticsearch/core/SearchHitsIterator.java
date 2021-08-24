@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate;
+package com.zqykj.tldw.aggregate.data.query.elasticsearch.core;
 
 import com.zqykj.infrastructure.util.CloseableIterator;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.SearchHit;

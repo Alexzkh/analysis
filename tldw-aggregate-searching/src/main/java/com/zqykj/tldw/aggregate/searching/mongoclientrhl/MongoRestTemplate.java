@@ -4,7 +4,10 @@
 package com.zqykj.tldw.aggregate.searching.mongoclientrhl;
 
 import com.mongodb.client.MongoClient;
+import com.zqykj.tldw.aggregate.index.elasticsearch.ElasticsearchPersistentEntity;
+import com.zqykj.tldw.aggregate.index.mongodb.SimpleMongoPersistentEntity;
 import com.zqykj.tldw.aggregate.index.mongodb.SimpleMongodbMappingContext;
+import com.zqykj.tldw.aggregate.index.mongodb.associate.MongodbIndexOperations;
 import com.zqykj.tldw.aggregate.properties.MongoDBOperationClientProperties;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.util.Assert;
@@ -33,6 +36,28 @@ public class MongoRestTemplate extends AbstractMongoTemplate {
 
     public final MongoDBOperationClientProperties getMongoDBOperationClientProperties() {
         return mongoDBOperationClientProperties;
+    }
+
+
+    /**
+     * <h2> 获取一个Elasticsearch index operation </h2>
+     */
+    public MongodbIndexOperations indexOps(Class<?> clazz) {
+
+        Assert.notNull(clazz, "clazz must not be null");
+
+        return new MongodbIndexOperations(this, clazz);
+    }
+
+    /**
+     * <h2> 获取指定类的 index Name </h2>
+     */
+    public String getIndexCoordinatesFor(Class<?> clazz) {
+        return getRequiredPersistentEntity(clazz).getCollection();
+    }
+
+    SimpleMongoPersistentEntity<?> getRequiredPersistentEntity(Class<?> clazz) {
+        return mappingContext.getRequiredPersistentEntity(clazz);
     }
 
     /**

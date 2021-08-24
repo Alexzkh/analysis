@@ -6,13 +6,11 @@ package com.zqykj.tldw.aggregate.data;
 import com.zqykj.infrastructure.util.Lazy;
 import com.zqykj.tldw.aggregate.BaseOperations;
 import com.zqykj.tldw.aggregate.data.support.AggregateRepositoryFactorySupport;
-import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
 
 import java.io.Serializable;
 import java.util.function.Supplier;
@@ -28,19 +26,11 @@ public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M
 
     private Class<? extends T> repositoryInterface;
 
-    @Nullable
-    private ElasticsearchRestTemplate elasticsearchRestTemplate;
-
-    @Nullable
-    private MongoRestTemplate mongoRestTemplate;
-
     public void setElasticsearchRestTemplate(ElasticsearchRestTemplate elasticsearchRestTemplate) {
-        this.elasticsearchRestTemplate = elasticsearchRestTemplate;
         setElasticsearchTemplate(elasticsearchRestTemplate);
     }
 
     public void setMongoRestTemplate(MongoRestTemplate mongoRestTemplate) {
-        this.mongoRestTemplate = mongoRestTemplate;
         setMongoTemplate(mongoRestTemplate);
     }
 

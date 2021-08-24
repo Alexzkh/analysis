@@ -4,10 +4,12 @@
 package com.zqykj.tldw.aggregate.index.elasticsearch;
 
 import com.zqykj.tldw.aggregate.index.mapping.PersistentEntity;
+import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.index.VersionType;
 import org.springframework.lang.Nullable;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <h1> Elasticsearch Persistent Entity describe</h1>
@@ -38,6 +40,26 @@ public interface ElasticsearchPersistentEntity<T> extends PersistentEntity<T, Si
     VersionType getVersionType();
 
     boolean isCreateIndexAndMapping();
+
+    boolean isRollover();
+
+    boolean isAutoRollover();
+
+    long getAutoRolloverInitialDelay();
+
+    long getAutoRolloverPeriod();
+
+    TimeUnit getAutoRolloverTimeUnit();
+
+    long getRolloverMaxIndexAgeCondition();
+
+    TimeUnit getRolloverMaxIndexAgeTimeUnit();
+
+    long getRolloverMaxIndexDocsCondition();
+
+    long getRolloverMaxIndexSizeCondition();
+
+    ByteSizeUnit getRolloverMaxIndexSizeByteSizeUnit();
 
     @Nullable
     SimpleElasticSearchPersistentProperty getPersistentPropertyWithFieldName(String fieldName);
