@@ -36,11 +36,12 @@ public class AggregateRepositoryFactoryBean<T extends BaseOperations<S, M>, S, M
 
     public void setElasticsearchRestTemplate(ElasticsearchRestTemplate elasticsearchRestTemplate) {
         this.elasticsearchRestTemplate = elasticsearchRestTemplate;
+        setElasticsearchTemplate(elasticsearchRestTemplate);
     }
 
     public void setMongoRestTemplate(MongoRestTemplate mongoRestTemplate) {
         this.mongoRestTemplate = mongoRestTemplate;
-
+        setMongoTemplate(mongoRestTemplate);
     }
 
     /**
