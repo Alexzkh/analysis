@@ -3,7 +3,6 @@
  */
 package com.zqykj.tldw.aggregate.index.mongodb.associate;
 
-import com.zqykj.infrastructure.util.TypeInformation;
 import com.zqykj.tldw.aggregate.index.context.AbstractMappingContext;
 import com.zqykj.tldw.aggregate.index.mongodb.SimpleMongoPersistentEntity;
 import com.zqykj.tldw.aggregate.index.mongodb.SimpleMongodbPersistentProperty;
@@ -19,5 +18,5 @@ public interface IndexResolver {
         return new MongodbPersistentEntityIndexResolver(mappingContext);
     }
 
-    Iterable<? extends IndexDefinition> resolveIndexFor(TypeInformation<?> typeInformation);
+    Iterable<? extends IndexDefinition> resolveIndexFor(SimpleMongoPersistentEntity<?> mongoPersistentEntity);
 }

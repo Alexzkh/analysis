@@ -9,12 +9,13 @@ import com.zqykj.tldw.aggregate.data.repository.AbstractRepositoryMetadata;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryMetadata;
 import com.zqykj.tldw.aggregate.data.repository.elasticsearch.ElasticsearchRepositoryInformation;
-import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import com.zqykj.tldw.aggregate.BaseOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.impl.SimpleElasticsearchOperations;
+import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoOperations;
 import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoRestTemplate;
+import com.zqykj.tldw.aggregate.searching.mongoclientrhl.impl.SimpleMongoOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
@@ -101,11 +102,10 @@ public abstract class AggregateRepositoryFactorySupport {
         // 根据 repositoryInterface 拿到对应的 impl Class
         if (ElasticsearchOperations.class.isAssignableFrom(repositoryInterface)) {
             return SimpleElasticsearchOperations.class;
+        } else if (MongoOperations.class.isAssignableFrom(repositoryInterface)) {
+            return SimpleMongoOperations.class;
         }
         //TODO 其他数据源的顶级RepositoryInterface.class 判断
-//        else if (....){
-//
-//        }
         // 默认使用Es
         return SimpleElasticsearchOperations.class;
     }
@@ -129,18 +129,18 @@ public abstract class AggregateRepositoryFactorySupport {
      */
     protected Object getTargetRepository(RepositoryInformation metadata) {
 
-        // 生成对应实现类想要的client
+        // ElasticsearchOperations 子接口默认实现类 构造函数需要注入的bean
         if (ElasticsearchOperations.class.isAssignableFrom(metadata.getRepositoryInterface())) {
             // 生成Es 实现类构造函数想要的Object
-            return getTargetRepositoryViaReflection(metadata, metadata, elasticsearchRestTemplate.orElse(null));
+            Assert.notNull(elasticsearchRestTemplate.orElse(null), "ElasticsearchRestTemplate must be configured!");
+            return getTargetRepositoryViaReflection(metadata, metadata, elasticsearchRestTemplate.get());
+        }
+        //  MongoOperations 子接口默认实现类 构造函数需要注入的bean
+        else if (MongoOperations.class.isAssignableFrom(metadata.getRepositoryInterface())) {
+            Assert.notNull(mongoRestTemplate.orElse(null), "MongoRestTemplate must be configured!");
+            return getTargetRepositoryViaReflection(metadata, metadata, mongoRestTemplate.get());
         }
         // TODO 其他数据源实现类 构造函数需要注入的...
-//        else if(...){
-//
-//        }
-        else {
-            // TODO
-        }
         return getTargetRepositoryViaReflection(metadata);
     }
 

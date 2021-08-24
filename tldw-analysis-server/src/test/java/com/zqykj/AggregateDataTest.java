@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +27,23 @@ public class AggregateDataTest {
 
     @Autowired
     private TeacherInfoDao teacherInfoDao;
+
+    @Test
+    public void saveAll() {
+        List<TeacherInfo> teacherInfos = new ArrayList<>();
+        for (int i = 112; i <= 120; i++) {
+            TeacherInfo teacherInfo = new TeacherInfo(i + "", "test" + i, i, "test" + i, i, new BigDecimal("32.22"));
+            teacherInfos.add(teacherInfo);
+        }
+        teacherInfoDao.saveAll(teacherInfos);
+    }
+
+    @Test
+    public void save() {
+        int i = 111;
+        TeacherInfo teacherInfo = new TeacherInfo(i + "", "test" + i, i, "test" + i, i, new BigDecimal("32.22"));
+        teacherInfoDao.save(teacherInfo);
+    }
 
     @Test
     public void test() {
@@ -54,7 +73,7 @@ public class AggregateDataTest {
 
     @Test
     public void testListQuery() {
-        Page<TeacherInfo> teacherInfos = teacherInfoDao.matchAllofList(PageRequest.of(0, 3));
+        Page<TeacherInfo> teacherInfos = teacherInfoDao.matchAllofList(PageRequest.of(0, 1, Sort.Direction.DESC, "age"));
         System.out.println(JSON.toJSONString(teacherInfos.getContent()));
     }
 }

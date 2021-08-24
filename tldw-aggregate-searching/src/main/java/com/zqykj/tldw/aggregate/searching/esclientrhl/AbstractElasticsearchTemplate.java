@@ -15,6 +15,7 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.ElasticsearchPersistentEntit
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentProperty;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
+import com.zqykj.tldw.aggregate.index.mapping.PersistentProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -23,6 +24,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -35,6 +37,7 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -125,10 +128,10 @@ public abstract class AbstractElasticsearchTemplate {
         } else {
             indexRequest = new IndexRequest(indexName);
         }
-        indexRequest.source(JSON.toJSONString(entity));
-        Object routing = getRouting(entity);
+        indexRequest.source(JSON.toJSONString(entity), XContentType.JSON);
+        String routing = getRouting(entity);
         if (routing != null) {
-            indexRequest.routing(Objects.toString(routing, null));
+            indexRequest.routing(routing);
         }
         return indexRequest;
     }
@@ -141,7 +144,7 @@ public abstract class AbstractElasticsearchTemplate {
         SimpleElasticSearchPersistentProperty idProperty =
                 mappingContext.getRequiredPersistentEntity(bean.getClass()).getIdProperty();
         if (null != idProperty) {
-            Object id = this.convertIfNecessary(bean, idProperty.getType());
+            Object id = getProperty(idProperty, bean);
             if (null != id) {
                 return Objects.toString(id, null);
             }
@@ -152,24 +155,31 @@ public abstract class AbstractElasticsearchTemplate {
     /**
      * <h2> 获取路由key </h2>
      */
-    protected <T> Object getRouting(T bean) {
+    protected <T> String getRouting(T bean) {
 
         SimpleElasticSearchPersistentProperty routingFieldProperty =
                 mappingContext.getRequiredPersistentEntity(bean.getClass()).getRoutingFieldProperty();
-        if (null == routingFieldProperty) {
-            return null;
-        }
-        Field field = routingFieldProperty.getField();
-        if (null == field) {
-            return null;
-        }
-        ReflectionUtils.makeAccessible(field);
-        Object routingField = ReflectionUtils.getField(field, bean);
-        Routing routing = convertIfNecessary(routingField, Routing.class);
+        Routing routing = convertIfNecessary(routingFieldProperty, Routing.class);
         if (null != routing && null != routing.getRouting()) {
             return conversionService.convert(routing.getRouting(), String.class);
         }
         return null;
+    }
+
+    public <T> Object getProperty(PersistentProperty<?> property, T bean) {
+
+        Assert.notNull(property, "PersistentProperty must not be null!");
+
+        try {
+            Field field = property.getRequiredField();
+
+            ReflectionUtils.makeAccessible(field);
+            return ReflectionUtils.getField(field, bean);
+
+        } catch (IllegalStateException e) {
+            throw new RuntimeException(
+                    String.format("Could not read property %s of %s!", property.toString(), bean.toString()), e);
+        }
     }
 
     @SuppressWarnings("unchecked")

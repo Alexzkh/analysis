@@ -28,11 +28,11 @@ import org.elasticsearch.client.indices.rollover.RolloverResponse;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.springframework.util.StringUtils.hasText;
@@ -44,66 +44,63 @@ import static org.springframework.util.StringUtils.hasText;
 public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         implements ElasticsearchIndexOperate {
 
-    private final ElasticsearchMappingBuilder elasticsearchMappingBuilder;
-    private final ElasticsearchRestTemplate restTemplate;
+    protected final ElasticsearchMappingBuilder elasticsearchMappingBuilder;
+
+    protected final ElasticsearchRestTemplate restTemplate;
+
+    /**
+     * ElasticsearchOperations 数据源子接口绑定的 索引类
+     */
+    protected final Class<?> boundClass;
+
+    /**
+     * 索引类对应的 索引名称
+     */
+    protected final String boundIndex;
 
     public ElasticsearchIndexOperations(ElasticsearchRestTemplate restTemplate,
-                                        Class<?> boundClass) {
-        super(boundClass);
+                                        @NonNull Class<?> boundClass) {
+        Assert.notNull(boundClass, "boundClass may not be null");
         this.restTemplate = restTemplate;
         this.elasticsearchMappingBuilder = new ElasticsearchMappingBuilder(restTemplate.getMappingContext());
+        this.boundClass = boundClass;
+        this.boundIndex = restTemplate.getIndexCoordinatesFor(boundClass);
     }
 
     /**
      * <h2> Es暂不支持此索引创建操作</h2>
      */
     @Override
-    public boolean createIndex(PersistentEntity<?, ?> entity) {
-        if (entity instanceof SimpleElasticSearchPersistentEntity) {
-            SimpleElasticSearchPersistentEntity<?> elasticPersistentEntity = (SimpleElasticSearchPersistentEntity<?>) entity;
-            if (StringUtils.isBlank(elasticPersistentEntity.getIndexName())) {
-                log.error("entity = {} , index name is empty!", entity.getType().getSimpleName());
-                return false;
-            }
-            // 判断索引是否存在
-            GetIndexRequest getIndexRequest = new GetIndexRequest(elasticPersistentEntity.getIndexName());
-            // 如果设置了Mapping 映射结构,可以在Persistent Entity 上打上Settings 注解,指定映射文件路径
-            Boolean exists = restTemplate.execute(client -> client.indices().exists(getIndexRequest, RequestOptions.DEFAULT));
-            if (exists) {
-                log.warn("Index name  = {} already exists!", elasticPersistentEntity.getIndexName());
-                return false;
-            }
-            Boolean createIndex = false;
-            if (elasticPersistentEntity.isRollover()) {
-                if (elasticPersistentEntity.getRolloverMaxIndexAgeCondition() == 0
-                        && elasticPersistentEntity.getRolloverMaxIndexDocsCondition() == 0
-                        && elasticPersistentEntity.getRolloverMaxIndexSizeCondition() == 0) {
-                    throw new RuntimeException("rolloverMaxIndexAgeCondition is zero OR rolloverMaxIndexDocsCondition is zero OR rolloverMaxIndexSizeCondition is zero");
-                }
-                CreateIndexRequest createIndexRequest = new CreateIndexRequest("<" + elasticPersistentEntity.getIndexName() + "-{now/d}-000001>");
+    public boolean createIndex() {
 
-                Alias alias = new Alias(elasticPersistentEntity.getIndexName());
-                alias.writeIndex(true);
-                createIndexRequest.alias(alias);
-                createIndexRequest.settings(createSettings(elasticPersistentEntity));
-                createIndex = restTemplate.execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
-                elasticPersistentEntity.setIndexName("<" + elasticPersistentEntity.getIndexName() + "-{now/d}-000001>");
-            } else {
-                CreateIndexRequest createIndexRequest = new CreateIndexRequest((elasticPersistentEntity.getIndexName()));
-                createIndexRequest.settings(createSettings(elasticPersistentEntity));
-                createIndex = restTemplate.execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
-            }
-            // 若存在映射文件,则创建索引的同时,也会根据Settings 映射创建mapping
-//            createIndexRequest.settings(createSettings(elasticPersistentEntity));
-//            Boolean createIndex = execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
-            // index create success
-            if (createIndex) {
-                // 根据PersistentEntity 构建出mapping
-                return createMapping(elasticPersistentEntity);
-            }
+        SimpleElasticSearchPersistentEntity<?> elasticPersistentEntity = getRequiredPersistentEntity(boundClass);
+        // 判断是否设置了Settings
+        Map<String, ?> settings = null;
+        if (boundClass != null) {
+            settings = createSettings(boundClass);
         }
-        log.warn("entity does not belong to SimpleElasticSearchPersistentEntity, can not auto create index!");
-        return false;
+
+        if (elasticPersistentEntity.isRollover()) {
+            if (elasticPersistentEntity.getRolloverMaxIndexAgeCondition() == 0
+                    && elasticPersistentEntity.getRolloverMaxIndexDocsCondition() == 0
+                    && elasticPersistentEntity.getRolloverMaxIndexSizeCondition() == 0) {
+                throw new RuntimeException("rolloverMaxIndexAgeCondition is zero OR rolloverMaxIndexDocsCondition is zero OR rolloverMaxIndexSizeCondition is zero");
+            }
+            CreateIndexRequest createIndexRequest = new CreateIndexRequest("<" + boundIndex + "-{now/d}-000001>");
+
+            Alias alias = new Alias(elasticPersistentEntity.getIndexName());
+            alias.writeIndex(true);
+            createIndexRequest.alias(alias);
+            createIndexRequest.settings(settings);
+            restTemplate.execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
+            elasticPersistentEntity.setIndexName("<" + elasticPersistentEntity.getIndexName() + "-{now/d}-000001>");
+        } else {
+
+            CreateIndexRequest createIndexRequest = new CreateIndexRequest((boundIndex));
+            createIndexRequest.settings(settings);
+            restTemplate.execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
+        }
+        return true;
     }
 
     @Override
@@ -124,48 +121,53 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
     /**
      * <h2> 创建索引配置</h2>
      */
-    private Map<String, ?> createSettings(SimpleElasticSearchPersistentEntity<?> entity) {
-        Map<String, ?> mappingMap = null;
-        if (entity.isAnnotationPresent(Setting.class)) {
-            Setting settings = entity.findAnnotation(Setting.class);
-            if (null != settings) {
-                mappingMap = loadSettings(settings.settingPath());
+    private Map<String, ?> createSettings(Class<?> clazz) {
+        Map<String, ?> settings = null;
+        if (clazz.isAnnotationPresent(Setting.class)) {
+            String settingPath = clazz.getAnnotation(Setting.class).settingPath();
+            settings = loadSettings(settingPath);
+        }
+        if (null == settings) {
+            settings = getRequiredPersistentEntity(clazz).getDefaultSettings();
+        }
+        return settings;
+    }
+
+    /**
+     * <h2> 加载配置 </h2>
+     */
+    private Map<String, Object> loadSettings(String settingPath) {
+        if (hasText(settingPath)) {
+            String settingsFile = ResourceUtil.readFileFromClasspath(settingPath);
+
+            if (hasText(settingsFile)) {
+                return JSON.parseObject(settingsFile, new TypeReference<Map<String, Object>>() {
+                });
             }
+        } else {
+            log.info("settingPath in @Setting has to be defined. Using default instead.");
         }
-        if (null == mappingMap) {
-            mappingMap = entity.getDefaultSettings();
-        }
-        return mappingMap;
+        return null;
     }
 
 
     /**
      * <h2> 创建索引映射结构 </h2>
      */
-    public boolean createMapping(SimpleElasticSearchPersistentEntity<?> clazz) {
-        if (null == clazz) {
-            throw new RuntimeException("PersistentEntity is null!");
-        }
+    public boolean createMapping(Class<?> clazz) {
+
         Map<String, Object> mapping = buildMapping(clazz);
 
-        PutMappingRequest request = new PutMappingRequest(clazz.getIndexName());
+        PutMappingRequest request = new PutMappingRequest(boundIndex);
         request.source(mapping);
         return restTemplate.execute(client -> client.indices().putMapping(request, RequestOptions.DEFAULT).isAcknowledged());
     }
 
-
-    /**
-     * <h2> 构建索引映射 </h2>
-     */
-    protected Map<String, Object> buildMapping(SimpleElasticSearchPersistentEntity<?> clazz) {
+    protected Map<String, Object> buildMapping(Class<?> clazz) {
 
         // load mapping specified in Mapping annotation if present
         if (clazz.isAnnotationPresent(Mapping.class)) {
-            String mappingPath = null;
-            Optional<Mapping> optionalMapping = Optional.ofNullable(clazz.findAnnotation(Mapping.class));
-            if (optionalMapping.isPresent()) {
-                mappingPath = optionalMapping.get().mappingPath();
-            }
+            String mappingPath = clazz.getAnnotation(Mapping.class).mappingPath();
             if (!StringUtils.isEmpty(mappingPath)) {
                 String mappings = ResourceUtil.readFileFromClasspath(mappingPath);
                 if (!StringUtils.isEmpty(mappings)) {
@@ -187,27 +189,11 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
     }
 
     /**
-     * <h2> 加载配置 </h2>
-     */
-    private Map<String, Object> loadSettings(String settingPath) {
-        if (hasText(settingPath)) {
-            String settingsFile = ResourceUtil.readFileFromClasspath(settingPath);
-
-            if (hasText(settingsFile)) {
-                return JSON.parseObject(settingsFile, new TypeReference<Map<String, Object>>() {
-                });
-            }
-        } else {
-            log.info("settingPath in @Setting has to be defined. Using default instead.");
-        }
-        return null;
-    }
-
-    /**
      * <h2> 构建属性映射配置 </h2>
      */
-    protected String buildPropertyMapping(SimpleElasticSearchPersistentEntity<?> entity) throws IOException {
+    protected String buildPropertyMapping(Class<?> clazz) throws IOException {
 
+        SimpleElasticSearchPersistentEntity<?> entity = getRequiredPersistentEntity(clazz);
         XContentBuilder builder = jsonBuilder().startObject();
         // TODO Dynamic templates (暂不支持,等待后续开发)
 //        addDynamicTemplatesMapping(builder, entity);
@@ -281,5 +267,13 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
             log.error("rollover error {}", e);
         }
     }
+
+    /**
+     * <h2> 根据指定Class 获取对应的ElasticsearchPersistentEntity </h2>
+     */
+    SimpleElasticSearchPersistentEntity<?> getRequiredPersistentEntity(Class<?> clazz) {
+        return restTemplate.getMappingContext().getRequiredPersistentEntity(clazz);
+    }
+
 }
 

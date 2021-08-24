@@ -5,32 +5,22 @@ import com.zqykj.infrastructure.constant.Constants;
 import com.zqykj.infrastructure.util.JsonUtils;
 import com.zqykj.infrastructure.util.Tools;
 import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
-import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
-import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.ClientCallback;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
 import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchRestTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.rollover.RolloverRequest;
-import org.elasticsearch.client.indices.rollover.RolloverResponse;
-import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -42,7 +32,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,11 +47,9 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
 
 
     private final ElasticsearchIndexOperations indexOperations;
-    private final SimpleElasticsearchMappingContext mappingContext;
     private final RepositoryInformation information;
     private final Class<T> entityClass;
     private final ElasticsearchRestTemplate restTemplate;
-    private final SimpleElasticSearchPersistentEntity<?> persistentEntity;
 
 
     private static Map<Class, String> classIDMap = new ConcurrentHashMap();
@@ -72,18 +59,15 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
                                          ElasticsearchRestTemplate restTemplate) {
         this.restTemplate = restTemplate;
         this.information = information;
-        this.mappingContext = restTemplate.getMappingContext();
-        this.persistentEntity = mappingContext.getRequiredPersistentEntity(information.getDomainType());
-        Objects.requireNonNull(persistentEntity);
         this.entityClass = (Class<T>) information.getDomainType();
         // 获取一个索引操作类
         this.indexOperations = restTemplate.indexOps(entityClass);
         // 自动构建索引与mapping (每当注入一个 extends ElasticsearchOperations) 且开启自动创建与映射配置、索引名称在es中不存在 触发此操作
-        if (mappingContext.isAutoIndexCreation() && !indexOperations.exists(persistentEntity.getIndexName())) {
+        if (restTemplate.getMappingContext().isAutoIndexCreation() && !indexOperations.exists(getIndexCoordinates())) {
             // 创建索引
-            indexOperations.createIndex(persistentEntity);
+            indexOperations.createIndex();
             // 创建mappings
-            indexOperations.createMapping(persistentEntity);
+            indexOperations.createMapping(entityClass);
         }
     }
 
@@ -182,7 +166,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
 
     @Override
     public List<T> search(QueryBuilder queryBuilder) throws Exception {
-        String indexName = persistentEntity.getIndexName();
+        String indexName = getIndexCoordinates();
         return search(queryBuilder, indexName);
     }
 
@@ -254,7 +238,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
 
     @Override
     public boolean delete(M id, String routing) throws Exception {
-        String indexname = persistentEntity.getIndexName();
+        String indexname = getIndexCoordinates();
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");
         }
@@ -274,7 +258,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
 
     @Override
     public BulkByScrollResponse deleteByCondition(QueryBuilder queryBuilder) throws Exception {
-        String indexname = persistentEntity.getIndexName();
+        String indexname = getIndexCoordinates();
         DeleteByQueryRequest request = new DeleteByQueryRequest(indexname);
         request.setQuery(queryBuilder);
         BulkByScrollResponse bulkResponse = restTemplate.execute(client -> client.deleteByQuery(request, RequestOptions.DEFAULT));
@@ -284,7 +268,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
 
     @Override
     public List<T> multiGetById(M[] ids) throws Exception {
-        String indexname = persistentEntity.getIndexName();
+        String indexname = getIndexCoordinates();
         MultiGetRequest request = new MultiGetRequest();
         for (int i = 0; i < ids.length; i++) {
             request.add(new MultiGetRequest.Item(indexname, ids[i].toString()));
@@ -328,7 +312,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
     @Override
     public boolean updateByID(M id, String name) throws Exception {
 
-        String indexname = persistentEntity.getIndexName();
+        String indexname = getIndexCoordinates();
 
         if (ObjectUtils.isEmpty(id)) {
             throw new Exception("ID cannot be empty");

@@ -139,6 +139,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.indexName = indexName;
     }
 
+    @Override
     public boolean isRollover() {
         return rollover;
     }
@@ -147,6 +148,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.rollover = rollover;
     }
 
+    @Override
     public boolean isAutoRollover() {
         return autoRollover;
     }
@@ -155,6 +157,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.autoRollover = autoRollover;
     }
 
+    @Override
     public long getAutoRolloverInitialDelay() {
         return autoRolloverInitialDelay;
     }
@@ -163,6 +166,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.autoRolloverInitialDelay = autoRolloverInitialDelay;
     }
 
+    @Override
     public long getAutoRolloverPeriod() {
         return autoRolloverPeriod;
     }
@@ -171,6 +175,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.autoRolloverPeriod = autoRolloverPeriod;
     }
 
+    @Override
     public TimeUnit getAutoRolloverTimeUnit() {
         return autoRolloverTimeUnit;
     }
@@ -179,6 +184,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.autoRolloverTimeUnit = autoRolloverTimeUnit;
     }
 
+    @Override
     public long getRolloverMaxIndexAgeCondition() {
         return rolloverMaxIndexAgeCondition;
     }
@@ -187,6 +193,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.rolloverMaxIndexAgeCondition = rolloverMaxIndexAgeCondition;
     }
 
+    @Override
     public TimeUnit getRolloverMaxIndexAgeTimeUnit() {
         return rolloverMaxIndexAgeTimeUnit;
     }
@@ -195,6 +202,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.rolloverMaxIndexAgeTimeUnit = rolloverMaxIndexAgeTimeUnit;
     }
 
+    @Override
     public long getRolloverMaxIndexDocsCondition() {
         return rolloverMaxIndexDocsCondition;
     }
@@ -203,6 +211,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.rolloverMaxIndexDocsCondition = rolloverMaxIndexDocsCondition;
     }
 
+    @Override
     public long getRolloverMaxIndexSizeCondition() {
         return rolloverMaxIndexSizeCondition;
     }
@@ -211,6 +220,7 @@ public class SimpleElasticSearchPersistentEntity<T>
         this.rolloverMaxIndexSizeCondition = rolloverMaxIndexSizeCondition;
     }
 
+    @Override
     public ByteSizeUnit getRolloverMaxIndexSizeByteSizeUnit() {
         return rolloverMaxIndexSizeByteSizeUnit;
     }

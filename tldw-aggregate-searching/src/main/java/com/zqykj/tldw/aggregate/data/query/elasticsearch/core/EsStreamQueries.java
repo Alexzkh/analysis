@@ -4,7 +4,6 @@
 package com.zqykj.tldw.aggregate.data.query.elasticsearch.core;
 
 import com.zqykj.infrastructure.util.ScrollState;
-import com.zqykj.tldw.aggregate.SearchHitsIterator;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;

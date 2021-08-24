@@ -50,10 +50,9 @@ public class MongodbPersistentEntityIndexResolver implements IndexResolver {
     }
 
     @Override
-    public Iterable<? extends IndexDefinition> resolveIndexFor(TypeInformation<?> typeInformation) {
-        BasicPersistentEntity<?, ?> entity = mappingContext.getRequiredPersistentEntity(typeInformation);
+    public Iterable<? extends IndexDefinition> resolveIndexFor(SimpleMongoPersistentEntity<?> entity) {
         if (null != entity) {
-            return resolveIndexForEntity((SimpleMongoPersistentEntity<?>) entity);
+            return resolveIndexForEntity(entity);
         }
         return CollatingIterator::new;
     }

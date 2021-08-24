@@ -40,6 +40,17 @@ public interface PersistentProperty<P extends PersistentProperty<P>> {
     @Nullable
     Field getField();
 
+    default Field getRequiredField() {
+
+        Field field = getField();
+
+        if (field == null) {
+            throw new IllegalArgumentException(String.format("No field backing persistent property %s!", this));
+        }
+
+        return field;
+    }
+
     Class<?> getRawType();
 
     Class<?> getActualType();
