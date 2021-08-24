@@ -1,4 +1,4 @@
-package com.zqykj.tldw.aggregate.Exception;
+package com.zqykj.tldw.aggregate.exception;
 
 
 public class DataOperationClientException extends RuntimeException {

@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate.Exception;
+package com.zqykj.tldw.aggregate.exception;
 
 import org.springframework.dao.DataAccessException;
 
