@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate.Exception;
+package com.zqykj.tldw.aggregate.exception;
 
 /**
  * <h1> 转化异常 </h1>

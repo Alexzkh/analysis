@@ -6,7 +6,7 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl;
 import com.alibaba.fastjson.JSON;
 import com.zqykj.domain.page.Sort;
 import com.zqykj.domain.routing.Routing;
-import com.zqykj.tldw.aggregate.Exception.BulkFailureException;
+import com.zqykj.tldw.aggregate.exception.BulkFailureException;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.ElasticsearchStringQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.HighlightQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.Query;

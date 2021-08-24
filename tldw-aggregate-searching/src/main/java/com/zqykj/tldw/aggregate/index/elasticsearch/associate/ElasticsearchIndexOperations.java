@@ -73,7 +73,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
                 log.warn("Index name  = {} already exists!", elasticPersistentEntity.getIndexName());
                 return false;
             }
-//             CreateIndexRequest createIndexRequest = null;
             Boolean createIndex = false;
             if (elasticPersistentEntity.isRollover()) {
                 if (elasticPersistentEntity.getRolloverMaxIndexAgeCondition() == 0
@@ -91,6 +90,7 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
                 elasticPersistentEntity.setIndexName("<" + elasticPersistentEntity.getIndexName() + "-{now/d}-000001>");
             } else {
                 CreateIndexRequest createIndexRequest = new CreateIndexRequest((elasticPersistentEntity.getIndexName()));
+                createIndexRequest.settings(createSettings(elasticPersistentEntity));
                 createIndex = restTemplate.execute(client -> client.indices().create(createIndexRequest, RequestOptions.DEFAULT).isAcknowledged());
             }
             // 若存在映射文件,则创建索引的同时,也会根据Settings 映射创建mapping
@@ -121,6 +121,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         restTemplate.execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
     }
 
+    /**
+     * <h2> 创建索引配置</h2>
+     */
     private Map<String, ?> createSettings(SimpleElasticSearchPersistentEntity<?> entity) {
         Map<String, ?> mappingMap = null;
         if (entity.isAnnotationPresent(Setting.class)) {
@@ -150,6 +153,10 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return restTemplate.execute(client -> client.indices().putMapping(request, RequestOptions.DEFAULT).isAcknowledged());
     }
 
+
+    /**
+     * <h2> 构建索引映射 </h2>
+     */
     protected Map<String, Object> buildMapping(SimpleElasticSearchPersistentEntity<?> clazz) {
 
         // load mapping specified in Mapping annotation if present
@@ -179,6 +186,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         }
     }
 
+    /**
+     * <h2> 加载配置 </h2>
+     */
     private Map<String, Object> loadSettings(String settingPath) {
         if (hasText(settingPath)) {
             String settingsFile = ResourceUtil.readFileFromClasspath(settingPath);
@@ -193,6 +203,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return null;
     }
 
+    /**
+     * <h2> 构建属性映射配置 </h2>
+     */
     protected String buildPropertyMapping(SimpleElasticSearchPersistentEntity<?> entity) throws IOException {
 
         XContentBuilder builder = jsonBuilder().startObject();
@@ -240,6 +253,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
     }
 
 
+    /**
+     * <h2> 滚动索引执行 </h2>
+     */
     public void rollover(SimpleElasticSearchPersistentEntity<?> persistentEntity) {
 
         RolloverRequest rolloverRequest = new RolloverRequest(persistentEntity.getIndexName(), null);

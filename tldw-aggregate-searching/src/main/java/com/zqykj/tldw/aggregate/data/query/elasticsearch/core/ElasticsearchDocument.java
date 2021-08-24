@@ -5,7 +5,7 @@ package com.zqykj.tldw.aggregate.data.query.elasticsearch.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-import com.zqykj.tldw.aggregate.Exception.ConversionException;
+import com.zqykj.tldw.aggregate.exception.ConversionException;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 

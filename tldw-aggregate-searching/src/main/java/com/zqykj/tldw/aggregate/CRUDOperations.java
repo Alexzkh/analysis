@@ -41,7 +41,7 @@ public interface CRUDOperations<T, M> extends BaseOperations<T, M> {
      * insert data
      * @param t data
      */
-//    public boolean save(T t) throws Exception;
+//    public boolean save(T t) throws exception;
 
 
     /**

@@ -29,7 +29,7 @@ public class StandardBankTransactionFlowController {
 //
 //
 //    @GetMapping(value = "/count")
-//    public ServerResponse count() throws Exception {
+//    public ServerResponse count() throws exception {
 //
 ////        log.info("the total count is "+aggregateOperateService.countAPI().getData());
 //        ServerResponse serverResponse = aggregateOperateService.countAPI();
@@ -37,7 +37,7 @@ public class StandardBankTransactionFlowController {
 //    }
 
 //    @RequestMapping(value = "/print")
-//    public String print() throws Exception {
+//    public String print() throws exception {
 ////
 //        String result = generateAggregateService.print();
 //        log.info("************"+result);
@@ -47,7 +47,7 @@ public class StandardBankTransactionFlowController {
 //
 //
 //    @RequestMapping(value = "/aggs")
-//    public String aggs() throws Exception {
+//    public String aggs() throws exception {
 //
 //        double sum = elasticsearchTemplate.aggs("trade_balance", AggsType.sum,null, IStandardBankTransactionFlowService.class);
 //        double count = elasticsearchTemplate.aggs("trade_balance", AggsType.count,null,IStandardBankTransactionFlowService.class);
@@ -68,7 +68,7 @@ public class StandardBankTransactionFlowController {
 //
 //
 //    @RequestMapping(value = "/search/page")
-//    public String searchByPage() throws Exception {
+//    public String searchByPage() throws exception {
 //
 //        int currentPage = 1;
 //        int pageSize =20 ;

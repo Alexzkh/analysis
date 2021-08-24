@@ -2,7 +2,7 @@ package com.zqykj.infrastructure.exception;
 
 
 /**
- * KV storage Exception .
+ * KV storage exception .
  */
 public class KvStorageException extends AnalysisException {
 

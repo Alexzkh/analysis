@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.tldw.aggregate.Exception;
+package com.zqykj.tldw.aggregate.exception;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * <h1> Elasticsearch Exception 解释 </h1>
+ * <h1> Elasticsearch exception 解释 </h1>
  */
 public class ElasticsearchExceptionTranslator {
 

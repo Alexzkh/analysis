@@ -87,12 +87,6 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
         }
     }
 
-//    @Override
-//    public boolean save(T t) throws Exception {
-//
-//        return save(t, null);
-//    }
-
     @Override
     public <S extends T> S save(S entity) {
 
@@ -118,10 +112,10 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
     }
 
 //    @Override
-//    public Optional<T> findById(M id) throws Exception {
+//    public Optional<T> findById(M id) throws exception {
 //        String indexname = persistentEntity.getIndexName();
 //        if (ObjectUtils.isEmpty(id)) {
-//            throw new Exception("ID cannot be empty");
+//            throw new exception("ID cannot be empty");
 //        }
 //        GetRequest getRequest = new GetRequest(indexname, id.toString());
 //        GetResponse getResponse = restTemplate(execute(client -> client.get(getRequest, RequestOptions.DEFAULT)));
@@ -162,7 +156,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
     }
 
 //    @Override
-//    public boolean save(T t, String routing) throws Exception {
+//    public boolean save(T t, String routing) throws exception {
 //        String indexName = persistentEntity.getIndexName();
 //        String id = Tools.getESId(entityClass);
 //        IndexRequest indexRequest = new IndexRequest(indexName);
@@ -307,15 +301,6 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
         return list;
     }
 
-//    @Override
-//    public BulkResponse save(List<T> list) throws Exception {
-//        if (list == null || list.size() == 0) {
-//            return null;
-//        }
-//        String indexname = persistentEntity.getIndexName();
-//        return savePart(list, indexname);
-//    }
-
     /**
      * @param list:      pojo list
      * @param indexname: operate index
@@ -365,7 +350,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
 
 
     //    @Override
-//    public void rollover(boolean isAsyn) throws Exception {
+//    public void rollover(boolean isAsyn) throws exception {
 //        if (!persistentEntity.isRollover()) {
 //            return;
 //        }
@@ -379,7 +364,7 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
 //                    try {
 //                        Thread.sleep(1024);
 //                        rollover();
-//                    } catch (Exception e) {
+//                    } catch (exception e) {
 //                       log.error("rollover error {}",e);
 //                    }
 //
