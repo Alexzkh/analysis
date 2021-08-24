@@ -118,6 +118,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         restTemplate.execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
     }
 
+    /**
+     * <h2> 创建索引配置</h2>
+     */
     private Map<String, ?> createSettings(Class<?> clazz) {
         Map<String, ?> settings = null;
         if (clazz.isAnnotationPresent(Setting.class)) {
@@ -168,6 +171,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         }
     }
 
+    /**
+     * <h2> 加载配置 </h2>
+     */
     private Map<String, Object> loadSettings(String settingPath) {
         if (hasText(settingPath)) {
             String settingsFile = ResourceUtil.readFileFromClasspath(settingPath);
@@ -182,6 +188,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return null;
     }
 
+    /**
+     * <h2> 构建属性映射配置 </h2>
+     */
     protected String buildPropertyMapping(Class<?> clazz) throws IOException {
 
         SimpleElasticSearchPersistentEntity<?> entity = getRequiredPersistentEntity(clazz);
@@ -230,6 +239,9 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
     }
 
 
+    /**
+     * <h2> 滚动索引执行 </h2>
+     */
     public void rollover(SimpleElasticSearchPersistentEntity<?> persistentEntity) {
 
         RolloverRequest rolloverRequest = new RolloverRequest(persistentEntity.getIndexName(), null);

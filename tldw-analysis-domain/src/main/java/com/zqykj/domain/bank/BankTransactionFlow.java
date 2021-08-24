@@ -2,10 +2,7 @@ package com.zqykj.domain.bank;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.zqykj.annotations.DateFormat;
-import com.zqykj.annotations.Document;
-import com.zqykj.annotations.Field;
-import com.zqykj.annotations.FieldType;
+import com.zqykj.annotations.*;
 import lombok.Data;
 
 import java.util.Date;
@@ -17,8 +14,12 @@ import java.util.Date;
  * @Date 2021/8/20 13:50
  */
 @Data
-@Document(indexName = "bank_transaction_flow", shards = 3,refreshInterval = "30s")
+@Document(indexName = "bank_transaction_flow", shards = 3)
 public class BankTransactionFlow {
+
+
+    @Id
+    private long id;
 
     @Field(type = FieldType.Keyword, name = "case_id")
     private String caseId;
@@ -74,7 +75,7 @@ public class BankTransactionFlow {
     @Field(type = FieldType.Double, name = "transaction_balance")
     private Double transactionBalance;
 
-    @Field(type = FieldType.Date, name = "trading_time",format = DateFormat.basic_ordinal_date)
+    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.basic_ordinal_date)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date tradingTime;
 

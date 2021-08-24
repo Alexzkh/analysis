@@ -97,7 +97,7 @@ public class DataOpertionClientFactory {
 //            }
 //
 //            restHighLevelClient = new RestHighLevelClient(builder);
-//        } catch (Exception e) {
+//        } catch (exception e) {
 //            log.error("create RestHighLevelClient error{}", e);
 //            return null;
 //        }

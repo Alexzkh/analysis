@@ -5,7 +5,7 @@ import com.zqykj.infrastructure.constant.Constants;
 import com.zqykj.infrastructure.util.StringUtils;
 
 /**
- * analysis Exception.
+ * analysis exception.
  */
 public class AnalysisException extends Exception {
 

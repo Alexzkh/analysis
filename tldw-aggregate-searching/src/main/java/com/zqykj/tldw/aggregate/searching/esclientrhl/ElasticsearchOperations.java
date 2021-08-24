@@ -26,7 +26,7 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
      * @param routing: specified route
      * @return: boolean
      **/
-//    public boolean save(T t, String routing) throws Exception;
+//    public boolean save(T t, String routing) throws exception;
 
     /**
      * Non paged query
@@ -85,5 +85,5 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
      *
      * @param list index pojo collection
      */
-//    public BulkResponse save(List<T> list) throws Exception;
+//    public BulkResponse save(List<T> list) throws exception;
 }
