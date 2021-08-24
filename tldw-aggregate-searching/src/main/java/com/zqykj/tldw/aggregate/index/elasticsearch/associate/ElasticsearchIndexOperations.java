@@ -133,6 +133,23 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         return settings;
     }
 
+    /**
+     * <h2> 加载配置 </h2>
+     */
+    private Map<String, Object> loadSettings(String settingPath) {
+        if (hasText(settingPath)) {
+            String settingsFile = ResourceUtil.readFileFromClasspath(settingPath);
+
+            if (hasText(settingsFile)) {
+                return JSON.parseObject(settingsFile, new TypeReference<Map<String, Object>>() {
+                });
+            }
+        } else {
+            log.info("settingPath in @Setting has to be defined. Using default instead.");
+        }
+        return null;
+    }
+
 
     /**
      * <h2> 创建索引映射结构 </h2>
@@ -169,23 +186,6 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         } catch (Exception e) {
             throw new RuntimeException("Failed to build mapping for " + clazz.getName(), e);
         }
-    }
-
-    /**
-     * <h2> 加载配置 </h2>
-     */
-    private Map<String, Object> loadSettings(String settingPath) {
-        if (hasText(settingPath)) {
-            String settingsFile = ResourceUtil.readFileFromClasspath(settingPath);
-
-            if (hasText(settingsFile)) {
-                return JSON.parseObject(settingsFile, new TypeReference<Map<String, Object>>() {
-                });
-            }
-        } else {
-            log.info("settingPath in @Setting has to be defined. Using default instead.");
-        }
-        return null;
     }
 
     /**

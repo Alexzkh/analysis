@@ -9,6 +9,7 @@ import com.zqykj.infrastructure.util.Streamable;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.SearchHitsIterator;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.Query;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.*;
+import com.zqykj.tldw.aggregate.exception.ElasticsearchExceptionTranslator;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.associate.ElasticsearchIndexOperations;
 import lombok.extern.slf4j.Slf4j;
