@@ -3,11 +3,8 @@
  */
 package com.zqykj.tldw.aggregate.index.elasticsearch.util;
 
+import com.zqykj.annotations.*;
 import com.zqykj.infrastructure.util.TypeInformation;
-import com.zqykj.annotations.DynamicMapping;
-import com.zqykj.annotations.Field;
-import com.zqykj.annotations.FieldType;
-import com.zqykj.annotations.Mapping;
 import com.zqykj.tldw.aggregate.index.context.AbstractMappingContext;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentProperty;
@@ -138,7 +135,8 @@ public class ElasticsearchMappingBuilder {
             }
         }
 
-//        MultiField multiField = property.findAnnotation(MultiField.class);
+        // property 是否存在multi-fields
+        MultiField multiField = property.findAnnotation(MultiField.class);
 
 //        if (isCompletionProperty) {
 //            CompletionField completionField = property.findAnnotation(CompletionField.class);
@@ -147,6 +145,8 @@ public class ElasticsearchMappingBuilder {
 
         if (isRootObject && fieldAnnotation != null && property.isIdProperty()) {
             applyDefaultIdFieldMapping(builder, property);
+        } else if (multiField != null) {
+            addMultiFieldMapping(builder, property, multiField, isNestedOrObjectProperty);
         } else if (fieldAnnotation != null) {
             addSingleFieldMapping(builder, property, fieldAnnotation, isNestedOrObjectProperty);
         }
@@ -165,6 +165,33 @@ public class ElasticsearchMappingBuilder {
         return entity != null && entity.getPersistentProperties(Field.class) != null;
     }
 
+
+    /**
+     * <h2> property 支持multi-fields  </h2>
+     */
+    private void addMultiFieldMapping(XContentBuilder builder, SimpleElasticSearchPersistentProperty property,
+                                      MultiField annotation, boolean nestedOrObjectField) throws IOException {
+
+        // add main field
+        builder.startObject(property.getFieldName());
+        addFieldMappingParameters(builder, annotation.mainField(), nestedOrObjectField);
+
+        // add InnerField
+        builder.startObject("fields");
+        for (InnerField innerField : annotation.otherFields()) {
+            builder.startObject(innerField.suffix());
+            addFieldMappingParameters(builder, innerField, false);
+            builder.endObject();
+        }
+
+        builder.endObject();
+
+        builder.endObject();
+    }
+
+    /**
+     * <h2> 单个Field mapping 处理  </h2>
+     */
     private void addSingleFieldMapping(XContentBuilder builder, SimpleElasticSearchPersistentProperty property,
                                        Field annotation, boolean nestedOrObjectField) throws IOException {
 

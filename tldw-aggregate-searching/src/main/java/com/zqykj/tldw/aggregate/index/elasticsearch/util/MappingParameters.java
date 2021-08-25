@@ -15,9 +15,7 @@
  */
 package com.zqykj.tldw.aggregate.index.elasticsearch.util;
 
-import com.zqykj.annotations.DateFormat;
-import com.zqykj.annotations.Field;
-import com.zqykj.annotations.FieldType;
+import com.zqykj.annotations.*;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.springframework.util.Assert;
@@ -76,8 +74,13 @@ public final class MappingParameters {
     @Nullable
     private final Integer ignoreAbove;
     private final boolean ignoreMalformed;
+    private final IndexOptions indexOptions;
     private final boolean index;
     private final boolean indexPhrases;
+    @Nullable
+    private final IndexPrefixes indexPrefixes;
+    private final String nullValue;
+    private final NullValueType nullValueType;
     private final String normalizer;
     private final boolean norms;
     @Nullable
@@ -86,6 +89,8 @@ public final class MappingParameters {
     private final boolean positiveScoreImpact;
     private final String searchAnalyzer;
     private final double scalingFactor;
+    private final Similarity similarity;
+    private final TermVector termVector;
     private final boolean store;
     private final FieldType type;
 
@@ -101,6 +106,8 @@ public final class MappingParameters {
 
         if (annotation instanceof Field) {
             return new MappingParameters((Field) annotation);
+        } else if (annotation instanceof InnerField) {
+            return new MappingParameters((InnerField) annotation);
         } else {
             throw new IllegalArgumentException("annotation must be an instance of @Field or @InnerField");
         }
@@ -123,9 +130,15 @@ public final class MappingParameters {
         Assert.isTrue(!((type == FieldType.Text || type == FieldType.Nested) && !docValues),
                 "docValues false is not allowed for field type text");
         ignoreMalformed = field.ignoreMalformed();
+        indexOptions = field.indexOptions();
         indexPhrases = field.indexPhrases();
+        indexPrefixes = field.indexPrefixes().length > 0 ? field.indexPrefixes()[0] : null;
         norms = field.norms();
+        nullValue = field.nullValue();
+        nullValueType = field.nullValueType();
         positionIncrementGap = field.positionIncrementGap();
+        similarity = field.similarity();
+        termVector = field.termVector();
         scalingFactor = field.scalingFactor();
         maxShingleSize = field.maxShingleSize() >= 0 ? field.maxShingleSize() : null;
         Assert.isTrue(type != FieldType.Search_As_You_Type //
@@ -135,6 +148,43 @@ public final class MappingParameters {
         positiveScoreImpact = field.positiveScoreImpact();
         Assert.isTrue(field.enabled() || type == FieldType.Object, "enabled false is only allowed for field type object");
         enabled = field.enabled();
+        eagerGlobalOrdinals = field.eagerGlobalOrdinals();
+    }
+
+    private MappingParameters(InnerField field) {
+        index = field.index();
+        store = field.store();
+        fielddata = field.fielddata();
+        type = field.type();
+        format = field.format();
+        datePattern = field.pattern();
+        analyzer = field.analyzer();
+        searchAnalyzer = field.searchAnalyzer();
+        normalizer = field.normalizer();
+        copyTo = null;
+        ignoreAbove = field.ignoreAbove() >= 0 ? field.ignoreAbove() : null;
+        coerce = field.coerce();
+        docValues = field.docValues();
+        Assert.isTrue(!((type == FieldType.Text || type == FieldType.Nested) && !docValues),
+                "docValues false is not allowed for field type text");
+        ignoreMalformed = field.ignoreMalformed();
+        indexOptions = field.indexOptions();
+        indexPhrases = field.indexPhrases();
+        indexPrefixes = field.indexPrefixes().length > 0 ? field.indexPrefixes()[0] : null;
+        norms = field.norms();
+        nullValue = field.nullValue();
+        nullValueType = field.nullValueType();
+        positionIncrementGap = field.positionIncrementGap();
+        similarity = field.similarity();
+        termVector = field.termVector();
+        scalingFactor = field.scalingFactor();
+        maxShingleSize = field.maxShingleSize() >= 0 ? field.maxShingleSize() : null;
+        Assert.isTrue(type != FieldType.Search_As_You_Type //
+                        || maxShingleSize == null //
+                        || (maxShingleSize >= 2 && maxShingleSize <= 4), //
+                "maxShingleSize must be in inclusive range from 2 to 4 for field type search_as_you_type");
+        positiveScoreImpact = field.positiveScoreImpact();
+        enabled = true;
         eagerGlobalOrdinals = field.eagerGlobalOrdinals();
     }
 
@@ -203,14 +253,52 @@ public final class MappingParameters {
             builder.field(FIELD_PARAM_INDEX_PHRASES, indexPhrases);
         }
 
+        if (indexPrefixes != null) {
+            builder.startObject(FIELD_PARAM_INDEX_PREFIXES);
+            if (indexPrefixes.minChars() != IndexPrefixes.MIN_DEFAULT) {
+                builder.field(FIELD_PARAM_INDEX_PREFIXES_MIN_CHARS, indexPrefixes.minChars());
+            }
+            if (indexPrefixes.maxChars() != IndexPrefixes.MAX_DEFAULT) {
+                builder.field(FIELD_PARAM_INDEX_PREFIXES_MAX_CHARS, indexPrefixes.maxChars());
+            }
+            builder.endObject();
+        }
+
         if (!norms) {
             builder.field(FIELD_PARAM_NORMS, norms);
+        }
+
+        if (!StringUtils.isEmpty(nullValue)) {
+            Object value;
+            switch (nullValueType) {
+                case Integer:
+                    value = Integer.valueOf(nullValue);
+                    break;
+                case Long:
+                    value = Long.valueOf(nullValue);
+                    break;
+                case Double:
+                    value = Double.valueOf(nullValue);
+                    break;
+                case String:
+                default:
+                    value = nullValue;
+                    break;
+            }
+            builder.field(FIELD_PARAM_NULL_VALUE, value);
         }
 
         if (positionIncrementGap != null && positionIncrementGap >= 0) {
             builder.field(FIELD_PARAM_POSITION_INCREMENT_GAP, positionIncrementGap);
         }
 
+        if (similarity != Similarity.Default) {
+            builder.field(FIELD_PARAM_SIMILARITY, similarity);
+        }
+
+        if (termVector != TermVector.none) {
+            builder.field(FIELD_PARAM_TERM_VECTOR, termVector);
+        }
 
         if (type == FieldType.Scaled_Float) {
             builder.field(FIELD_PARAM_SCALING_FACTOR, scalingFactor);
