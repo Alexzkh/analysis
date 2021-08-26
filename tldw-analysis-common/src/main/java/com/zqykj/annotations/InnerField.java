@@ -3,68 +3,37 @@
  */
 package com.zqykj.annotations;
 
-import org.springframework.core.annotation.AliasFor;
-
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- *
+ * <h1> Field 中的内部 Field </h1>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-@Documented
-@Inherited
-public @interface Field {
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface InnerField {
 
-    @AliasFor("value")
-    String name() default "";
+    String suffix();
 
-    /**
-     * <h2> 用于存储文档的字段名称, 如果未设置,则使用注释属性的名称</h2>
-     */
-    @AliasFor("name")
-    String value() default "";
+    FieldType type();
 
-    /**
-     * <h2> 用于存储字段的类型, 如果未设置,则使用注释属性的类型(通常mongodb 不需要指定)</h2>
-     */
-    FieldType type() default FieldType.Text;
-
-    String pattern() default "";
-
-    /**
-     * <h2> 字段是否索引 </h2>
-     */
     boolean index() default true;
 
     DateFormat format() default DateFormat.none;
 
-    /**
-     * <h2> 字段是否存储  </h2>
-     */
+    String pattern() default "";
+
     boolean store() default false;
-
-    /**
-     * <h2> 分词器细粒度设置</h2>
-     * <p> 字段搜索时使用的分词器</p>
-     */
-    String searchAnalyzer() default "";
-
-    /**
-     * <h2> 分词器细粒度设置</h2>
-     * <p>默认的分词器</p>
-     */
-    String analyzer() default "";
-
-    String[] ignoreFields() default {};
 
     boolean fielddata() default false;
 
+    String searchAnalyzer() default "";
+
+    String analyzer() default "";
+
     String normalizer() default "";
-
-    boolean includeInParent() default false;
-
-    String[] copyTo() default {};
 
     /**
      * @since 4.0
@@ -139,25 +108,11 @@ public @interface Field {
     int maxShingleSize() default -1;
 
     /**
-     * if true, the field will be stored in Elasticsearch even if it has a null value
-     *
-     * @since 4.1
-     */
-    boolean storeNullValue() default false;
-
-    /**
      * to be used in combination with {@link FieldType#Rank_Feature}
      *
      * @since 4.1
      */
     boolean positiveScoreImpact() default true;
-
-    /**
-     * to be used in combination with {@link FieldType#Object}
-     *
-     * @since 4.1
-     */
-    boolean enabled() default true;
 
     /**
      * @since 4.1
@@ -168,5 +123,4 @@ public @interface Field {
      * @since 4.1
      */
     NullValueType nullValueType() default NullValueType.String;
-
 }
