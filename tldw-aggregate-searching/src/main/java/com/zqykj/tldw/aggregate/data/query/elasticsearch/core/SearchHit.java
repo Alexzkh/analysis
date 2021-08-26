@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
+ * the result of query when query or search successed the return object .
  */
 public class SearchHit<T> {
 
