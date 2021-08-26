@@ -6,6 +6,7 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl;
 import com.alibaba.fastjson.JSON;
 import com.zqykj.domain.page.Sort;
 import com.zqykj.domain.routing.Routing;
+import com.zqykj.infrastructure.constant.Constants;
 import com.zqykj.tldw.aggregate.exception.BulkFailureException;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.ElasticsearchStringQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.HighlightQuery;
@@ -139,7 +140,7 @@ public abstract class AbstractElasticsearchTemplate {
     /**
      * <h2> 获取当前数据的Id </h2>
      */
-    protected <T> String getEntityId(T bean) {
+    public <T> String getEntityId(T bean) {
 
         SimpleElasticSearchPersistentProperty idProperty =
                 mappingContext.getRequiredPersistentEntity(bean.getClass()).getIdProperty();
@@ -150,6 +151,44 @@ public abstract class AbstractElasticsearchTemplate {
             }
         }
         return null;
+    }
+
+    /**
+     * @description: split big list to small list ,then execute batch update .
+     * @param originalList:  original pojo list
+     * @param isParallel: is parallel
+     * @return: java.util.List<java.util.List<T>>
+     **/
+    public <T> List<List<T>> spiltList(List<T> originalList, boolean isParallel) {
+        if (originalList.size() <= Constants.BULK_COUNT) {
+            List<List<T>> splitList = new ArrayList<>();
+            splitList.add(originalList);
+            return splitList;
+        }
+        int limit = (originalList.size() + Constants.BULK_COUNT - 1) / Constants.BULK_COUNT;
+        if (isParallel) {
+            return Stream.iterate(0, n -> n + 1)
+                    .limit(limit)
+                    .parallel()
+                    .map(a -> originalList.stream()
+                            .skip(a * Constants.BULK_COUNT)
+                            .limit(Constants.BULK_COUNT)
+                            .parallel()
+                            .collect(Collectors.toList()))
+                    .collect(Collectors.toList());
+        } else {
+            final List<List<T>> splitList = new ArrayList<>();
+            Stream.iterate(0, n -> n + 1)
+                    .limit(limit)
+                    .forEach(i -> {
+                        splitList.add(originalList.stream()
+                                .skip(i * Constants.BULK_COUNT)
+                                .limit(Constants.BULK_COUNT)
+                                .collect(Collectors.toList()));
+                    });
+            return splitList;
+        }
+
     }
 
     /**

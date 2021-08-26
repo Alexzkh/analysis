@@ -22,8 +22,6 @@ import java.lang.annotation.*;
  * {@link #shardKey()} is used to distribute documents across shards. <br />
  * Please see the <a href="https://docs.mongodb.com/manual/sharding/">MongoDB Documentation</a> for more information
  * about requirements and limitations of sharding.
- *
- * @since 3.0
  */
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)

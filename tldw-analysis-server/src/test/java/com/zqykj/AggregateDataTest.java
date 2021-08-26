@@ -10,6 +10,7 @@ import com.zqykj.domain.page.Page;
 import com.zqykj.domain.page.PageRequest;
 import com.zqykj.domain.page.Sort;
 import com.zqykj.domain.routing.Routing;
+import com.zqykj.infrastructure.id.SnowFlowerIdGenerator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,4 +77,13 @@ public class AggregateDataTest {
         Page<TeacherInfo> teacherInfos = teacherInfoDao.matchAllofList(PageRequest.of(0, 1, Sort.Direction.DESC, "age"));
         System.out.println(JSON.toJSONString(teacherInfos.getContent()));
     }
+
+    @Test
+    public void testGenerator(){
+        SnowFlowerIdGenerator  snowFlowerIdGenerator = new SnowFlowerIdGenerator();
+        System.out.println(snowFlowerIdGenerator.currentId());
+        System.out.println(snowFlowerIdGenerator.nextId());
+    }
+
+
 }

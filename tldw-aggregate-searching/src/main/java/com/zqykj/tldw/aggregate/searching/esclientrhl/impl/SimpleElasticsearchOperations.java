@@ -95,21 +95,6 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
                 restTemplate.get(Objects.toString(id, null), entityClass, getIndexCoordinates()));
     }
 
-//    @Override
-//    public Optional<T> findById(M id) throws exception {
-//        String indexname = persistentEntity.getIndexName();
-//        if (ObjectUtils.isEmpty(id)) {
-//            throw new exception("ID cannot be empty");
-//        }
-//        GetRequest getRequest = new GetRequest(indexname, id.toString());
-//        GetResponse getResponse = restTemplate(execute(client -> client.get(getRequest, RequestOptions.DEFAULT)));
-//        if (getResponse.isExists()) {
-//            return Optional.of(JsonUtils.string2Obj(getResponse.getSourceAsString(), entityClass));
-//        }
-//        return Optional.empty();
-//    }
-
-
     /**
      * <h2> 获取当前entityClass 的 indexName </h2>
      */
@@ -138,31 +123,6 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
     public void refresh(String... indexName) {
         indexOperations.refresh(indexName);
     }
-
-//    @Override
-//    public boolean save(T t, String routing) throws exception {
-//        String indexName = persistentEntity.getIndexName();
-//        String id = Tools.getESId(entityClass);
-//        IndexRequest indexRequest = new IndexRequest(indexName);
-//        if (ObjectUtils.isEmpty(id)) {
-//            indexRequest.id(id);
-//        }
-//
-//        String source = JsonUtils.obj2String(t);
-//        indexRequest.source(source, XContentType.JSON);
-//        if (!ObjectUtils.isEmpty(routing)) {
-//            indexRequest.routing(routing);
-//        }
-//        IndexResponse indexResponse = execute(client -> client.index(indexRequest, RequestOptions.DEFAULT));
-//        if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
-//            log.info("Index create success !");
-//        } else if (indexResponse.getResult() == DocWriteResponse.Result.UPDATED) {
-//            log.info("Index update success !");
-//        } else {
-//            return false;
-//        }
-//        return true;
-//    }
 
     @Override
     public List<T> search(QueryBuilder queryBuilder) throws Exception {
@@ -285,30 +245,6 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
         return list;
     }
 
-    /**
-     * @param list:      pojo list
-     * @param indexname: operate index
-     * @return: org.elasticsearch.action.bulk.BulkResponse
-     **/
-    private BulkResponse savePart(List<T> list, String indexname) throws Exception {
-        BulkRequest bulkRequest = new BulkRequest();
-        for (int i = 0; i < list.size(); i++) {
-            T tt = list.get(i);
-            String id = Tools.getESId(tt);
-            String sourceJsonStr = JsonUtils.obj2String(tt);
-            IndexRequest indexRequest = new IndexRequest(indexname);
-            indexRequest.id(id);
-            indexRequest.source(sourceJsonStr, XContentType.JSON);
-
-            bulkRequest.add(indexRequest);
-        }
-        BulkResponse bulkResponse = restTemplate.execute(client -> client.bulk(bulkRequest, RequestOptions.DEFAULT));
-
-        refresh(indexname);
-//        rollover(true);
-        return bulkResponse;
-    }
-
     @Override
     public boolean updateByID(M id, String name) throws Exception {
 
@@ -330,6 +266,39 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
             return false;
         }
         return true;
+    }
+
+    @Override
+    public BulkResponse[] bulkUpdate(List<T> list) {
+        if (list == null || list.size() == 0) {
+            return null;
+        }
+        String indexName = getIndexCoordinates();
+        List<List<T>> splitList = restTemplate.spiltList(list, true);
+        BulkResponse[] bulkResponses = new BulkResponse[splitList.size()];
+        for (int i = 0; i < splitList.size(); i++) {
+            bulkResponses[i] = updatePart(splitList.get(i), indexName);
+
+        }
+        return bulkResponses;
+    }
+
+    /**
+     * description : batch update pojo list method .
+     *
+     * @param list:      pojo list
+     * @param indexName: index name
+     * @return: org.elasticsearch.action.bulk.BulkResponse
+     **/
+    public BulkResponse updatePart(List<T> list, String indexName) {
+        BulkRequest bulkRequest = new BulkRequest();
+        for (int i = 0; i < list.size(); i++) {
+            T t = list.get(i);
+            String id = restTemplate.getEntityId(t);
+            bulkRequest.add(new UpdateRequest(indexName, id).doc(JsonUtils.obj2String(t), XContentType.JSON));
+        }
+        BulkResponse bulkResponse = executeAndRefresh(restTemplate -> restTemplate.execute(client -> client.bulk(bulkRequest, RequestOptions.DEFAULT)));
+        return bulkResponse;
     }
 
 
