@@ -3,10 +3,7 @@
  */
 package com.zqykj.tldw.aggregate.index.mapping;
 
-import com.zqykj.infrastructure.util.Lazy;
-import com.zqykj.infrastructure.util.Optionals;
-import com.zqykj.infrastructure.util.StreamUtils;
-import com.zqykj.infrastructure.util.TypeInformation;
+import com.zqykj.infrastructure.util.*;
 import com.zqykj.annotations.Id;
 import com.zqykj.tldw.aggregate.index.model.Property;
 import com.zqykj.tldw.aggregate.index.model.SimpleTypeHolder;
@@ -31,6 +28,12 @@ import java.util.stream.Stream;
 @Slf4j
 public abstract class AbstractPersistentProperty<P extends PersistentProperty<P>> implements PersistentProperty<P> {
 
+    private static final Field CAUSE_FIELD;
+
+    static {
+        CAUSE_FIELD = ReflectionUtils.findRequiredField(Throwable.class, "cause");
+    }
+
     private final String name;
     private final TypeInformation<?> information;
     private final Class<?> rawType;
@@ -43,6 +46,7 @@ public abstract class AbstractPersistentProperty<P extends PersistentProperty<P>
     private final Field field;
     private final Method getter;
     private final Method setter;
+    private final Lazy<Boolean> usePropertyAccess;
     private final Lazy<Boolean> isId = Lazy.of(() -> isAnnotationPresent(Id.class));
 
     public AbstractPersistentProperty(Property property, PersistentEntity<?, P> owner,
@@ -57,6 +61,8 @@ public abstract class AbstractPersistentProperty<P extends PersistentProperty<P>
         this.rawType = this.information.getType();
         this.property = property;
         this.owner = owner;
+
+        this.usePropertyAccess = Lazy.of(() -> owner.getType().isInterface() || CAUSE_FIELD.equals(getField()));
         this.entityTypeInformation = Lazy.of(() -> Optional.ofNullable(information.getActualType())
                 .filter(it -> !simpleTypeHolder.isSimpleType(it.getType()))
                 .filter(it -> !it.isCollectionLike())
@@ -118,6 +124,10 @@ public abstract class AbstractPersistentProperty<P extends PersistentProperty<P>
         Assert.notNull(annotationType, "Annotation type must not be null!");
 
         return doFindAnnotation(annotationType).orElse(null);
+    }
+
+    public boolean usePropertyAccess() {
+        return usePropertyAccess.get();
     }
 
     @Nullable

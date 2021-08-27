@@ -79,6 +79,11 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
     }
 
     @Override
+    public boolean isPropertyPresent(String name) {
+        return propertyCache.containsKey(name);
+    }
+
+    @Override
     public void doWithProperties(PropertyHandler<P> handler) {
 
         Assert.notNull(handler, "PropertyHandler must not be null!");
@@ -160,7 +165,6 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
         if (!property.isTransient()) {
             persistentPropertiesCache.add(property);
         }
-        propertyCache.putIfAbsent(property.getName(), property);
 //        if (property.isVersionProperty()) {
 //            P versionProperty = this.versionProperty;
 //            if (versionProperty != null) {

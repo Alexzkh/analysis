@@ -6,6 +6,8 @@ package com.zqykj.tldw.aggregate.searching.esclientrhl;
 import com.alibaba.fastjson.JSON;
 import com.zqykj.domain.page.Sort;
 import com.zqykj.domain.routing.Routing;
+import com.zqykj.infrastructure.util.QueryExecutionConverters;
+import com.zqykj.tldw.aggregate.covert.ElasticsearchEntityConverter;
 import com.zqykj.tldw.aggregate.exception.BulkFailureException;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.ElasticsearchStringQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.HighlightQuery;
@@ -15,7 +17,7 @@ import com.zqykj.tldw.aggregate.index.elasticsearch.ElasticsearchPersistentEntit
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentProperty;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
-import com.zqykj.tldw.aggregate.index.mapping.PersistentProperty;
+import com.zqykj.tldw.aggregate.model.BeanWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -33,11 +35,8 @@ import org.elasticsearch.search.sort.*;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,16 +46,29 @@ import static org.elasticsearch.index.query.QueryBuilders.wrapperQuery;
 @Slf4j
 public abstract class AbstractElasticsearchTemplate {
 
-    protected final GenericConversionService conversionService;
-    protected final SimpleElasticsearchMappingContext mappingContext;
-    static final Integer INDEX_MAX_RESULT_WINDOW = 10_000;
+    protected GenericConversionService conversionService;
+    protected SimpleElasticsearchMappingContext mappingContext;
+    protected ElasticsearchEntityConverter elasticsearchConverter;
+    static Integer INDEX_MAX_RESULT_WINDOW = 10_000;
 
-    public AbstractElasticsearchTemplate(SimpleElasticsearchMappingContext mappingContext,
-                                         GenericConversionService conversionService) {
+    protected void initialize(SimpleElasticsearchMappingContext mappingContext,
+                              ElasticsearchEntityConverter elasticsearchConverter) {
+
+        Assert.notNull(elasticsearchConverter, "elasticsearchConverter must not be null.");
+        Assert.notNull(mappingContext, "mappingContext must not be null.");
+
         this.mappingContext = mappingContext;
-        this.conversionService = conversionService;
+        this.conversionService = QueryExecutionConverters.CONVERSION_SERVICE;
+        this.elasticsearchConverter = elasticsearchConverter;
     }
 
+
+    /**
+     * <h2> 构建Elasticsearch entity converter </h2>
+     */
+    protected ElasticsearchEntityConverter createElasticsearchConverter() {
+        return new ElasticsearchEntityConverter(mappingContext);
+    }
 
     /**
      * <h2> 对批量操作返回进行检查 </h2>
@@ -128,7 +140,9 @@ public abstract class AbstractElasticsearchTemplate {
         } else {
             indexRequest = new IndexRequest(indexName);
         }
-        indexRequest.source(JSON.toJSONString(entity), XContentType.JSON);
+        Map<String, Object> source = new HashMap<>();
+        elasticsearchConverter.write(entity, source);
+        indexRequest.source(source, XContentType.JSON);
         String routing = getRouting(entity);
         if (routing != null) {
             indexRequest.routing(routing);
@@ -144,7 +158,7 @@ public abstract class AbstractElasticsearchTemplate {
         SimpleElasticSearchPersistentProperty idProperty =
                 mappingContext.getRequiredPersistentEntity(bean.getClass()).getIdProperty();
         if (null != idProperty) {
-            Object id = getProperty(idProperty, bean);
+            Object id = BeanWrapper.getProperty(idProperty, bean);
             if (null != id) {
                 return Objects.toString(id, null);
             }
@@ -159,27 +173,11 @@ public abstract class AbstractElasticsearchTemplate {
 
         SimpleElasticSearchPersistentProperty routingFieldProperty =
                 mappingContext.getRequiredPersistentEntity(bean.getClass()).getRoutingFieldProperty();
-        Routing routing = convertIfNecessary(routingFieldProperty, Routing.class);
+        Routing routing = convertIfNecessary(BeanWrapper.getProperty(routingFieldProperty, bean), Routing.class);
         if (null != routing && null != routing.getRouting()) {
             return conversionService.convert(routing.getRouting(), String.class);
         }
         return null;
-    }
-
-    public <T> Object getProperty(PersistentProperty<?> property, T bean) {
-
-        Assert.notNull(property, "PersistentProperty must not be null!");
-
-        try {
-            Field field = property.getRequiredField();
-
-            ReflectionUtils.makeAccessible(field);
-            return ReflectionUtils.getField(field, bean);
-
-        } catch (IllegalStateException e) {
-            throw new RuntimeException(
-                    String.format("Could not read property %s of %s!", property.toString(), bean.toString()), e);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -199,7 +197,7 @@ public abstract class AbstractElasticsearchTemplate {
         return getRequiredPersistentEntity(clazz).getIndexName();
     }
 
-    ElasticsearchPersistentEntity<?> getRequiredPersistentEntity(Class<?> clazz) {
+    public ElasticsearchPersistentEntity<?> getRequiredPersistentEntity(Class<?> clazz) {
         return mappingContext.getRequiredPersistentEntity(clazz);
     }
 
@@ -215,6 +213,7 @@ public abstract class AbstractElasticsearchTemplate {
     protected class ReadSearchDocumentResponseCallback<T> implements SearchDocumentResponseCallback<SearchHits<T>> {
         private final Class<T> type;
         private final DocumentCallback<T> delegate;
+
 
         public ReadSearchDocumentResponseCallback(Class<T> type, String index) {
             Assert.notNull(type, "type is null");

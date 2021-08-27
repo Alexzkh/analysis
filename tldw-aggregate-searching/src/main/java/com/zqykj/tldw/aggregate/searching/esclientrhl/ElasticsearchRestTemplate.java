@@ -4,7 +4,6 @@
 package com.zqykj.tldw.aggregate.searching.esclientrhl;
 
 import com.alibaba.fastjson.JSON;
-import com.zqykj.infrastructure.util.QueryExecutionConverters;
 import com.zqykj.infrastructure.util.Streamable;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.SearchHitsIterator;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.Query;
@@ -45,10 +44,10 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
 
     public ElasticsearchRestTemplate(RestHighLevelClient client,
                                      SimpleElasticsearchMappingContext mappingContext) {
-        super(mappingContext, QueryExecutionConverters.CONVERSION_SERVICE);
         this.client = client;
         this.mappingContext = mappingContext;
         this.exceptionTranslator = new ElasticsearchExceptionTranslator();
+        initialize(mappingContext, createElasticsearchConverter());
     }
 
     public final SimpleElasticsearchMappingContext getMappingContext() {

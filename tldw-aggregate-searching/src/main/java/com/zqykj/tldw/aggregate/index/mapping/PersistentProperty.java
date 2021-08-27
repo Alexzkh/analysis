@@ -8,6 +8,7 @@ import org.springframework.lang.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @author Mcj
@@ -15,6 +16,9 @@ import java.lang.reflect.Field;
 public interface PersistentProperty<P extends PersistentProperty<P>> {
 
     PersistentEntity<?, P> getOwner();
+
+
+    boolean usePropertyAccess();
 
     /**
      * The name of the property
@@ -50,6 +54,20 @@ public interface PersistentProperty<P extends PersistentProperty<P>> {
 
         return field;
     }
+
+    default Method getRequiredGetter() {
+
+        Method getter = getGetter();
+
+        if (getter == null) {
+            throw new IllegalArgumentException(String.format("No getter available for persistent property %s!", this));
+        }
+
+        return getter;
+    }
+
+    @Nullable
+    Method getGetter();
 
     Class<?> getRawType();
 
