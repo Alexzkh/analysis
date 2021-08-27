@@ -1,4 +1,4 @@
-package com.zqykj.analysis.advice;
+package com.zqykj.advice;
 
 import com.zqykj.infrastructure.common.dto.ErrorInfo;
 import lombok.extern.slf4j.Slf4j;

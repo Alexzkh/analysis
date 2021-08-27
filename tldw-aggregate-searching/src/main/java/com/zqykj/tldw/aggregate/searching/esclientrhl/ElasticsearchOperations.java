@@ -86,4 +86,11 @@ public interface ElasticsearchOperations<T, M> extends CRUDOperations<T, M> {
      * @param list index pojo collection
      */
 //    public BulkResponse save(List<T> list) throws exception;
+
+    /**
+     * batch update index collection
+     *
+     * @param list index pojo collection
+     */
+    public BulkResponse[] bulkUpdate (List<T> list);
 }
