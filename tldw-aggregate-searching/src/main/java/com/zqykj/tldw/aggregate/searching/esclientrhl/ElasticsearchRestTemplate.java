@@ -3,8 +3,8 @@
  */
 package com.zqykj.tldw.aggregate.searching.esclientrhl;
 
-import com.alibaba.fastjson.JSON;
 import com.zqykj.infrastructure.util.Streamable;
+import com.zqykj.tldw.aggregate.data.core.elasticsearch.DocumentAdapters;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.SearchHitsIterator;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.Query;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.*;
@@ -25,6 +25,7 @@ import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -47,7 +48,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         this.client = client;
         this.mappingContext = mappingContext;
         this.exceptionTranslator = new ElasticsearchExceptionTranslator();
-        initialize(mappingContext, createElasticsearchConverter());
+        initialize(mappingContext);
     }
 
     public final SimpleElasticsearchMappingContext getMappingContext() {
@@ -89,14 +90,15 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         return Streamable.of(entities).stream().collect(Collectors.toList());
     }
 
+    /**
+     * <h2> 根据Id 与 路由获取单条文档数据 </h2>
+     */
     @Nullable
-    public <T> T get(String id, Class<T> clazz, String indexName) {
-        GetRequest request = new GetRequest(indexName, id);
+    public <T> T get(String id, Class<T> type, String indexName, @NonNull String routing) {
+        GetRequest request = new GetRequest(indexName, id).routing(routing);
         GetResponse response = execute(client -> client.get(request, RequestOptions.DEFAULT));
-        if (response.isExists()) {
-            return JSON.parseObject(response.getSourceAsBytes(), clazz);
-        }
-        return null;
+        DocumentCallback<T> callback = new ReadDocumentCallback<>(elasticsearchConverter, type);
+        return callback.doWith(DocumentAdapters.from(response));
     }
 
 
@@ -109,7 +111,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         SearchRequest searchRequest = createSearchRequest(query, type, index);
         SearchResponse response = execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         SearchDocumentResponseCallback<SearchHits<T>> searchDocumentResponseCallback =
-                new ReadSearchDocumentResponseCallback<>(type, index);
+                new ReadSearchDocumentResponseCallback<>(type);
         return searchDocumentResponseCallback.doWith(SearchDocumentResponse.from(response));
     }
 
@@ -126,8 +128,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
 
         SearchResponse response = execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
 
-        SearchDocumentResponseCallback<SearchHits<T>> callback = new ReadSearchDocumentResponseCallback<>(clazz,
-                index);
+        SearchDocumentResponseCallback<SearchHits<T>> callback = new ReadSearchDocumentResponseCallback<>(clazz);
         return callback.doWith(SearchDocumentResponse.from(response));
     }
 
@@ -143,7 +144,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         SearchResponse response = execute(client -> client.scroll(request, RequestOptions.DEFAULT));
 
         SearchDocumentResponseCallback<SearchHits<T>> callback = //
-                new ReadSearchDocumentResponseCallback<>(clazz, index);
+                new ReadSearchDocumentResponseCallback<>(clazz);
         return callback.doWith(SearchDocumentResponse.from(response));
     }
 
@@ -208,6 +209,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
             throw translateException(e);
         }
     }
+
 
     private RuntimeException translateException(Exception exception) {
 

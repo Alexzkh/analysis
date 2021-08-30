@@ -29,7 +29,6 @@ import java.util.stream.Stream;
  *
  * @param <S> Type of the first thing.
  * @param <T> Type of the second thing.
- * @since 1.12
  */
 public final class Pair<S, T> {
 
@@ -50,7 +49,6 @@ public final class Pair<S, T> {
      *
      * @param first  must not be {@literal null}.
      * @param second must not be {@literal null}.
-     * @return
      */
     public static <S, T> Pair<S, T> of(S first, T second) {
         return new Pair<>(first, second);
@@ -83,10 +81,6 @@ public final class Pair<S, T> {
         return Collectors.toMap(Pair::getFirst, Pair::getSecond);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals(@Nullable Object o) {
 
@@ -107,10 +101,6 @@ public final class Pair<S, T> {
         return ObjectUtils.nullSafeEquals(second, pair.second);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         int result = ObjectUtils.nullSafeHashCode(first);
@@ -118,10 +108,6 @@ public final class Pair<S, T> {
         return result;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return String.format("%s->%s", this.first, this.second);

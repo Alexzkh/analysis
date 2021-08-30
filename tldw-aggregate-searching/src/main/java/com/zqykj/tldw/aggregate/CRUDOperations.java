@@ -1,6 +1,8 @@
 package com.zqykj.tldw.aggregate;
 
 import com.zqykj.annotations.NoRepositoryBean;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 import java.util.Optional;
 
@@ -35,7 +37,7 @@ public interface CRUDOperations<T, M> extends BaseOperations<T, M> {
      * @param id the key of id .
      * @return the converted object or null if the result does not exist .
      */
-    Optional<T> findById(M id) throws Exception;
+    Optional<T> findById(M id, @NonNull String routing) throws Exception;
 
     /**
      * insert data

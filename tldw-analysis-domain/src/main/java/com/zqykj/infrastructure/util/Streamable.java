@@ -46,7 +46,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Returns a {@link Streamable} with the given elements.
      *
      * @param t the elements to return.
-     * @return
      */
     @SafeVarargs
     static <T> Streamable<T> of(T... t) {
@@ -57,7 +56,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Returns a {@link Streamable} for the given {@link Iterable}.
      *
      * @param iterable must not be {@literal null}.
-     * @return
      */
     static <T> Streamable<T> of(Iterable<T> iterable) {
 
@@ -83,7 +81,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Returns a new {@link Streamable} that will apply the given {@link Function} to the current one.
      *
      * @param mapper must not be {@literal null}.
-     * @return
      * @see Stream#map(Function)
      */
     default <R> Streamable<R> map(Function<? super T, ? extends R> mapper) {
@@ -97,7 +94,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Returns a new {@link Streamable} that will apply the given {@link Function} to the current one.
      *
      * @param mapper must not be {@literal null}.
-     * @return
      * @see Stream#flatMap(Function)
      */
     default <R> Streamable<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
@@ -111,7 +107,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Returns a new {@link Streamable} that will apply the given filter {@link Predicate} to the current one.
      *
      * @param predicate must not be {@literal null}.
-     * @return
      * @see Stream#filter(Predicate)
      */
     default Streamable<T> filter(Predicate<? super T> predicate) {
@@ -123,8 +118,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
 
     /**
      * Returns whether the current {@link Streamable} is empty.
-     *
-     * @return
      */
     default boolean isEmpty() {
         return !iterator().hasNext();
@@ -134,8 +127,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Creates a new {@link Streamable} from the current one and the given {@link Stream} concatenated.
      *
      * @param stream must not be {@literal null}.
-     * @return
-     * @since 2.1
      */
     default Streamable<T> and(Supplier<? extends Stream<? extends T>> stream) {
 
@@ -149,7 +140,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      *
      * @param others must not be {@literal null}.
      * @return will never be {@literal null}.
-     * @since 2.2
      */
     @SuppressWarnings("unchecked")
     default Streamable<T> and(T... others) {
@@ -164,7 +154,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      *
      * @param iterable must not be {@literal null}.
      * @return will never be {@literal null}.
-     * @since 2.2
      */
     default Streamable<T> and(Iterable<? extends T> iterable) {
 
@@ -179,7 +168,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      *
      * @param streamable must not be {@literal null}.
      * @return will never be {@literal null}.
-     * @since 2.2
      */
     default Streamable<T> and(Streamable<? extends T> streamable) {
         return and((Supplier<? extends Stream<? extends T>>) streamable);
@@ -189,7 +177,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Creates a new, unmodifiable {@link List}.
      *
      * @return will never be {@literal null}.
-     * @since 2.2
      */
     default List<T> toList() {
         return stream().collect(StreamUtils.toUnmodifiableList());
@@ -199,16 +186,11 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * Creates a new, unmodifiable {@link Set}.
      *
      * @return will never be {@literal null}.
-     * @since 2.2
      */
     default Set<T> toSet() {
         return stream().collect(StreamUtils.toUnmodifiableSet());
     }
 
-    /*
-     * (non-Javadoc)
-     * @see java.util.function.Supplier#get()
-     */
     default Stream<T> get() {
         return stream();
     }
@@ -217,9 +199,7 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
      * A collector to easily produce a {@link Streamable} from a {@link Stream} using {@link Collectors#toList} as
      * intermediate collector.
      *
-     * @return
      * @see #toStreamable(Collector)
-     * @since 2.2
      */
     public static <S> Collector<S, ?, Streamable<S>> toStreamable() {
         return toStreamable(Collectors.toList());
@@ -227,9 +207,6 @@ public interface Streamable<T> extends Iterable<T>, Supplier<Stream<T>> {
 
     /**
      * A collector to easily produce a {@link Streamable} from a {@link Stream} and the given intermediate collector.
-     *
-     * @return
-     * @since 2.2
      */
     @SuppressWarnings("unchecked")
     public static <S, T extends Iterable<S>> Collector<S, ?, Streamable<S>> toStreamable(

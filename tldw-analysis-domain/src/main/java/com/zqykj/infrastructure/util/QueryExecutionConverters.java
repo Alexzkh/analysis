@@ -192,10 +192,7 @@ public class QueryExecutionConverters {
             super(java.util.Optional.empty());
         }
 
-        /*
-         * (non-Javadoc)
-         * @see org.springframework.data.repository.util.QueryExecutionConverters.AbstractWrapperTypeConverter#wrap(java.lang.Object)
-         */
+
         @Override
         protected Object wrap(Object source) {
             return java.util.Optional.of(source);
@@ -240,10 +237,6 @@ public class QueryExecutionConverters {
             super(CompletableFuture.completedFuture(null));
         }
 
-        /*
-         * (non-Javadoc)
-         * @see org.springframework.data.repository.util.QueryExecutionConverters.AbstractWrapperTypeConverter#wrap(java.lang.Object)
-         */
         @Override
         protected Object wrap(Object source) {
             return source instanceof CompletableFuture ? source : CompletableFuture.completedFuture(source);
