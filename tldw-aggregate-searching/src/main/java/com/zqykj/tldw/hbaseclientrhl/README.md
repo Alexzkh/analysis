@@ -34,10 +34,6 @@ public class PeopleDto {
 ```
 3. RowMapper定义
 ```java
-import com.jthink.skyeye.data.hbase.api.RowMapper;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.util.Bytes;
-
 public class PeopleRowMapper implements RowMapper<PeopleDto> {
 
     private static byte[] COLUMNFAMILY = "f".getBytes();
@@ -57,13 +53,6 @@ public class PeopleRowMapper implements RowMapper<PeopleDto> {
 ```
 4. query操作
 ```java
-import com.jthink.skyeye.data.hbase.api.HbaseTemplate;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 public class QueryService {
 
@@ -87,17 +76,6 @@ public class QueryService {
 1. 将上述配置项赋予正确的值
 2. update、delete、put操作
 ```java
-import com.jthink.skyeye.data.hbase.api.HbaseTemplate;
-import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.Mutation;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-
 @Service
 public class QueryService {
 
