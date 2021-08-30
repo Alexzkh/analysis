@@ -25,9 +25,6 @@ public interface TeacherInfoDao extends ElasticsearchOperations<TeacherInfo, Str
     @Query("{\"match_all\" : {}}")
     Page<TeacherInfo> matchAll(Pageable pageable);
 
-    @Query("{\"aggs\" : { \"salary_status\" : { \"stats\" : {\"field\" : \"salary\"}}}}")
-    Page<TeacherInfo> testAggregate(Pageable pageable, Routing routing);
-
     @Query("{\"match_all\" : {}}")
     Optional<List<TeacherInfo>> matchAllofOptional();
 
