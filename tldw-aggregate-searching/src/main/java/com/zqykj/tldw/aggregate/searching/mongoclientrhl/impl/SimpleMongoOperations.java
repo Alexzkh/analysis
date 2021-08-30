@@ -7,6 +7,7 @@ import com.zqykj.tldw.aggregate.data.repository.RepositoryInformation;
 import com.zqykj.tldw.aggregate.index.mongodb.associate.MongodbIndexOperations;
 import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoOperations;
 import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoRestTemplate;
+import org.springframework.lang.Nullable;
 
 import java.util.Optional;
 
@@ -48,7 +49,7 @@ public class SimpleMongoOperations<T, ID> implements MongoOperations<T, ID> {
     }
 
     @Override
-    public Optional<T> findById(ID id) {
+    public Optional<T> findById(ID id, @Nullable String routing) {
         return Optional.empty();
     }
 

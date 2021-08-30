@@ -60,6 +60,8 @@ public interface PersistentEntity<T, P extends PersistentProperty<P>> extends It
     @Nullable
     P getPersistentProperty(String name);
 
+    boolean isPropertyPresent(String name);
+
     void doWithProperties(PropertyHandler<P> handler);
 
     /**

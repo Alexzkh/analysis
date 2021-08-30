@@ -28,6 +28,7 @@ import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
@@ -90,9 +91,9 @@ public class SimpleElasticsearchOperations<T, M> implements ElasticsearchOperati
     }
 
     @Override
-    public Optional<T> findById(M id) {
+    public Optional<T> findById(M id, @NonNull String routing) {
         return Optional.ofNullable(
-                restTemplate.get(Objects.toString(id, null), entityClass, getIndexCoordinates()));
+                restTemplate.get(Objects.toString(id, null), entityClass, getIndexCoordinates(), routing));
     }
 
     /**

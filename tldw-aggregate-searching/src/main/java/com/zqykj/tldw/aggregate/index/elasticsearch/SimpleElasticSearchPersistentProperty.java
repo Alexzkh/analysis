@@ -4,6 +4,7 @@
 package com.zqykj.tldw.aggregate.index.elasticsearch;
 
 import com.zqykj.annotations.Field;
+import com.zqykj.annotations.MultiField;
 import com.zqykj.tldw.aggregate.index.model.Property;
 import com.zqykj.tldw.aggregate.index.model.SimpleTypeHolder;
 import com.zqykj.tldw.aggregate.index.mapping.AbstractPersistentProperty;
@@ -44,6 +45,12 @@ public class SimpleElasticSearchPersistentProperty extends AbstractPersistentPro
         if (isIdWithoutAnnotation) {
             LOGGER.warn("Using the property name of '{}' to identify the id property is deprecated."
                     + " Please annotate the id property with '@Id'", getName());
+        }
+
+        boolean isField = isAnnotationPresent(Field.class);
+
+        if (isField && isAnnotationPresent(MultiField.class)) {
+            throw new RuntimeException("@Field annotation must not be used on a @MultiField property.");
         }
     }
 

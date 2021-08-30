@@ -3,20 +3,22 @@
  */
 package com.zqykj.tldw.aggregate.searching.esclientrhl;
 
-import com.alibaba.fastjson.JSON;
 import com.zqykj.domain.page.Sort;
 import com.zqykj.domain.routing.Routing;
+import com.zqykj.infrastructure.util.JacksonUtils;
+import com.zqykj.infrastructure.util.QueryExecutionConverters;
+import com.zqykj.tldw.aggregate.covert.ElasticsearchEntityConverter;
 import com.zqykj.infrastructure.constant.Constants;
+import com.zqykj.tldw.aggregate.covert.EntityReader;
 import com.zqykj.tldw.aggregate.exception.BulkFailureException;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.ElasticsearchStringQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.HighlightQuery;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.Query;
 import com.zqykj.tldw.aggregate.data.query.elasticsearch.core.*;
 import com.zqykj.tldw.aggregate.index.elasticsearch.ElasticsearchPersistentEntity;
-import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentEntity;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticSearchPersistentProperty;
 import com.zqykj.tldw.aggregate.index.elasticsearch.SimpleElasticsearchMappingContext;
-import com.zqykj.tldw.aggregate.index.mapping.PersistentProperty;
+import com.zqykj.tldw.aggregate.model.BeanWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -34,11 +36,8 @@ import org.elasticsearch.search.sort.*;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,16 +47,27 @@ import static org.elasticsearch.index.query.QueryBuilders.wrapperQuery;
 @Slf4j
 public abstract class AbstractElasticsearchTemplate {
 
-    protected final GenericConversionService conversionService;
-    protected final SimpleElasticsearchMappingContext mappingContext;
-    static final Integer INDEX_MAX_RESULT_WINDOW = 10_000;
+    protected GenericConversionService conversionService;
+    protected SimpleElasticsearchMappingContext mappingContext;
+    protected ElasticsearchEntityConverter elasticsearchConverter;
+    static Integer INDEX_MAX_RESULT_WINDOW = 10_000;
 
-    public AbstractElasticsearchTemplate(SimpleElasticsearchMappingContext mappingContext,
-                                         GenericConversionService conversionService) {
+    protected void initialize(SimpleElasticsearchMappingContext mappingContext) {
+
+        Assert.notNull(mappingContext, "mappingContext must not be null.");
+
         this.mappingContext = mappingContext;
-        this.conversionService = conversionService;
+        this.conversionService = QueryExecutionConverters.CONVERSION_SERVICE;
+        this.elasticsearchConverter = this.createElasticsearchConverter();
     }
 
+
+    /**
+     * <h2> 构建Elasticsearch entity converter </h2>
+     */
+    protected ElasticsearchEntityConverter createElasticsearchConverter() {
+        return new ElasticsearchEntityConverter(mappingContext);
+    }
 
     /**
      * <h2> 对批量操作返回进行检查 </h2>
@@ -129,7 +139,9 @@ public abstract class AbstractElasticsearchTemplate {
         } else {
             indexRequest = new IndexRequest(indexName);
         }
-        indexRequest.source(JSON.toJSONString(entity), XContentType.JSON);
+        Map<String, Object> source = new HashMap<>();
+        elasticsearchConverter.write(entity, source);
+        indexRequest.source(JacksonUtils.toJson(source), XContentType.JSON);
         String routing = getRouting(entity);
         if (routing != null) {
             indexRequest.routing(routing);
@@ -145,7 +157,7 @@ public abstract class AbstractElasticsearchTemplate {
         SimpleElasticSearchPersistentProperty idProperty =
                 mappingContext.getRequiredPersistentEntity(bean.getClass()).getIdProperty();
         if (null != idProperty) {
-            Object id = getProperty(idProperty, bean);
+            Object id = BeanWrapper.getProperty(idProperty, bean);
             if (null != id) {
                 return Objects.toString(id, null);
             }
@@ -154,10 +166,10 @@ public abstract class AbstractElasticsearchTemplate {
     }
 
     /**
+     * @param originalList: original pojo list
+     * @param isParallel:   is parallel
      * @description: split big list to small list ,then execute batch update .
-     * @param originalList:  original pojo list
-     * @param isParallel: is parallel
-     * @return: java.util.List<java.util.List<T>>
+     * @return: java.util.List<java.util.List < T>>
      **/
     public <T> List<List<T>> spiltList(List<T> originalList, boolean isParallel) {
         if (originalList.size() <= Constants.BULK_COUNT) {
@@ -198,27 +210,17 @@ public abstract class AbstractElasticsearchTemplate {
 
         SimpleElasticSearchPersistentProperty routingFieldProperty =
                 mappingContext.getRequiredPersistentEntity(bean.getClass()).getRoutingFieldProperty();
-        Routing routing = convertIfNecessary(routingFieldProperty, Routing.class);
+        if (null == routingFieldProperty) {
+            if (log.isErrorEnabled()) {
+                log.error("Please add the Routing attribute to the index class : {} " + bean.getClass().getName());
+            }
+            throw new RuntimeException("Please add the Routing attribute to the index class " + bean.getClass().getName());
+        }
+        Routing routing = convertIfNecessary(BeanWrapper.getProperty(routingFieldProperty, bean), Routing.class);
         if (null != routing && null != routing.getRouting()) {
             return conversionService.convert(routing.getRouting(), String.class);
         }
         return null;
-    }
-
-    public <T> Object getProperty(PersistentProperty<?> property, T bean) {
-
-        Assert.notNull(property, "PersistentProperty must not be null!");
-
-        try {
-            Field field = property.getRequiredField();
-
-            ReflectionUtils.makeAccessible(field);
-            return ReflectionUtils.getField(field, bean);
-
-        } catch (IllegalStateException e) {
-            throw new RuntimeException(
-                    String.format("Could not read property %s of %s!", property.toString(), bean.toString()), e);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -238,40 +240,59 @@ public abstract class AbstractElasticsearchTemplate {
         return getRequiredPersistentEntity(clazz).getIndexName();
     }
 
-    ElasticsearchPersistentEntity<?> getRequiredPersistentEntity(Class<?> clazz) {
+    public ElasticsearchPersistentEntity<?> getRequiredPersistentEntity(Class<?> clazz) {
         return mappingContext.getRequiredPersistentEntity(clazz);
     }
 
-    public interface DocumentCallback<T> {
+    protected interface DocumentCallback<T> {
+
         @Nullable
         T doWith(@Nullable ElasticsearchDocument document);
     }
 
+    /**
+     * <h2> </h2>
+     */
+    protected class ReadDocumentCallback<T> implements DocumentCallback<T> {
+
+        private final EntityReader<? super T, Map<String, Object>> reader;
+        private final Class<T> type;
+
+        public ReadDocumentCallback(EntityReader<? super T, Map<String, Object>> reader, Class<T> type) {
+            Assert.notNull(reader, "reader is null");
+            Assert.notNull(type, "type is null");
+
+            this.reader = reader;
+            this.type = type;
+        }
+
+
+        @Override
+
+        public T doWith(ElasticsearchDocument document) {
+
+            if (null == document) {
+                return null;
+            }
+            return reader.read(type, document);
+        }
+    }
+
+    /**
+     * <h2> 对Es 查询的文档数据进行回调处理 </h2>
+     */
     public interface SearchDocumentResponseCallback<T> {
         T doWith(SearchDocumentResponse response);
     }
 
     protected class ReadSearchDocumentResponseCallback<T> implements SearchDocumentResponseCallback<SearchHits<T>> {
-        private final Class<T> type;
         private final DocumentCallback<T> delegate;
 
-        public ReadSearchDocumentResponseCallback(Class<T> type, String index) {
+        public ReadSearchDocumentResponseCallback(Class<T> type) {
+
             Assert.notNull(type, "type is null");
-            this.type = type;
-            // 将es的hit 数据转换成 index Class
-            delegate = document -> {
-                if (null == document) {
-                    return null;
-                }
-                SimpleElasticSearchPersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(type);
-                if (null != persistentEntity) {
-                    SimpleElasticSearchPersistentProperty idProperty = persistentEntity.getIdProperty();
-                    if (null != idProperty) {
-                        document.put(idProperty.getFieldName(), document.getId());
-                    }
-                }
-                return JSON.parseObject(JSON.toJSONString(document), type);
-            };
+            // 使用Es converter 对 查询的文档数据 读取处理
+            this.delegate = new ReadDocumentCallback<>(elasticsearchConverter, type);
         }
 
         @Override
@@ -279,75 +300,75 @@ public abstract class AbstractElasticsearchTemplate {
             List<T> entities = response.getSearchDocuments().stream().map(delegate::doWith).collect(Collectors.toList());
             return mapHits(response, entities);
         }
+    }
 
-        private <T> SearchHits<T> mapHits(SearchDocumentResponse searchDocumentResponse, List<T> contents) {
-            return mapHitsFromResponse(searchDocumentResponse, contents);
+    private <T> SearchHits<T> mapHits(SearchDocumentResponse searchDocumentResponse, List<T> contents) {
+        return mapHitsFromResponse(searchDocumentResponse, contents);
+    }
+
+    private <T> SearchHitsImpl<T> mapHitsFromResponse(SearchDocumentResponse searchDocumentResponse, List<T> contents) {
+
+        Assert.notNull(searchDocumentResponse, "searchDocumentResponse is null");
+        Assert.notNull(contents, "contents is null");
+
+        Assert.isTrue(searchDocumentResponse.getSearchDocuments().size() == contents.size(),
+                "Count of documents must match the count of entities");
+
+        long totalHits = searchDocumentResponse.getTotalHits();
+        float maxScore = searchDocumentResponse.getMaxScore();
+        String scrollId = searchDocumentResponse.getScrollId();
+
+        List<SearchHit<T>> searchHits = new ArrayList<>();
+        List<SearchDocumentResponse.SearchDocument> searchDocuments = searchDocumentResponse.getSearchDocuments();
+        for (int i = 0; i < searchDocuments.size(); i++) {
+            SearchDocumentResponse.SearchDocument document = searchDocuments.get(i);
+            T content = contents.get(i);
+            SearchHit<T> hit = mapHit(document, content);
+            searchHits.add(hit);
         }
+        Aggregations aggregations = searchDocumentResponse.getAggregations();
+        SearchHits.TotalHitsRelation totalHitsRelation = SearchHits.TotalHitsRelation.valueOf(searchDocumentResponse.getTotalHitsRelation());
 
-        private <T> SearchHitsImpl<T> mapHitsFromResponse(SearchDocumentResponse searchDocumentResponse, List<T> contents) {
+        return new SearchHitsImpl<>(totalHits, totalHitsRelation, maxScore, scrollId, searchHits, aggregations);
+    }
 
-            Assert.notNull(searchDocumentResponse, "searchDocumentResponse is null");
-            Assert.notNull(contents, "contents is null");
+    private <T> SearchHit<T> mapHit(SearchDocumentResponse.SearchDocument searchDocument, T content) {
 
-            Assert.isTrue(searchDocumentResponse.getSearchDocuments().size() == contents.size(),
-                    "Count of documents must match the count of entities");
+        Assert.notNull(searchDocument, "searchDocument is null");
+        Assert.notNull(content, "content is null");
 
-            long totalHits = searchDocumentResponse.getTotalHits();
-            float maxScore = searchDocumentResponse.getMaxScore();
-            String scrollId = searchDocumentResponse.getScrollId();
+        return new SearchHit<>(searchDocument.getIndex(),
+                searchDocument.hasId() ? searchDocument.getId() : null,
+                searchDocument.getScore(),
+                searchDocument.getSortValues(),
+                searchDocument.getHighlightFields(),
+                mapInnerHits(searchDocument),
+                searchDocument.getNestedMetaData(),
+                content);
+    }
 
-            List<SearchHit<T>> searchHits = new ArrayList<>();
-            List<SearchDocumentResponse.SearchDocument> searchDocuments = searchDocumentResponse.getSearchDocuments();
-            for (int i = 0; i < searchDocuments.size(); i++) {
-                SearchDocumentResponse.SearchDocument document = searchDocuments.get(i);
-                T content = contents.get(i);
-                SearchHit<T> hit = mapHit(document, content);
-                searchHits.add(hit);
-            }
-            Aggregations aggregations = searchDocumentResponse.getAggregations();
-            SearchHits.TotalHitsRelation totalHitsRelation = SearchHits.TotalHitsRelation.valueOf(searchDocumentResponse.getTotalHitsRelation());
+    private Map<String, SearchHits<?>> mapInnerHits(SearchDocumentResponse.SearchDocument searchDocument) {
 
-            return new SearchHitsImpl<>(totalHits, totalHitsRelation, maxScore, scrollId, searchHits, aggregations);
-        }
+        Map<String, SearchHits<?>> innerHits = new LinkedHashMap<>();
+        Map<String, SearchDocumentResponse> documentInnerHits = searchDocument.getInnerHits();
 
-        private <T> SearchHit<T> mapHit(SearchDocumentResponse.SearchDocument searchDocument, T content) {
+        if (documentInnerHits != null && documentInnerHits.size() > 0) {
 
-            Assert.notNull(searchDocument, "searchDocument is null");
-            Assert.notNull(content, "content is null");
+            for (Map.Entry<String, SearchDocumentResponse> entry : documentInnerHits.entrySet()) {
+                SearchDocumentResponse searchDocumentResponse = entry.getValue();
 
-            return new SearchHit<>(searchDocument.getIndex(),
-                    searchDocument.hasId() ? searchDocument.getId() : null,
-                    searchDocument.getScore(),
-                    searchDocument.getSortValues(),
-                    searchDocument.getHighlightFields(),
-                    mapInnerHits(searchDocument),
-                    searchDocument.getNestedMetaData(),
-                    content);
-        }
+                SearchHits<SearchDocumentResponse.SearchDocument> searchHits =
+                        mapHitsFromResponse(searchDocumentResponse, searchDocumentResponse.getSearchDocuments());
 
-        private Map<String, SearchHits<?>> mapInnerHits(SearchDocumentResponse.SearchDocument searchDocument) {
-
-            Map<String, SearchHits<?>> innerHits = new LinkedHashMap<>();
-            Map<String, SearchDocumentResponse> documentInnerHits = searchDocument.getInnerHits();
-
-            if (documentInnerHits != null && documentInnerHits.size() > 0) {
-
-                for (Map.Entry<String, SearchDocumentResponse> entry : documentInnerHits.entrySet()) {
-                    SearchDocumentResponse searchDocumentResponse = entry.getValue();
-
-                    SearchHits<SearchDocumentResponse.SearchDocument> searchHits =
-                            mapHitsFromResponse(searchDocumentResponse, searchDocumentResponse.getSearchDocuments());
-
-                    // map Documents to real objects
-                    // TODO 最后搞
+                // map Documents to real objects
+                // TODO 最后搞
 //                SearchHits<?> mappedSearchHits = mapInnerDocuments(searchHits, type);
 //
 //                innerHits.put(entry.getKey(), mappedSearchHits);
-                }
-
             }
-            return innerHits;
+
         }
+        return innerHits;
     }
 
     protected SearchRequest createSearchRequest(Query query, @Nullable Class<?> clazz, String index) {

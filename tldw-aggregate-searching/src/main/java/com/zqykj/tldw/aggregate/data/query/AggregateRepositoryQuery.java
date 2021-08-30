@@ -14,8 +14,5 @@ public interface AggregateRepositoryQuery {
      * @return execution result. Can be {@literal null}.
      */
     @Nullable
-    default Object execute(Object[] parameters) {
-        return null;
-    }
-
+    Object execute(Object[] parameters);
 }

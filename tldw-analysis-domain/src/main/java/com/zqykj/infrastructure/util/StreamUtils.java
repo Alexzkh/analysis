@@ -32,8 +32,6 @@ import static java.util.stream.Collectors.*;
 
 /**
  * Spring Data specific Java {@link Stream} utility methods and classes.
- *
- * @since 1.10
  */
 public interface StreamUtils {
 
@@ -41,7 +39,6 @@ public interface StreamUtils {
      * Returns a {@link Stream} backed by the given {@link Iterator}
      *
      * @param iterator must not be {@literal null}.
-     * @return
      */
     public static <T> Stream<T> createStreamFromIterator(Iterator<T> iterator) {
 
@@ -54,8 +51,6 @@ public interface StreamUtils {
      * {@link Stream#close()} to the iterator.
      *
      * @param iterator must not be {@literal null}.
-     * @return
-     * @since 2.0
      */
     public static <T> Stream<T> createStreamFromIterator(CloseableIterator<T> iterator) {
 
@@ -98,7 +93,6 @@ public interface StreamUtils {
      *
      * @param source can be {@literal null}.
      * @return a new {@link Stream} for the given value returning an empty {@link Stream} if the value is {@literal null}.
-     * @since 2.0.6
      */
     public static <T> Stream<T> fromNullable(@Nullable T source) {
         return source == null ? Stream.empty() : Stream.of(source);
@@ -112,8 +106,6 @@ public interface StreamUtils {
      * @param left     must not be {@literal null}.
      * @param right    must not be {@literal null}.
      * @param combiner must not be {@literal null}.
-     * @return
-     * @since 2.1
      */
     public static <L, R, T> Stream<T> zip(Stream<L> left, Stream<R> right, BiFunction<L, R, T> combiner) {
 

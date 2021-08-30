@@ -32,7 +32,7 @@ public class Routing {
         return new Routing(null);
     }
 
-    public boolean isRoute() {
-        return null != routing;
-    }
+//    public boolean isRoute() {
+//        return null != routing;
+//    }
 }

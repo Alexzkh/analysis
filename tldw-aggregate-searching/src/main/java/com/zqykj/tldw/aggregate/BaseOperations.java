@@ -8,13 +8,13 @@ import org.springframework.stereotype.Indexed;
  * classpath scanning for easy Spring bean creation.
  * <p>
  * Domain operations extending this interface can selectively expose CRUD methods by simply declaring methods of the
- *  same signature as those declared in {@link CRUDOperations}.
+ * same signature as those declared in {@link CRUDOperations}.
  *
- * @see CRUDOperations
  * @param <T> the domain type the operations manages
  * @param <M> the type of the id of the entity the operations manages
  * @Author zhangkehou
  * @Date 2021/8/17
+ * @see CRUDOperations
  */
 @Indexed
 public interface BaseOperations<T, M> {
