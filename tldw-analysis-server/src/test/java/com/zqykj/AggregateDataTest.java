@@ -7,13 +7,18 @@ import com.zqykj.app.service.dao.AliasPojoDao;
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.domain.aggregate.AliasPojo;
 import com.zqykj.domain.aggregate.TeacherInfo;
+import com.zqykj.domain.graph.EntityGraph;
+import com.zqykj.domain.graph.LinkGraph;
 import com.zqykj.domain.page.Page;
 import com.zqykj.domain.page.PageRequest;
 import com.zqykj.domain.page.Sort;
 import com.zqykj.domain.routing.Routing;
 import com.zqykj.infrastructure.id.SnowFlowerIdGenerator;
 import com.zqykj.infrastructure.util.JacksonUtils;
-import org.checkerframework.checker.units.qual.A;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,5 +138,57 @@ public class AggregateDataTest {
         System.out.println(JacksonUtils.toJson(aliasPojo.orElse(new AliasPojo())));
     }
 
+    @Test
+    public void testMultiField() {
 
+        AliasPojo aliasPojo = new AliasPojo();
+
+        aliasPojo.setId("1");
+        aliasPojo.setRouting(new Routing("1"));
+        aliasPojo.setDate(new Date());
+        aliasPojo.setDescribe(new TeacherInfo());
+        aliasPojo.setName("12312");
+
+        EntityGraph entity = new EntityGraph();
+        entity.setId(1223213232L);
+        entity.setType("card");
+        EntityGraph entity1 = new EntityGraph();
+        entity1.setId(2343242342L);
+        entity1.setType("card");
+        List<EntityGraph> entityGraphs = new ArrayList<>();
+        entityGraphs.add(entity);
+        entityGraphs.add(entity1);
+        aliasPojo.setEntityGraphs(entityGraphs);
+
+        LinkGraph linkGraph = new LinkGraph();
+        linkGraph.setId(1223213232L);
+        linkGraph.setType("trade_card");
+        LinkGraph linkGraph1 = new LinkGraph();
+        linkGraph1.setId(2343242342L);
+        linkGraph1.setType("trade_card");
+        List<LinkGraph> linkGraphs = new ArrayList<>();
+        linkGraphs.add(linkGraph);
+        linkGraphs.add(linkGraph1);
+
+        aliasPojo.setLinkGraphs(linkGraphs);
+
+        aliasPojoDao.save(aliasPojo);
+    }
+
+
+    @Setter
+    @Getter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    static class Entity {
+        private String type;
+        private String id;
+    }
+
+    @Test
+    public void findMultiField() throws Exception {
+
+        Optional<AliasPojo> byId = aliasPojoDao.findById("1", "1");
+        System.out.println(JacksonUtils.toJson(byId.orElse(new AliasPojo())));
+    }
 }

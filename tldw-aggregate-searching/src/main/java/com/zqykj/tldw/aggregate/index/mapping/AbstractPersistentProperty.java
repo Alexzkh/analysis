@@ -112,6 +112,15 @@ public abstract class AbstractPersistentProperty<P extends PersistentProperty<P>
         return getProperty().getName();
     }
 
+    @Nullable
+    protected Class<?> getActualTypeOrNull() {
+        try {
+            return getActualType();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Override
     public Class<?> getActualType() {
         return information.getRequiredActualType().getType();
