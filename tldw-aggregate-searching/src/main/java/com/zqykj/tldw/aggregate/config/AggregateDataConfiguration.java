@@ -16,7 +16,6 @@ import com.zqykj.tldw.aggregate.searching.mongoclientrhl.MongoRestTemplate;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -66,7 +65,6 @@ public class AggregateDataConfiguration {
 
     @Bean
     @ConditionalOnBean(SimpleElasticsearchMappingContext.class)
-    @ConditionalOnMissingBean(ElasticsearchRestTemplate.class)
     public ElasticsearchRestTemplate elasticsearchRestTemplate(RestHighLevelClient restHighLevelClient,
                                                                SimpleElasticsearchMappingContext simpleElasticsearchMappingContext) {
         
