@@ -33,7 +33,6 @@ public class AggregateDataConfiguration {
      */
     @Bean
     @ConditionalOnBean(MongoDBOperationClientProperties.class)
-    @ConditionalOnMissingBean(SimpleMongodbMappingContext.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('mongodb')")
     SimpleMongodbMappingContext simpleMongodbMappingContext(ApplicationContext applicationContext, MongoDBOperationClientProperties properties) throws ClassNotFoundException {
         SimpleMongodbMappingContext context = new SimpleMongodbMappingContext();
@@ -46,7 +45,6 @@ public class AggregateDataConfiguration {
 
     @Bean
     @ConditionalOnBean(ElasticsearchOperationClientProperties.class)
-    @ConditionalOnMissingBean(SimpleElasticsearchMappingContext.class)
     @ConditionalOnExpression("'${enable.datasource.type}'.equals('elasticsearch')")
     SimpleElasticsearchMappingContext simpleElasticsearchMappingContext(ApplicationContext applicationContext,
                                                                         ElasticsearchOperationClientProperties properties) throws ClassNotFoundException {
@@ -59,7 +57,6 @@ public class AggregateDataConfiguration {
 
     @Bean
     @ConditionalOnBean(SimpleMongodbMappingContext.class)
-    @ConditionalOnMissingBean(MongoRestTemplate.class)
     public MongoRestTemplate mongoRestTemplate(MongoClient mongoClient,
                                                SimpleMongodbMappingContext simpleMongodbMappingContext,
                                                MongoDBOperationClientProperties mongoDBOperationClientProperties) {
