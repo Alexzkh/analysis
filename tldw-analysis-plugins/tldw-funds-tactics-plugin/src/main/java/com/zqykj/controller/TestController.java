@@ -3,23 +3,30 @@
  */
 package com.zqykj.controller;
 
+import com.gitee.starblues.realize.PluginUtils;
+import com.zqykj.app.service.dao.ElasticTestDao;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.zqykj.app.service.dao.ElasticTestDao;
+
+
 
 @RestController
+@RequestMapping(path = "plugin2")
 public class TestController {
 
-    @Autowired
-    private ElasticTestDao testDao;
+    private final ElasticTestDao testDao;
 
+    @Autowired
+    public TestController(PluginUtils pluginUtils) {
+        this.testDao = pluginUtils.getMainBean(ElasticTestDao.class);
+    }
 
     @GetMapping("/test")
     public int test() throws Exception {
         return testDao.search(new MatchAllQueryBuilder()).size();
     }
-
 
 }

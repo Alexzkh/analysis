@@ -1,0 +1,5 @@
+#配置插件自动启动类
+plugin:
+  auto-config-class:
+    - com.zqykj.tldw.hbaseclientrhl.boot.HbaseAutoConfiguration
+    - com.zqykj.tldw.aggregate.data.AggregateRepositoriesAutoConfiguration

@@ -9,6 +9,10 @@
         <module>tldw-analysis-app</module>
         <module>tldw-analysis-domain</module>
         <module>tldw-analysis-common</module>
+        <module>tldw-analysis-plugins</module>
+        <module>tldw-analysis-runner</module>
+        <module>tldw-analysis-plugin-common</module>
+        <module>tldw-analysis-plugin-parent</module>
     </modules>
 
     <groupId>com.zqykj</groupId>
@@ -78,7 +82,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.8.1</version>
                 <configuration>
                     <source>${compiler.source}</source>
                     <target>${compiler.target}</target>

@@ -1,34 +1,5 @@
-elasticsearch:
-  data:
-    source:
-      # es link
-      host: http://172.30.6.31:9208
-      # userName if elasticsearch open ssl
-      username:
-      # password if elasticsearch open ssl
-      password:
-      max_connect_total: 30
-      max_connect_per_route: 10
-      connection_request_timeout_millis: 2000
-      socket_timeout_millis: 30000
-      connect_timeout_millis: 2000
-      prefix:
-
-server:
-  port: 18087
-aggregate:
-  operate: es
-
+#获取启动项目的配置文件
 spring:
-  redis:
-    host: 172.30.6.31
-    port: 6379
-  data:
-    hbase:
-      quorum: 172.30.6.31:2181
-      rootDir: file:///hbase
-      nodeParent: /hbase
+  profiles:
+    active: dev
 
-enable:
-  datasource:
-    type: elasticsearch

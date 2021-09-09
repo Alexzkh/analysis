@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
  * @Author zhangkehou
  * @Date 2021/7/16 14:42
  */
-@Service
+//@Service
 public class AggregateOperateService {
 
     @Autowired
