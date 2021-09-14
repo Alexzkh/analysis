@@ -1,7 +1,8 @@
 package com.zqykj.infrastructure.util;
 
 
-import com.zqykj.infrastructure.constant.Constants;
+
+import com.zqykj.constant.Constants;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;

@@ -24,8 +24,8 @@ public class JacksonSerializer implements Serializer {
             return null;
         }
         return JacksonUtils.toObj(data, cls);
-    }
-    
+}
+
     @Override
     public <T> T deserialize(byte[] data, Type type) {
         if (ByteUtils.isEmpty(data)) {

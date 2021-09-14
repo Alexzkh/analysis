@@ -17,7 +17,8 @@
 package com.zqykj.infrastructure.util;
 
 
-import com.zqykj.infrastructure.constant.Constants;
+
+import com.zqykj.constant.Constants;
 
 import java.io.IOException;
 import java.io.StringWriter;

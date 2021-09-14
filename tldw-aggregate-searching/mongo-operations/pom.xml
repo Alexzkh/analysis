@@ -17,17 +17,12 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
-            <version>${mongodb.version}</version>
-            <scope>compile</scope>
-        </dependency>
+
 
         <!-- 通用模块 -->
         <dependency>
             <groupId>com.zqykj</groupId>
-            <artifactId>tldw-analysis-commons</artifactId>
+            <artifactId>aggregate-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

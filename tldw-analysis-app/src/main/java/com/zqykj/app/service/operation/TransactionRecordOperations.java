@@ -1,14 +1,14 @@
 package com.zqykj.app.service.operation;
 
 import com.zqykj.domain.transaction.TransactionRecord;
-import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
+import com.zqykj.repository.ElasticsearchRepository;
 
 /**
  * @Description: test ElasticsearchOperarionsTempleate
  * @Author zhangkehou
  * @Date 2021/8/16
  */
-public interface TransactionRecordOperations extends ElasticsearchOperations<TransactionRecord,String> {
+public interface TransactionRecordOperations extends ElasticsearchRepository<TransactionRecord,String> {
 
 
 }

@@ -2,6 +2,9 @@ package com.zqykj.domain.bank;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.zqykj.annotations.Document;
+import com.zqykj.annotations.Field;
+import com.zqykj.annotations.FieldType;
 import lombok.Data;
 
 import java.util.Date;

@@ -4,9 +4,9 @@
 package com.zqykj.domain.aggregate;
 
 import com.zqykj.annotations.*;
+import com.zqykj.domain.Routing;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
-import com.zqykj.domain.routing.Routing;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

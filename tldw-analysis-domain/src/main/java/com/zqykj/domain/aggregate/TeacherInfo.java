@@ -7,7 +7,7 @@ import com.zqykj.annotations.Document;
 import com.zqykj.annotations.Field;
 import com.zqykj.annotations.FieldType;
 import com.zqykj.annotations.Id;
-import com.zqykj.domain.routing.Routing;
+import com.zqykj.domain.Routing;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

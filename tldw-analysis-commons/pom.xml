@@ -16,57 +16,6 @@
 
     <name>tldw-analysis-commons</name>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
 
-    <dependencies>
-
-        <!-- 引入 Web 功能 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <!-- JSON 处理工具 -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.31</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-collections4</artifactId>
-            <version>4.0</version>
-        </dependency>
-
-        <!-- lombok 工具通过在代码编译时期动态的将注解替换为具体的代码,
-                IDEA 需要添加 lombok 插件 -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.16.18</version>
-        </dependency>
-
-        <!-- Java 8+ 函数式库Vavr -->
-        <!--        <dependency>-->
-        <!--            <groupId>io.vavr</groupId>-->
-        <!--            <artifactId>vavr</artifactId>-->
-        <!--            <version>0.10.3</version>-->
-        <!--        </dependency>-->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
-        </dependency>
-
-    </dependencies>
 
 </project>
