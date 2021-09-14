@@ -36,11 +36,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.zqykj</groupId>
-            <artifactId>tldw-aggregate-searching</artifactId>
-            <version>${analysis.server}</version>
-        </dependency>
-        <dependency>
             <groupId>com.gitee.starblues</groupId>
             <artifactId>springboot-plugin-framework</artifactId>
             <version>${springboot.plugins.version}</version>

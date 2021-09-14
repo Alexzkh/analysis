@@ -116,20 +116,24 @@ public abstract class RepositoryFactoryBeanSupport<T extends Repository<S, ID>, 
                 .getRequiredPersistentEntity(repositoryMetadata.getDomainType());
     }
 
+    @Override
     @NonNull
     public T getObject() {
         return this.repository.get();
     }
 
+    @Override
     @NonNull
     public Class<? extends T> getObjectType() {
         return repositoryInterface;
     }
 
+    @Override
     public boolean isSingleton() {
         return true;
     }
 
+    @Override
     public void afterPropertiesSet() {
 
         this.factory = createRepositoryFactory();

@@ -21,6 +21,9 @@ import java.util.Date;
 @Builder
 public class BankTransactionFlowTest {
 
+    @Id
+    private String id;
+
     /**
      * 客户名称
      */

@@ -15,8 +15,6 @@ import com.zqykj.util.TypeInformation;
 public class SimpleElasticsearchMappingContext
         extends AbstractMappingContext<SimpleElasticSearchPersistentEntity<?>, ElasticsearchPersistentProperty> {
 
-    private boolean autoIndexCreation = false;
-
     @Override
     protected <T> SimpleElasticSearchPersistentEntity<?> createPersistentEntity(TypeInformation<T> typeInformation) {
         return new SimpleElasticSearchPersistentEntity<>(typeInformation);
@@ -28,11 +26,4 @@ public class SimpleElasticsearchMappingContext
         return new SimpleElasticSearchPersistentProperty(property, owner, simpleTypeHolder);
     }
 
-    public boolean isAutoIndexCreation() {
-        return autoIndexCreation;
-    }
-
-    public void setAutoIndexCreation(boolean autoCreateIndexes) {
-        this.autoIndexCreation = autoCreateIndexes;
-    }
 }

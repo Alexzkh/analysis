@@ -30,7 +30,7 @@ public class ElasticsearchRepositoryConfigExtension extends RepositoryConfigurat
     public void postProcess(BeanDefinitionBuilder builder, AnnotationRepositoryConfigurationSource config) {
 
         AnnotationAttributes attributes = config.getAttributes();
-        builder.addPropertyReference("elasticsearchOperations", attributes.getString("elasticsearchTemplateRef"));
+        builder.addPropertyReference("elasticsearchTemplate", attributes.getString("elasticsearchTemplateRef"));
     }
 
     @Override
