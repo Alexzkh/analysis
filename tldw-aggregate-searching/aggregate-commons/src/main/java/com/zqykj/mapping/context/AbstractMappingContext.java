@@ -79,17 +79,16 @@ public abstract class AbstractMappingContext<E extends BasicPersistentEntity<?, 
         try {
 
             read.lock();
-
             return persistentEntities.values().stream()//
                     .flatMap(Optionals::toStream)//
                     .collect(Collectors.toSet());
-
         } finally {
             read.unlock();
         }
     }
 
 
+    @Override
     @Nullable
     public E getPersistentEntity(Class<?> type) {
         return getPersistentEntity(ClassTypeInformation.from(type));

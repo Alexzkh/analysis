@@ -6,7 +6,7 @@
         <artifactId>tldw-analysis-plugins</artifactId>
         <groupId>com.zqykj</groupId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath>../../tldw-analysis-plugin-parent/pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

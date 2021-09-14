@@ -3,10 +3,19 @@
  */
 package com.zqykj.repository.config;
 
+import com.zqykj.boot.ElasticsearchRepositoriesRegistrar;
 import com.zqykj.repository.query.QueryLookupStrategy;
 import com.zqykj.repository.support.ElasticsearchRepositoryFactoryBean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Import;
 
+import java.lang.annotation.*;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@Import(ElasticsearchRepositoriesRegistrar.class)
 public @interface EnableElasticsearchRepositories {
 
     /**

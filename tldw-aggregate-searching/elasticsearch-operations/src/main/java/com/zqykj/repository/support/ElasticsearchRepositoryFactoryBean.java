@@ -27,7 +27,7 @@ public class ElasticsearchRepositoryFactoryBean<T extends Repository<S, ID>, S, 
         extends RepositoryFactoryBeanSupport<T, S, ID> {
 
     @Nullable
-    private ElasticsearchRestTemplate operations;
+    private ElasticsearchRestTemplate elasticsearchTemplate;
 
     /**
      * <h2> Creates a new {@link ElasticsearchRepositoryFactoryBean} for the given repository interface. </h2>
@@ -41,27 +41,27 @@ public class ElasticsearchRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     /**
      * <h2> Configures the {@link ElasticsearchRestTemplate} to be used to create Elasticsearch repositories. </h2>
      *
-     * @param operations the operations to set
+     * @param elasticsearchTemplate the operations to set
      */
-    public void setElasticsearchOperations(ElasticsearchRestTemplate operations) {
+    public void setElasticsearchTemplate(ElasticsearchRestTemplate elasticsearchTemplate) {
 
-        Assert.notNull(operations, "ElasticsearchOperations must not be null!");
+        Assert.notNull(elasticsearchTemplate, "ElasticsearchOperations must not be null!");
 
-        setMappingContext(operations.getElasticsearchConverter().getMappingContext());
-        this.operations = operations;
+        setMappingContext(elasticsearchTemplate.getElasticsearchConverter().getMappingContext());
+        this.elasticsearchTemplate = elasticsearchTemplate;
     }
 
     @Override
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
-        Assert.notNull(operations, "ElasticsearchOperations must be configured!");
+        Assert.notNull(elasticsearchTemplate, "ElasticsearchOperations must be configured!");
     }
 
     @Override
     protected RepositoryFactorySupport createRepositoryFactory() {
 
-        Assert.notNull(operations, "operations are not initialized");
+        Assert.notNull(elasticsearchTemplate, "operations are not initialized");
 
-        return new ElasticsearchRepositoryFactory(operations);
+        return new ElasticsearchRepositoryFactory(elasticsearchTemplate);
     }
 }

@@ -63,6 +63,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         initialize(elasticsearchConverter);
     }
 
+    @Override
     public ElasticsearchIndexOperations indexOps(Class<?> clazz) {
 
         Assert.notNull(clazz, "clazz must not be null");
@@ -70,6 +71,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         return new ElasticsearchIndexOperations(this, clazz);
     }
 
+    @Override
     public ElasticsearchIndexOperations indexOps(String index) {
 
         Assert.notNull(index, "index must not be null");
@@ -77,6 +79,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         return new ElasticsearchIndexOperations(this, index);
     }
 
+    @Override
     public List<IndexedObjectInformation> doBulkOperation(List<?> queries, BulkOptions bulkOptions,
                                                           String index) {
         BulkRequest bulkRequest = requestFactory.bulkRequest(queries, bulkOptions, index);
@@ -87,6 +90,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     /**
      * <h2> 索引操作 </h2>
      */
+    @Override
     public String doIndex(IndexQuery query, String index) {
 
         IndexRequest request = requestFactory.indexRequest(query, index);
@@ -104,6 +108,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     /**
      * <h2> 根据Id 与 路由获取单条文档数据 </h2>
      */
+    @Override
     @Nullable
     public <T> T get(String id, Class<T> clazz, String index, @NonNull String routing) {
         Assert.notNull(routing, "routing param is must be not null!");

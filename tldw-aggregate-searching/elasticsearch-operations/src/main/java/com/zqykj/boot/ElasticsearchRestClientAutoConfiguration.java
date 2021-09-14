@@ -13,6 +13,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,7 +24,6 @@ import java.util.Arrays;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(RestHighLevelClient.class)
-@ConditionalOnMissingBean(RestClient.class)
 @EnableConfigurationProperties(value = ElasticsearchRestClientProperties.class)
 public class ElasticsearchRestClientAutoConfiguration {
 
@@ -75,6 +75,7 @@ public class ElasticsearchRestClientAutoConfiguration {
     static class RestHighLevelClientConfiguration {
 
         @Bean
+        @ConditionalOnBean(RestClientBuilder.class)
         RestHighLevelClient restHighLevelClient(RestClientBuilder restClientBuilder) {
             return new RestHighLevelClient(restClientBuilder);
         }

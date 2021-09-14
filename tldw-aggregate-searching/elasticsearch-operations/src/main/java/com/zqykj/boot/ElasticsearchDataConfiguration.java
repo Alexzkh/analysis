@@ -3,14 +3,16 @@
  */
 package com.zqykj.boot;
 
+import com.zqykj.annotations.Document;
+import com.zqykj.annotations.Persistent;
 import com.zqykj.core.ElasticsearchRestTemplate;
 import com.zqykj.core.convert.ElasticsearchConverter;
 import com.zqykj.core.convert.MappingElasticsearchConverter;
 import com.zqykj.core.mapping.SimpleElasticsearchMappingContext;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.domain.EntityScanner;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,15 +22,21 @@ abstract class ElasticsearchDataConfiguration {
     static class BaseConfiguration {
 
         @Bean
-        @ConditionalOnMissingBean
-        ElasticsearchConverter elasticsearchConverter(SimpleElasticsearchMappingContext mappingContext) {
-            return new MappingElasticsearchConverter(mappingContext);
+        public ElasticsearchConverter elasticsearchEntityMapper(
+                SimpleElasticsearchMappingContext elasticsearchMappingContext) {
+
+            MappingElasticsearchConverter elasticsearchConverter = new MappingElasticsearchConverter(
+                    elasticsearchMappingContext);
+            return elasticsearchConverter;
         }
 
         @Bean
-        @ConditionalOnMissingBean
-        SimpleElasticsearchMappingContext mappingContext() {
-            return new SimpleElasticsearchMappingContext();
+        public SimpleElasticsearchMappingContext elasticsearchMappingContext(ApplicationContext applicationContext)
+                throws ClassNotFoundException {
+
+            SimpleElasticsearchMappingContext mappingContext = new SimpleElasticsearchMappingContext();
+            mappingContext.setInitialEntitySet(new EntityScanner(applicationContext).scan(Document.class, Persistent.class));
+            return mappingContext;
         }
     }
 
@@ -37,8 +45,6 @@ abstract class ElasticsearchDataConfiguration {
     static class RestClientConfiguration {
 
         @Bean
-        @ConditionalOnMissingBean(value = ElasticsearchRestTemplate.class, name = "elasticsearchTemplate")
-        @ConditionalOnBean(RestHighLevelClient.class)
         ElasticsearchRestTemplate elasticsearchTemplate(RestHighLevelClient restHighLevelClient, ElasticsearchConverter elasticsearchConverter) {
             return new ElasticsearchRestTemplate(restHighLevelClient, elasticsearchConverter);
         }
