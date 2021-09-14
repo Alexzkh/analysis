@@ -1,12 +1,10 @@
 package com.zqykj.app.service.impl;
 
 import com.zqykj.app.service.IStandardBankTransactionFlowService;
-import com.zqykj.app.service.dao.ElasticTestDao;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;

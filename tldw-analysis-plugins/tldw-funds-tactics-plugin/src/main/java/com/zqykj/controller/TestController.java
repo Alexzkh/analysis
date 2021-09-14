@@ -4,7 +4,6 @@
 package com.zqykj.controller;
 
 import com.gitee.starblues.realize.PluginUtils;
-import com.zqykj.app.service.dao.ElasticTestDao;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

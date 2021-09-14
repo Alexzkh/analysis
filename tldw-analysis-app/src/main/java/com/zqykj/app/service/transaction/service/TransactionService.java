@@ -1,6 +1,5 @@
 package com.zqykj.app.service.transaction.service;
 
-import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.operation.TransactionRecordOperations;
 import com.zqykj.domain.transaction.TransactionRecord;
 import org.springframework.beans.factory.annotation.Autowired;

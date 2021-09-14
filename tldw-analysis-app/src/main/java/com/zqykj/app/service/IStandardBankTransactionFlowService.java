@@ -11,6 +11,5 @@ import java.util.List;
  */
 public interface IStandardBankTransactionFlowService {
 
-
     List<StandardBankTransactionFlow> standardBankTransactionFlowList();
 }
