@@ -29,6 +29,12 @@
         <dependency>
             <groupId>com.zqykj</groupId>
             <artifactId>elasticsearch-operations</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.zqykj</groupId>
+                    <artifactId>aggregate-commons</artifactId>
+                </exclusion>
+            </exclusions>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
