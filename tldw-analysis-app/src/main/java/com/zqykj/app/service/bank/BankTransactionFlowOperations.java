@@ -8,6 +8,6 @@ import com.zqykj.tldw.aggregate.searching.esclientrhl.ElasticsearchOperations;
  * @Author zhangkehou
  * @Date 2021/8/20
  */
-public interface BankTransactionFlowOperations extends ElasticsearchOperations<BankTransactionFlow,Long> {
+public interface BankTransactionFlowOperations extends ElasticsearchRepository<BankTransactionFlow,Long> {
 
 }

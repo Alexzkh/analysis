@@ -2,20 +2,28 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <packaging>pom</packaging>
-    <modules>
-        <module>tldw-aggregate-searching</module>
-        <module>tldw-analysis-server</module>
-        <module>tldw-analysis-app</module>
-        <module>tldw-analysis-domain</module>
-        <module>tldw-analysis-common</module>
-    </modules>
 
     <groupId>com.zqykj</groupId>
     <artifactId>analysis-service</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <modules>
+        <module>tldw-aggregate-searching</module>
+        <module>tldw-analysis-app</module>
+        <module>tldw-analysis-domain</module>
+        <module>tldw-analysis-commons</module>
+    </modules>
+
     <name>tldw-analysis-service</name>
     <description>数据分析服务</description>
+
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.4.3</version>
+    </parent>
 
     <properties>
         <java.version>1.8</java.version>
@@ -27,12 +35,6 @@
         <compiler.target>1.8</compiler.target>
         <spring-cloud.version>2020.0.1</spring-cloud.version>
     </properties>
-
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.4.3</version>
-    </parent>
 
     <dependencies>
         <dependency>

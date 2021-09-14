@@ -7,42 +7,40 @@
         <groupId>com.zqykj</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
+
     <artifactId>tldw-aggregate-searching</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+
     <name>tldw-aggregate-searching</name>
     <description>聚合查询服务</description>
+
+    <modules>
+        <module>elasticsearch-operations</module>
+        <module>hbase-operations</module>
+        <module>mongo-operations</module>
+    </modules>
+
+    <packaging>pom</packaging>
+
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <guava.version>25.1-jre</guava.version>
     </properties>
-    <dependencies>
 
-        <dependency>
-            <groupId>com.zqykj</groupId>
-            <artifactId>tldw-analysis-domain</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
+    <dependencies>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
+            <version>25.1-jre</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
-            <version>5.3.4</version>
-        </dependency>
-
 
     </dependencies>
 
-
+    <!-- 远程仓库 -->
     <distributionManagement>
         <repository>
             <id>nexus</id>
@@ -55,6 +53,7 @@
             <url>http://172.30.6.10:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
+
     <build>
         <plugins>
             <plugin>

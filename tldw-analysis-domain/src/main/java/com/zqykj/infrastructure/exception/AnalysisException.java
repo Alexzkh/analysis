@@ -1,7 +1,7 @@
 package com.zqykj.infrastructure.exception;
 
 
-import com.zqykj.infrastructure.constant.Constants;
+import com.zqykj.constant.Constants;
 import com.zqykj.infrastructure.util.StringUtils;
 
 /**

@@ -1,7 +1,7 @@
 package com.zqykj.infrastructure.util;
 
 import com.zqykj.annotations.Id;
-import com.zqykj.infrastructure.constant.Constants;
+import com.zqykj.constant.Constants;
 import org.springframework.util.ObjectUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
