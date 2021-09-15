@@ -1,7 +1,7 @@
 /**
  * @author Mcj
  */
-package com.zqykj.boot;
+package com.autoconfigure.rest;
 
 import com.zqykj.client.ElasticsearchRestClientProperties;
 import org.apache.commons.lang3.StringUtils;
@@ -13,7 +13,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -22,18 +22,21 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
 
+/**
+ *  <h1> {@link EnableAutoConfiguration Auto-configuration} for Elasticsearch REST clients. </h1>
+ * */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(RestHighLevelClient.class)
 @EnableConfigurationProperties(value = ElasticsearchRestClientProperties.class)
 public class ElasticsearchRestClientAutoConfiguration {
 
 
-    @Configuration(proxyBeanMethods = false)
+    @Configuration(proxyBeanMethods = false)  // 非单例
     @ConditionalOnMissingBean(RestClientBuilder.class)
     static class RestClientBuilderConfiguration {
 
         @Bean
-        RestClientBuilder restClientBuilder(ElasticsearchRestClientProperties properties) {
+        RestClientBuilder elasticsearchRestClientBuilder(ElasticsearchRestClientProperties properties) {
 
             String hosts = properties.getHost();
             hosts = hosts.contains("http://") ? hosts.replace("http://", "") : hosts;
@@ -75,9 +78,8 @@ public class ElasticsearchRestClientAutoConfiguration {
     static class RestHighLevelClientConfiguration {
 
         @Bean
-        @ConditionalOnBean(RestClientBuilder.class)
-        RestHighLevelClient restHighLevelClient(RestClientBuilder restClientBuilder) {
-            return new RestHighLevelClient(restClientBuilder);
+        RestHighLevelClient restHighLevelClient(RestClientBuilder elasticsearchRestClientBuilder) {
+            return new RestHighLevelClient(elasticsearchRestClientBuilder);
         }
 
     }

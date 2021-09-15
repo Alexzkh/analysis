@@ -3,7 +3,7 @@
  */
 package com.zqykj.repository.config;
 
-import com.zqykj.boot.ElasticsearchRepositoriesRegistrar;
+import com.autoconfigure.data.ElasticsearchRepositoriesRegistrar;
 import com.zqykj.repository.query.QueryLookupStrategy;
 import com.zqykj.repository.support.ElasticsearchRepositoryFactoryBean;
 import org.springframework.context.annotation.ComponentScan;

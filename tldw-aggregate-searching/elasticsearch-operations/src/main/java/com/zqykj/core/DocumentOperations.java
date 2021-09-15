@@ -17,7 +17,7 @@ import java.util.Objects;
 public interface DocumentOperations {
 
     @Nullable
-    <T> T get(String id, Class<T> clazz,String routing);
+    <T> T get(String id, Class<T> clazz, String routing);
 
     /**
      * <h2> 通过给定的索引 </h2>

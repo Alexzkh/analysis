@@ -188,7 +188,9 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
             routing = getEntityRouting(entity);
         }
         indexQuery.setVersion(getEntityVersion(entity));
-        indexQuery.setRouting(routing);
+        if (StringUtils.isNotBlank(routing)) {
+            indexQuery.setRouting(routing);
+        }
         return indexQuery;
     }
 

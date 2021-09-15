@@ -402,7 +402,6 @@ public class RequestFactory {
         if (elasticsearchFilter != null) {
             searchRequest.source().postFilter(elasticsearchFilter);
         }
-
         return searchRequest;
 
     }

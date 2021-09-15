@@ -4,9 +4,11 @@
 package com.zqykj.repository.core.support;
 
 
+import com.zqykj.annotations.Query;
 import com.zqykj.repository.Repository;
 import com.zqykj.repository.core.NamedQueries;
 import com.zqykj.repository.core.RepositoryInformation;
+import com.zqykj.repository.query.DefaultRepositoryQuery;
 import com.zqykj.repository.query.QueryLookupStrategy;
 import com.zqykj.repository.query.RepositoryQuery;
 import com.zqykj.repository.util.QueryExecutionConverters;
@@ -52,7 +54,7 @@ class QueryExecutorMethodInterceptor implements MethodInterceptor {
         }
         //
         this.queries = queryLookupStrategy //
-                .map(it -> mapMethodsToQuery(repositoryInformation, it)) //
+                .map(it -> mapMethodsToQuery(repositoryInformation, it))
                 .orElse(Collections.emptyMap());
     }
 
@@ -107,6 +109,7 @@ class QueryExecutorMethodInterceptor implements MethodInterceptor {
     private Object doInvoke(MethodInvocation invocation) throws Throwable {
         Method method = invocation.getMethod();
 
+        // 如果方法有@Query 注解
         if (hasQueryFor(method)) {
 
             RepositoryMethodInvoker invocationMetadata = invocationMetadataCache.get(method);
@@ -120,6 +123,7 @@ class QueryExecutorMethodInterceptor implements MethodInterceptor {
                     invocation.getArguments());
         }
 
+        // 直接代理到 默认实现类的 默认方法 查询
         return invocation.proceed();
     }
 
@@ -130,6 +134,6 @@ class QueryExecutorMethodInterceptor implements MethodInterceptor {
      * @return true / false
      */
     private boolean hasQueryFor(Method method) {
-        return queries.containsKey(method);
+        return queries.containsKey(method) && method.isAnnotationPresent(Query.class);
     }
 }

@@ -1,7 +1,7 @@
 /**
  * @author Mcj
  */
-package com.zqykj.boot;
+package com.autoconfigure.data;
 
 
 import com.zqykj.repository.ElasticsearchRepository;

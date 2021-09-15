@@ -12,6 +12,7 @@ import com.zqykj.domain.PageImpl;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Pageable;
 import com.zqykj.repository.ElasticsearchRepository;
+import com.zqykj.repository.EntranceRepository;
 import com.zqykj.repository.query.NativeSearchQuery;
 import com.zqykj.repository.query.Query;
 import com.zqykj.util.StreamUtils;
@@ -38,7 +39,7 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
  * @author machengjun
  */
 @Slf4j
-public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchRepository<T, ID> {
+public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchRepository<T, ID>, EntranceRepository<T, ID> {
 
     private ElasticsearchRestTemplate operations;
     private IndexOperations indexOperations;

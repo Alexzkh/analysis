@@ -130,7 +130,6 @@ public class NativeSearchQueryBuilder {
         this.route = route;
         return this;
     }
-
     public NativeSearchQueryBuilder withSearchType(SearchType searchType) {
         this.searchType = searchType;
         return this;

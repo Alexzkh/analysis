@@ -85,6 +85,13 @@ public class MappingElasticsearchConverter implements ElasticsearchConverter, In
             // 索引类 字段原始 name
             String name = property.getName();
 
+            // id 需要特殊处理
+            if (property.isIdProperty() && source.hasId()) {
+                Object id = source.get(property.getFieldName());
+                if (null == id) {
+                    source.put(property.getFieldName(), source.getId());
+                }
+            }
             // source 是map 结构
             // key 代表的索引类的字段name( 有可能不是原始name,可能通过注解@Field 的name 属性设置了自定义的name)
             // value 就是property 对应值

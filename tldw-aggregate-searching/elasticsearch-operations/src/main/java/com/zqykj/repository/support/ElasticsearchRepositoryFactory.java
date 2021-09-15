@@ -9,10 +9,7 @@ import com.zqykj.repository.core.NamedQueries;
 import com.zqykj.repository.core.RepositoryInformation;
 import com.zqykj.repository.core.RepositoryMetadata;
 import com.zqykj.repository.core.support.RepositoryFactorySupport;
-import com.zqykj.repository.query.ElasticsearchQueryMethod;
-import com.zqykj.repository.query.ElasticsearchStringQuery;
-import com.zqykj.repository.query.QueryLookupStrategy;
-import com.zqykj.repository.query.RepositoryQuery;
+import com.zqykj.repository.query.*;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -79,9 +76,10 @@ public class ElasticsearchRepositoryFactory extends RepositoryFactorySupport {
             } else if (queryMethod.hasAnnotatedQuery()) {
                 // 处理方法 上 标注有 @Query的 查询策略
                 return new ElasticsearchStringQuery(queryMethod, elasticsearchOperations, queryMethod.getAnnotatedQuery());
+            } else {
+                // 默认方法处理
+                return new ElasticsearchPartQuery(queryMethod, elasticsearchOperations);
             }
-            // 默认按照method name 处理
-            return new ElasticsearchStringQuery(queryMethod, elasticsearchOperations, namedQueryName);
             //  当然也可以像 spring data elasticsearch 那样处理动态投影方法查询 eg. 以 find|read|get|query|search|stream , delete|remove, exists ,count
             //  固定开头,后面跟需要查询的参数名称(索引类中的property)  eg. findByName
             //  具体实现上述的查询策略 见此类 {@link org.springframework.data.elasticsearch.repository.query.ElasticsearchPartQuery} */

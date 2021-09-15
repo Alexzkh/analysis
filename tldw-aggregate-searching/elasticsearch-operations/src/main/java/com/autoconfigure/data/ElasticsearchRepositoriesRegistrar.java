@@ -1,8 +1,9 @@
 /**
  * @author Mcj
  */
-package com.zqykj.boot;
+package com.autoconfigure.data;
 
+import com.zqykj.boot.AbstractRepositoryConfigurationSourceSupport;
 import com.zqykj.repository.config.ElasticsearchRepositoryConfigExtension;
 import com.zqykj.repository.config.EnableElasticsearchRepositories;
 import com.zqykj.repository.config.RepositoryConfigurationExtension;

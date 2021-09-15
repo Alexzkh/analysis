@@ -9,6 +9,7 @@ import com.zqykj.core.document.SearchDocumentResponse;
 import com.zqykj.repository.query.*;
 import com.zqykj.support.SearchHitsUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -111,8 +112,10 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     @Override
     @Nullable
     public <T> T get(String id, Class<T> clazz, String index, @NonNull String routing) {
-        Assert.notNull(routing, "routing param is must be not null!");
-        GetRequest request = new GetRequest(index, id).routing(routing);
+        GetRequest request = new GetRequest(index, id);
+        if (StringUtils.isNotBlank(routing)) {
+            request.routing(routing);
+        }
         GetResponse response = execute(client -> client.get(request, RequestOptions.DEFAULT));
 
         DocumentCallback<T> callback = new ReadDocumentCallback<>(elasticsearchConverter, clazz, index);
@@ -202,8 +205,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     }
 
     @Override
-    public <T> SearchScrollHits<T> searchScrollStart(long scrollTimeInMillis, Query query, Class<T> clazz,
-                                                     String index) {
+    public <T> SearchScrollHits<T> searchScrollStart(long scrollTimeInMillis, Query query, Class<T> clazz, String index) {
 
         Assert.notNull(query.getPageable(), "pageable of query must not be null.");
 
