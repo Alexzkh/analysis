@@ -9,12 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hbase-operations</artifactId>
+    <artifactId>tldw-elasticsearch-operations</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
-        <cdh.version>1.2.0-cdh5.10.0</cdh.version>
+        <elasticsearch.version>7.9.3</elasticsearch.version>
     </properties>
 
     <dependencies>
@@ -22,9 +22,10 @@
         <!-- 通用模块 -->
         <dependency>
             <groupId>com.zqykj</groupId>
-            <artifactId>aggregate-commons</artifactId>
+            <artifactId>tldw-aggregate-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
     </dependencies>
 
     <distributionManagement>
@@ -51,4 +52,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

@@ -9,20 +9,20 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>mongo-operations</artifactId>
-
+    <artifactId>tldw-hbase-operations</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <properties>
-        <mongodb.version>4.1.1</mongodb.version>
+        <cdh.version>1.2.0-cdh5.10.0</cdh.version>
     </properties>
 
     <dependencies>
 
-
         <!-- 通用模块 -->
         <dependency>
             <groupId>com.zqykj</groupId>
-            <artifactId>aggregate-commons</artifactId>
+            <artifactId>tldw-aggregate-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

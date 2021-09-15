@@ -9,23 +9,23 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>elasticsearch-operations</artifactId>
+    <artifactId>tldw-mongo-operations</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
-        <elasticsearch.version>7.9.3</elasticsearch.version>
+        <mongodb.version>4.1.1</mongodb.version>
     </properties>
 
     <dependencies>
 
+
         <!-- 通用模块 -->
         <dependency>
             <groupId>com.zqykj</groupId>
-            <artifactId>aggregate-commons</artifactId>
+            <artifactId>tldw-aggregate-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
     </dependencies>
 
     <distributionManagement>
@@ -52,5 +52,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

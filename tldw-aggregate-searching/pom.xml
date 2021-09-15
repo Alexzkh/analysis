@@ -17,10 +17,10 @@
     <description>聚合查询服务</description>
 
     <modules>
-        <module>elasticsearch-operations</module>
-        <module>hbase-operations</module>
-        <module>mongo-operations</module>
-        <module>aggregate-commons</module>
+        <module>tldw-elasticsearch-operations</module>
+        <module>tldw-hbase-operations</module>
+        <module>tldw-mongo-operations</module>
+        <module>tldw-aggregate-commons</module>
     </modules>
 
     <packaging>pom</packaging>
