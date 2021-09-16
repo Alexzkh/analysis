@@ -8,11 +8,11 @@ import com.zqykj.annotations.Query;
 import com.zqykj.repository.Repository;
 import com.zqykj.repository.core.NamedQueries;
 import com.zqykj.repository.core.RepositoryInformation;
-import com.zqykj.repository.query.DefaultRepositoryQuery;
 import com.zqykj.repository.query.QueryLookupStrategy;
 import com.zqykj.repository.query.RepositoryQuery;
 import com.zqykj.repository.util.QueryExecutionConverters;
 import com.zqykj.util.Pair;
+import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.lang.NonNull;
@@ -28,6 +28,7 @@ import java.util.Optional;
 /**
  * <h1> 主要是拦截 extends {@link Repository} 的子接口内部所有的查询方法  {@link MethodInterceptor}</h1>
  */
+@Slf4j
 class QueryExecutorMethodInterceptor implements MethodInterceptor {
 
     /**
@@ -112,6 +113,8 @@ class QueryExecutorMethodInterceptor implements MethodInterceptor {
         // 如果方法有@Query 注解
         if (hasQueryFor(method)) {
 
+            // 处理自动构建索引
+
             RepositoryMethodInvoker invocationMetadata = invocationMetadataCache.get(method);
 
             if (invocationMetadata == null) {
@@ -122,6 +125,8 @@ class QueryExecutorMethodInterceptor implements MethodInterceptor {
             return invocationMetadata.invoke(repositoryInformation.getRepositoryInterface(),
                     invocation.getArguments());
         }
+
+        // 处理自动构建索引
 
         // 直接代理到 默认实现类的 默认方法 查询
         return invocation.proceed();
