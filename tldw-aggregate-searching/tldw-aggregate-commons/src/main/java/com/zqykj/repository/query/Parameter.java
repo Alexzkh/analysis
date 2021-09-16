@@ -3,6 +3,8 @@
  */
 package com.zqykj.repository.query;
 
+import com.zqykj.annotations.Document;
+import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Pageable;
 import com.zqykj.domain.Routing;
 import com.zqykj.domain.Sort;
@@ -88,6 +90,13 @@ public class Parameter {
      */
     boolean isRouting() {
         return Routing.class.isAssignableFrom(getType());
+    }
+
+    /**
+     * <h2> 是否是domain类型 </h2>
+     */
+    boolean isDomain() {
+        return EntityClass.class.isAssignableFrom(getType());
     }
 
     /**

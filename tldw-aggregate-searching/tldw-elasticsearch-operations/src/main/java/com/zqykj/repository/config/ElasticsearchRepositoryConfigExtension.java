@@ -5,6 +5,7 @@ package com.zqykj.repository.config;
 
 import com.zqykj.annotations.Document;
 import com.zqykj.repository.ElasticsearchRepository;
+import com.zqykj.repository.EntranceRepository;
 import com.zqykj.repository.support.ElasticsearchRepositoryFactoryBean;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.core.annotation.AnnotationAttributes;
@@ -40,7 +41,7 @@ public class ElasticsearchRepositoryConfigExtension extends RepositoryConfigurat
 
     @Override
     protected Collection<Class<?>> getIdentifyingTypes() {
-        return Arrays.asList(ElasticsearchRepository.class, ElasticsearchRepository.class);
+        return Arrays.asList(ElasticsearchRepository.class, EntranceRepository.class);
     }
 
 }

@@ -8,6 +8,7 @@ import com.zqykj.repository.core.RepositoryMetadata;
 import com.zqykj.util.ClassTypeInformation;
 import com.zqykj.util.TypeInformation;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -38,11 +39,16 @@ public class DefaultRepositoryMetadata extends AbstractRepositoryMetadata {
         List<TypeInformation<?>> arguments = ClassTypeInformation.from(repositoryInterface) //
                 .getRequiredSuperTypeInformation(Repository.class)//
                 .getTypeArguments();
-
-        this.domainType = resolveTypeParameter(arguments, 0,
-                () -> String.format("Could not resolve domain type of %s!", repositoryInterface));
-        this.idType = resolveTypeParameter(arguments, 1,
-                () -> String.format("Could not resolve id type of %s!", repositoryInterface));
+        // 可能这个repositoryInterface 这个类没有泛型参数, 只有泛型方法
+        if (CollectionUtils.isEmpty(arguments)) {
+            this.domainType = null;
+            this.idType = null;
+        } else {
+            this.domainType = resolveTypeParameter(arguments, 0,
+                    () -> String.format("Could not resolve domain type of %s!", repositoryInterface));
+            this.idType = resolveTypeParameter(arguments, 1,
+                    () -> String.format("Could not resolve id type of %s!", repositoryInterface));
+        }
     }
 
     /**

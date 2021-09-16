@@ -6,9 +6,7 @@ package com.zqykj.repository.core.support;
 import com.zqykj.mapping.PersistentEntity;
 import com.zqykj.mapping.context.MappingContext;
 import com.zqykj.repository.Repository;
-import com.zqykj.repository.core.EntityInformation;
 import com.zqykj.repository.core.NamedQueries;
-import com.zqykj.repository.core.RepositoryMetadata;
 import com.zqykj.repository.query.QueryLookupStrategy;
 import com.zqykj.util.Lazy;
 import org.springframework.beans.factory.BeanClassLoaderAware;
@@ -23,8 +21,8 @@ import java.util.Optional;
  * <h1> Adapter for Springs {@link FactoryBean} interface to allow easy setup of repository factories via Spring
  * configuration </h1>
  */
-public abstract class RepositoryFactoryBeanSupport<T extends Repository<S, ID>, S, ID>
-        implements InitializingBean, RepositoryFactoryInformation<S, ID>, FactoryBean<T>, BeanClassLoaderAware {
+public abstract class RepositoryFactoryBeanSupport<T extends Repository>
+        implements InitializingBean, FactoryBean<T>, BeanClassLoaderAware {
 
     private final Class<? extends T> repositoryInterface;
 
@@ -37,8 +35,6 @@ public abstract class RepositoryFactoryBeanSupport<T extends Repository<S, ID>, 
     private boolean lazyInit = false;
 
     private Lazy<T> repository;
-
-    private RepositoryMetadata repositoryMetadata;
 
     /**
      * <h2> Creates a new {@link RepositoryFactoryBeanSupport} for the given repository interface. </h2>
@@ -79,7 +75,6 @@ public abstract class RepositoryFactoryBeanSupport<T extends Repository<S, ID>, 
 
     /**
      * Configures the {@link MappingContext} to be used to lookup {@link PersistentEntity} instances for
-     * {@link #getPersistentEntity()}.
      */
     protected void setMappingContext(MappingContext<?, ?> mappingContext) {
         this.mappingContext = Optional.of(mappingContext);
@@ -97,23 +92,6 @@ public abstract class RepositoryFactoryBeanSupport<T extends Repository<S, ID>, 
     @Override
     public void setBeanClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
-    }
-
-    /**
-     * <h2> 索引类封装的一些基本信息 </h2>
-     */
-    @SuppressWarnings("unchecked")
-    public EntityInformation<S, ID> getEntityInformation() {
-        return (EntityInformation<S, ID>) factory.getEntityInformation(repositoryMetadata.getDomainType());
-    }
-
-    /**
-     * <h2> 扫描的索引类 会被包装成PersistentEntity </h2>
-     */
-    public PersistentEntity<?, ?> getPersistentEntity() {
-
-        return mappingContext.orElseThrow(() -> new IllegalStateException("No MappingContext available!"))
-                .getRequiredPersistentEntity(repositoryMetadata.getDomainType());
     }
 
     @Override
@@ -142,12 +120,7 @@ public abstract class RepositoryFactoryBeanSupport<T extends Repository<S, ID>, 
         this.factory.setBeanClassLoader(classLoader);
         repositoryBaseClass.ifPresent(this.factory::setRepositoryBaseClass);
 
-        this.repositoryMetadata = this.factory.getRepositoryMetadata(repositoryInterface);
-
         this.repository = Lazy.of(() -> this.factory.getRepository(repositoryInterface));
-
-        // Make sure the aggregate root type is present in the MappingContext (e.g. for auditing)
-        this.mappingContext.ifPresent(it -> it.getPersistentEntity(repositoryMetadata.getDomainType()));
 
         if (!lazyInit) {
             this.repository.get();

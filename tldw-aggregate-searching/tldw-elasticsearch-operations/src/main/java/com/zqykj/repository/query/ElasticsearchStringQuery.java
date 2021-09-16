@@ -41,6 +41,10 @@ public class ElasticsearchStringQuery extends AbstractElasticsearchRepositoryQue
         Class<?> clazz = queryMethod.getDomainClass();
         // 构造参数访问器
         ParametersParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameterValues);
+        // 有可能是默认类型DefaultDomain, 如果是的话,需要的根据方法参数看是否又Class<?> 类型 且该类上标注了 @Document 注解
+        if (DefaultDomain.class.isAssignableFrom(clazz)) {
+            clazz = accessor.getDomain().getDomain();
+        }
 
         StringQuery stringQuery = createQuery(accessor);
 

@@ -3,9 +3,12 @@
  */
 package com.zqykj.repository.query;
 
+import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Pageable;
+import com.zqykj.domain.Routing;
 import com.zqykj.domain.Sort;
 import com.zqykj.repository.util.QueryExecutionConverters;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.util.Iterator;
@@ -13,6 +16,7 @@ import java.util.Iterator;
 /**
  * <h1> 具体的参数访问器实现,来查找特殊的参数 </h1>
  */
+@Slf4j
 public class ParametersParameterAccessor implements ParameterAccessor {
 
     private final Parameters<?, ?> parameters;
@@ -77,6 +81,7 @@ public class ParametersParameterAccessor implements ParameterAccessor {
         return this.values;
     }
 
+    @Override
     public Pageable getPageable() {
 
         if (!parameters.hasPageableParameter()) {
@@ -102,6 +107,28 @@ public class ParametersParameterAccessor implements ParameterAccessor {
         }
 
         return Sort.unsorted();
+    }
+
+    @Override
+    public Routing getRouting() {
+        if (!parameters.hasRoutingParameter()) {
+
+            return Routing.unRoute();
+        }
+        Routing sort = (Routing) values[parameters.getSortIndex()];
+        return sort == null ? Routing.unRoute() : sort;
+    }
+
+
+    @Override
+    public EntityClass getDomain() {
+        if (!parameters.hasDomainParameter()) {
+
+            log.error("Index EntityClass must not be null!");
+            throw new IllegalArgumentException("index entityClass must not be null!");
+        }
+
+        return (EntityClass) values[parameters.getDomainIndex()];
     }
 
 

@@ -4,7 +4,9 @@
 package com.zqykj.repository.query;
 
 
+import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Pageable;
+import com.zqykj.domain.Routing;
 import com.zqykj.domain.Sort;
 
 import java.util.Iterator;
@@ -24,6 +26,10 @@ public interface ParameterAccessor extends Iterable<Object> {
      * {@link Sort} contained in a {@link Pageable} if available. Returns {@code null} if no {@link Sort} can be found.  </h2>
      */
     Sort getSort();
+
+    EntityClass getDomain();
+
+    Routing getRouting();
 
     /**
      * <h2> 返回给定索引的绑定值(用于方法参数获取指定位置索引的参数值) </h2>

@@ -3,6 +3,7 @@
  */
 package com.zqykj.repository.support;
 
+import com.zqykj.annotations.Document;
 import com.zqykj.core.*;
 import com.zqykj.core.aggregation.AggregatedPage;
 import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
@@ -11,7 +12,6 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.PageImpl;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Pageable;
-import com.zqykj.repository.ElasticsearchRepository;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.repository.query.NativeSearchQuery;
 import com.zqykj.repository.query.Query;
@@ -19,13 +19,13 @@ import com.zqykj.util.StreamUtils;
 import com.zqykj.util.Streamable;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.IdsQueryBuilder;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
@@ -39,68 +39,108 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
  * @author machengjun
  */
 @Slf4j
-public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchRepository<T, ID>, EntranceRepository<T, ID> {
+@SuppressWarnings({"all"})
+public class SimpleElasticsearchRepository implements EntranceRepository {
 
     private ElasticsearchRestTemplate operations;
-    private IndexOperations indexOperations;
+    // 索引类对应的索引操作(一个索引类 entityClass 对应一个 索引操作类 IndexOperations)
+    private Map<Class<?>, IndexOperations> indexOperationsMap;
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock read = lock.readLock();
+    private final Lock write = lock.writeLock();
 
-    private Class<T> entityClass;
-    private ElasticsearchEntityInformation<T, ID> entityInformation;
-
-    public SimpleElasticsearchRepository(ElasticsearchEntityInformation<T, ID> metadata,
-                                         ElasticsearchRestTemplate operations) {
+    public SimpleElasticsearchRepository(ElasticsearchRestTemplate operations) {
         this.operations = operations;
+    }
 
-        Assert.notNull(metadata, "ElasticsearchEntityInformation must not be null!");
-
-        this.entityInformation = metadata;
-        this.entityClass = this.entityInformation.getJavaType();
-        this.indexOperations = operations.indexOps(this.entityClass);
-
+    /**
+     * <h2> 根据entityClass 构建索引与映射 </h2>
+     */
+    private <T> void createIndexAndMapping(Class<T> entityClass) {
         try {
-            if (shouldCreateIndexAndMapping() && !indexOperations.exists()) {
-                indexOperations.createOrRollover();
-                indexOperations.putMapping(entityClass);
+            if (shouldCreateIndexAndMapping(entityClass)) {
+                IndexOperations indexOperations = null;
+                // 检查entityClass 是否已经加载过
+                if (!isHaveIndexOperationsForEntityClass(entityClass)) {
+                    indexOperations = addEntityClass(entityClass);
+                }
+                if (!indexOperations.exists()) {
+                    indexOperations.createOrRollover();
+                    indexOperations.putMapping(entityClass);
+                }
             }
         } catch (Exception exception) {
             log.warn("Cannot create index: {}", exception.getMessage());
+        } finally {
+
         }
     }
 
-    private boolean shouldCreateIndexAndMapping() {
+    private <T> boolean isHaveIndexOperationsForEntityClass(Class<T> entityClass) {
+
+        try {
+            read.lock();
+
+            return indexOperationsMap.containsKey(entityClass);
+        } finally {
+
+            read.unlock();
+        }
+    }
+
+    private <T> IndexOperations addEntityClass(Class<T> entityClass) {
+        try {
+
+            write.lock();
+
+            IndexOperations indexOperations = operations.indexOps(entityClass);
+            indexOperationsMap.put(entityClass, indexOperations);
+            return indexOperations;
+        } finally {
+
+            write.unlock();
+        }
+    }
+
+    /**
+     * <h2> 判断当前entityClass 是否标注了@Document 且 是否需要自动构建索引与mapping </h2>
+     */
+    private <T> boolean shouldCreateIndexAndMapping(@NonNull Class<T> entityClass) {
 
         final ElasticsearchPersistentEntity<?> entity = operations.getElasticsearchConverter().getMappingContext()
                 .getRequiredPersistentEntity(entityClass);
-        return entity.isCreateIndexAndMapping();
+        return entity.isAnnotationPresent(Document.class) && entity.isCreateIndexAndMapping();
     }
 
     @Override
-    public Optional<T> findById(ID id, String routing) throws Exception {
+    public <T, ID> Optional<T> findById(ID id, String routing, @NonNull Class<T> entityClass) throws Exception {
         return Optional.ofNullable(
-                execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(), routing)));
+                execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(entityClass), routing)));
     }
 
     @Override
-    public Iterable<T> findAll(String routing) {
-        int itemCount = (int) this.count(routing);
+    public <T> Iterable<T> findAll(String routing, @NonNull Class<T> entityClass) {
+        int itemCount = (int) this.count(routing, entityClass);
 
         if (itemCount == 0) {
             return new PageImpl<>(Collections.emptyList());
         }
-        return this.findAll(PageRequest.of(0, Math.max(1, itemCount)), routing);
+        return this.findAll(PageRequest.of(0, Math.max(1, itemCount)), routing, entityClass);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Page<T> findAll(Pageable pageable, String routing) {
+    public <T> Page<T> findAll(Pageable pageable, String routing, @NonNull Class<T> entityClass) {
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withPageable(pageable).build();
-        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates()));
+
+        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)));
+
         AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
         return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
     }
 
     @Override
-    public Iterable<T> findAllById(Iterable<ID> ids, String routing) {
+    public <T, ID> Iterable<T> findAllById(Iterable<ID> ids, String routing, @NonNull Class<T> entityClass) {
         Assert.notNull(ids, "ids can't be null.");
 
         List<T> result = new ArrayList<>();
@@ -111,7 +151,7 @@ public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchReposi
         }
 
         NativeSearchQuery query = new NativeSearchQueryBuilder().withIds(stringIds).withRoute(routing).build();
-        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates()));
+        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates(entityClass)));
 
         if (multiGetEntities != null) {
             multiGetEntities.forEach(entity -> {
@@ -125,7 +165,7 @@ public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchReposi
         return result;
     }
 
-    private List<String> stringIdsRepresentation(Iterable<ID> ids) {
+    private <ID> List<String> stringIdsRepresentation(Iterable<ID> ids) {
 
         Assert.notNull(ids, "ids can't be null.");
 
@@ -133,77 +173,68 @@ public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchReposi
                 .collect(Collectors.toList());
     }
 
-    private @Nullable
-    String stringIdRepresentation(@Nullable ID id) {
+    @Nullable
+    private <ID> String stringIdRepresentation(@Nullable ID id) {
         return operations.stringIdRepresentation(id);
     }
 
     @Override
-    public long count(String routing) {
+    public <T> long count(String routing, @NonNull Class<T> entityClass) {
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery())
                 .withRoute(routing)
                 .build();
         // noinspection ConstantConditions
-        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates()));
+        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)));
     }
 
     @Override
-    public <S extends T> S save(S entity, String routing) {
+    public <T> T save(T entity, String routing, @NonNull Class<T> entityClass) {
         Assert.notNull(entity, "Cannot save 'null' entity.");
-        return executeAndRefresh(operations -> operations.save(entity, getIndexCoordinates(), routing));
+        return executeAndRefresh(operations -> operations.save(entity, getIndexCoordinates(entityClass), routing), entityClass);
     }
 
-    public <S extends T> Iterable<S> save(Iterable<S> entities, String routing) {
+    public <T> Iterable<T> save(Iterable<T> entities, String routing, Class<T> entityClass) {
         Assert.notNull(entities, "Cannot insert 'null' as a List.");
+        // 自动构建索引
+        createIndexAndMapping(entityClass);
 
-        return Streamable.of(saveAll(entities, routing)).stream().collect(Collectors.toList());
+        return Streamable.of(saveAll(entities, routing, entityClass)).stream().collect(Collectors.toList());
     }
 
     @Override
-    public <S extends T> Iterable<S> saveAll(Iterable<S> entities, String routing) {
+    public <T> Iterable<T> saveAll(Iterable<T> entities, String routing, @NonNull Class<T> entityClass) {
 
         Assert.notNull(entities, "Cannot insert 'null' as a List.");
+        // 自动构建索引
+        createIndexAndMapping(entityClass);
 
-        String indexCoordinates = getIndexCoordinates();
-        executeAndRefresh(operations -> operations.save(entities, indexCoordinates, routing));
+        String indexCoordinates = getIndexCoordinates(entityClass);
+        executeAndRefresh(operations -> operations.save(entities, indexCoordinates, routing), entityClass);
 
         return entities;
     }
 
 
     @Override
-    public void deleteById(ID id, String routing) {
+    public <T, ID> void deleteById(ID id, String routing, @NonNull Class<T> entityClass) {
         Assert.notNull(id, "Cannot delete entity with id 'null'.");
-        doDelete(id, getIndexCoordinates(), routing);
+        doDelete(id, getIndexCoordinates(entityClass), routing, entityClass);
     }
 
-    @Override
-    public void delete(T entity, String routing) {
-        Assert.notNull(entity, "Cannot delete 'null' entity.");
-
-        doDelete(extractIdFromBean(entity), operations.getEntityRouting(entity), getIndexCoordinates());
-    }
-
-    private void doDelete(@Nullable ID id, @Nullable String routing, String indexCoordinates) {
+    private <T, ID> void doDelete(@Nullable ID id, @Nullable String routing, String indexCoordinates, Class<T> entityClass) {
 
         if (id != null) {
-            executeAndRefresh(operations -> operations.delete(stringIdRepresentation(id), routing, indexCoordinates));
+            executeAndRefresh(operations -> operations.delete(stringIdRepresentation(id), routing, indexCoordinates), entityClass);
         }
     }
 
-    @Nullable
-    private ID extractIdFromBean(T entity) {
-        return entityInformation.getId(entity);
-    }
-
     @Override
-    public void deleteAll(Iterable<? extends T> entities, String routing) {
-        Assert.notNull(entities, "Cannot delete 'null' list.");
+    public <T, ID> void deleteAll(Iterable<ID> ids, String routing, @NonNull Class<T> entityClass) {
+        Assert.notNull(ids, "Cannot delete 'null' list.");
 
-        String indexCoordinates = getIndexCoordinates();
+        String indexCoordinates = getIndexCoordinates(entityClass);
         IdsQueryBuilder idsQueryBuilder = idsQuery();
-        for (T entity : entities) {
-            ID id = extractIdFromBean(entity);
+        for (ID id : ids) {
             if (id != null) {
                 idsQueryBuilder.addIds(stringIdRepresentation(id));
             }
@@ -218,13 +249,13 @@ public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchReposi
         executeAndRefresh((OperationsCallback<Void>) operations -> {
             operations.delete(query, entityClass, indexCoordinates);
             return null;
-        });
+        }, entityClass);
     }
 
     @Override
-    public void deleteAll(String routing) {
+    public <T> void deleteAll(String routing, @NonNull Class<T> entityClass) {
 
-        String indexCoordinates = getIndexCoordinates();
+        String indexCoordinates = getIndexCoordinates(entityClass);
         Query query = new NativeSearchQueryBuilder().withQuery(matchAllQuery())
                 .withRoute(routing)
                 .build();
@@ -232,14 +263,25 @@ public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchReposi
         executeAndRefresh((OperationsCallback<Void>) operations -> {
             operations.delete(query, entityClass, indexCoordinates);
             return null;
-        });
+        }, entityClass);
     }
 
-    public void refresh() {
-        indexOperations.refresh();
+    /**
+     * <h2> 刷新索引 </h2>
+     */
+    public <T> void refresh(Class<T> entityClass) {
+
+        try {
+            read.lock();
+
+            indexOperationsMap.get(entityClass).refresh();
+        } finally {
+
+            read.unlock();
+        }
     }
 
-    private String getIndexCoordinates() {
+    private <T> String getIndexCoordinates(@NonNull Class<T> entityClass) {
         return operations.getIndexCoordinatesFor(entityClass);
     }
 
@@ -255,9 +297,9 @@ public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchReposi
     }
 
     @Nullable
-    public <R> R executeAndRefresh(OperationsCallback<R> callback) {
+    public <R, T> R executeAndRefresh(OperationsCallback<R> callback, Class<T> entityClass) {
         R result = callback.doWithOperations(operations);
-        refresh();
+        refresh(entityClass);
         return result;
     }
 }

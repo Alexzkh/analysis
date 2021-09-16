@@ -11,8 +11,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import com.zqykj.annotations.NoRepositoryBean;
 
-import java.io.Serializable;
-
 /**
  * <h2>
  * 所有数据存储 Repository 最终 都会被包装成ElasticsearchRepositoryFactoryBean 交由spring 管理
@@ -23,8 +21,7 @@ import java.io.Serializable;
  * 方法 getObjectType() 代表的是当前 接口 Repository 类型
  * </h2>
  */
-public class ElasticsearchRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable>
-        extends RepositoryFactoryBeanSupport<T, S, ID> {
+public class ElasticsearchRepositoryFactoryBean<T extends Repository> extends RepositoryFactoryBeanSupport<T> {
 
     @Nullable
     private ElasticsearchRestTemplate elasticsearchTemplate;
