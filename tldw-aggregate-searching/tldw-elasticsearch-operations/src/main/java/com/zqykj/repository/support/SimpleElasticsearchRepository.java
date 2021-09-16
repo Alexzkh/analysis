@@ -50,15 +50,14 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T, ID> Optional<T> findById(ID id, String routing, @NonNull Class<T> entityClass) throws Exception {
 
-        createIndexAndMapping(entityClass);
         return Optional.ofNullable(
-                execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(entityClass), routing)));
+                execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(entityClass), routing),
+                        entityClass
+                ));
     }
 
     @Override
     public <T> Iterable<T> findAll(String routing, @NonNull Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         int itemCount = (int) this.count(routing, entityClass);
 
@@ -72,11 +71,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T> Page<T> findAll(Pageable pageable, String routing, @NonNull Class<T> entityClass) {
 
-        createIndexAndMapping(entityClass);
-
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withPageable(pageable).build();
 
-        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)));
+        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
         AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
         return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
@@ -84,8 +81,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T, ID> Iterable<T> findAllById(Iterable<ID> ids, String routing, @NonNull Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         Assert.notNull(ids, "ids can't be null.");
 
@@ -97,7 +92,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
 
         NativeSearchQuery query = new NativeSearchQueryBuilder().withIds(stringIds).withRoute(routing).build();
-        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates(entityClass)));
+        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
         if (multiGetEntities != null) {
             multiGetEntities.forEach(entity -> {
@@ -127,27 +122,21 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T> long count(String routing, @NonNull Class<T> entityClass) {
 
-        createIndexAndMapping(entityClass);
-
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery())
                 .withRoute(routing)
                 .build();
         // noinspection ConstantConditions
-        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)));
+        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
     }
 
     @Override
     public <T> T save(T entity, String routing, @NonNull Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         Assert.notNull(entity, "Cannot save 'null' entity.");
         return executeAndRefresh(operations -> operations.save(entity, getIndexCoordinates(entityClass), routing), entityClass);
     }
 
     public <T> Iterable<T> save(Iterable<T> entities, String routing, Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         Assert.notNull(entities, "Cannot insert 'null' as a List.");
 
@@ -156,8 +145,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T> Iterable<T> saveAll(Iterable<T> entities, String routing, @NonNull Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         Assert.notNull(entities, "Cannot insert 'null' as a List.");
 
@@ -171,15 +158,11 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T, ID> void deleteById(ID id, String routing, @NonNull Class<T> entityClass) {
 
-        createIndexAndMapping(entityClass);
-
         Assert.notNull(id, "Cannot delete entity with id 'null'.");
         doDelete(id, getIndexCoordinates(entityClass), routing, entityClass);
     }
 
     private <T, ID> void doDelete(@Nullable ID id, @Nullable String routing, String indexCoordinates, Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         if (id != null) {
             executeAndRefresh(operations -> operations.delete(stringIdRepresentation(id), routing, indexCoordinates), entityClass);
@@ -188,8 +171,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T, ID> void deleteAll(Iterable<ID> ids, String routing, @NonNull Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         Assert.notNull(ids, "Cannot delete 'null' list.");
 
@@ -215,8 +196,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T> void deleteAll(String routing, @NonNull Class<T> entityClass) {
-
-        createIndexAndMapping(entityClass);
 
         String indexCoordinates = getIndexCoordinates(entityClass);
         Query query = new NativeSearchQueryBuilder().withQuery(matchAllQuery())
@@ -262,12 +241,15 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Nullable
-    public <R> R execute(OperationsCallback<R> callback) {
+    public <R, T> R execute(OperationsCallback<R> callback, Class<T> entityClass) {
+        createIndexAndMapping(entityClass);
         return callback.doWithOperations(operations);
     }
 
     @Nullable
     public <R, T> R executeAndRefresh(OperationsCallback<R> callback, Class<T> entityClass) {
+        // 检查entityClass 是否创建了索引
+        createIndexAndMapping(entityClass);
         R result = callback.doWithOperations(operations);
         refresh(entityClass);
         return result;
