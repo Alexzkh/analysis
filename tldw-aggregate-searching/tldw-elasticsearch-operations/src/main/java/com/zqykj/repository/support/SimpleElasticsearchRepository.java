@@ -3,6 +3,8 @@
  */
 package com.zqykj.repository.support;
 
+import com.zqykj.common.request.DateHistogramParams;
+import com.zqykj.common.response.Stats;
 import com.zqykj.core.*;
 import com.zqykj.core.aggregation.AggregatedPage;
 import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
@@ -11,6 +13,7 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.PageImpl;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Pageable;
+import com.zqykj.enums.AggsType;
 import com.zqykj.repository.ElasticsearchRepository;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.repository.query.NativeSearchQuery;
@@ -22,10 +25,7 @@ import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
@@ -241,6 +241,48 @@ public class SimpleElasticsearchRepository<T, ID> implements ElasticsearchReposi
 
     private String getIndexCoordinates() {
         return operations.getIndexCoordinatesFor(entityClass);
+    }
+
+    @Override
+    public <S extends T> S metricsAggs(String metricsName, AggsType aggsType, Class<S> clazz, String... indexes) {
+
+
+        return null;
+    }
+
+    @Override
+    public <S extends T> Stats statsAggs(String metricsName, Class<S> clazz, String... indexes) {
+        return null;
+    }
+
+    @Override
+    public <S extends T> Map<String, Stats> statsAggs(String metricsName, Class<S> clazz, String bucketName, String... indexes) {
+        return null;
+    }
+
+    @Override
+    public <S extends T> Map<Double, Double> percentilesAggs(String metricsName, Class<S> clazz, double[] customSegment, String... indexes) {
+        return null;
+    }
+
+    @Override
+    public <S extends T> Map<Double, Double> percentilesRanksAggs(String metricsName, Class<S> clazz, double[] customSegment, String... indexes) {
+        return null;
+    }
+
+    @Override
+    public <S extends T> Map histogramAggs(String metricsName, AggsType aggsType, Class<S> clazz, String bucketName, double interval, String... indexes) {
+        return null;
+    }
+
+    @Override
+    public <S extends T> Map dateHistogramAggs(String metricsName, AggsType aggsType, Class<S> clazz, String bucketName, DateHistogramParams dateHistogramParams, String... indexes) {
+        return null;
+    }
+
+    @Override
+    public long cardinality(String metricName, long precisionThreshold, Class<T> clazz, String indexes) {
+        return 0;
     }
 
     @FunctionalInterface
