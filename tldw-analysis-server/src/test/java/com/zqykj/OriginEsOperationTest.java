@@ -10,6 +10,7 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.aggregate.TeacherInfo;
+import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -25,8 +26,8 @@ public class OriginEsOperationTest {
     @Autowired
     private TeacherInfoDao teacherInfoDao;
 
-//    @Autowired
-//    private EntranceRepository repository;
+    @Autowired
+    private EntranceRepository entranceRepository;
 
 
 //    @Test
@@ -38,7 +39,7 @@ public class OriginEsOperationTest {
     @Test
     public void testTeacherById() throws Exception {
 
-        Optional<TeacherInfo> teacherInfo = teacherInfoDao.findById("110", "22", TeacherInfo.class);
+        Optional<TeacherInfo> teacherInfo = entranceRepository.findById("110", "22", TeacherInfo.class);
         log.info(JacksonUtils.toJson(teacherInfo.orElse(null)));
     }
 
