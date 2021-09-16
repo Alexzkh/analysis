@@ -40,8 +40,12 @@ public class ElasticsearchRepositoryFactory extends RepositoryFactorySupport {
 
     @Override
     protected Object getTargetRepository(RepositoryInformation metadata) {
-        return getTargetRepositoryViaReflection(metadata, getEntityInformation(metadata.getDomainType()),
-                elasticsearchOperations);
+        if (null != metadata.getDomainType()) {
+            return getTargetRepositoryViaReflection(metadata, elasticsearchOperations,
+                    getEntityInformation(metadata.getDomainType()));
+        }
+        // 可能RepositoryInterface 接口不是泛型类,里面可能都是指定的泛型方法
+        return getTargetRepositoryViaReflection(metadata, elasticsearchOperations);
     }
 
     @Override

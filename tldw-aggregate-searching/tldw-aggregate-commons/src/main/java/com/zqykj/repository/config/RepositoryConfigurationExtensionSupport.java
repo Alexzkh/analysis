@@ -14,6 +14,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.log.LogMessage;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -72,7 +73,7 @@ public abstract class RepositoryConfigurationExtensionSupport implements Reposit
             boolean qualifiedForImplementation = !strictMatchesOnly || configSource.usesExplicitFilters()
                     || isStrictRepositoryCandidate(metadata);
 
-            if (qualifiedForImplementation && useRepositoryConfiguration(metadata)) {
+            if (qualifiedForImplementation && useRepositoryConfiguration()) {
                 result.add(configuration);
             }
         }
@@ -264,7 +265,11 @@ public abstract class RepositoryConfigurationExtensionSupport implements Reposit
             }
         }
 
+        // repositoryInterface 可能不是泛型类, 里面可能全都是泛型方法
         Class<?> domainType = metadata.getDomainType();
+        if (null == domainType) {
+            return true;
+        }
 
         for (Class<? extends Annotation> annotationType : annotations) {
             if (AnnotationUtils.findAnnotation(domainType, annotationType) != null) {
@@ -297,11 +302,16 @@ public abstract class RepositoryConfigurationExtensionSupport implements Reposit
      * Return whether to use the configuration for the repository with the given metadata. Defaults to {@literal true} and
      * Must be overridden by store modules that wish to provide reactive repositories.
      *
-     * @param metadata will never be {@literal null}.
      * @return default.
      */
-    protected boolean useRepositoryConfiguration(RepositoryMetadata metadata) {
+    protected boolean useRepositoryConfiguration() {
 
+        // 这里判断的响应式 Reactive(目前还没有用WebFlux)
+//        if (metadata.isReactiveRepository()) {
+//            throw new InvalidDataAccessApiUsageException(
+//                    String.format("Reactive Repositories are not supported by %s. Offending repository is %s!", getModuleName(),
+//                            metadata.getRepositoryInterface().getName()));
+//        }
         return true;
     }
 
