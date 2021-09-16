@@ -11,7 +11,6 @@ import com.zqykj.annotations.NoRepositoryBean;
  * @author zhangkehou
  * @author machengjun
  */
-@NoRepositoryBean
-public interface ElasticsearchRepository<T, ID> extends CrudRepository<T, ID> {
+public interface ElasticsearchRepository<T, ID> extends CrudRepository {
 
 }

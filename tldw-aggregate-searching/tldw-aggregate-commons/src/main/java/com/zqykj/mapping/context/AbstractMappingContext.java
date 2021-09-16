@@ -16,6 +16,8 @@ import com.zqykj.util.TypeInformation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.core.KotlinDetector;
@@ -202,9 +204,10 @@ public abstract class AbstractMappingContext<E extends BasicPersistentEntity<?, 
             write.unlock();
         }
         // Inform listeners
-        if (null != applicationEventPublisher) {
-            applicationEventPublisher.publishEvent(new MappingContextEvent<>(this, entity));
-        }
+        // 发布事件
+//        if (null != applicationEventPublisher) {
+//            applicationEventPublisher.publishEvent(new MappingContextEvent<>(this, entity));
+//        }
         return Optional.of(entity);
     }
 

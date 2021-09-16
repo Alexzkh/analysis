@@ -13,9 +13,7 @@ import java.util.Map;
 /**
  * <h1> 提供给外部使用的公共入口Repository </h1>
  */
-@NoRepositoryBean
-public interface EntranceRepository<T, ID> extends CrudRepository<T, ID> {
-
+public interface EntranceRepository extends CrudRepository {
 
 //    public <T> T aggsStat(String merticName,Class<T> tClass,String... indexes) throws Exception;
 

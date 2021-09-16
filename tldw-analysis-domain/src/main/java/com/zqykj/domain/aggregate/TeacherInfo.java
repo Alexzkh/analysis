@@ -30,7 +30,7 @@ public class TeacherInfo implements Serializable {
     @Id
     private String id;
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Keyword,name = "_name")
     private String name;
 
     @Field(type = FieldType.Integer)

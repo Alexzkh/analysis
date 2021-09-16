@@ -3,6 +3,7 @@
  */
 package com.zqykj.repository.query;
 
+import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Pageable;
 import com.zqykj.domain.Routing;
 import com.zqykj.domain.Sort;
@@ -34,6 +35,7 @@ public abstract class Parameters<S extends Parameters<S, T>, T extends Parameter
     private int dynamicProjectionIndex;
     private final Lazy<S> bindable;
     private final int routingIndex;
+    private final int domainIndex;
 
     /**
      * Creates a new instance of {@link Parameters}.
@@ -52,6 +54,7 @@ public abstract class Parameters<S extends Parameters<S, T>, T extends Parameter
         int pageableIndex = -1;
         int sortIndex = -1;
         int routingIndex = -1;
+        int domainIndex = -1;
 
         for (int i = 0; i < parameterCount; i++) {
 
@@ -76,12 +79,18 @@ public abstract class Parameters<S extends Parameters<S, T>, T extends Parameter
                 routingIndex = i;
             }
 
+            // 是否是domain类型
+            if (EntityClass.class.isAssignableFrom(parameter.getType())) {
+                domainIndex = i;
+            }
+
             parameters.add(parameter);
         }
 
         this.pageableIndex = pageableIndex;
         this.sortIndex = sortIndex;
         this.routingIndex = routingIndex;
+        this.domainIndex = domainIndex;
 
         this.bindable = Lazy.of(this::getBindable);
     }
@@ -94,6 +103,7 @@ public abstract class Parameters<S extends Parameters<S, T>, T extends Parameter
         int sortIndexTemp = -1;
         int dynamicProjectionTemp = -1;
         int routingIndexTemp = -1;
+        int domainIndexTemp = -1;
 
         for (int i = 0; i < originals.size(); i++) {
 
@@ -104,12 +114,14 @@ public abstract class Parameters<S extends Parameters<S, T>, T extends Parameter
             sortIndexTemp = original.isSort() ? i : -1;
             dynamicProjectionTemp = original.isDynamicProjectionParameter() ? i : -1;
             routingIndexTemp = original.isRouting() ? i : -1;
+            domainIndexTemp = original.isDomain() ? i : -1;
         }
 
         this.pageableIndex = pageableIndexTemp;
         this.sortIndex = sortIndexTemp;
         this.dynamicProjectionIndex = dynamicProjectionTemp;
         this.routingIndex = routingIndexTemp;
+        this.domainIndex = domainIndexTemp;
         // parameters  value 绑定对应
         this.bindable = Lazy.of(() -> (S) this);
     }
@@ -136,10 +148,6 @@ public abstract class Parameters<S extends Parameters<S, T>, T extends Parameter
         return this.bindable.get();
     }
 
-    public boolean hasPageableParameter() {
-        return pageableIndex != -1;
-    }
-
     /**
      * <h2> 返回参数的个数 </h2>
      */
@@ -155,8 +163,28 @@ public abstract class Parameters<S extends Parameters<S, T>, T extends Parameter
         return sortIndex;
     }
 
+    public int getRoutingIndex() {
+        return routingIndex;
+    }
+
+    public int getDomainIndex() {
+        return domainIndex;
+    }
+
     public boolean hasSortParameter() {
         return sortIndex != -1;
+    }
+
+    public boolean hasRoutingParameter() {
+        return routingIndex != -1;
+    }
+
+    public boolean hasDomainParameter() {
+        return domainIndex != -1;
+    }
+
+    public boolean hasPageableParameter() {
+        return pageableIndex != -1;
     }
 
     public int getDynamicProjectionIndex() {

@@ -9,7 +9,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.util.Assert;
 
 /**
- * <h1> 用来发布Event的包装类 </h1>
+ * <h1> 发布entityClass 索引自动构建的event </h1>
  */
 public class MappingContextEvent<E extends PersistentEntity<?, P>, P extends PersistentProperty<P>> extends
         ApplicationEvent {

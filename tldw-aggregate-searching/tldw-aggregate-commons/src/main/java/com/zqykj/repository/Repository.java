@@ -17,6 +17,6 @@ import org.springframework.stereotype.Indexed;
  * @see CrudRepository
  */
 @Indexed
-public interface Repository<T, ID> {
+public interface Repository {
 
 }
