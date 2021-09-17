@@ -3,9 +3,11 @@
  */
 package com.zqykj.core;
 
+import com.zqykj.annotations.Document;
 import com.zqykj.core.convert.ElasticsearchConverter;
 import com.zqykj.core.document.DocumentAdapters;
 import com.zqykj.core.document.SearchDocumentResponse;
+import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
 import com.zqykj.repository.query.*;
 import com.zqykj.support.SearchHitsUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +82,17 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         return new ElasticsearchIndexOperations(this, index);
     }
 
+
+    /**
+     * <h2> 判断当前entityClass 是否标注了@Document 且 是否需要自动构建索引与mapping </h2>
+     */
+    public <T> boolean shouldCreateIndexAndMapping(@NonNull Class<T> entityClass) {
+
+        final ElasticsearchPersistentEntity<?> entity = getElasticsearchConverter().getMappingContext()
+                .getRequiredPersistentEntity(entityClass);
+        return entity.isAnnotationPresent(Document.class) && entity.isCreateIndexAndMapping();
+    }
+
     @Override
     public List<IndexedObjectInformation> doBulkOperation(List<?> queries, BulkOptions bulkOptions,
                                                           String index) {
@@ -102,8 +115,8 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
 
     @Override
     @Nullable
-    public <T> T get(String id, Class<T> clazz,String routing) {
-        return get(id, clazz, getIndexCoordinatesFor(clazz),routing);
+    public <T> T get(String id, Class<T> clazz, String routing) {
+        return get(id, clazz, getIndexCoordinatesFor(clazz), routing);
     }
 
     /**

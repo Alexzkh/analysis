@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Optional;
 
@@ -24,10 +25,7 @@ import java.util.Optional;
 public class OriginEsOperationTest {
 
     @Autowired
-    private TeacherInfoDao teacherInfoDao;
-
-    @Autowired
-    private EntranceRepository entranceRepository;
+    private ApplicationContext applicationContext;
 
 
 //    @Test
@@ -39,13 +37,15 @@ public class OriginEsOperationTest {
     @Test
     public void testTeacherById() throws Exception {
 
+        EntranceRepository entranceRepository = applicationContext.getBean(EntranceRepository.class);
         Optional<TeacherInfo> teacherInfo = entranceRepository.findById("110", "22", TeacherInfo.class);
         log.info(JacksonUtils.toJson(teacherInfo.orElse(null)));
     }
 
     @Test
-    public void testQueryAnn() throws Exception {
+    public void testQueryAnn() {
 
+        TeacherInfoDao teacherInfoDao = applicationContext.getBean(TeacherInfoDao.class);
         Page<TeacherInfo> teacherInfo = teacherInfoDao.matchAll(new PageRequest(0, 20, Sort.unsorted()),
                 new EntityClass(TeacherInfo.class));
         log.info(JacksonUtils.toJson(teacherInfo.getContent()));

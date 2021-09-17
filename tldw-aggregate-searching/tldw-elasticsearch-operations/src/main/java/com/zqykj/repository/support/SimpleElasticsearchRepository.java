@@ -3,10 +3,8 @@
  */
 package com.zqykj.repository.support;
 
-import com.zqykj.annotations.Document;
 import com.zqykj.core.*;
 import com.zqykj.core.aggregation.AggregatedPage;
-import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
 import com.zqykj.core.query.NativeSearchQueryBuilder;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageImpl;
@@ -24,8 +22,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
@@ -43,83 +39,26 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 public class SimpleElasticsearchRepository implements EntranceRepository {
 
     private ElasticsearchRestTemplate operations;
-    // 索引类对应的索引操作(一个索引类 entityClass 对应一个 索引操作类 IndexOperations)
-    private Map<Class<?>, IndexOperations> indexOperationsMap;
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Lock read = lock.readLock();
-    private final Lock write = lock.writeLock();
+    private IndexOperations indexOperations;
 
     public SimpleElasticsearchRepository(ElasticsearchRestTemplate operations) {
         this.operations = operations;
+        this.indexOperations = new ElasticsearchIndexOperations(operations);
     }
 
-    /**
-     * <h2> 根据entityClass 构建索引与映射 </h2>
-     */
-    private <T> void createIndexAndMapping(Class<T> entityClass) {
-        try {
-            if (shouldCreateIndexAndMapping(entityClass)) {
-                IndexOperations indexOperations = null;
-                // 检查entityClass 是否已经加载过
-                if (!isHaveIndexOperationsForEntityClass(entityClass)) {
-                    indexOperations = addEntityClass(entityClass);
-                }
-                if (!indexOperations.exists()) {
-                    indexOperations.createOrRollover();
-                    indexOperations.putMapping(entityClass);
-                }
-            }
-        } catch (Exception exception) {
-            log.warn("Cannot create index: {}", exception.getMessage());
-        } finally {
-
-        }
-    }
-
-    private <T> boolean isHaveIndexOperationsForEntityClass(Class<T> entityClass) {
-
-        try {
-            read.lock();
-
-            return indexOperationsMap.containsKey(entityClass);
-        } finally {
-
-            read.unlock();
-        }
-    }
-
-    private <T> IndexOperations addEntityClass(Class<T> entityClass) {
-        try {
-
-            write.lock();
-
-            IndexOperations indexOperations = operations.indexOps(entityClass);
-            indexOperationsMap.put(entityClass, indexOperations);
-            return indexOperations;
-        } finally {
-
-            write.unlock();
-        }
-    }
-
-    /**
-     * <h2> 判断当前entityClass 是否标注了@Document 且 是否需要自动构建索引与mapping </h2>
-     */
-    private <T> boolean shouldCreateIndexAndMapping(@NonNull Class<T> entityClass) {
-
-        final ElasticsearchPersistentEntity<?> entity = operations.getElasticsearchConverter().getMappingContext()
-                .getRequiredPersistentEntity(entityClass);
-        return entity.isAnnotationPresent(Document.class) && entity.isCreateIndexAndMapping();
-    }
 
     @Override
     public <T, ID> Optional<T> findById(ID id, String routing, @NonNull Class<T> entityClass) throws Exception {
+
         return Optional.ofNullable(
-                execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(entityClass), routing)));
+                execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(entityClass), routing),
+                        entityClass
+                ));
     }
 
     @Override
     public <T> Iterable<T> findAll(String routing, @NonNull Class<T> entityClass) {
+
         int itemCount = (int) this.count(routing, entityClass);
 
         if (itemCount == 0) {
@@ -131,9 +70,10 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @SuppressWarnings("unchecked")
     @Override
     public <T> Page<T> findAll(Pageable pageable, String routing, @NonNull Class<T> entityClass) {
+
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withPageable(pageable).build();
 
-        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)));
+        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
         AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
         return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
@@ -141,6 +81,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T, ID> Iterable<T> findAllById(Iterable<ID> ids, String routing, @NonNull Class<T> entityClass) {
+
         Assert.notNull(ids, "ids can't be null.");
 
         List<T> result = new ArrayList<>();
@@ -151,7 +92,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
 
         NativeSearchQuery query = new NativeSearchQueryBuilder().withIds(stringIds).withRoute(routing).build();
-        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates(entityClass)));
+        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
         if (multiGetEntities != null) {
             multiGetEntities.forEach(entity -> {
@@ -180,23 +121,24 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T> long count(String routing, @NonNull Class<T> entityClass) {
+
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery())
                 .withRoute(routing)
                 .build();
         // noinspection ConstantConditions
-        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)));
+        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
     }
 
     @Override
     public <T> T save(T entity, String routing, @NonNull Class<T> entityClass) {
+
         Assert.notNull(entity, "Cannot save 'null' entity.");
         return executeAndRefresh(operations -> operations.save(entity, getIndexCoordinates(entityClass), routing), entityClass);
     }
 
     public <T> Iterable<T> save(Iterable<T> entities, String routing, Class<T> entityClass) {
+
         Assert.notNull(entities, "Cannot insert 'null' as a List.");
-        // 自动构建索引
-        createIndexAndMapping(entityClass);
 
         return Streamable.of(saveAll(entities, routing, entityClass)).stream().collect(Collectors.toList());
     }
@@ -205,8 +147,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     public <T> Iterable<T> saveAll(Iterable<T> entities, String routing, @NonNull Class<T> entityClass) {
 
         Assert.notNull(entities, "Cannot insert 'null' as a List.");
-        // 自动构建索引
-        createIndexAndMapping(entityClass);
 
         String indexCoordinates = getIndexCoordinates(entityClass);
         executeAndRefresh(operations -> operations.save(entities, indexCoordinates, routing), entityClass);
@@ -217,6 +157,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T, ID> void deleteById(ID id, String routing, @NonNull Class<T> entityClass) {
+
         Assert.notNull(id, "Cannot delete entity with id 'null'.");
         doDelete(id, getIndexCoordinates(entityClass), routing, entityClass);
     }
@@ -230,6 +171,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Override
     public <T, ID> void deleteAll(Iterable<ID> ids, String routing, @NonNull Class<T> entityClass) {
+
         Assert.notNull(ids, "Cannot delete 'null' list.");
 
         String indexCoordinates = getIndexCoordinates(entityClass);
@@ -270,14 +212,20 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
      * <h2> 刷新索引 </h2>
      */
     public <T> void refresh(Class<T> entityClass) {
+        indexOperations.refresh(entityClass);
+    }
 
+    /**
+     * <h2> 自动构建索引与映射 </h2>
+     */
+    public <T> void createIndexAndMapping(Class<T> entityClass) {
         try {
-            read.lock();
-
-            indexOperationsMap.get(entityClass).refresh();
-        } finally {
-
-            read.unlock();
+            if (operations.shouldCreateIndexAndMapping(entityClass) && !indexOperations.exists(entityClass)) {
+                indexOperations.create(entityClass);
+                indexOperations.putMapping(entityClass);
+            }
+        } catch (Exception exception) {
+            log.warn("Cannot create index: {}", exception.getMessage());
         }
     }
 
@@ -289,15 +237,19 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     public interface OperationsCallback<R> {
         @Nullable
         R doWithOperations(ElasticsearchRestTemplate operations);
+
     }
 
     @Nullable
-    public <R> R execute(OperationsCallback<R> callback) {
+    public <R, T> R execute(OperationsCallback<R> callback, Class<T> entityClass) {
+        createIndexAndMapping(entityClass);
         return callback.doWithOperations(operations);
     }
 
     @Nullable
     public <R, T> R executeAndRefresh(OperationsCallback<R> callback, Class<T> entityClass) {
+        // 检查entityClass 是否创建了索引
+        createIndexAndMapping(entityClass);
         R result = callback.doWithOperations(operations);
         refresh(entityClass);
         return result;
