@@ -16,12 +16,19 @@ public interface IndexOperations {
      */
     boolean create();
 
+    boolean create(Class<?> entityClass);
+
     /**
      * <h2> 创建索引分片 </h2>
      */
     boolean createIndexRollover();
 
+
+    boolean createIndexRollover(Class<?> entityClass);
+
     boolean createOrRollover();
+
+    boolean createOrRollover(Class<?> entityClass);
 
     /**
      * <h2> 通过给定的配置创建索引 </h2>
@@ -38,6 +45,8 @@ public interface IndexOperations {
      */
     boolean delete();
 
+    boolean delete(Class<?> entityClass);
+
     /**
      * <h2> 检查此IndexOperations实例上 绑定的索引是否存在 </h2>
      *
@@ -45,10 +54,14 @@ public interface IndexOperations {
      */
     boolean exists();
 
+    boolean exists(Class<?> entityClass);
+
     /**
      * <h2> 刷新此IndexOperations实例上 绑定的索引 </h2>
      */
     void refresh();
+
+    void refresh(Class<?> entityClass);
 
     /**
      * <h2> 为该 IndexOperations实例上绑定的索引创建 索引映射 </h2>

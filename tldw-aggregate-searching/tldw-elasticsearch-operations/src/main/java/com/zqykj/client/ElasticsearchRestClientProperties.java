@@ -26,7 +26,7 @@ public class ElasticsearchRestClientProperties {
     /**
      * Host
      */
-    private String host;
+    private String host = "127.0.0.1:9200";
 
     /**
      * UserName.
@@ -64,13 +64,13 @@ public class ElasticsearchRestClientProperties {
     private Integer connectTimeoutMillis = 5000;
 
     /**
-     * 是否自动创建索引
+     * 是否自动创建索引与mapping
      */
-    private Boolean autoIndexCreation = true;
+    private boolean autoIndexCreation = true;
 
     /**
      * 协议 eg. http
      */
-    private String scheme;
+    private String scheme = "http";
 
 }

@@ -26,6 +26,7 @@ import static org.springframework.util.StringUtils.hasText;
  * <h2>  Elasticsearch 抽象数据源索引操作 </h2>
  */
 @Slf4j
+@SuppressWarnings("all")
 public abstract class AbstractDefaultIndexOperations implements IndexOperations {
 
     protected final ElasticsearchConverter elasticsearchConverter;
@@ -43,8 +44,7 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
     @Nullable
     protected final String boundIndex;
 
-    public AbstractDefaultIndexOperations(ElasticsearchConverter elasticsearchConverter,
-                                          @Nullable Class<?> boundClass) {
+    public AbstractDefaultIndexOperations(ElasticsearchConverter elasticsearchConverter, @Nullable Class<?> boundClass) {
 
         Assert.notNull(boundClass, "boundClass may not be null");
         this.elasticsearchConverter = elasticsearchConverter;
@@ -53,8 +53,7 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
         this.boundIndex = null;
     }
 
-    public AbstractDefaultIndexOperations(ElasticsearchConverter elasticsearchConverter,
-                                          @Nullable String boundIndex) {
+    public AbstractDefaultIndexOperations(ElasticsearchConverter elasticsearchConverter, @Nullable String boundIndex) {
 
         Assert.notNull(boundIndex, "boundIndex may not be null");
 
@@ -62,6 +61,15 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
         requestFactory = new RequestFactory(elasticsearchConverter);
         this.boundClass = null;
         this.boundIndex = boundIndex;
+    }
+
+    public AbstractDefaultIndexOperations(ElasticsearchConverter elasticsearchConverter) {
+
+
+        this.elasticsearchConverter = elasticsearchConverter;
+        requestFactory = new RequestFactory(elasticsearchConverter);
+        this.boundClass = null;
+        this.boundIndex = null;
     }
 
     /**
@@ -77,38 +85,55 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
     @Override
     public boolean create() {
 
+        return create(boundClass);
+    }
+
+    @Override
+    public boolean create(Class<?> entityClass) {
+
         Document settings = null;
 
         if (boundClass != null) {
-            settings = createSettings(boundClass);
+            settings = createSettings(entityClass);
         }
 
-        return doCreate(getIndexCoordinates(), settings);
+        return doCreate(getIndexCoordinatesFor(entityClass), settings);
     }
 
     @Override
     public boolean createIndexRollover() {
 
+        return createIndexRollover(boundClass);
+    }
+
+    @Override
+    public boolean createIndexRollover(Class<?> entityClass) {
+
         Document settings = null;
 
-        if (boundClass != null) {
-            settings = createSettings(boundClass);
+        if (entityClass != null) {
+            settings = createSettings(entityClass);
         }
-        boolean isSuccess = doCreateRollover(getRolloverIndexCoordinates(), settings, getAlias());
+        boolean isSuccess = doCreateRollover(getRolloverIndexCoordinates(entityClass), settings, getAlias());
         if (isSuccess) {
-            setIndexName("<" + getIndexCoordinates() + "-{now/d}-000001>");
+            setIndexName("<" + getIndexCoordinatesFor(entityClass) + "-{now/d}-000001>");
         }
         return isSuccess;
     }
 
     @Override
     public boolean createOrRollover() {
-        if (isCreateIndexByRollover()) {
+        return createOrRollover(boundClass);
+    }
 
-            return this.createIndexRollover();
+    @Override
+    public boolean createOrRollover(Class<?> entityClass) {
+        if (isCreateIndexByRollover(entityClass)) {
+
+            return this.createIndexRollover(entityClass);
         } else {
 
-            return this.create();
+            return this.create(entityClass);
         }
     }
 
@@ -142,14 +167,23 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
 
     @Override
     public boolean delete() {
-        return doDelete(getIndexCoordinates());
+        return delete(boundClass);
+    }
+
+    @Override
+    public boolean delete(Class<?> entityClass) {
+        return doDelete(getIndexCoordinatesFor(entityClass));
     }
 
     protected abstract boolean doDelete(String index);
 
     @Override
     public boolean exists() {
-        return doExists(getIndexCoordinates());
+        return exists(boundClass);
+    }
+
+    public boolean exists(Class<?> entityClass) {
+        return doExists(getIndexCoordinatesFor(entityClass));
     }
 
     protected abstract boolean doExists(String index);
@@ -163,7 +197,12 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
 
     @Override
     public void refresh() {
-        doRefresh(getIndexCoordinates());
+        refresh(boundClass);
+    }
+
+    @Override
+    public void refresh(Class<?> entityClass) {
+        doRefresh(getIndexCoordinatesFor(entityClass));
     }
 
     protected abstract void doRefresh(String index);
@@ -237,7 +276,11 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
     }
 
     public String getRolloverIndexCoordinates() {
-        return "<" + getIndexCoordinates() + "-{now/d}-000001>";
+        return getRolloverIndexCoordinates(boundClass);
+    }
+
+    public String getRolloverIndexCoordinates(Class<?> entityClas) {
+        return "<" + getIndexCoordinatesFor(entityClas) + "-{now/d}-000001>";
     }
 
     public Alias getAlias() {
@@ -278,7 +321,11 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
     protected abstract void rollover(ElasticsearchPersistentEntity<?> entity);
 
     public boolean isCreateIndexByRollover() {
-        ElasticsearchPersistentEntity<?> entity = getRequiredPersistentEntity(boundClass);
+        return isCreateIndexByRollover(boundClass);
+    }
+
+    public boolean isCreateIndexByRollover(Class<?> entityClass) {
+        ElasticsearchPersistentEntity<?> entity = getRequiredPersistentEntity(entityClass);
         if (entity.isRollover()) {
             if (entity.getRolloverMaxIndexAgeCondition() == 0
                     && entity.getRolloverMaxIndexDocsCondition() == 0

@@ -10,9 +10,12 @@ import com.zqykj.enums.DateIntervalUnit;
 
 import java.util.Map;
 
+import org.springframework.context.annotation.Primary;
+
 /**
  * <h1> 提供给外部使用的公共入口Repository </h1>
  */
+@Primary
 public interface EntranceRepository extends CrudRepository {
 
     /**

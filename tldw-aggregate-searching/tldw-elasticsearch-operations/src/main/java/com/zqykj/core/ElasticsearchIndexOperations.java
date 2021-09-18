@@ -39,6 +39,11 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
         this.restTemplate = restTemplate;
     }
 
+    public ElasticsearchIndexOperations(ElasticsearchRestTemplate restTemplate) {
+        super(restTemplate.getElasticsearchConverter());
+        this.restTemplate = restTemplate;
+    }
+
     @Override
     protected boolean doCreate(String index, @Nullable Document settings) {
         CreateIndexRequest request = requestFactory.createIndexRequest(index, settings, null);
