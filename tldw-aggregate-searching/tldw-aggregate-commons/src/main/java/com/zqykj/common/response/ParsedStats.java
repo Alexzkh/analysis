@@ -1,47 +1,42 @@
 package com.zqykj.common.response;
 
 
-import java.util.HashMap;
-import java.util.Map;
+import lombok.Builder;
+import lombok.Data;
+
 
 /**
- * @Description: TODO
+ * @Description: Convert elasticsearch return data
  * @Author zhangkehou
- * @Date 2021/9/16
+ * @Date 2021/9/18
  */
-public class ParsedStats implements Stats{
+@Data
+@Builder
+public class ParsedStats {
 
 
-    private long count ;
+    /**
+     * statistics
+     */
+    private long count;
+
+    /**
+     * minimum value
+     */
     private double min;
+
+    /**
+     * maximum value
+     */
     private double max;
+
+    /**
+     * sum
+     */
     private double sum;
+
+    /**
+     * average value
+     */
     private double avg;
-
-
-    @Override
-    public long getCount() {
-        return count;
-    }
-
-    @Override
-    public double getMin() {
-        return min;
-    }
-
-    @Override
-    public double getMax() {
-        return max;
-    }
-
-    @Override
-    public double getAvg() {
-        return avg;
-    }
-
-    @Override
-    public double getSum() {
-        return sum;
-    }
-
 }

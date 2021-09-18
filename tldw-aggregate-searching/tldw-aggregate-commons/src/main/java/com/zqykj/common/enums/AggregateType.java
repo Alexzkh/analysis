@@ -1,7 +1,7 @@
 package com.zqykj.common.enums;
 
 /**
- * @Description: TODO
+ * @Description: aggregate Type
  * @Author zhangkehou
  * @Date 2021/9/15
  */

@@ -1,6 +1,7 @@
 package com.zqykj.common.request;
 
 import com.zqykj.common.enums.AggregateType;
+import com.zqykj.enums.AggsType;
 import lombok.*;
 
 import java.util.List;
@@ -15,10 +16,12 @@ import java.util.Map;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
-@EqualsAndHashCode
 public class AggregateBuilder {
 
+    /**
+     * 分片路由
+     */
+    private String routing;
 
     /**
      * 聚合名称
@@ -28,11 +31,11 @@ public class AggregateBuilder {
     /**
      * 聚合类型
      */
-    private AggregateType aggregateType;
+    private AggsType aggregateType;
 
     /**
      * 父聚合名称
-     * */
+     */
     private String parentAggregateName;
 
     /**
