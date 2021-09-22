@@ -50,7 +50,7 @@ plugin:
   #插件启动方式 dev or prod
   runMode: dev
   #插件包放置位置 Linux环境修改为对应路径形式 eg：./plugins
-  pluginPath: D:\\zqy\\santaizi\\tldw-analysis-plugins
+  pluginPath: C:\\Users\\zhangkehou\\IdeaProjects\\dev_jz_2.6.4_version_upgrade\\santaizi\\tldw-analysis-plugins
   #插件包配置文件路径
   pluginConfigFilePath:
 

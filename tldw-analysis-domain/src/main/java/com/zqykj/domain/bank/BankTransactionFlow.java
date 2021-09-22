@@ -3,9 +3,12 @@ package com.zqykj.domain.bank;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.zqykj.annotations.*;
+import com.zqykj.domain.graph.EntityGraph;
+import com.zqykj.domain.graph.LinkGraph;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @ClassName Transactions
@@ -141,5 +144,17 @@ public class BankTransactionFlow {
 
     @Field(type = FieldType.Keyword, name = "data_schema_id")
     private String dataSchemaId;
+
+    /**
+     * 实体嵌套数据
+     */
+    @Field(name = "entity", type = FieldType.Nested)
+    private List<EntityGraph> entityGraphs;
+
+    /**
+     * 链接嵌套数据
+     */
+    @Field(name = "link", type = FieldType.Nested)
+    private List<LinkGraph> linkGraphs;
 
 }
