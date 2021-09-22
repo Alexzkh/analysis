@@ -281,6 +281,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 indexOperations.putMapping(entityClass);
             }
         } catch (Exception exception) {
+            exception.printStackTrace();
             log.warn("Cannot create index: {}", exception.getMessage());
         }
     }

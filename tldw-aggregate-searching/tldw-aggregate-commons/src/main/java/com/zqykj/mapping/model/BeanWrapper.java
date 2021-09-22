@@ -50,7 +50,8 @@ public class BeanWrapper<T> implements PersistentPropertyAccessor<T> {
         return getProperty(property, property.getType());
     }
 
-    public static <T> Object getProperty(PersistentProperty<?> property, T bean) {
+    @Nullable
+    public <S> Object getProperty(PersistentProperty<?> property, Class<? extends S> type) {
 
         Assert.notNull(property, "PersistentProperty must not be null!");
 
@@ -74,17 +75,6 @@ public class BeanWrapper<T> implements PersistentPropertyAccessor<T> {
                     String.format("Could not read property %s of %s!", property.toString(), bean.toString()), e);
         }
     }
-
-
-    @Nullable
-    public <S> S getProperty(PersistentProperty<?> property, Class<S> targetType) {
-
-        Assert.notNull(property, "PersistentProperty must not be null!");
-        Assert.notNull(targetType, "Target type must not be null!");
-
-        return convertIfNecessary(getProperty(property), targetType);
-    }
-
 
     @Nullable
     @SuppressWarnings("unchecked")
