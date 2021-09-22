@@ -121,6 +121,9 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         List<IndexQuery> indexQueries = Streamable.of(entities).stream().map(entity -> getIndexQuery(entity, routing))
                 .collect(Collectors.toList());
 
+        if (!indexQueries.isEmpty()) {
+            bulkIndex(indexQueries, index);
+        }
 
         return indexQueries.stream().map(IndexQuery::getObject).map(entity -> (T) entity).collect(Collectors.toList());
     }
@@ -177,9 +180,6 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         IndexQuery indexQuery = new IndexQuery();
         String id = getEntityId(entity);
 
-        if (id != null) {
-            id = elasticsearchConverter.convertId(id);
-        }
         indexQuery.setId(id);
         indexQuery.setObject(entity);
         //TODO version cannot be used together with seq_no and primary_term
@@ -187,7 +187,9 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         if (StringUtils.isBlank(routing)) {
             routing = getEntityRouting(entity);
         }
-        indexQuery.setVersion(getEntityVersion(entity));
+        if (null != getEntityVersion(entity)) {
+            indexQuery.setVersion(getEntityVersion(entity));
+        }
         if (StringUtils.isNotBlank(routing)) {
             indexQuery.setRouting(routing);
         }
@@ -209,11 +211,12 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
 
         ElasticsearchPersistentEntity<?> requiredPersistentEntity = getRequiredPersistentEntity(entity.getClass());
 
+        if (null != requiredPersistentEntity.getVersionProperty()) {
+            Object version = requiredPersistentEntity.getPropertyAccessor(entity).getProperty(requiredPersistentEntity.getVersionProperty());
 
-        Object version = requiredPersistentEntity.getPropertyAccessor(entity).getProperty(requiredPersistentEntity.getVersionProperty());
-
-        if (version != null && Long.class.isAssignableFrom(version.getClass())) {
-            return ((Long) version);
+            if (version != null && Long.class.isAssignableFrom(version.getClass())) {
+                return ((Long) version);
+            }
         }
 
         return null;
@@ -274,7 +277,7 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         ElasticsearchPersistentProperty routingFieldProperty = entity.getRoutingFieldProperty();
 
         if (routingFieldProperty != null) {
-            Routing routingField = propertyAccessor.getProperty(routingFieldProperty, Routing.class);
+            Routing routingField = (Routing) propertyAccessor.getProperty(routingFieldProperty);
 
             if (routingField != null && routingField.getName() != null) {
                 return elasticsearchConverter.getConversionService().convert(routingField.getName(), String.class);

@@ -93,7 +93,7 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
 
         Document settings = null;
 
-        if (boundClass != null) {
+        if (entityClass != null) {
             settings = createSettings(entityClass);
         }
 
@@ -191,6 +191,11 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
     @Override
     public boolean putMapping(Document mapping) {
         return doPutMapping(getIndexCoordinates(), mapping);
+    }
+
+    @Override
+    public boolean putMapping(Document mapping, Class<?> clazz) {
+        return doPutMapping(getIndexCoordinatesFor(clazz), mapping);
     }
 
     protected abstract boolean doPutMapping(String index, Document mapping);

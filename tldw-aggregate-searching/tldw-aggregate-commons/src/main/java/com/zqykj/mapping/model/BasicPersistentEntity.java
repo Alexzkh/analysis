@@ -120,6 +120,10 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
 
         properties.add(property);
 
+        if (!property.isTransient()) {
+            persistentPropertiesCache.add(property);
+        }
+
         propertyCache.computeIfAbsent(property.getName(), key -> property);
 
         P candidate = returnPropertyIfBetterIdPropertyCandidateOrNull(property);
