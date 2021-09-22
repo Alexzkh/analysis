@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 /**
  * <h1> 聚合查询测试类 </h1>
  */
-@Document(indexName = "teacher_info")
+@Document(indexName = "teacher_info", shards = 2)
 @Setter
 @Getter
 @AllArgsConstructor
@@ -30,7 +30,7 @@ public class TeacherInfo implements Serializable {
     @Id
     private String id;
 
-    @Field(type = FieldType.Keyword,name = "_name")
+    @Field(type = FieldType.Keyword, name = "_name")
     private String name;
 
     @Field(type = FieldType.Integer)

@@ -25,7 +25,4 @@ public interface PersistentPropertyAccessor<T> {
      * @return will never be {@literal null}.
      */
     T getBean();
-
-    <S> S getProperty(PersistentProperty<?> property, Class<S> targetType);
-
 }

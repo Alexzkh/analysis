@@ -96,8 +96,10 @@ public interface IndexOperations {
      */
     boolean putMapping(Document mapping);
 
+    boolean putMapping(Document mapping, Class<?> clazz);
+
     default boolean putMapping(Class<?> clazz) {
-        return putMapping(createMapping(clazz));
+        return putMapping(createMapping(clazz), clazz);
     }
 
     /**
