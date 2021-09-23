@@ -17,7 +17,7 @@ import java.util.List;
  * @Date 2021/8/20 13:50
  */
 @Data
-@Document(indexName = "bank_transaction_flow_test", shards = 3)
+@Document(indexName = "bank_transaction_flow", shards = 3)
 public class BankTransactionFlow {
 
 
