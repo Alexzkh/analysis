@@ -17,7 +17,7 @@ import lombok.Setter;
 public class LinkGraph {
 
     @Field(name = "id", type = FieldType.Long)
-    private long id;
+    private Long id;
 
     @Field(name = "type", type = FieldType.Keyword)
     private String type;

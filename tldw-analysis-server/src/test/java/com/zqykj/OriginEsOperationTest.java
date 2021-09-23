@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Slf4j
@@ -91,7 +90,7 @@ public class OriginEsOperationTest {
         List<BankTransactionFlow> bankTransactionFlows = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
             BankTransactionFlow bankTransactionFlow = new BankTransactionFlow();
-            bankTransactionFlow.setId(i);
+            bankTransactionFlow.setId((long) i);
             bankTransactionFlow.setCaseId("61e9e22a-a6b1-4838-8cea-df8995bc2d8c" + i);
             bankTransactionFlow.setResourceId("a0e16cb6b48f4516aa200fca3218574c" + i);
             bankTransactionFlow.setResourceKeyId(i + "");
@@ -152,7 +151,7 @@ public class OriginEsOperationTest {
         List<BankTransactionFlow> bankTransactionFlows = new ArrayList<>();
         for (int i = 10000; i < 18000; i++) {
             BankTransactionFlow bankTransactionFlow = new BankTransactionFlow();
-            bankTransactionFlow.setId(i);
+            bankTransactionFlow.setId((long) i);
             bankTransactionFlow.setCaseId("61e9e22a-a6b1-4838-8cea-df8995bc2d8c" + i);
             bankTransactionFlow.setResourceId("a0e16cb6b48f4516aa200fca3218574c" + i);
             bankTransactionFlow.setResourceKeyId(i + "");
