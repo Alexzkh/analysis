@@ -167,6 +167,14 @@ public class MappingElasticsearchConverter implements ElasticsearchConverter, In
         for (ElasticsearchPersistentProperty property : entity) {
 
             Object value = accessor.getProperty(property);
+            if (value == null) {
+
+                if (property.storeNullValue()) {
+                    sink.put(property.getFieldName(), null);
+                }
+
+                continue;
+            }
             // 查看property 是否设置了自定义的converter
             // (eg. property 设置了注解 @Field( format = DateFormat.custom, patter = "yyyy-MM-dd HH:mm:ss")
             if (property.hasPropertyConverter()) {
