@@ -76,8 +76,8 @@
     <build>
         <plugins>
             <plugin>
+                <!-- deploy 的时候将源码推送上去,这样别人在引入我们jar包的时候,可以下载到源码查看 -->
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
