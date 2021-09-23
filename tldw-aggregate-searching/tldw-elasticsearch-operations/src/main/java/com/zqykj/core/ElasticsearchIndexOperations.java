@@ -6,6 +6,7 @@ package com.zqykj.core;
 import com.zqykj.core.document.Document;
 import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -19,6 +20,8 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * <h2> ElasticSearch Index Operations</h2>
@@ -91,8 +94,11 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
 
         Assert.notNull(index, "No index defined for refresh()");
 
+        StopWatch refreshStarted = StopWatch.createStarted();
         RefreshRequest refreshRequest = requestFactory.refreshRequest(index);
         restTemplate.execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
+        refreshStarted.stop();
+        log.info("refresh index data cost time = {} ms , index name = {}", refreshStarted.getTime(TimeUnit.MILLISECONDS), index);
     }
 
     /**

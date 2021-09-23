@@ -16,17 +16,18 @@ import com.zqykj.domain.graph.LinkGraph;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.util.StopWatch;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Slf4j
@@ -146,10 +147,9 @@ public class OriginEsOperationTest {
 
     @Test
     public void testSaveTransactionFlowAll() {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+        StopWatch started = StopWatch.createStarted();
         List<BankTransactionFlow> bankTransactionFlows = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 30000; i < 40000; i++) {
             BankTransactionFlow bankTransactionFlow = new BankTransactionFlow();
             bankTransactionFlow.setId(i);
             bankTransactionFlow.setCaseId("61e9e22a-a6b1-4838-8cea-df8995bc2d8c" + i);
@@ -203,8 +203,8 @@ public class OriginEsOperationTest {
             bankTransactionFlows.add(bankTransactionFlow);
         }
         entranceRepository.saveAll(bankTransactionFlows, "61e9e22a-a6b1-4838-8cea-df8995bc2d8c", BankTransactionFlow.class);
-        stopWatch.stop();
-        log.info("save 6000 entity cost time = {} ms ", stopWatch.getTotalTimeMillis());
+        started.stop();
+        log.info("save 10000 entity cost time = {} ms ", started.getTime(TimeUnit.MILLISECONDS));
     }
 
 }

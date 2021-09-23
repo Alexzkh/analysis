@@ -66,16 +66,16 @@ public interface DocumentOperations {
     /**
      * <h2> 批量索引操作 </h2>
      */
-    List<IndexedObjectInformation> bulkIndex(List<IndexQuery> queries, Class<?> clazz);
+    void bulkIndex(List<IndexQuery> queries, Class<?> clazz);
 
-    default List<IndexedObjectInformation> bulkIndex(List<IndexQuery> queries, String index) {
-        return bulkIndex(queries, BulkOptions.defaultOptions(), index);
+    default void bulkIndex(List<IndexQuery> queries, String index) {
+        bulkIndex(queries, BulkOptions.defaultOptions(), index);
     }
 
     /**
      * <h2> 批量索引操作 </h2>
      */
-    List<IndexedObjectInformation> bulkIndex(List<IndexQuery> queries, BulkOptions bulkOptions, String index);
+    void bulkIndex(List<IndexQuery> queries, BulkOptions bulkOptions, String index);
 
     /**
      * <h2> 文档的部分更新 </h2>

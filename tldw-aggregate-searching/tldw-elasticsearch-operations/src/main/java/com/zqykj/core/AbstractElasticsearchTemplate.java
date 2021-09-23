@@ -21,7 +21,6 @@ import com.zqykj.repository.query.UpdateQuery;
 import com.zqykj.util.Streamable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.springframework.lang.NonNull;
@@ -30,7 +29,6 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 public abstract class AbstractElasticsearchTemplate implements DocumentOperations, SearchOperations {
@@ -125,22 +123,22 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
             bulkIndex(indexQueries, index);
         }
 
-        return indexQueries.stream().map(IndexQuery::getObject).map(entity -> (T) entity).collect(Collectors.toList());
+        return entities;
     }
 
     @Override
-    public List<IndexedObjectInformation> bulkIndex(List<IndexQuery> queries, Class<?> clazz) {
-        return bulkIndex(queries, getIndexCoordinatesFor(clazz));
+    public void bulkIndex(List<IndexQuery> queries, Class<?> clazz) {
+        bulkIndex(queries, getIndexCoordinatesFor(clazz));
     }
 
     @Override
-    public final List<IndexedObjectInformation> bulkIndex(List<IndexQuery> queries, BulkOptions bulkOptions,
-                                                          String index) {
+    public final void bulkIndex(List<IndexQuery> queries, BulkOptions bulkOptions,
+                                String index) {
 
         Assert.notNull(queries, "List of IndexQuery must not be null");
         Assert.notNull(bulkOptions, "BulkOptions must not be null");
 
-        return bulkOperation(queries, bulkOptions, index);
+        bulkOperation(queries, bulkOptions, index);
     }
 
     @Override
@@ -157,17 +155,17 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         doBulkOperation(queries, bulkOptions, index);
     }
 
-    public List<IndexedObjectInformation> bulkOperation(List<?> queries, BulkOptions bulkOptions,
-                                                        String index) {
+    public void bulkOperation(List<?> queries, BulkOptions bulkOptions,
+                              String index) {
 
         Assert.notNull(queries, "List of IndexQuery must not be null");
         Assert.notNull(bulkOptions, "BulkOptions must not be null");
 
-        return doBulkOperation(queries, bulkOptions, index);
+        doBulkOperation(queries, bulkOptions, index);
     }
 
-    public abstract List<IndexedObjectInformation> doBulkOperation(List<?> queries, BulkOptions bulkOptions,
-                                                                   String index);
+    public abstract void doBulkOperation(List<?> queries, BulkOptions bulkOptions,
+                                         String index);
 
     @Override
     public long count(Query query, Class<?> clazz) {
@@ -304,9 +302,8 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
      * <h2> 检查批量操作是否失败  </h2>
      *
      * @param bulkResponse 批量操作返回
-     * @return the list of the item id's
      */
-    protected List<IndexedObjectInformation> checkForBulkOperationFailure(BulkResponse bulkResponse) {
+    protected void checkForBulkOperationFailure(BulkResponse bulkResponse) {
 
         if (bulkResponse.hasFailures()) {
             Map<String, String> failedDocuments = new HashMap<>();
@@ -320,16 +317,6 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
                             + failedDocuments + ']',
                     failedDocuments);
         }
-        return Stream.of(bulkResponse.getItems()).map(bulkItemResponse -> {
-            DocWriteResponse response = bulkItemResponse.getResponse();
-            if (response != null) {
-                return IndexedObjectInformation.of(response.getId(), response.getSeqNo(), response.getPrimaryTerm(),
-                        response.getVersion());
-            } else {
-                return IndexedObjectInformation.of(bulkItemResponse.getId(), null, null, null);
-            }
-
-        }).collect(Collectors.toList());
     }
 
     /**

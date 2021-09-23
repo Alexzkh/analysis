@@ -12,6 +12,7 @@ import com.zqykj.repository.query.*;
 import com.zqykj.support.SearchHitsUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -35,6 +36,7 @@ import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -94,11 +96,14 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     }
 
     @Override
-    public List<IndexedObjectInformation> doBulkOperation(List<?> queries, BulkOptions bulkOptions,
-                                                          String index) {
+    public void doBulkOperation(List<?> queries, BulkOptions bulkOptions,
+                                String index) {
         BulkRequest bulkRequest = requestFactory.bulkRequest(queries, bulkOptions, index);
-        return checkForBulkOperationFailure(
+        StopWatch saveAllData = StopWatch.createStarted();
+        checkForBulkOperationFailure(
                 execute(client -> client.bulk(bulkRequest, RequestOptions.DEFAULT)));
+        saveAllData.stop();
+        log.info("save data count = {} , index name = {}, cost time = {} ms", queries.size(), index, saveAllData.getTime(TimeUnit.MILLISECONDS));
     }
 
     /**
