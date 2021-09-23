@@ -10,8 +10,6 @@ import org.springframework.stereotype.Indexed;
  * Domain operations extending this interface can selectively expose CRUD methods by simply declaring methods of the
  * same signature as those declared in {@link CrudRepository}.
  *
- * @param <T>  the domain type the operations manages
- * @param <ID> the type of the id of the entity the operations manages
  * @Author zhangkehou
  * @Date 2021/8/17
  * @see CrudRepository
