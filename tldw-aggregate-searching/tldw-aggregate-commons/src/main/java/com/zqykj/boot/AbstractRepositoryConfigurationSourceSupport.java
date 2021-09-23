@@ -3,6 +3,7 @@
  */
 package com.zqykj.boot;
 
+import com.zqykj.annotations.RepositoryScan;
 import com.zqykj.repository.config.AnnotationRepositoryConfigurationSource;
 import com.zqykj.repository.config.BootstrapMode;
 import com.zqykj.repository.config.RepositoryConfigurationDelegate;
@@ -58,8 +59,29 @@ public abstract class AbstractRepositoryConfigurationSourceSupport implements Im
         };
     }
 
+    /**
+     * <h2> 获取是当前启动类所在的包 、子包(默认) 以及指定的包或者类(如果存在) </h2>
+     */
     protected Streamable<String> getBasePackages() {
+
+        // 检查是否指定了需要扫描的基础包
+        Streamable<String> specifyBasePackages = getSpecifyBasePackages();
+        if (!specifyBasePackages.isEmpty()) {
+            return specifyBasePackages;
+        }
         return Streamable.of(AutoConfigurationPackages.get(this.beanFactory));
+    }
+
+    /**
+     * <h2> 获取指定的基础包或者类 (通过 {@link RepositoryScan} 注解的属性获取) </h2>
+     */
+    protected Streamable<String> getSpecifyBasePackages() {
+        try {
+            return Streamable.of(RepositoryScanPackages.get(this.beanFactory));
+        } catch (Exception e) {
+            // 未启用 @RepositoryScan 注解 来指定扫描需要的基础包与类, 那么默认扫描启动类所在的包以及子包
+            return Streamable.empty();
+        }
     }
 
     /**
@@ -122,6 +144,7 @@ public abstract class AbstractRepositoryConfigurationSourceSupport implements Im
 
         @Override
         public Streamable<String> getBasePackages() {
+            // 获取 扫描 Repository interface 所在的基础包
             return AbstractRepositoryConfigurationSourceSupport.this.getBasePackages();
         }
 
