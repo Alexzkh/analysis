@@ -5,6 +5,7 @@ package com.zqykj.core.aggregation.query.parameters.aggregate;
 
 import com.zqykj.core.aggregation.query.parameters.DateParameters;
 import com.zqykj.core.aggregation.query.parameters.GeneralParameters;
+import com.zqykj.core.aggregation.query.parameters.pipeline.PipelineAggregationParameters;
 import lombok.*;
 
 import java.util.List;
@@ -48,4 +49,9 @@ public class AggregationParameters {
      * 子聚合
      */
     private List<AggregationParameters> subAggregation;
+
+    /**
+     * 管道聚合
+     */
+    private List<PipelineAggregationParameters> pipelineAggregation;
 }

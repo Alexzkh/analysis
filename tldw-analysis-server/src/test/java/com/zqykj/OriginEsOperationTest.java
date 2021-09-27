@@ -39,6 +39,7 @@ import org.elasticsearch.search.aggregations.metrics.MaxAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.MinAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketScriptPipelineAggregationBuilder;
+import org.elasticsearch.search.aggregations.pipeline.MaxBucketPipelineAggregationBuilder;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Test;
@@ -299,11 +300,10 @@ public class OriginEsOperationTest {
         BucketScriptPipelineAggregationBuilder bucketScriptPipelineAggregationBuilder =
                 new BucketScriptPipelineAggregationBuilder("trade_total_amount_per_card", bucketsPath, script);
 
-        termsAggregationBuilderByMainCard.subAggregation(bucketScriptPipelineAggregationBuilder);
-
-        termsAggregationBuilderByMainAccount.subAggregation(termsAggregationBuilderByMainCard);
+        termsAggregationBuilderByMainAccount.subAggregation(bucketScriptPipelineAggregationBuilder);
 
         sourceBuilder.aggregation(termsAggregationBuilderByMainAccount);
+        sourceBuilder.aggregation(bucketScriptPipelineAggregationBuilder);
 
         request.source(sourceBuilder);
 

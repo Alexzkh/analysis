@@ -16,7 +16,7 @@
 
     <name>tldw-analysis-commons</name>
     <properties>
-        <lombok.version>1.16.18</lombok.version>
+        <lombok.version>1.18.20</lombok.version>
         <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
     </properties>
 
