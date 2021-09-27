@@ -19,7 +19,6 @@
         <plugin.version/>
         <plugin.provider/>
         <plugin.description/>
-        <lombok.version>1.18.10</lombok.version>
         <junit.version>4.13</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
         <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
