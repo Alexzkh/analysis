@@ -102,7 +102,7 @@ public interface EntranceRepository extends CrudRepository {
      * @param routing: the shard of routing
      * @param aggsType:             aggregation type
      * @param clazz:                domain type
-     * @param bucketName:           ucket aggregation Name
+     * @param bucketName:           bucket aggregation Name
      * @param interval:the          histogram interval
      * @param dateIntervalUnit:date type
      * @param indexes:              the index name collection

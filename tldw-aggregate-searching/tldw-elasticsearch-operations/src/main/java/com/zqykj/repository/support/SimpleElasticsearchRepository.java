@@ -3,10 +3,14 @@
  */
 package com.zqykj.repository.support;
 
-import com.zqykj.common.enums.AggregateType;
+
+import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AggregateBuilder;
+import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
+import com.zqykj.support.ParseAggregationResultUtil;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.metrics.Stats;
 import com.zqykj.core.*;
@@ -30,27 +34,30 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.ParsedHistogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.*;
+import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
+import static org.elasticsearch.index.query.QueryBuilders.*;
 
 /**
  * <h1>  Elasticsearch specific repository
@@ -74,6 +81,8 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         this.mappingContext = operations.getElasticsearchConverter().getMappingContext();
         this.indexOperations = new ElasticsearchIndexOperations(operations);
     }
+
+    private static final String WILDCARD = ".*";
 
     private static Map<AggsType, BiFunction<String, String, ValuesSourceAggregationBuilder>> map = new ConcurrentHashMap<>();
 
@@ -99,8 +108,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         dateHistogramInterval.put(DateIntervalUnit.MONTH, month -> DateHistogramInterval.MONTH);
         dateHistogramInterval.put(DateIntervalUnit.YEAR, year -> DateHistogramInterval.YEAR);
     }
-
-
 
 
     @Override
@@ -160,6 +167,19 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
 
         return result;
+    }
+
+    @Override
+    public <T> T query(QueryParams queryParams, Class<T> entityClass) {
+
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(entityClass);
+        String aliasFieldName = entity.getRequiredPersistentProperty(queryParams.getField()).getFieldName();
+        NativeSearchQuery nativeSearchQuery = new NativeSearchQueryBuilder()
+                .withQuery(termsQuery(aliasFieldName, queryParams.getValue()))
+                .withPageable(PageRequest.of(0, 1))
+                .build();
+        String indexCoordinates = getIndexCoordinates(entityClass);
+        return execute(operations -> operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)), entityClass)!=null?operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)).getContent():null;
     }
 
     private <ID> List<String> stringIdsRepresentation(Iterable<ID> ids) {
@@ -598,18 +618,37 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         TermsAggregationBuilder aggregationBuilder = AggregationBuilders.terms(name).field(aliasName)
                 .collectMode(Aggregator.SubAggCollectionMode.BREADTH_FIRST)
                 .size(aggregateBuilder.getSize());
+        /**
+         * 解析`子聚合`.
+         * */
         aggregateBuilder.getSubAggregations().stream().forEach(subAggregation -> {
-            String subAliasName = entity.getRequiredPersistentProperty(subAggregation.getAggregateName()).getFieldName();
+            String subAliasName = null;
+            if (!subAggregation.getAggregateName().equals("bucket_sort")){
+                subAliasName =   entity.getRequiredPersistentProperty(subAggregation.getAggregateName()).getFieldName();
+            }
             String subName = subAggregation.getAggregateType().toString() + "_" + subAliasName;
-            if (subAggregation.getAggregateType().equals(AggregateType.terms)) {
+
+            /**
+             * 如果`子聚合`是term聚合的话则特殊处理，反之亦反.
+             * */
+            if (subAggregation.getAggregateType().equals(AggsType.terms)) {
                 TermsAggregationBuilder subaggregationBuilder = AggregationBuilders.terms(subName).field(subAliasName).size(subAggregation.getSize());
                 if (!CollectionUtils.isEmpty(subAggregation.getSubAggregations())) {
+                    /**
+                     * 解析`子聚合的子聚合`.
+                     * */
                     subAggregation.getSubAggregations().stream().forEach(thirdAggregation -> {
                         String thirdAliasName = entity.getRequiredPersistentProperty(thirdAggregation.getAggregateName()).getFieldName();
                         String thirdName = thirdAggregation.getAggregateType().toString() + "_" + thirdAliasName;
-                        if (thirdAggregation.getAggregateType().equals(AggregateType.terms)) {
-                            TermsAggregationBuilder thirdAggregationBuilder = AggregationBuilders.terms(thirdName).field(thirdAliasName);
+                        /**
+                         * 如果`子聚合的子聚合`是term聚合的话则特殊处理，反之亦反.
+                         * */
+                        if (thirdAggregation.getAggregateType().equals(AggsType.terms)) {
+                            TermsAggregationBuilder thirdAggregationBuilder = AggregationBuilders.terms(thirdName).field(thirdAliasName).size(10);
                             if (!CollectionUtils.isEmpty(thirdAggregation.getSubAggregations())) {
+                                /**
+                                 * 解析`子聚合的子聚合的子聚合`.
+                                 * */
                                 thirdAggregation.getSubAggregations().stream().forEach(fourthAggregation -> {
                                     String fourthAliasName = entity.getRequiredPersistentProperty(fourthAggregation.getAggregateName()).getFieldName();
                                     String fourthName = fourthAggregation.getAggregateType().toString() + "_" + fourthAliasName;
@@ -617,30 +656,94 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                                     thirdAggregationBuilder.subAggregation(fourBiFunction.apply(fourthName, fourthAliasName));
                                 });
                             }
+
+                            /**
+                             * 处理`子聚合的子聚合`不是term聚合的聚合.
+                             * */
+                        } else {
+                            BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = map.get(thirdAggregation.getAggregateType());
+                            if (builderBiFunction != null) {
+                                subaggregationBuilder.subAggregation(builderBiFunction.apply(thirdName, thirdAliasName));
+                            }
                         }
-                        BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = map.get(thirdAggregation.getAggregateType());
-                        if (builderBiFunction != null) {
-                            subaggregationBuilder.subAggregation(builderBiFunction.apply(thirdName, thirdAliasName));
-                        }
+
                     });
                 }
                 aggregationBuilder.subAggregation(subaggregationBuilder);
+
+                /**
+                 * 处理`子聚合`不是term聚合的聚合.
+                 * */
+            } else {
+                /**
+                 * 当`子聚合`不是term聚合，而是bucket_sort聚合时则做特殊处理.
+                 * */
+                if (subAggregation.getAggregateType().equals(AggsType.bucket_sort)) {
+                    // todo 根据不同的聚合结果进行排序 现默认根据计算的总金额逆序
+                    FieldSortBuilder fieldSortBuilder = SortBuilders.fieldSort("sum_transaction_money").order(SortOrder.DESC);
+                    List<FieldSortBuilder> fieldSortBuilders = new ArrayList<>();
+                    fieldSortBuilders.add(fieldSortBuilder);
+                    aggregationBuilder.subAggregation(new BucketSortPipelineAggregationBuilder("bucket_sort", fieldSortBuilders)
+                            .from(subAggregation.getFrom())
+                            .size(subAggregation.getSize()));
+                    /**
+                     * 当`子聚合`既不是term聚合，也不是bucket_sort聚合时.
+                     * */
+                } else {
+                    BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = map.get(subAggregation.getAggregateType());
+                    if (builderBiFunction != null) {
+                        aggregationBuilder.subAggregation(builderBiFunction.apply(subName, subAliasName));
+                    }
+                }
+
             }
-            BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = map.get(subAggregation.getAggregateType());
-            if (builderBiFunction != null) {
-                aggregationBuilder.subAggregation(builderBiFunction.apply(subName, subAliasName));
-            }
+
         });
+        QueryParams params = aggregateBuilder.getQueryParams();
+        /**
+         * 当查询为查询字段的值存在时，构建term查询.
+         * */
+        if (StringUtils.isNotEmpty(params.getField())) {
+            if (params.getQueryType().equals(QueryType.term)) {
+                TermsQueryBuilder termsQueryBuilder = QueryBuilders.termsQuery(params.getField(), params.getValue());
+                searchSourceBuilder.query(termsQueryBuilder);
+            }
+        }
+
+        /**
+         * 当查询字段的值不存在时,而模糊查询的值(即keyword)存在时构建regex查询.
+         * */
+        if (StringUtils.isNotEmpty(params.getField())&&StringUtils.isEmpty(params.getValue()) && StringUtils.isEmpty(params.getField())) {
+            searchSourceBuilder.query(builderQuery(params.getValue()));
+        }
         searchSourceBuilder.size(0);
         searchSourceBuilder.aggregation(aggregationBuilder);
         SearchRequest searchRequest = new SearchRequest(indexName);
+
+        /**
+         * 指定路由查询
+         * */
         if (StringUtils.isNotEmpty(aggregateBuilder.getRouting())) {
             searchRequest.routing(aggregateBuilder.getRouting());
         }
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-        Aggregations aggregations = searchResponse.getAggregations();
-        return aggregations.asMap();
+        return ParseAggregationResultUtil.parse(searchResponse, name);
+    }
+
+
+    /**
+     * @param value: 模糊查询的值
+     * @Description: 构建模糊查询参数
+     * @return: QueryBuilder
+     **/
+    private QueryBuilder builderQuery(String value) {
+
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery().should(QueryBuilders.regexpQuery("customer_name", WILDCARD + value + WILDCARD))
+                .should(QueryBuilders.regexpQuery("account_card", WILDCARD + value + WILDCARD))
+                .should(QueryBuilders.regexpQuery("bank", WILDCARD + value + WILDCARD));
+
+        return boolQueryBuilder;
     }
 
 

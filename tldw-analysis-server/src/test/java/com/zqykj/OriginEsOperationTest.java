@@ -19,6 +19,7 @@ import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
+import com.zqykj.util.WebApplicationContext;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequest;
@@ -69,8 +70,8 @@ public class OriginEsOperationTest {
     @Autowired
     private ApplicationContext applicationContext;
 
-    @Autowired
-    private EntranceRepository entranceRepository;
+
+    private EntranceRepository entranceRepository = WebApplicationContext.getBean(EntranceRepository.class);
 
     @Autowired
     private RestHighLevelClient restHighLevelClient;
@@ -194,7 +195,6 @@ public class OriginEsOperationTest {
             bankTransactionFlow.setResourceKeyId(i + "");
             bankTransactionFlow.setBank("中国银行");
             bankTransactionFlow.setCustomerName("客户" + i);
-            bankTransactionFlow.setCustomer_identity_card("320123" + i);
             bankTransactionFlow.setQueryAccount("320123" + i);
             bankTransactionFlow.setQueryCard("728834032432" + i);
             bankTransactionFlow.setTransactionOppositeName("对方客户" + i);
