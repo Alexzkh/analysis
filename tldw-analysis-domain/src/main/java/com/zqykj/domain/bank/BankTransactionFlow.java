@@ -42,8 +42,8 @@ public class BankTransactionFlow {
     @Field(type = FieldType.Text, name = "customer_name", analyzer = "ik_max_word")
     private String customerName;
 
-    @Field(type = FieldType.Text, name = "customer_identity_card", analyzer = "ik_max_word")
-    private String customer_identity_card;
+    @Field(type = FieldType.Keyword, name = "customer_identity_card")
+    private String customerIdentityCard;
 
     @Field(type = FieldType.Text, name = "query_account", analyzer = "ik_max_word")
     private String queryAccount;

@@ -40,5 +40,10 @@ public enum AggsType {
     /**
      * bucket_script
      */
-    bucket_script
+    bucket_script,
+
+    /**
+     * bucket_sort 聚合排序、分页
+     * */
+    bucket_sort
 }

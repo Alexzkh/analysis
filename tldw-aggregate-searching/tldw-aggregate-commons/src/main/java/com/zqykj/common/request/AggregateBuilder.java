@@ -1,8 +1,8 @@
 package com.zqykj.common.request;
 
-import com.zqykj.common.enums.AggregateType;
 import com.zqykj.enums.AggsType;
 import lombok.*;
+import org.junit.internal.requests.SortingRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -43,6 +43,10 @@ public class AggregateBuilder {
      */
     private String field;
 
+    private int from;
+
+    private SortingRequest sortingRequest;
+
     /**
      * 当前聚合结果大小
      */
@@ -57,6 +61,11 @@ public class AggregateBuilder {
      * bucket_script聚合时的script值
      */
     private String script;
+
+    /**
+     * 聚合之外的查询参数
+     */
+    private QueryParams queryParams;
 
     /**
      * 子聚合集合

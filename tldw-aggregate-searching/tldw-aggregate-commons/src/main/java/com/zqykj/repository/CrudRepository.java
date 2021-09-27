@@ -1,6 +1,8 @@
 package com.zqykj.repository;
 
 import com.zqykj.annotations.NoRepositoryBean;
+import com.zqykj.common.enums.QueryType;
+import com.zqykj.common.request.QueryParams;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.Pageable;
 import com.zqykj.domain.Routing;
@@ -73,6 +75,14 @@ public interface CrudRepository extends Repository {
      * @param entityClass 实体类     must not be {@literal null}.
      */
     <T, ID> Iterable<T> findAllById(Iterable<ID> ids, @Nullable String routing, @NonNull Class<T> entityClass);
+
+    /**
+     * <h2> 删除数据 </h2>
+     *
+     * @param queryParams 查询参数
+     * @param entityClass 实体类   must not be {@literal null}.
+     */
+    <T> T query(QueryParams queryParams, Class<T> entityClass);
 
     /**
      * <h2> 统计数量 </h2>

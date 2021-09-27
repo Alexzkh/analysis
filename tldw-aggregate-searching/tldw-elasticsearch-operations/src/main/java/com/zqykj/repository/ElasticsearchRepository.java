@@ -3,7 +3,6 @@
  */
 package com.zqykj.repository;
 
-import com.zqykj.annotations.NoRepositoryBean;
 
 /**
  * <h1> Elasticsearch basic function components </h1>

@@ -17,7 +17,7 @@
     <name>tldw-analysis-commons</name>
     <properties>
         <lombok.version>1.16.18</lombok.version>
-
+        <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
     </properties>
 
 
@@ -27,6 +27,16 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+            <version>${codehaus.jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>${codehaus.jackson.version}</version>
         </dependency>
     </dependencies>
 </project>

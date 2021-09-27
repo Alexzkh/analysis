@@ -12,6 +12,7 @@ import com.zqykj.domain.Sort;
 import com.zqykj.domain.aggregate.TeacherInfo;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
+import com.zqykj.util.WebApplicationContext;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +31,8 @@ public class OriginEsOperationTest {
     @Autowired
     private ApplicationContext applicationContext;
 
-    @Autowired
-    private EntranceRepository entranceRepository;
+
+    private EntranceRepository entranceRepository = WebApplicationContext.getBean(EntranceRepository.class);
 
 
     @Test
