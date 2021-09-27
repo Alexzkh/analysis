@@ -3,22 +3,32 @@
  */
 package com.zqykj.util;
 
+import org.springframework.beans.BeanUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Optional;
+import java.lang.reflect.Modifier;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.springframework.util.ConcurrentReferenceHashMap;
+import org.springframework.util.ReflectionUtils.FieldFilter;
 
 /**
  * <h1> specific reflection utility methods and classes. </h1>
  */
 public final class ReflectionUtils {
+
+    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+    private static final Map<Class<?>, Method[]> declaredMethodsCache = new ConcurrentReferenceHashMap<>(256);
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
 
     /**
      * Finds a constructor on the given type that matches the given constructor arguments.
@@ -73,10 +83,103 @@ public final class ReflectionUtils {
         return result;
     }
 
+    /**
+     * A {@link FieldFilter} that has a description.
+     */
+    public interface DescribedFieldFilter extends FieldFilter {
+
+        /**
+         * Returns the description of the field filter. Used in exceptions being thrown in case uniqueness shall be enforced
+         * on the field filter.
+         *
+         * @return
+         */
+        String getDescription();
+    }
+
+    /**
+     * A {@link FieldFilter} for a given annotation.
+     */
+    public static class AnnotationFieldFilter implements DescribedFieldFilter {
+
+        private final Class<? extends Annotation> annotationType;
+
+        public AnnotationFieldFilter(Class<? extends Annotation> annotationType) {
+            this.annotationType = annotationType;
+        }
+
+        public boolean matches(Field field) {
+            return AnnotationUtils.getAnnotation(field, annotationType) != null;
+        }
+
+        public String getDescription() {
+            return String.format("Annotation filter for %s", annotationType.getName());
+        }
+    }
+
+    @Nullable
+    public static Field findField(Class<?> type, FieldFilter filter) {
+
+        return findField(type, new DescribedFieldFilter() {
+
+            public boolean matches(Field field) {
+                return filter.matches(field);
+            }
+
+            public String getDescription() {
+                return String.format("FieldFilter %s", filter.toString());
+            }
+        }, false);
+    }
+
     public static void setField(Field field, Object target, @Nullable Object value) {
 
         org.springframework.util.ReflectionUtils.makeAccessible(field);
         org.springframework.util.ReflectionUtils.setField(field, target, value);
+    }
+
+    /**
+     * Finds the field matching the given {@link DescribedFieldFilter}. Will make sure there's only one field matching the
+     * filter in case {@code enforceUniqueness} is {@literal true}.
+     *
+     * @param type              must not be {@literal null}.
+     * @param filter            must not be {@literal null}.
+     * @param enforceUniqueness whether to enforce uniqueness of the field
+     * @return the field matching the given {@link DescribedFieldFilter} or {@literal null} if none found.
+     * @throws IllegalStateException if enforceUniqueness is true and more than one matching field is found
+     */
+    @Nullable
+    public static Field findField(Class<?> type, DescribedFieldFilter filter, boolean enforceUniqueness) {
+
+        Assert.notNull(type, "Type must not be null!");
+        Assert.notNull(filter, "Filter must not be null!");
+
+        Class<?> targetClass = type;
+        Field foundField = null;
+
+        while (targetClass != Object.class) {
+
+            for (Field field : targetClass.getDeclaredFields()) {
+
+                if (!filter.matches(field)) {
+                    continue;
+                }
+
+                if (!enforceUniqueness) {
+                    return field;
+                }
+
+                if (foundField != null && enforceUniqueness) {
+                    throw new IllegalStateException(filter.getDescription());
+                }
+
+                foundField = field;
+            }
+
+            targetClass = targetClass.getSuperclass();
+        }
+
+        return foundField;
     }
 
     public static Method findRequiredMethod(Class<?> type, String name, Class<?>... parameterTypes) {
@@ -126,5 +229,77 @@ public final class ReflectionUtils {
         return Stream.concat(returnType, parameterTypes);
     }
 
+    @SuppressWarnings("unchecked")
+    public static <R> R getTargetInstanceViaReflection(Class<?> baseClass, Object... constructorArguments) {
+        Optional<Constructor<?>> constructor = findConstructor(baseClass, constructorArguments);
 
+        return constructor.map(it -> (R) BeanUtils.instantiateClass(it, constructorArguments))
+                .orElseThrow(() -> new IllegalStateException(String.format(
+                        "No suitable constructor found on %s to match the given arguments: %s. Make sure you implement a constructor taking these",
+                        baseClass, Arrays.stream(constructorArguments).map(Object::getClass).collect(Collectors.toList()))));
+    }
+
+    public static Optional<Method> findMethod(Class<?> clazz, String name) {
+        return findMethod(clazz, name, EMPTY_CLASS_ARRAY);
+    }
+
+    public static Optional<Method> findMethod(Class<?> clazz, String name, @Nullable Class<?>... paramTypes) {
+        Assert.notNull(clazz, "Class must not be null");
+        Assert.notNull(name, "Method name must not be null");
+        Class<?> searchType = clazz;
+        while (searchType != null) {
+            Method[] methods = (searchType.isInterface() ? searchType.getMethods() :
+                    getDeclaredMethods(searchType, false));
+            for (Method method : methods) {
+                if (name.equals(method.getName()) && (paramTypes == null || hasSameParams(method, paramTypes))) {
+                    return Optional.of(method);
+                }
+            }
+            searchType = searchType.getSuperclass();
+        }
+        return Optional.empty();
+    }
+
+    private static Method[] getDeclaredMethods(Class<?> clazz, boolean defensive) {
+        Assert.notNull(clazz, "Class must not be null");
+        Method[] result = declaredMethodsCache.get(clazz);
+        if (result == null) {
+            try {
+                Method[] declaredMethods = clazz.getDeclaredMethods();
+                List<Method> defaultMethods = findConcreteMethodsOnInterfaces(clazz);
+                if (defaultMethods != null) {
+                    result = new Method[declaredMethods.length + defaultMethods.size()];
+                    System.arraycopy(declaredMethods, 0, result, 0, declaredMethods.length);
+                    int index = declaredMethods.length;
+                    for (Method defaultMethod : defaultMethods) {
+                        result[index] = defaultMethod;
+                        index++;
+                    }
+                } else {
+                    result = declaredMethods;
+                }
+                declaredMethodsCache.put(clazz, (result.length == 0 ? EMPTY_METHOD_ARRAY : result));
+            } catch (Throwable ex) {
+                throw new IllegalStateException("Failed to introspect Class [" + clazz.getName() +
+                        "] from ClassLoader [" + clazz.getClassLoader() + "]", ex);
+            }
+        }
+        return (result.length == 0 || !defensive) ? result : result.clone();
+    }
+
+    @Nullable
+    private static List<Method> findConcreteMethodsOnInterfaces(Class<?> clazz) {
+        List<Method> result = null;
+        for (Class<?> ifc : clazz.getInterfaces()) {
+            for (Method ifcMethod : ifc.getMethods()) {
+                if (!Modifier.isAbstract(ifcMethod.getModifiers())) {
+                    if (result == null) {
+                        result = new ArrayList<>();
+                    }
+                    result.add(ifcMethod);
+                }
+            }
+        }
+        return result;
+    }
 }
