@@ -87,7 +87,7 @@ public class AggregationMappingBuilder {
                 target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName());
             } else {
                 // 例如es 的 filter, 不仅需要填充聚合名称, 还需要填充查询参数 QueryBuilder
-                // 管道聚合等
+
             }
 
             return mapAggregation(target, parameters, aggregationClass);
@@ -103,7 +103,6 @@ public class AggregationMappingBuilder {
     public Object buildPipelineAggregationInstance(PipelineAggregationParameters parameters) {
 
         try {
-
             // TODO 聚合类型需要翻译 成对应数据源有的聚合类型
             // eg. max (对于es 来说有max, mongodb 可能不叫max)
             Class<?> aggregationClass = aggregateNameForClass.get(parameters.getType());
@@ -118,19 +117,22 @@ public class AggregationMappingBuilder {
             if (StringUtils.isBlank(parameters.getScript())) {
 
                 constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), parameters.getBucketsPath());
-                target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName(), parameters.getBucketsPath());
+                if (constructor.isPresent()) {
+                    target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName(), parameters.getBucketsPath());
+                }
             } else {
 
                 Script script = new Script(parameters.getScript());
                 constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), script, parameters.getBucketsPathMap());
-                target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName(), script, parameters.getBucketsPathMap());
+                if (constructor.isPresent()) {
+                    target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName(), script, parameters.getBucketsPathMap());
+                }
             }
-
+            return target;
         } catch (Exception e) {
             log.error("could not build pipeline aggregation, error msg = {}", e.getMessage());
             throw new ElasticsearchException("could not build pipeline aggregation", e);
         }
-        return null;
     }
 
 
@@ -161,7 +163,7 @@ public class AggregationMappingBuilder {
 
             addDateParametersMapping(target, parameters, aggregationClass, field, field.getType());
         } else if (List.class.isAssignableFrom(field.getType())) {
-            // subAggregation 处理...
+            // subAggregation 处理... 类型是 AggregationBuilder
             addSubAggregationMapping(target, parameters.getSubAggregation(), aggregationClass);
         }
     }
@@ -305,5 +307,7 @@ public class AggregationMappingBuilder {
 
         Object target = aggregationMappingBuilder.buildAggregationInstance(parameters);
         System.out.println(target);
+
+
     }
 }
