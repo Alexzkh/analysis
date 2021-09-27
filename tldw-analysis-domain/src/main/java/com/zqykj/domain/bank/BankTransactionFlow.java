@@ -22,7 +22,7 @@ public class BankTransactionFlow {
 
 
     @Id
-    private long id;
+    private Long id;
 
     @Field(type = FieldType.Keyword, name = "case_id")
     private String caseId;

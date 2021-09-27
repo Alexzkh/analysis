@@ -17,7 +17,7 @@ import lombok.Setter;
 public class EntityGraph {
 
     @Field(name = "id", type = FieldType.Long)
-    private long id;
+    private Long id;
 
     @Field(name = "type", type = FieldType.Keyword)
     private String type;

@@ -40,7 +40,7 @@ public @interface Document {
     /**
      * Refresh interval for the index {@link #indexName()}. Used for index creation.
      */
-    String refreshInterval() default "2s";
+    String refreshInterval() default "60s";
 
     /**
      * Index storage type for the index {@link #indexName()}. Used for index creation.

@@ -19,6 +19,9 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.StopWatch;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * <h2> ElasticSearch Index Operations</h2>
@@ -91,8 +94,12 @@ public class ElasticsearchIndexOperations extends AbstractDefaultIndexOperations
 
         Assert.notNull(index, "No index defined for refresh()");
 
+        StopWatch refreshStarted = new StopWatch();
+        refreshStarted.start();
         RefreshRequest refreshRequest = requestFactory.refreshRequest(index);
         restTemplate.execute(client -> client.indices().refresh(refreshRequest, RequestOptions.DEFAULT));
+        refreshStarted.stop();
+        log.info("refresh index data cost time = {} ms , index name = {}", refreshStarted.getTotalTimeMillis(), index);
     }
 
     /**
