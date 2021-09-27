@@ -21,11 +21,11 @@ import java.util.Date;
 public class CardStatisticsResponse {
 
     public CardStatisticsResponse(AggregationResult aggregationResult) throws ParseException {
-        this.earliestTradingTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(aggregationResult.getEarliestTradingTime());
+        this.earliestTradingTime = aggregationResult.getEarliestTradingTime();
         this.queryCard = aggregationResult.getCard();
         this.entriesAmount =new BigDecimal(aggregationResult.getEntriesAmount()).setScale(2, RoundingMode.HALF_UP);
         this.entriesNums = aggregationResult.getEntriesNums();
-        this.LatestTradingTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(aggregationResult.getLatestTradingTime());
+        this.LatestTradingTime = aggregationResult.getLatestTradingTime();
         this.outGoingAmount = new BigDecimal(aggregationResult.getOutGoingAmount()).setScale(2, RoundingMode.HALF_UP);
         this.outGoingNums = aggregationResult.getOutGoingNums();
         this.transactionTotalNums = aggregationResult.getTransactionTotalNums();
@@ -92,10 +92,10 @@ public class CardStatisticsResponse {
     /**
      * 最早交易时间
      */
-    private Date earliestTradingTime;
+    private String earliestTradingTime;
 
     /**
      * 最晚交易时间
      */
-    private Date LatestTradingTime;
+    private String LatestTradingTime;
 }

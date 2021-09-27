@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import java.io.Serializable;
@@ -28,17 +29,19 @@ public class PersonalStatisticsResponse implements Serializable {
 
     public PersonalStatisticsResponse(AggregationResult aggregationResult) throws ParseException {
         this.accountCardNums = aggregationResult.getAccountCardNums();
-        this.earliestTradingTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(aggregationResult.getEarliestTradingTime());
+        this.earliestTradingTime = aggregationResult.getEarliestTradingTime();
+        System.out.println("eearliestTradingTime");
         this.customerIdentityId = aggregationResult.getCard();
         this.entriesAmount =new BigDecimal(aggregationResult.getEntriesAmount()).setScale(2, RoundingMode.HALF_UP);
         this.entriesNums = aggregationResult.getEntriesNums();
-        this.LatestTradingTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(aggregationResult.getLatestTradingTime());
+        this.LatestTradingTime =aggregationResult.getLatestTradingTime();
         this.outGoingAmount = new BigDecimal(aggregationResult.getOutGoingAmount()).setScale(2, RoundingMode.HALF_UP);
         this.outGoingNums = aggregationResult.getOutGoingNums();
         this.transactionTotalNums = aggregationResult.getTransactionTotalNums();
         this.transactionNetAmount = new BigDecimal(aggregationResult.getTransactionNetAmount()).setScale(2, RoundingMode.HALF_UP);
         this.transactionTotalAmount = new BigDecimal(aggregationResult.getTransactionTotalAmount()).setScale(2, RoundingMode.HALF_UP);
     }
+
 
     /**
      * 账户开户名称
@@ -98,11 +101,11 @@ public class PersonalStatisticsResponse implements Serializable {
     /**
      * 最早交易时间
      */
-    private Date earliestTradingTime;
+    private String earliestTradingTime;
 
     /**
      * 最晚交易时间
      */
-    private Date LatestTradingTime;
+    private String LatestTradingTime;
 
 }

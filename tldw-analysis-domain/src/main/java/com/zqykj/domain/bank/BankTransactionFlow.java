@@ -78,8 +78,7 @@ public class BankTransactionFlow {
     @Field(type = FieldType.Double, name = "transaction_balance")
     private Double transactionBalance;
 
-    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.basic_ordinal_date)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.custom,pattern ="yyyy-MM-dd HH:mm:ss")
     private Date tradingTime;
 
     @Field(type = FieldType.Keyword, name = "transaction_serial_number")

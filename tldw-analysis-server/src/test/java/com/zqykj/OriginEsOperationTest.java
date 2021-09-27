@@ -22,6 +22,7 @@ import com.zqykj.util.JacksonUtils;
 import com.zqykj.util.WebApplicationContext;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.DateUtils;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -61,6 +62,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -71,8 +74,8 @@ public class OriginEsOperationTest {
     @Autowired
     private ApplicationContext applicationContext;
 
-
-    private EntranceRepository entranceRepository = WebApplicationContext.getBean(EntranceRepository.class);
+    @Autowired
+    private EntranceRepository entranceRepository;
 
     @Autowired
     private RestHighLevelClient restHighLevelClient;
@@ -184,14 +187,14 @@ public class OriginEsOperationTest {
     }
 
     @Test
-    public void testSaveTransactionFlowAll() {
+    public void testSaveTransactionFlowAll() throws ParseException {
         StopWatch started = new StopWatch();
         started.start();
         List<BankTransactionFlow> bankTransactionFlows = new ArrayList<>();
-        for (int i = 10000; i < 18000; i++) {
+        for (int i = 1; i < 7; i++) {
             BankTransactionFlow bankTransactionFlow = new BankTransactionFlow();
             bankTransactionFlow.setId((long) i);
-            bankTransactionFlow.setCaseId("61e9e22a-a6b1-4838-8cea-df8995bc2d8c" + i);
+            bankTransactionFlow.setCaseId("61e9e22a-a6b1-4838-8cea-df8995bc2d8g" + i);
             bankTransactionFlow.setResourceId("a0e16cb6b48f4516aa200fca3218574c" + i);
             bankTransactionFlow.setResourceKeyId(i + "");
             bankTransactionFlow.setBank("中国银行");
@@ -224,7 +227,8 @@ public class OriginEsOperationTest {
             bankTransactionFlow.setMacAddress("223232::232::11");
             bankTransactionFlow.setTransactionTellerNumber("1232131");
             bankTransactionFlow.setNote("备注");
-            bankTransactionFlow.setTradingTime(new Date());
+//            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2020-07-04 12:09:44");
+            bankTransactionFlow.setTradingTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2020-07-04 12:09:44"));
             bankTransactionFlow.setDataSchemaId("21321dataSchemaId");
             EntityGraph entityGraph = new EntityGraph(132132131L, "bank_card");
             EntityGraph entityGraph1 = new EntityGraph(2222132132131L, "bank_card");
@@ -240,7 +244,7 @@ public class OriginEsOperationTest {
             bankTransactionFlow.setLinkGraphs(linkGraphs);
             bankTransactionFlows.add(bankTransactionFlow);
         }
-        entranceRepository.saveAll(bankTransactionFlows, "61e9e22a-a6b1-4838-8cea-df8995bc2d8c", BankTransactionFlow.class);
+        entranceRepository.saveAll(bankTransactionFlows, "61e9e22a-a6b1-4838-8cea-df8995bc2d8g", BankTransactionFlow.class);
         started.stop();
         log.info("save 10000 entity cost time = {} ms ", started.getTotalTimeMillis());
     }

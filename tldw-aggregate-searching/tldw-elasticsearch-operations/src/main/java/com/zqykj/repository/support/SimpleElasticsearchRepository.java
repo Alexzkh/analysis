@@ -8,6 +8,7 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
+import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.index.query.*;
@@ -83,31 +84,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     private static final String WILDCARD = ".*";
-
-    private static Map<AggsType, BiFunction<String, String, ValuesSourceAggregationBuilder>> map = new ConcurrentHashMap<>();
-
-    static {
-        map.put(AggsType.count, (type, field) -> AggregationBuilders.count(type).field(field));
-        map.put(AggsType.avg, (type, field) -> AggregationBuilders.avg(type).field(field));
-        map.put(AggsType.max, (type, field) -> AggregationBuilders.max(type).field(field));
-        map.put(AggsType.min, (type, field) -> AggregationBuilders.min(type).field(field));
-        map.put(AggsType.sum, (type, field) -> AggregationBuilders.sum(type).field(field));
-        map.put(AggsType.terms, (type, field) -> AggregationBuilders.terms(type).field(field));
-
-    }
-
-    private static Map<DateIntervalUnit, Function<Integer, DateHistogramInterval>> dateHistogramInterval = new ConcurrentHashMap<>();
-
-    static {
-        dateHistogramInterval.put(DateIntervalUnit.SECOND, sec -> DateHistogramInterval.seconds(sec));
-        dateHistogramInterval.put(DateIntervalUnit.DAY, sec -> DateHistogramInterval.days(sec));
-        dateHistogramInterval.put(DateIntervalUnit.MINUTE, minutes -> DateHistogramInterval.minutes(minutes));
-        dateHistogramInterval.put(DateIntervalUnit.HOUR, hours -> DateHistogramInterval.hours(hours));
-        dateHistogramInterval.put(DateIntervalUnit.WEEK, week -> DateHistogramInterval.weeks(week));
-        dateHistogramInterval.put(DateIntervalUnit.QUARTER, quarter -> DateHistogramInterval.QUARTER);
-        dateHistogramInterval.put(DateIntervalUnit.MONTH, month -> DateHistogramInterval.MONTH);
-        dateHistogramInterval.put(DateIntervalUnit.YEAR, year -> DateHistogramInterval.YEAR);
-    }
 
 
     @Override
@@ -321,7 +297,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // the name of aggregation
         String name = stringJoiner.toString();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        BiFunction<String, String, ValuesSourceAggregationBuilder> result = map.get(AggsType.count);
+        BiFunction<String, String, ValuesSourceAggregationBuilder> result = DateHistogramIntervalUtil.map.get(AggsType.count);
         if (result != null) {
             searchSourceBuilder.aggregation(result.apply(name, aliasName));
         }
@@ -487,7 +463,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         AggregationBuilder aggregation = AggregationBuilders.histogram(bucket).field(bucketAliasName).interval(interval);
         searchSourceBuilder.size(0);
-        BiFunction<String, String, ValuesSourceAggregationBuilder> result = map.get(AggsType.count);
+        BiFunction<String, String, ValuesSourceAggregationBuilder> result = DateHistogramIntervalUtil.map.get(AggsType.count);
         if (result != null) {
             searchSourceBuilder.aggregation(result.apply(name, metricsAliasName));
         }
@@ -540,12 +516,12 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // the name of aggregation
         String name = stringJoiner.toString();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        Function<Integer, DateHistogramInterval> function = dateHistogramInterval.get(dateIntervalUnit);
+        Function<Integer, DateHistogramInterval> function =DateHistogramIntervalUtil.dateHistogramInterval.get(dateIntervalUnit);
 
         DateHistogramInterval dateHistogramInterval = function.apply(interval);
         AggregationBuilder aggregation = AggregationBuilders.dateHistogram(bucket).field(bucketAliasName).fixedInterval(dateHistogramInterval);
         searchSourceBuilder.size(0);
-        BiFunction<String, String, ValuesSourceAggregationBuilder> result = map.get(AggsType.count);
+        BiFunction<String, String, ValuesSourceAggregationBuilder> result = DateHistogramIntervalUtil.map.get(AggsType.count);
         if (result != null) {
             searchSourceBuilder.aggregation(result.apply(name, metricsAliasName));
         }
@@ -652,7 +628,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                                 thirdAggregation.getSubAggregations().stream().forEach(fourthAggregation -> {
                                     String fourthAliasName = entity.getRequiredPersistentProperty(fourthAggregation.getAggregateName()).getFieldName();
                                     String fourthName = fourthAggregation.getAggregateType().toString() + "_" + fourthAliasName;
-                                    BiFunction<String, String, ValuesSourceAggregationBuilder> fourBiFunction = map.get(fourthAggregation.getAggregateType());
+                                    BiFunction<String, String, ValuesSourceAggregationBuilder> fourBiFunction = DateHistogramIntervalUtil.map.get(fourthAggregation.getAggregateType());
                                     thirdAggregationBuilder.subAggregation(fourBiFunction.apply(fourthName, fourthAliasName));
                                 });
                             }
@@ -661,7 +637,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                              * 处理`子聚合的子聚合`不是term聚合的聚合.
                              * */
                         } else {
-                            BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = map.get(thirdAggregation.getAggregateType());
+                            BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = DateHistogramIntervalUtil.map.get(thirdAggregation.getAggregateType());
                             if (builderBiFunction != null) {
                                 subaggregationBuilder.subAggregation(builderBiFunction.apply(thirdName, thirdAliasName));
                             }
@@ -690,7 +666,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                      * 当`子聚合`既不是term聚合，也不是bucket_sort聚合时.
                      * */
                 } else {
-                    BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = map.get(subAggregation.getAggregateType());
+                    BiFunction<String, String, ValuesSourceAggregationBuilder> builderBiFunction = DateHistogramIntervalUtil.map.get(subAggregation.getAggregateType());
                     if (builderBiFunction != null) {
                         aggregationBuilder.subAggregation(builderBiFunction.apply(subName, subAliasName));
                     }
