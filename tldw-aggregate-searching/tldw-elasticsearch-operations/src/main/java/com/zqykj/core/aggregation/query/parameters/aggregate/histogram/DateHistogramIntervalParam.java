@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.query.parameters.histogram;
+package com.zqykj.core.aggregation.query.parameters.aggregate.histogram;
 
 public class DateHistogramIntervalParam {
 

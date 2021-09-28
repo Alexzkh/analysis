@@ -1,9 +1,9 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.util.bucket;
+package com.zqykj.core.aggregation.util.aggregate.bucket;
 
-import com.zqykj.core.aggregation.util.AggregationNameForBeanClass;
+import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 
 /**
@@ -12,13 +12,13 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
  * eg. terms -> TermsAggregationBuilder
  * </h1>
  */
-public class AggregationNameForBeanClassOfBucket extends AggregationNameForBeanClass {
+public class ClassNameForBeanClassOfBucket extends ClassNameForBeanClass {
 
     private final static String TYPE = "bucket";
     private final static String packageName = "org.elasticsearch.search.aggregations.bucket";
     private final static Class<?> scanClass = AggregationBuilder.class;
 
-    public AggregationNameForBeanClassOfBucket() {
+    public ClassNameForBeanClassOfBucket() {
         getAggregationNameForClassOfType(TYPE, scanClass, packageName);
     }
 

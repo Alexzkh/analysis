@@ -3,11 +3,12 @@
  */
 package com.zqykj.core.aggregation.query.parameters.aggregate;
 
-import com.zqykj.core.aggregation.query.parameters.DateParameters;
-import com.zqykj.core.aggregation.query.parameters.GeneralParameters;
-import com.zqykj.core.aggregation.query.parameters.pipeline.PipelineAggregationParameters;
+import com.zqykj.core.aggregation.query.parameters.aggregate.pipeline.PipelineAggregationParameters;
+import com.zqykj.core.aggregation.query.parameters.query.QueryParameters;
 import lombok.*;
+import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,7 +39,7 @@ public class AggregationParameters {
     /**
      * 通过参数
      */
-    private GeneralParameters generalParameters;
+    private AggregationGeneralParameters aggregationGeneralParameters;
 
     /**
      * 日期参数
@@ -54,4 +55,49 @@ public class AggregationParameters {
      * 管道聚合
      */
     private List<PipelineAggregationParameters> pipelineAggregation;
+
+    /**
+     * 查询参数
+     */
+    private QueryParameters queryParameters;
+
+    public AggregationParameters(String name, String type, String script) {
+        this.name = name;
+        this.type = type;
+        this.script = script;
+    }
+
+    public AggregationParameters(String name, String type) {
+        this.name = name;
+        this.type = type;
+    }
+
+    public void setPerSubAggregation(AggregationParameters aggregation) {
+        if (CollectionUtils.isEmpty(this.subAggregation)) {
+            this.subAggregation = new ArrayList<>();
+        }
+        this.subAggregation.add(aggregation);
+    }
+
+
+    public void setPerPipelineAggregation(PipelineAggregationParameters aggregation) {
+        if (CollectionUtils.isEmpty(this.pipelineAggregation)) {
+            this.pipelineAggregation = new ArrayList<>();
+        }
+        this.pipelineAggregation.add(aggregation);
+    }
+
+    /**
+     * <h1> 聚合类型的翻译 </h1>
+     * TODO 后面做一个翻译器, 将公共的类型 翻译成不同数据源需要的聚合类型
+     */
+    public String aggregationTypeConvert(String type) {
+
+        switch (type) {
+            case "count":
+                return "value_count";
+            default:
+                return type;
+        }
+    }
 }

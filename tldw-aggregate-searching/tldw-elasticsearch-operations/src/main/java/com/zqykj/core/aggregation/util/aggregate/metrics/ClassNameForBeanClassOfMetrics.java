@@ -1,9 +1,9 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.util.metrics;
+package com.zqykj.core.aggregation.util.aggregate.metrics;
 
-import com.zqykj.core.aggregation.util.AggregationNameForBeanClass;
+import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 
 /**
@@ -12,14 +12,14 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
  * eg. max -> MaxAggregationBuilder
  * </h1>
  */
-public class AggregationNameForBeanClassOfMetrics extends AggregationNameForBeanClass {
+public class ClassNameForBeanClassOfMetrics extends ClassNameForBeanClass {
 
     private final static String TYPE = "metrics";
     private final static String packageName = "org.elasticsearch.search.aggregations.metrics";
     private final static Class<?> scanClass = AggregationBuilder.class;
 
 
-    public AggregationNameForBeanClassOfMetrics() {
+    public ClassNameForBeanClassOfMetrics() {
         getAggregationNameForClassOfType(TYPE, scanClass, packageName);
     }
 }

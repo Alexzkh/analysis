@@ -5,10 +5,13 @@ package com.zqykj;
 
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
-import com.zqykj.core.aggregation.query.AggregationMappingBuilder;
-import com.zqykj.core.aggregation.query.parameters.GeneralParameters;
+import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
+import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationGeneralParameters;
 import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationParameters;
-import com.zqykj.core.aggregation.util.bucket.AggregationNameForBeanClassOfBucket;
+import com.zqykj.core.aggregation.query.parameters.aggregate.pipeline.PipelineAggregationParameters;
+import com.zqykj.core.aggregation.util.aggregate.bucket.ClassNameForBeanClassOfBucket;
+import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOfMetrics;
+import com.zqykj.core.aggregation.util.aggregate.pipeline.ClassNameForBeanClassOfPipeline;
 import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -19,10 +22,8 @@ import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
-import com.zqykj.util.WebApplicationContext;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.utils.DateUtils;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -32,16 +33,10 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.range.IpRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.MaxAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.MinAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketScriptPipelineAggregationBuilder;
-import org.elasticsearch.search.aggregations.pipeline.MaxBucketPipelineAggregationBuilder;
-import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
@@ -346,25 +341,31 @@ public class OriginEsOperationTest {
         sourceBuilder.size(0);
 
         AggregationMappingBuilder aggregationMappingBuilder = new AggregationMappingBuilder(
-                new AggregationNameForBeanClassOfBucket()
+                new ClassNameForBeanClassOfBucket(), new ClassNameForBeanClassOfPipeline(),
+                new ClassNameForBeanClassOfMetrics()
         );
 
-        AggregationParameters parameters = new AggregationParameters();
+        AggregationParameters root = new AggregationParameters("main_account_per", "terms");
+        AggregationGeneralParameters aggregationGeneralParameters = new AggregationGeneralParameters("customer_identity_card", 3);
+        root.setAggregationGeneralParameters(aggregationGeneralParameters);
 
-        parameters.setName("main_account_per");
-        parameters.setType("terms");
-        GeneralParameters generalParameters = new GeneralParameters("customer_identity_card", 3);
-        parameters.setGeneralParameters(generalParameters);
+        AggregationParameters sub = new AggregationParameters("main_card_per", "terms");
+        AggregationGeneralParameters subAggregationGeneralParameters = new AggregationGeneralParameters("account_card", 4);
+        sub.setAggregationGeneralParameters(subAggregationGeneralParameters);
 
-        AggregationParameters sub = new AggregationParameters();
-        sub.setName("main_card_per");
-        sub.setType("terms");
-        GeneralParameters subGeneralParameters = new GeneralParameters("account_card", 4);
-        sub.setGeneralParameters(subGeneralParameters);
-        List<AggregationParameters> subList = new ArrayList<>();
-        subList.add(sub);
-        parameters.setSubAggregation(subList);
-        Object target = aggregationMappingBuilder.buildAggregationInstance(parameters);
+
+        AggregationParameters sub2 = new AggregationParameters("enter_bill_sum_per_card", "sum");
+        AggregationGeneralParameters subAggregationGeneralParameters2 = new AggregationGeneralParameters("trade_amount");
+        sub2.setAggregationGeneralParameters(subAggregationGeneralParameters2);
+
+        PipelineAggregationParameters pipelineAggregationParameters = new PipelineAggregationParameters("total_sum_bucket", "sum_bucket", "main_card_per>enter_bill_sum_per_card");
+
+        root.setPerPipelineAggregation(pipelineAggregationParameters);
+        root.setPerSubAggregation(sub);
+        sub.setPerSubAggregation(sub2);
+
+
+        Object target = aggregationMappingBuilder.buildAggregationInstance(root);
         sourceBuilder.aggregation((AggregationBuilder) target);
         request.source(sourceBuilder);
         SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
