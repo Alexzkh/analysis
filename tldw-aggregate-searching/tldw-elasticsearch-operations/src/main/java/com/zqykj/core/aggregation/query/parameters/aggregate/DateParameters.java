@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.query.parameters;
+package com.zqykj.core.aggregation.query.parameters.aggregate;
 
 import lombok.*;
 
@@ -28,5 +28,10 @@ public class DateParameters {
      * 固定日历间隔参数配置 (支持的单位: 毫秒、秒、分钟、小时、天)
      */
     private String fixedInterval;
+
+    public DateParameters(String calendarInterval, String format) {
+        this.calendarInterval = calendarInterval;
+        this.format = format;
+    }
 
 }

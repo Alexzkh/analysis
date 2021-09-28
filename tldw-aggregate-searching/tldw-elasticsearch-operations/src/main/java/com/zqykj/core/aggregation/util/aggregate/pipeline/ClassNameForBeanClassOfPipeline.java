@@ -1,9 +1,9 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.util.pipeline;
+package com.zqykj.core.aggregation.util.aggregate.pipeline;
 
-import com.zqykj.core.aggregation.util.AggregationNameForBeanClass;
+import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import org.elasticsearch.search.aggregations.PipelineAggregationBuilder;
 
 /**
@@ -12,13 +12,13 @@ import org.elasticsearch.search.aggregations.PipelineAggregationBuilder;
  * eg. bucket_script -> BucketScriptPipelineAggregationBuilder
  * </h1>
  */
-public class AggregationNameForBeanClassOfPipeline extends AggregationNameForBeanClass {
+public class ClassNameForBeanClassOfPipeline extends ClassNameForBeanClass {
 
     private final static String TYPE = "pipeline";
     private final static String packageName = "org.elasticsearch.search.aggregations.pipeline";
     private final static Class<?> scanClass = PipelineAggregationBuilder.class;
 
-    public AggregationNameForBeanClassOfPipeline() {
+    public ClassNameForBeanClassOfPipeline() {
         getAggregationNameForClassOfType(TYPE, scanClass, packageName);
     }
 }

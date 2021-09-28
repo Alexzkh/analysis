@@ -3,9 +3,9 @@
  */
 package com.zqykj.core.aggregation.util;
 
-import com.zqykj.core.aggregation.util.bucket.AggregationNameForBeanClassOfBucket;
-import com.zqykj.core.aggregation.util.metrics.AggregationNameForBeanClassOfMetrics;
-import com.zqykj.core.aggregation.util.pipeline.AggregationNameForBeanClassOfPipeline;
+import com.zqykj.core.aggregation.util.aggregate.bucket.ClassNameForBeanClassOfBucket;
+import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOfMetrics;
+import com.zqykj.core.aggregation.util.aggregate.pipeline.ClassNameForBeanClassOfPipeline;
 import com.zqykj.util.ReflectionUtils;
 import com.zqykj.util.Streamable;
 import lombok.extern.slf4j.Slf4j;
@@ -22,25 +22,25 @@ import java.util.stream.Collectors;
 
 /**
  * <h1>
- * 描述es 聚合名称 与 聚合类的关系 抽象类
+ * 描述 类作用名称 与 类的关系 抽象类
  * </h1>
  */
 @Slf4j
-public abstract class AggregationNameForBeanClass {
+public abstract class ClassNameForBeanClass {
 
 
     /**
-     * aggregation name -> aggregation operation class
+     * class effect name ->  operation class
      */
     protected Map<String, Class<?>> aggregateNameForClass;
 
     /**
-     * <h2> 通过 聚合类型, 获取一个map (key: 聚合名称 , value: 对应该聚合操作类) </h2>
+     * <h2> 给定接口类 和 基础扫描包, 得到接口下所有实现类 </h2>
      */
-    protected void getAggregationNameForClassOfType(String aggregationType, Class<?> scanSuperClass, String... basePackages) {
+    protected void getAggregationNameForClassOfType(String effectType, Class<?> scanSuperClass, String... basePackages) {
 
-        log.info("Scanning for aggregation, type = {}, scan class = {}, basePackages = {}",
-                aggregationType, scanSuperClass.getName(), Arrays.toString(basePackages));
+        log.info("Scanning for type = {}, scan class = {}, basePackages = {}",
+                effectType, scanSuperClass.getName(), Arrays.toString(basePackages));
         // true：默认TypeFilter生效，这种模式会查询出许多不符合你要求的class名
         // false：关闭默认TypeFilter
         ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(
@@ -105,8 +105,8 @@ public abstract class AggregationNameForBeanClass {
 
     // Test
     public static void main(String[] args) {
-        Map<String, ? extends Class<?>> bucket = new AggregationNameForBeanClassOfBucket().getAggregateNameForClass();
-        Map<String, ? extends Class<?>> metrics = new AggregationNameForBeanClassOfMetrics().getAggregateNameForClass();
-        Map<String, ? extends Class<?>> pipeline = new AggregationNameForBeanClassOfPipeline().getAggregateNameForClass();
+        Map<String, ? extends Class<?>> bucket = new ClassNameForBeanClassOfBucket().getAggregateNameForClass();
+        Map<String, ? extends Class<?>> metrics = new ClassNameForBeanClassOfMetrics().getAggregateNameForClass();
+        Map<String, ? extends Class<?>> pipeline = new ClassNameForBeanClassOfPipeline().getAggregateNameForClass();
     }
 }

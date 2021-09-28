@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.query.parameters;
+package com.zqykj.core.aggregation.query.parameters.aggregate;
 
 
 import lombok.*;
@@ -13,7 +13,7 @@ import lombok.*;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class GeneralParameters {
+public class AggregationGeneralParameters {
 
     /**
      * 聚合需要的字段 (如果此聚合需要对某个字段进行操作的话)
@@ -24,4 +24,8 @@ public class GeneralParameters {
      * 聚合桶数量返回 限制 (若此聚合产生的结果是多个,可以使用此参数做相应限制)
      */
     private int size = 1;
+
+    public AggregationGeneralParameters(String field) {
+        this.field = field;
+    }
 }
