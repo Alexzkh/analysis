@@ -30,7 +30,6 @@ public class PersonalStatisticsResponse implements Serializable {
     public PersonalStatisticsResponse(AggregationResult aggregationResult) throws ParseException {
         this.accountCardNums = aggregationResult.getAccountCardNums();
         this.earliestTradingTime = aggregationResult.getEarliestTradingTime();
-        System.out.println("eearliestTradingTime");
         this.customerIdentityId = aggregationResult.getCard();
         this.entriesAmount =new BigDecimal(aggregationResult.getEntriesAmount()).setScale(2, RoundingMode.HALF_UP);
         this.entriesNums = aggregationResult.getEntriesNums();
