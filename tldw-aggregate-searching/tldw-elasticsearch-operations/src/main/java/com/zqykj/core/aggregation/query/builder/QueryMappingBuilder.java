@@ -4,8 +4,8 @@
 package com.zqykj.core.aggregation.query.builder;
 
 
-import com.zqykj.core.aggregation.query.parameters.query.QueryGeneralParameters;
-import com.zqykj.core.aggregation.query.parameters.query.QueryParameters;
+import com.zqykj.parameters.query.QueryGeneralParameters;
+import com.zqykj.parameters.query.QueryParameters;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.query.QueryNameForBeanClass;
 import com.zqykj.util.ReflectionUtils;

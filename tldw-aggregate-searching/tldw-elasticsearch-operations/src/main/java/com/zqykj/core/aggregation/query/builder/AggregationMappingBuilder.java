@@ -3,16 +3,17 @@
  */
 package com.zqykj.core.aggregation.query.builder;
 
-import com.zqykj.core.aggregation.query.parameters.aggregate.DateParameters;
-import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationGeneralParameters;
-import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationParameters;
-import com.zqykj.core.aggregation.query.parameters.Pagination;
-import com.zqykj.core.aggregation.query.parameters.aggregate.pipeline.PipelineAggregationParameters;
-import com.zqykj.core.aggregation.query.parameters.query.QueryParameters;
+import com.zqykj.parameters.aggregate.DateParameters;
+import com.zqykj.parameters.aggregate.AggregationGeneralParameters;
+import com.zqykj.parameters.aggregate.AggregationParameters;
+import com.zqykj.parameters.Pagination;
+import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParameters;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.aggregate.bucket.ClassNameForBeanClassOfBucket;
 import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOfMetrics;
 import com.zqykj.core.aggregation.util.aggregate.pipeline.ClassNameForBeanClassOfPipeline;
+import com.zqykj.parameters.annotation.DateIntervalParameter;
+import com.zqykj.parameters.annotation.OptionalParameter;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,11 +26,13 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInter
 import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -79,8 +82,11 @@ public class AggregationMappingBuilder {
 
     /**
      * <h2> 构建AggregationBuilder 聚合 </h2>
+     *
+     * @param father     第一次传递null
+     * @param parameters 聚合参数
      */
-    public static Object buildAggregationInstance(AggregationParameters parameters) {
+    public static Object buildAggregationInstance(@Nullable Object father, AggregationParameters parameters) {
 
         try {
             // TODO 聚合类型需要翻译 成对应数据源有的聚合类型
@@ -106,7 +112,7 @@ public class AggregationMappingBuilder {
                     throw new IllegalArgumentException("could not find match aggregation constructor!");
                 }
             }
-            return mapAggregation(target, parameters, aggregationClass);
+            return mapAggregation(father, target, parameters, aggregationClass);
         } catch (Exception e) {
             log.error("could not build aggregation, error msg = {}", e.getMessage());
             throw new ElasticsearchException("could not build aggregation", e);
@@ -144,6 +150,15 @@ public class AggregationMappingBuilder {
             Optional<Constructor<?>> constructor;
             Object target = null;
             // 分2类, 一类是不需要script , 一类是需要的
+            if (StringUtils.isNotBlank(parameters.getBucketsPath())
+                    && !CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
+                log.error("Cannot use [bucketsPath] with [bucketsPaths] configuration option");
+            }
+            if (StringUtils.isBlank(parameters.getBucketsPath())
+                    && CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
+                log.error("Invalid parameters, must be non-null and non-empty, " +
+                        "need [bucketsPath] or [bucketsPaths] configuration option.");
+            }
             if (StringUtils.isBlank(parameters.getScript())) {
 
                 constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), parameters.getBucketsPath());
@@ -156,11 +171,12 @@ public class AggregationMappingBuilder {
             } else {
 
                 Script script = new Script(parameters.getScript());
-                constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), script, parameters.getBucketsPathMap());
+                constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), parameters.getBucketsPathMap(), script);
                 if (constructor.isPresent()) {
-                    target = ReflectionUtils.getTargetInstanceViaReflection(constructor, aggregationClass, parameters.getName(), script, parameters.getBucketsPathMap());
+                    target = ReflectionUtils.getTargetInstanceViaReflection(constructor, aggregationClass, parameters.getName(), parameters.getBucketsPathMap(), script);
                 } else {
                     // TODO 可能存在一些不太统一的构造函数情况,等到发现的时候再去处理
+
                 }
             }
             return target;
@@ -217,13 +233,13 @@ public class AggregationMappingBuilder {
     }
 
 
-    private static Object mapAggregation(Object target, AggregationParameters parameters, Class<?> aggregationClass) {
+    private static Object mapAggregation(Object father, Object target, AggregationParameters parameters, Class<?> aggregationClass) {
 
         // 处理 AggregationParameters 中不同类型的参数, 为 aggregation instance target 赋值
         org.springframework.util.ReflectionUtils.doWithFields(parameters.getClass(), field -> {
 
             try {
-                buildingAggregationViaField(target, parameters, aggregationClass, field);
+                buildingAggregationViaField(father, target, parameters, aggregationClass, field);
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("error mapping property with name = {}", field.getName());
@@ -234,15 +250,15 @@ public class AggregationMappingBuilder {
     }
 
 
-    private static void buildingAggregationViaField(Object target, AggregationParameters parameters, Class<?> aggregationClass,
+    private static void buildingAggregationViaField(Object father, Object target, AggregationParameters parameters, Class<?> aggregationClass,
                                                     Field field) throws ClassNotFoundException {
 
         if (AggregationGeneralParameters.class.isAssignableFrom(field.getType())) {
 
-            addGeneraParametersMapping(target, parameters, aggregationClass, field, field.getType());
+            addGeneraParametersMapping(target, parameters.getAggregationGeneralParameters(), aggregationClass, field, field.getType());
         } else if (DateParameters.class.isAssignableFrom(field.getType())) {
 
-            addDateParametersMapping(target, parameters, aggregationClass, field, field.getType());
+            addDateParametersMapping(target, parameters.getDateParameters(), aggregationClass, field, field.getType());
         } else if (List.class.isAssignableFrom(field.getType())) {
 
             Optional<Class<?>> parameterType = ReflectionUtils.findParameterType(parameters.getClass(), field.getName());
@@ -256,10 +272,18 @@ public class AggregationMappingBuilder {
             } else if (PipelineAggregationParameters.class.isAssignableFrom(parameterType.get())) {
 
                 // PipelineAggregationBuilder 类型聚合处理
-                addPipelineAggregationMapping(target, parameters.getPipelineAggregation(), aggregationClass);
+                addPipelineAggregationMapping(father, parameters.getPipelineAggregation(), aggregationClass);
             }
         } else {
-            //TODO 处理一些默认的参数
+            addOptionalParameterMapping(target, aggregationClass, field, parameters);
+        }
+    }
+
+    private static void addOptionalParameterMapping(Object target, Class<?> aggregationClass,
+                                                    Field field, Object parameters) {
+
+        if (field.isAnnotationPresent(OptionalParameter.class)) {
+            applyDefaultField(target, aggregationClass, field, parameters);
         }
     }
 
@@ -269,7 +293,7 @@ public class AggregationMappingBuilder {
             return;
         }
         for (AggregationParameters subParameter : subParameters) {
-            Object subTarget = buildAggregationInstance(subParameter);
+            Object subTarget = buildAggregationInstance(target, subParameter);
             //
             applySubAggregation(target, aggregationClass, subTarget);
         }
@@ -288,10 +312,10 @@ public class AggregationMappingBuilder {
     }
 
 
-    private static void addGeneraParametersMapping(Object target, AggregationParameters parameters,
+    private static void addGeneraParametersMapping(Object target, AggregationGeneralParameters parameters,
                                                    Class<?> aggregationClass, Field field, Class<?> fieldClass) {
 
-        if (null == parameters.getAggregationGeneralParameters()) {
+        if (null == parameters) {
             return;
         }
         // 处理GeneraParameters 中的每一个字段
@@ -303,11 +327,26 @@ public class AggregationMappingBuilder {
         });
     }
 
-    private static void addDateParametersMapping(Object target, AggregationParameters parameters,
+    private static void addDateParametersMapping(Object target, DateParameters parameters,
                                                  Class<?> aggregationClass, Field field, Class<?> fieldClass) {
 
-        if (null == parameters.getDateParameters()) {
+        // Cannot use [fixed_interval] with [calendar_interval] configuration option.
+        if (null == parameters) {
             return;
+        }
+        if (StringUtils.isNotBlank(parameters.getCalendarInterval()) && StringUtils.isNotBlank(parameters.getFixedInterval())) {
+
+            if (log.isWarnEnabled()) {
+                log.warn("Cannot use [fixedInterval] with [calendarInterval] configuration option.");
+            }
+            throw new IllegalArgumentException("Cannot use [fixedInterval] with [calendarInterval] configuration option.");
+        } else if (StringUtils.isBlank(parameters.getCalendarInterval()) && StringUtils.isBlank(parameters.getFixedInterval())) {
+
+            if (log.isWarnEnabled()) {
+                log.warn("Invalid interval specified, must be non-null and non-empty");
+            }
+            throw new IllegalArgumentException("Invalid interval specified, must be non-null and non-empty, " +
+                    "need [fixedInterval] or [calendarInterval] configuration option.");
         }
         // 处理GeneraParameters 中的每一个字段
         org.springframework.util.ReflectionUtils.doWithFields(fieldClass, subField -> {
@@ -315,23 +354,8 @@ public class AggregationMappingBuilder {
             // 检测aggregationClass 是否拥有 subField这个方法
             // 日期类型的需要特殊处理
             // 目前先处理 date histogram 的相关参数
-            if (subField.getName().equals(AggregationMappingBuilder.CALENDAR_INTERVAL)) {
-
-                // 首先看field value 是否为空
-                org.springframework.util.ReflectionUtils.makeAccessible(subField);
-                Object calendarIntervalValue = org.springframework.util.ReflectionUtils.getField(subField, parameters.getDateParameters());
-
-                if (null != calendarIntervalValue) {
-                    // 检测当前 aggregationClass 是否有此方法 (此方法的类型为 DateHistogramInterval)
-                    applyDateInterval(target, aggregationClass, subField.getName(), calendarIntervalValue);
-                }
-
-            } else if (subField.getName().equals(AggregationMappingBuilder.FIXED_INTERVAL)) {
-
-                // 检测当前 aggregationClass 是否有此方法 (此方法的类型为 DateHistogramInterval)
-                org.springframework.util.ReflectionUtils.makeAccessible(subField);
-                Object fixedIntervalValue = org.springframework.util.ReflectionUtils.getField(subField, parameters.getDateParameters());
-                applyDateInterval(target, aggregationClass, subField.getName(), fixedIntervalValue);
+            if (subField.isAnnotationPresent(DateIntervalParameter.class)) {
+                applyDateInterval(target, aggregationClass, subField, parameters);
             } else {
                 // field 都正常按照名称处理
                 applyDefaultField(target, aggregationClass, subField, parameters);
@@ -358,23 +382,27 @@ public class AggregationMappingBuilder {
         });
     }
 
-    private static void applyDateInterval(Object target, Class<?> aggregationClass, String name, Object intervalValue) {
+    private static void applyDateInterval(Object target, Class<?> aggregationClass, Field field, Object parameters) {
         // 检测当前 aggregationClass 是否有此方法 (此方法的类型为 DateHistogramInterval)
-        Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, name, DATE_INTERVAL_TYPE);
+        Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, field.getName(), DATE_INTERVAL_TYPE);
         optionalMethod.ifPresent(method -> {
-            Object intervalObject = ReflectionUtils.getTargetInstanceViaReflection(DATE_INTERVAL_TYPE, intervalValue);
-            org.springframework.util.ReflectionUtils.invokeMethod(optionalMethod.get(), target, intervalObject);
+            org.springframework.util.ReflectionUtils.makeAccessible(field);
+            Object intervalValue = org.springframework.util.ReflectionUtils.getField(field, parameters);
+            if (null != intervalValue) {
+                DateHistogramInterval value = new DateHistogramInterval(intervalValue.toString());
+                org.springframework.util.ReflectionUtils.invokeMethod(optionalMethod.get(), target, value);
+            }
         });
     }
 
 
-    private static void applyDefaultField(Object target, Class<?> aggregationClass, Field subField, AggregationParameters parameters) {
+    private static void applyDefaultField(Object target, Class<?> aggregationClass, Field subField, Object parameters) {
         // 检测aggregationClass 是否拥有 subField这个方法
         Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), subField.getType());
         // 开始调用此聚合类的方法, 为target 赋值
         optionalMethod.ifPresent(method -> {
             org.springframework.util.ReflectionUtils.makeAccessible(subField);
-            Object value = org.springframework.util.ReflectionUtils.getField(subField, parameters.getAggregationGeneralParameters());
+            Object value = org.springframework.util.ReflectionUtils.getField(subField, parameters);
             if (null != value) {
                 org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
             }
@@ -392,31 +420,22 @@ public class AggregationMappingBuilder {
 
     public static void main(String[] args) {
 
-        AggregationMappingBuilder aggregationMappingBuilder = new AggregationMappingBuilder(
-                new ClassNameForBeanClassOfBucket(), new ClassNameForBeanClassOfPipeline(),
-                new ClassNameForBeanClassOfMetrics()
-        );
+        // DateHistogram 例子
+        AggregationParameters root = new AggregationParameters(
+                "account_date_histogram", "date_histogram", "trade_time",
+                new DateParameters("1h", "HH", 1));
 
-        AggregationParameters root = new AggregationParameters("main_account_per", "terms");
-        AggregationGeneralParameters aggregationGeneralParameters = new AggregationGeneralParameters("customer_identity_card", 3);
-        root.setAggregationGeneralParameters(aggregationGeneralParameters);
+        AggregationParameters sub = new AggregationParameters("sum_date_money",
+                "sum", "trade_amount");
 
-        AggregationParameters sub = new AggregationParameters("main_card_per", "terms");
-        AggregationGeneralParameters subAggregationGeneralParameters = new AggregationGeneralParameters("account_card", 4);
-        sub.setAggregationGeneralParameters(subAggregationGeneralParameters);
+        Map<String, String> bucketsPathMap = new HashMap<>();
+        bucketsPathMap.put("final_sum", "sum_date_money");
+        PipelineAggregationParameters pipelineAggregationParameters =
+                new PipelineAggregationParameters("sum_bucket_selector", "bucket_selector",
+                        bucketsPathMap, "params.final_sum > 0");
 
-
-        AggregationParameters sub2 = new AggregationParameters("enter_bill_sum_per_card", "sum");
-        AggregationGeneralParameters subAggregationGeneralParameters2 = new AggregationGeneralParameters("trade_amount");
-        sub2.setAggregationGeneralParameters(subAggregationGeneralParameters2);
-
-        PipelineAggregationParameters pipelineAggregationParameters = new PipelineAggregationParameters("total_sum_bucket", "sum_bucket", "main_card_per>enter_bill_sum_per_card");
-
-        root.setPerPipelineAggregation(pipelineAggregationParameters);
-        root.setPerSubAggregation(sub);
-        sub.setPerSubAggregation(sub2);
-
-        Object target = aggregationMappingBuilder.buildAggregationInstance(root);
+        root.setPerSubAggregation(sub, pipelineAggregationParameters);
+        Object target = buildAggregationInstance(null, root);
         System.out.println(target);
     }
 }

@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.query.parameters.query;
+package com.zqykj.parameters.query;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
