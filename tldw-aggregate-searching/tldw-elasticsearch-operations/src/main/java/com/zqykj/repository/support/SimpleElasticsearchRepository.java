@@ -8,9 +8,13 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
+import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
+import com.zqykj.parameters.aggregate.AggregationParameters;
+import com.zqykj.parameters.query.QueryParameters;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.metrics.Stats;
@@ -41,6 +45,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.ParsedHistogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.*;
+import org.elasticsearch.search.aggregations.pipeline.BucketSelectorPipelineAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -155,7 +160,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 .withPageable(PageRequest.of(0, 1))
                 .build();
         String indexCoordinates = getIndexCoordinates(entityClass);
-        return execute(operations -> operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)), entityClass)!=null?operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)).getContent():null;
+        return execute(operations -> operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)), entityClass) != null ? operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)).getContent() : null;
     }
 
     private <ID> List<String> stringIdsRepresentation(Iterable<ID> ids) {
@@ -516,7 +521,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // the name of aggregation
         String name = stringJoiner.toString();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        Function<Integer, DateHistogramInterval> function =DateHistogramIntervalUtil.dateHistogramInterval.get(dateIntervalUnit);
+        Function<Integer, DateHistogramInterval> function = DateHistogramIntervalUtil.dateHistogramInterval.get(dateIntervalUnit);
 
         DateHistogramInterval dateHistogramInterval = function.apply(interval);
         AggregationBuilder aggregation = AggregationBuilders.dateHistogram(bucket).field(bucketAliasName).fixedInterval(dateHistogramInterval);
@@ -599,8 +604,8 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
          * */
         aggregateBuilder.getSubAggregations().stream().forEach(subAggregation -> {
             String subAliasName = null;
-            if (!subAggregation.getAggregateName().equals("bucket_sort")){
-                subAliasName =   entity.getRequiredPersistentProperty(subAggregation.getAggregateName()).getFieldName();
+            if (!subAggregation.getAggregateName().equals("bucket_sort")) {
+                subAliasName = entity.getRequiredPersistentProperty(subAggregation.getAggregateName()).getFieldName();
             }
             String subName = subAggregation.getAggregateType().toString() + "_" + subAliasName;
 
@@ -689,7 +694,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         /**
          * 当查询字段的值不存在时,而模糊查询的值(即keyword)存在时构建regex查询.
          * */
-        if (StringUtils.isNotEmpty(params.getField())&&StringUtils.isEmpty(params.getValue()) && StringUtils.isEmpty(params.getField())) {
+        if (StringUtils.isNotEmpty(params.getField()) && StringUtils.isEmpty(params.getValue()) && StringUtils.isEmpty(params.getField())) {
             searchSourceBuilder.query(builderQuery(params.getValue()));
         }
         searchSourceBuilder.size(0);
@@ -707,7 +712,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return ParseAggregationResultUtil.parse(searchResponse, name);
     }
 
-
     /**
      * @param value: 模糊查询的值
      * @Description: 构建模糊查询参数
@@ -720,6 +724,32 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 .should(QueryBuilders.regexpQuery("bank", WILDCARD + value + WILDCARD));
 
         return boolQueryBuilder;
+    }
+
+
+    @Override
+    public <T> Map<String, Object> dateGroupAndSum(QueryParameters queryParameters, AggregationParameters parameters, String routing, Class<T> clazz) {
+
+        // 根据聚合参数,生成对应聚合builder的实例
+        Object target = AggregationMappingBuilder.buildAggregationInstance(null, parameters);
+
+        if (null == target) {
+            log.error("could not find this aggregation type = {} for name = {}", parameters.getType(), parameters.getName());
+            throw new ElasticsearchException("could not find this aggregation!");
+        }
+        // 构建搜索请求
+        SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
+        if (StringUtils.isNotBlank(routing)) {
+            searchRequest.routing(routing);
+        }
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        // 因为只需要聚合结果,不需要带出文档数据
+        sourceBuilder.size(0);
+        sourceBuilder.aggregation((AggregationBuilder) target);
+        searchRequest.source(sourceBuilder);
+        SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        // TODO 需要将response 解析成map, 方便根据聚合名称取出想要的结果
+        return response.getAggregations().get("-_-");
     }
 
 

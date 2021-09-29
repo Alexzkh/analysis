@@ -1,9 +1,9 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.query.parameters.query;
+package com.zqykj.parameters.query;
 
-import com.zqykj.core.aggregation.query.parameters.Pagination;
+import com.zqykj.parameters.Pagination;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,7 +38,6 @@ public class QueryParameters {
 
     // 分页参数设置
     private Pagination pagination;
-
 
     /**
      * <h1> 查询类型的翻译 </h1>

@@ -10,7 +10,10 @@ import com.zqykj.enums.DateIntervalUnit;
 
 import java.util.Map;
 
+import com.zqykj.parameters.aggregate.AggregationParameters;
+import com.zqykj.parameters.query.QueryParameters;
 import org.springframework.context.annotation.Primary;
+import org.springframework.lang.Nullable;
 
 /**
  * <h1> 提供给外部使用的公共入口Repository </h1>
@@ -21,18 +24,18 @@ public interface EntranceRepository extends CrudRepository {
     /**
      * @param metricsName: the field of aggrating ,the same as domain field name ;
      * @param aggsType:    aggregation type
-     * @param routing: the shard of routing
+     * @param routing:     the shard of routing
      * @param clazz:       domain type
      * @param indexes:the  index name collection
      * @description : Numeric metrics aggregations are a special type of metrics aggregation which output numeric values.
      * calculate the corresponding statistical value according to the type.
      * @return: aggregation result
      **/
-    <T> Double metricsAggs(String metricsName, AggsType aggsType, String routing ,Class<T> clazz, String... indexes);
+    <T> Double metricsAggs(String metricsName, AggsType aggsType, String routing, Class<T> clazz, String... indexes);
 
     /**
      * @param metricsName: the field of aggrating ,the same as domain field name ;
-     * @param routing: the shard of routing
+     * @param routing:     the shard of routing
      * @param clazz:       domain type
      * @param indexes:the  index name collection
      * @desription: A multi-value metrics aggregation that computes stats over numeric values extracted from the aggregated documents.
@@ -40,11 +43,11 @@ public interface EntranceRepository extends CrudRepository {
      * The stats that are returned consist of: min, max, sum, count and avg.
      * @return: com.zqykj.common.response.Stats
      **/
-    <T> ParsedStats statsAggs(String metricsName,String routing, Class<T> clazz, String... indexes);
+    <T> ParsedStats statsAggs(String metricsName, String routing, Class<T> clazz, String... indexes);
 
     /**
      * @param metricsName: the field of aggrating ,the same as domain field name ;
-     * @param routing: the shard of routing
+     * @param routing:     the shard of routing
      * @param clazz:domain type
      * @param bucketName:
      * @param indexes:the  index name collection
@@ -53,11 +56,11 @@ public interface EntranceRepository extends CrudRepository {
      * The stats that are returned consist of: min, max, sum, count and avg.
      * @return: java.util.Map<java.lang.String, com.zqykj.common.response.Stats>
      **/
-    <T> Map<String, ParsedStats> statsAggs(String metricsName, String routing,Class<T> clazz, String bucketName, String... indexes);
+    <T> Map<String, ParsedStats> statsAggs(String metricsName, String routing, Class<T> clazz, String bucketName, String... indexes);
 
     /**
      * @param metricsName:   the field of aggrating ,the same as domain field name ;
-     * @param routing: the shard of routing
+     * @param routing:       the shard of routing
      * @param clazz:domain   type
      * @param customSegment: custom segment
      * @param indexes:the    index name collection
@@ -67,11 +70,11 @@ public interface EntranceRepository extends CrudRepository {
      * For example, the 95th percentile is the value which is greater than 95% of the observed values.
      * @return: java.util.Map<java.lang.Double, java.lang.Double>
      **/
-    <T> Map<Double, Double> percentilesAggs(String metricsName,String routing ,Class<T> clazz, double[] customSegment, String... indexes);
+    <T> Map<Double, Double> percentilesAggs(String metricsName, String routing, Class<T> clazz, double[] customSegment, String... indexes);
 
     /**
      * @param metricsName:   the field of aggrating ,the same as domain field name ;
-     * @param routing: the shard of routing
+     * @param routing:       the shard of routing
      * @param clazz:domain   type
      * @param customSegment: Custom percentage segment
      * @param indexes:the    index name collection
@@ -81,11 +84,11 @@ public interface EntranceRepository extends CrudRepository {
      * For example, if a value is greater than or equal to 95% of the observed values it is said to be at the 95th percentile rank.
      * @return: java.util.Map<java.lang.Double, java.lang.Double>
      **/
-    <T> Map<Double, Double> percentilesRanksAggs(String metricsName,String routing, Class<T> clazz, double[] customSegment, String... indexes);
+    <T> Map<Double, Double> percentilesRanksAggs(String metricsName, String routing, Class<T> clazz, double[] customSegment, String... indexes);
 
     /**
      * @param metricsName: the field of aggrating ,the same as domain field name ;
-     * @param routing: the shard of routing
+     * @param routing:     the shard of routing
      * @param aggsType:    aggregation type
      * @param clazz:domain type
      * @param bucketName:  bucket aggregation Name
@@ -95,11 +98,11 @@ public interface EntranceRepository extends CrudRepository {
      * It dynamically builds fixed size (a.k.a. interval) buckets over the values.
      * @return: java.util.Map
      **/
-    <T> Map histogramAggs(String metricsName, String routing,AggsType aggsType, Class<T> clazz, String bucketName, double interval, String... indexes);
+    <T> Map histogramAggs(String metricsName, String routing, AggsType aggsType, Class<T> clazz, String bucketName, double interval, String... indexes);
 
     /**
      * @param metricsName:          the field of aggrating ,the same as domain field name ;
-     * @param routing: the shard of routing
+     * @param routing:              the shard of routing
      * @param aggsType:             aggregation type
      * @param clazz:                domain type
      * @param bucketName:           bucket aggregation Name
@@ -113,11 +116,11 @@ public interface EntranceRepository extends CrudRepository {
      * Time-based data requires special support because time-based intervals are not always a fixed length.
      * @return: java.util.Map
      **/
-    <T> Map dateHistogramAggs(String metricsName,String routing, AggsType aggsType, Class<T> clazz, String bucketName, int interval, DateIntervalUnit dateIntervalUnit, String... indexes);
+    <T> Map dateHistogramAggs(String metricsName, String routing, AggsType aggsType, Class<T> clazz, String bucketName, int interval, DateIntervalUnit dateIntervalUnit, String... indexes);
 
     /**
      * @param metricName:         the field of aggrating ,the same as domain field name ;
-     * @param routing: the shard of routing
+     * @param routing:            the shard of routing
      * @param precisionThreshold: precision threshold
      * @param clazz:domain        type
      * @param indexes:the         index name collection
@@ -125,7 +128,7 @@ public interface EntranceRepository extends CrudRepository {
      * Values can be extracted either from specific fields in the document or generated by a script.
      * @return: long
      **/
-    <T> long cardinality(String metricName,String routing, long precisionThreshold, Class<T> clazz, String... indexes);
+    <T> long cardinality(String metricName, String routing, long precisionThreshold, Class<T> clazz, String... indexes);
 
 
     /**
@@ -135,4 +138,16 @@ public interface EntranceRepository extends CrudRepository {
      * @return: java.util.Map
      **/
     <T> Map multilayerAggs(AggregateBuilder aggregateBuilder, Class<T> clazz);
+
+
+    /**
+     * <h2> 按日期间隔分组并根据某个字段进行求和 </h2>
+     *
+     * @param queryParameters       {@link QueryParameters}  查询参数   (目的是可能需要先过滤数据,然后再做一些聚合相关的统计分析)
+     * @param aggregationParameters {@link AggregationParameters}  聚合查询参数
+     * @param routing               路由参数
+     * @param clazz                 实体类
+     */
+    <T> Map<String, Object> dateGroupAndSum(@Nullable QueryParameters queryParameters, AggregationParameters aggregationParameters,
+                                              @Nullable String routing, Class<T> clazz);
 }

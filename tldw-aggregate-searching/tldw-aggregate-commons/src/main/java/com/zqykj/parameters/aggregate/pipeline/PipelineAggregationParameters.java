@@ -1,10 +1,10 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.query.parameters.aggregate.pipeline;
+package com.zqykj.parameters.aggregate.pipeline;
 
-import com.zqykj.core.aggregation.query.parameters.FieldSort;
-import com.zqykj.core.aggregation.query.parameters.Pagination;
+import com.zqykj.parameters.FieldSort;
+import com.zqykj.parameters.Pagination;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -101,6 +101,13 @@ public class PipelineAggregationParameters {
         this.name = name;
         this.type = type;
         this.bucketsPath = bucketsPath;
+    }
+
+    public PipelineAggregationParameters(String name, String type, String bucketsPath, String script) {
+        this.name = name;
+        this.type = type;
+        this.bucketsPath = bucketsPath;
+        this.script = script;
     }
 
 }

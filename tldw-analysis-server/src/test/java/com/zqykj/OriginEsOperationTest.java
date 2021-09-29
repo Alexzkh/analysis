@@ -6,12 +6,11 @@ package com.zqykj;
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
-import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationGeneralParameters;
-import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationParameters;
-import com.zqykj.core.aggregation.query.parameters.aggregate.pipeline.PipelineAggregationParameters;
-import com.zqykj.core.aggregation.util.aggregate.bucket.ClassNameForBeanClassOfBucket;
-import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOfMetrics;
-import com.zqykj.core.aggregation.util.aggregate.pipeline.ClassNameForBeanClassOfPipeline;
+import com.zqykj.domain.bank.StandardBankTransactionFlow;
+import com.zqykj.parameters.aggregate.AggregationGeneralParameters;
+import com.zqykj.parameters.aggregate.AggregationParameters;
+import com.zqykj.parameters.aggregate.DateParameters;
+import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParameters;
 import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -313,211 +312,28 @@ public class OriginEsOperationTest {
     }
 
     @Test
-    public void testAuto() throws IOException {
+    public void testDateHistogram() {
 
-        SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
+        AggregationParameters root = new AggregationParameters(
+                "account_date_histogram", "date_histogram", "trade_time",
+                new DateParameters("1h", "HH", 1));
 
-        request.routing("7f071cdf-9197-479f-95a9-9ae46045cca9");
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.size(0);
+        AggregationParameters sub = new AggregationParameters("sum_date_money",
+                "sum", "trade_amount");
 
-        sourceBuilder.aggregation((AggregationBuilder) getClassForAggregateObject("main_account_per", "terms",
-                "customer_identity_card", 3, true,
-                "main_card_per",
-                "terms",
-                "account_card",
-                5));
-        request.source(sourceBuilder);
-        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
-        Aggregations aggregations = search.getAggregations();
+        Map<String, String> bucketsPathMap = new HashMap<>();
+        bucketsPathMap.put("final_sum", "sum_date_money");
+        PipelineAggregationParameters pipelineAggregationParameters =
+                new PipelineAggregationParameters("sum_bucket_selector", "bucket_selector",
+                        bucketsPathMap, "params.final_sum > 0");
+
+        root.setPerSubAggregation(sub, pipelineAggregationParameters);
+        Map<String, Object> map = entranceRepository.dateGroupAndSum(null, root,
+                null, StandardBankTransactionFlow.class);
     }
 
-    @Test
-    public void testAggregationMapping() throws IOException {
-        SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
-
-        request.routing("7f071cdf-9197-479f-95a9-9ae46045cca9");
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.size(0);
-
-        AggregationMappingBuilder aggregationMappingBuilder = new AggregationMappingBuilder(
-                new ClassNameForBeanClassOfBucket(), new ClassNameForBeanClassOfPipeline(),
-                new ClassNameForBeanClassOfMetrics()
-        );
-
-        AggregationParameters root = new AggregationParameters("main_account_per", "terms");
-        AggregationGeneralParameters aggregationGeneralParameters = new AggregationGeneralParameters("customer_identity_card", 3);
-        root.setAggregationGeneralParameters(aggregationGeneralParameters);
-
-        AggregationParameters sub = new AggregationParameters("main_card_per", "terms");
-        AggregationGeneralParameters subAggregationGeneralParameters = new AggregationGeneralParameters("account_card", 4);
-        sub.setAggregationGeneralParameters(subAggregationGeneralParameters);
-
-
-        AggregationParameters sub2 = new AggregationParameters("enter_bill_sum_per_card", "sum");
-        AggregationGeneralParameters subAggregationGeneralParameters2 = new AggregationGeneralParameters("trade_amount");
-        sub2.setAggregationGeneralParameters(subAggregationGeneralParameters2);
-
-        PipelineAggregationParameters pipelineAggregationParameters = new PipelineAggregationParameters("total_sum_bucket", "sum_bucket", "main_card_per>enter_bill_sum_per_card");
-
-        root.setPerPipelineAggregation(pipelineAggregationParameters);
-        root.setPerSubAggregation(sub);
-        sub.setPerSubAggregation(sub2);
-
-
-        Object target = aggregationMappingBuilder.buildAggregationInstance(root);
-        sourceBuilder.aggregation((AggregationBuilder) target);
-        request.source(sourceBuilder);
-        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
-        Aggregations aggregations = search.getAggregations();
-    }
-
-    public Object getClassForAggregateObject(String aggregateName, String aggregateType, String field, int size, boolean isHaveSub,
-                                             String subAggregateName, String subAggregateType, String subField, int subSize) {
-
-        // 对每个人账号进行分组
-        TermsAggregationBuilder termsAggregationBuilderByMainAccount = new TermsAggregationBuilder("main_account_per");
-        termsAggregationBuilderByMainAccount.field("customer_identity_card");
-        termsAggregationBuilderByMainAccount.collectMode(Aggregator.SubAggCollectionMode.BREADTH_FIRST);
-        termsAggregationBuilderByMainAccount.size(10);
-
-        // 对每个人的卡号进行分组
-        TermsAggregationBuilder termsAggregationBuilderByMainCard = new TermsAggregationBuilder("main_card_per");
-        termsAggregationBuilderByMainCard.field("account_card");
-        termsAggregationBuilderByMainCard.collectMode(Aggregator.SubAggCollectionMode.BREADTH_FIRST);
-        termsAggregationBuilderByMainCard.size(5);
-
-        Class<?> aggregateClass = aggregateNameForClass.get(aggregateType);
-
-        Object target = getAggregateTarget(aggregateClass, aggregateName, aggregateType, field, size);
-        if (isHaveSub) {
-            Class<?> subAggregateClass = aggregateNameForClass.get(aggregateType);
-            Object subTarget = getAggregateTarget(subAggregateClass, subAggregateName, subAggregateType, subField, subSize);
-            setSubAggregate(target, subTarget, aggregateClass);
-        }
-        return target;
-    }
-
-    private Object getAggregateTarget(Class<?> aggregateClass, String aggregateName, String aggregateType, String field, int size) {
-
-        Object target = getTargetAggregateClassViaReflection(aggregateClass, aggregateName);
-
-        Method fieldSetMethod = ReflectionUtils.findRequiredMethod(aggregateClass, "field", String.class);
-        Method collectModeSetMethod = ReflectionUtils.findRequiredMethod(aggregateClass, "collectMode", Aggregator.SubAggCollectionMode.class);
-        Method sizeSetMethod = ReflectionUtils.findRequiredMethod(aggregateClass, "size", Integer.TYPE);
-
-        org.springframework.util.ReflectionUtils.invokeMethod(fieldSetMethod, target, field);
-        org.springframework.util.ReflectionUtils.invokeMethod(collectModeSetMethod, target, Aggregator.SubAggCollectionMode.BREADTH_FIRST);
-        org.springframework.util.ReflectionUtils.invokeMethod(sizeSetMethod, target, size);
-
-
-        return target;
-    }
-
-    private void setSubAggregate(Object target, Object subTarget, Class<?> targetClass) {
-
-        Method subAggregation = ReflectionUtils.findRequiredMethod(targetClass, "subAggregation", AggregationBuilder.class);
-        org.springframework.util.ReflectionUtils.invokeMethod(subAggregation, target, subTarget);
-    }
-
-    @SuppressWarnings("unchecked")
-    protected final <R> R getTargetAggregateClassViaReflection(Class<?> baseClass, Object... constructorArguments) {
-        Optional<Constructor<?>> constructor = ReflectionUtils.findConstructor(baseClass, constructorArguments);
-
-        return constructor.map(it -> (R) BeanUtils.instantiateClass(it, constructorArguments))
-                .orElseThrow(() -> new IllegalStateException(String.format(
-                        "No suitable constructor found on %s to match the given arguments: %s. Make sure you implement a constructor taking these",
-                        baseClass, Arrays.stream(constructorArguments).map(Object::getClass).collect(Collectors.toList()))));
-    }
-
-    @Test
-    public void scanAssign() throws ClassNotFoundException {
-        Set<Class<?>> scan = scan();
-        for (Class<?> aClass : scan) {
-            System.out.println(aClass.getSimpleName());
-        }
-    }
-
-    public final Set<Class<?>> scan() throws ClassNotFoundException {
-        List<String> packages = new ArrayList<>();
-        packages.add("org.elasticsearch.search.aggregations.pipeline");
-        if (packages.isEmpty()) {
-            return Collections.emptySet();
-        }
-        ClassPathScanningCandidateComponentProvider scanner = createClassPathScanningCandidateComponentProvider(
-                this.context);
-        Set<Class<?>> entitySet = new HashSet<>();
-        for (String basePackage : packages) {
-            if (StringUtils.hasText(basePackage)) {
-                for (BeanDefinition candidate : scanner.findCandidateComponents(basePackage)) {
-                    entitySet.add(ClassUtils.forName(Objects.requireNonNull(candidate.getBeanClassName()), this.context.getClassLoader()));
-                }
-            }
-        }
-        return entitySet;
-    }
-
-
-    /**
-     * Create a {@link ClassPathScanningCandidateComponentProvider} to scan entities based
-     * on the specified {@link ApplicationContext}.
-     *
-     * @param context the {@link ApplicationContext} to use
-     * @return a {@link ClassPathScanningCandidateComponentProvider} suitable to scan
-     * entities
-     * @since 2.4.0
-     */
-    protected ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider(
-            ApplicationContext context) {
-        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
-        scanner.addIncludeFilter(new InterfaceTypeFilter(PipelineAggregationBuilder.class));
-        scanner.setEnvironment(context.getEnvironment());
-        scanner.setResourceLoader(context);
-        return scanner;
-    }
-
-    private static class InterfaceTypeFilter extends AssignableTypeFilter {
-
-        /**
-         *
-         */
-        public InterfaceTypeFilter(Class<?> targetType) {
-            super(targetType);
-        }
-
-        @Override
-        public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
-                throws IOException {
-
-            return metadataReader.getClassMetadata().isInterface()
-
-                    && super.match(metadataReader, metadataReaderFactory);
-        }
-    }
 
     public static void main(String[] args) {
-
-
-//        Map<String, ? extends Class<?>> aggregateForClassName = scanList.stream().map(beanDefinition -> {
-//            try {
-//                return Class.forName(beanDefinition.getBeanClassName());
-//            } catch (ClassNotFoundException e) {
-//                e.printStackTrace();
-//                return null;
-//            }
-//        }).collect(Collectors.toMap(beanClass -> {
-//            assert beanClass != null;
-//            Field field = ReflectionUtils.findField(beanClass, "NAME");
-//            if (null == field) {
-//                return "UNkNOW";
-//            }
-//            return field.getName();
-//        }, beanClass -> beanClass));
-//
-//        aggregateForClassName.forEach((key, value) -> {
-//            log.info("aggregate name : {}", key);
-//            log.info("aggregate class name : {}", value.getSimpleName());
-//        });
 
         // 利用上面的map 去做一个简单的测试查询
         SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
