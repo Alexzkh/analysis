@@ -9,11 +9,15 @@ import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
+import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.domain.*;
+import com.zqykj.parameters.aggregate.AggregationParameters;
+import com.zqykj.parameters.query.QueryParameters;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
 import com.zqykj.util.ReflectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.bucket.histogram.*;
@@ -839,6 +843,31 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             map.put(entry.getKey(), entry.getDocCount());
         }
         return map;
+    }
+
+    @Override
+    public <T> Map<String, Object> dateGroupAndSum(QueryParameters queryParameters, AggregationParameters parameters, String routing, Class<T> clazz) {
+
+        // 根据聚合参数,生成对应聚合builder的实例
+        Object target = AggregationMappingBuilder.buildAggregationInstance(null, parameters);
+
+        if (null == target) {
+            log.error("could not find this aggregation type = {} for name = {}", parameters.getType(), parameters.getName());
+            throw new ElasticsearchException("could not find this aggregation!");
+        }
+        // 构建搜索请求
+        SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
+        if (StringUtils.isNotBlank(routing)) {
+            searchRequest.routing(routing);
+        }
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        // 因为只需要聚合结果,不需要带出文档数据
+        sourceBuilder.size(0);
+        sourceBuilder.aggregation((AggregationBuilder) target);
+        searchRequest.source(sourceBuilder);
+        SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        // TODO 需要将response 解析成map, 方便根据聚合名称取出想要的结果
+        return response.getAggregations().get("-_-");
     }
 
 

@@ -5,7 +5,7 @@ package com.zqykj;
 
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
-import com.zqykj.core.aggregation.query.AggregationMappingBuilder;
+import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.parameters.GeneralParameters;
 import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationParameters;
 import com.zqykj.core.aggregation.util.bucket.AggregationNameForBeanClassOfBucket;
@@ -337,39 +337,39 @@ public class OriginEsOperationTest {
         Aggregations aggregations = search.getAggregations();
     }
 
-    @Test
-    public void testAggregationMapping() throws IOException {
-        SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
-
-        request.routing("7f071cdf-9197-479f-95a9-9ae46045cca9");
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.size(0);
-
-        AggregationMappingBuilder aggregationMappingBuilder = new AggregationMappingBuilder(
-                new AggregationNameForBeanClassOfBucket()
-        );
-
-        AggregationParameters parameters = new AggregationParameters();
-
-        parameters.setName("main_account_per");
-        parameters.setType("terms");
-        GeneralParameters generalParameters = new GeneralParameters("customer_identity_card", 3);
-        parameters.setGeneralParameters(generalParameters);
-
-        AggregationParameters sub = new AggregationParameters();
-        sub.setName("main_card_per");
-        sub.setType("terms");
-        GeneralParameters subGeneralParameters = new GeneralParameters("account_card", 4);
-        sub.setGeneralParameters(subGeneralParameters);
-        List<AggregationParameters> subList = new ArrayList<>();
-        subList.add(sub);
-        parameters.setSubAggregation(subList);
-        Object target = aggregationMappingBuilder.buildAggregationInstance(parameters);
-        sourceBuilder.aggregation((AggregationBuilder) target);
-        request.source(sourceBuilder);
-        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
-        Aggregations aggregations = search.getAggregations();
-    }
+//    @Test
+//    public void testAggregationMapping() throws IOException {
+//        SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
+//
+//        request.routing("7f071cdf-9197-479f-95a9-9ae46045cca9");
+//        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+//        sourceBuilder.size(0);
+//
+//        AggregationMappingBuilder aggregationMappingBuilder = new AggregationMappingBuilder(
+//                new AggregationNameForBeanClassOfBucket()
+//        );
+//
+//        AggregationParameters parameters = new AggregationParameters();
+//
+//        parameters.setName("main_account_per");
+//        parameters.setType("terms");
+//        GeneralParameters generalParameters = new GeneralParameters("customer_identity_card", 3);
+//        parameters.setGeneralParameters(generalParameters);
+//
+//        AggregationParameters sub = new AggregationParameters();
+//        sub.setName("main_card_per");
+//        sub.setType("terms");
+//        GeneralParameters subGeneralParameters = new GeneralParameters("account_card", 4);
+//        sub.setGeneralParameters(subGeneralParameters);
+//        List<AggregationParameters> subList = new ArrayList<>();
+//        subList.add(sub);
+//        parameters.setSubAggregation(subList);
+//        Object target = aggregationMappingBuilder.buildAggregationInstance(parameters);
+//        sourceBuilder.aggregation((AggregationBuilder) target);
+//        request.source(sourceBuilder);
+//        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+//        Aggregations aggregations = search.getAggregations();
+//    }
 
     public Object getClassForAggregateObject(String aggregateName, String aggregateType, String field, int size, boolean isHaveSub,
                                              String subAggregateName, String subAggregateType, String subField, int subSize) {

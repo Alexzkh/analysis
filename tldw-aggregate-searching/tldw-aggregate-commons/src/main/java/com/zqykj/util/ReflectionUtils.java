@@ -10,10 +10,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -230,9 +227,16 @@ public final class ReflectionUtils {
     }
 
     @SuppressWarnings("unchecked")
+    public static <R> R getTargetInstanceViaReflection(Optional<Constructor<?>> constructor, Class<?> baseClass, Object... constructorArguments) {
+        return constructor.map(it -> (R) BeanUtils.instantiateClass(it, constructorArguments))
+                .orElseThrow(() -> new IllegalStateException(String.format(
+                        "No suitable constructor found on %s to match the given arguments: %s. Make sure you implement a constructor taking these",
+                        baseClass, Arrays.stream(constructorArguments).map(Object::getClass).collect(Collectors.toList()))));
+    }
+
+    @SuppressWarnings("unchecked")
     public static <R> R getTargetInstanceViaReflection(Class<?> baseClass, Object... constructorArguments) {
         Optional<Constructor<?>> constructor = findConstructor(baseClass, constructorArguments);
-
         return constructor.map(it -> (R) BeanUtils.instantiateClass(it, constructorArguments))
                 .orElseThrow(() -> new IllegalStateException(String.format(
                         "No suitable constructor found on %s to match the given arguments: %s. Make sure you implement a constructor taking these",
@@ -301,5 +305,21 @@ public final class ReflectionUtils {
             }
         }
         return result;
+    }
+
+
+    public static Optional<Class<?>> findParameterType(Class<?> clazz, String name) throws ClassNotFoundException {
+
+        Field requiredField = ReflectionUtils.findRequiredField(clazz, name);
+
+        Type type = requiredField.getAnnotatedType().getType();
+        if (type instanceof ParameterizedType) {
+
+            Type actualTypeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
+
+            return Optional.of(Class.forName(actualTypeArgument.getTypeName()));
+        }
+
+        return Optional.empty();
     }
 }
