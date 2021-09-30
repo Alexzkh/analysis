@@ -44,6 +44,11 @@ public enum AggsType {
 
     /**
      * bucket_sort 聚合排序、分页
-     */
-    bucket_sort
+     * */
+    bucket_sort,
+
+    /**
+     * date histogram
+     * */
+    date_histogram
 }

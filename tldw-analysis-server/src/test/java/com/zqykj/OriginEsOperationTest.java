@@ -5,12 +5,10 @@ package com.zqykj;
 
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
-import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
-import com.zqykj.domain.bank.StandardBankTransactionFlow;
-import com.zqykj.parameters.aggregate.AggregationGeneralParameters;
-import com.zqykj.parameters.aggregate.AggregationParameters;
-import com.zqykj.parameters.aggregate.DateParameters;
-import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParameters;
+import com.zqykj.core.aggregation.query.AggregationMappingBuilder;
+import com.zqykj.core.aggregation.query.parameters.GeneralParameters;
+import com.zqykj.core.aggregation.query.parameters.aggregate.AggregationParameters;
+import com.zqykj.core.aggregation.util.bucket.AggregationNameForBeanClassOfBucket;
 import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -21,8 +19,10 @@ import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
+import com.zqykj.util.WebApplicationContext;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.DateUtils;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -32,10 +32,16 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.IpRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.MaxAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.MinAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketScriptPipelineAggregationBuilder;
+import org.elasticsearch.search.aggregations.pipeline.MaxBucketPipelineAggregationBuilder;
+import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
@@ -312,28 +318,205 @@ public class OriginEsOperationTest {
     }
 
     @Test
-    public void testDateHistogram() {
+    public void testAuto() throws IOException {
 
-        AggregationParameters root = new AggregationParameters(
-                "account_date_histogram", "date_histogram", "trade_time",
-                new DateParameters("1h", "HH", 1));
+        SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
 
-        AggregationParameters sub = new AggregationParameters("sum_date_money",
-                "sum", "trade_amount");
+        request.routing("7f071cdf-9197-479f-95a9-9ae46045cca9");
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.size(0);
 
-        Map<String, String> bucketsPathMap = new HashMap<>();
-        bucketsPathMap.put("final_sum", "sum_date_money");
-        PipelineAggregationParameters pipelineAggregationParameters =
-                new PipelineAggregationParameters("sum_bucket_selector", "bucket_selector",
-                        bucketsPathMap, "params.final_sum > 0");
+        sourceBuilder.aggregation((AggregationBuilder) getClassForAggregateObject("main_account_per", "terms",
+                "customer_identity_card", 3, true,
+                "main_card_per",
+                "terms",
+                "account_card",
+                5));
+        request.source(sourceBuilder);
+        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        Aggregations aggregations = search.getAggregations();
+    }
 
-        root.setPerSubAggregation(sub, pipelineAggregationParameters);
-        Map<String, Object> map = entranceRepository.dateGroupAndSum(null, root,
-                null, StandardBankTransactionFlow.class);
+    @Test
+    public void testAggregationMapping() throws IOException {
+        SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
+
+        request.routing("7f071cdf-9197-479f-95a9-9ae46045cca9");
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.size(0);
+
+        AggregationMappingBuilder aggregationMappingBuilder = new AggregationMappingBuilder(
+                new AggregationNameForBeanClassOfBucket()
+        );
+
+        AggregationParameters parameters = new AggregationParameters();
+
+        parameters.setName("main_account_per");
+        parameters.setType("terms");
+        GeneralParameters generalParameters = new GeneralParameters("customer_identity_card", 3);
+        parameters.setGeneralParameters(generalParameters);
+
+        AggregationParameters sub = new AggregationParameters();
+        sub.setName("main_card_per");
+        sub.setType("terms");
+        GeneralParameters subGeneralParameters = new GeneralParameters("account_card", 4);
+        sub.setGeneralParameters(subGeneralParameters);
+        List<AggregationParameters> subList = new ArrayList<>();
+        subList.add(sub);
+        parameters.setSubAggregation(subList);
+        Object target = aggregationMappingBuilder.buildAggregationInstance(parameters);
+        sourceBuilder.aggregation((AggregationBuilder) target);
+        request.source(sourceBuilder);
+        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        Aggregations aggregations = search.getAggregations();
+    }
+
+    public Object getClassForAggregateObject(String aggregateName, String aggregateType, String field, int size, boolean isHaveSub,
+                                             String subAggregateName, String subAggregateType, String subField, int subSize) {
+
+        // 对每个人账号进行分组
+        TermsAggregationBuilder termsAggregationBuilderByMainAccount = new TermsAggregationBuilder("main_account_per");
+        termsAggregationBuilderByMainAccount.field("customer_identity_card");
+        termsAggregationBuilderByMainAccount.collectMode(Aggregator.SubAggCollectionMode.BREADTH_FIRST);
+        termsAggregationBuilderByMainAccount.size(10);
+
+        // 对每个人的卡号进行分组
+        TermsAggregationBuilder termsAggregationBuilderByMainCard = new TermsAggregationBuilder("main_card_per");
+        termsAggregationBuilderByMainCard.field("account_card");
+        termsAggregationBuilderByMainCard.collectMode(Aggregator.SubAggCollectionMode.BREADTH_FIRST);
+        termsAggregationBuilderByMainCard.size(5);
+
+        Class<?> aggregateClass = aggregateNameForClass.get(aggregateType);
+
+        Object target = getAggregateTarget(aggregateClass, aggregateName, aggregateType, field, size);
+        if (isHaveSub) {
+            Class<?> subAggregateClass = aggregateNameForClass.get(aggregateType);
+            Object subTarget = getAggregateTarget(subAggregateClass, subAggregateName, subAggregateType, subField, subSize);
+            setSubAggregate(target, subTarget, aggregateClass);
+        }
+        return target;
+    }
+
+    private Object getAggregateTarget(Class<?> aggregateClass, String aggregateName, String aggregateType, String field, int size) {
+
+        Object target = getTargetAggregateClassViaReflection(aggregateClass, aggregateName);
+
+        Method fieldSetMethod = ReflectionUtils.findRequiredMethod(aggregateClass, "field", String.class);
+        Method collectModeSetMethod = ReflectionUtils.findRequiredMethod(aggregateClass, "collectMode", Aggregator.SubAggCollectionMode.class);
+        Method sizeSetMethod = ReflectionUtils.findRequiredMethod(aggregateClass, "size", Integer.TYPE);
+
+        org.springframework.util.ReflectionUtils.invokeMethod(fieldSetMethod, target, field);
+        org.springframework.util.ReflectionUtils.invokeMethod(collectModeSetMethod, target, Aggregator.SubAggCollectionMode.BREADTH_FIRST);
+        org.springframework.util.ReflectionUtils.invokeMethod(sizeSetMethod, target, size);
+
+
+        return target;
+    }
+
+    private void setSubAggregate(Object target, Object subTarget, Class<?> targetClass) {
+
+        Method subAggregation = ReflectionUtils.findRequiredMethod(targetClass, "subAggregation", AggregationBuilder.class);
+        org.springframework.util.ReflectionUtils.invokeMethod(subAggregation, target, subTarget);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected final <R> R getTargetAggregateClassViaReflection(Class<?> baseClass, Object... constructorArguments) {
+        Optional<Constructor<?>> constructor = ReflectionUtils.findConstructor(baseClass, constructorArguments);
+
+        return constructor.map(it -> (R) BeanUtils.instantiateClass(it, constructorArguments))
+                .orElseThrow(() -> new IllegalStateException(String.format(
+                        "No suitable constructor found on %s to match the given arguments: %s. Make sure you implement a constructor taking these",
+                        baseClass, Arrays.stream(constructorArguments).map(Object::getClass).collect(Collectors.toList()))));
+    }
+
+    @Test
+    public void scanAssign() throws ClassNotFoundException {
+        Set<Class<?>> scan = scan();
+        for (Class<?> aClass : scan) {
+            System.out.println(aClass.getSimpleName());
+        }
+    }
+
+    public final Set<Class<?>> scan() throws ClassNotFoundException {
+        List<String> packages = new ArrayList<>();
+        packages.add("org.elasticsearch.search.aggregations.pipeline");
+        if (packages.isEmpty()) {
+            return Collections.emptySet();
+        }
+        ClassPathScanningCandidateComponentProvider scanner = createClassPathScanningCandidateComponentProvider(
+                this.context);
+        Set<Class<?>> entitySet = new HashSet<>();
+        for (String basePackage : packages) {
+            if (StringUtils.hasText(basePackage)) {
+                for (BeanDefinition candidate : scanner.findCandidateComponents(basePackage)) {
+                    entitySet.add(ClassUtils.forName(Objects.requireNonNull(candidate.getBeanClassName()), this.context.getClassLoader()));
+                }
+            }
+        }
+        return entitySet;
     }
 
 
+    /**
+     * Create a {@link ClassPathScanningCandidateComponentProvider} to scan entities based
+     * on the specified {@link ApplicationContext}.
+     *
+     * @param context the {@link ApplicationContext} to use
+     * @return a {@link ClassPathScanningCandidateComponentProvider} suitable to scan
+     * entities
+     * @since 2.4.0
+     */
+    protected ClassPathScanningCandidateComponentProvider createClassPathScanningCandidateComponentProvider(
+            ApplicationContext context) {
+        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new InterfaceTypeFilter(PipelineAggregationBuilder.class));
+        scanner.setEnvironment(context.getEnvironment());
+        scanner.setResourceLoader(context);
+        return scanner;
+    }
+
+    private static class InterfaceTypeFilter extends AssignableTypeFilter {
+
+        /**
+         *
+         */
+        public InterfaceTypeFilter(Class<?> targetType) {
+            super(targetType);
+        }
+
+        @Override
+        public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
+                throws IOException {
+
+            return metadataReader.getClassMetadata().isInterface()
+
+                    && super.match(metadataReader, metadataReaderFactory);
+        }
+    }
+
     public static void main(String[] args) {
+
+
+//        Map<String, ? extends Class<?>> aggregateForClassName = scanList.stream().map(beanDefinition -> {
+//            try {
+//                return Class.forName(beanDefinition.getBeanClassName());
+//            } catch (ClassNotFoundException e) {
+//                e.printStackTrace();
+//                return null;
+//            }
+//        }).collect(Collectors.toMap(beanClass -> {
+//            assert beanClass != null;
+//            Field field = ReflectionUtils.findField(beanClass, "NAME");
+//            if (null == field) {
+//                return "UNkNOW";
+//            }
+//            return field.getName();
+//        }, beanClass -> beanClass));
+//
+//        aggregateForClassName.forEach((key, value) -> {
+//            log.info("aggregate name : {}", key);
+//            log.info("aggregate class name : {}", value.getSimpleName());
+//        });
 
         // 利用上面的map 去做一个简单的测试查询
         SearchRequest request = new SearchRequest("standard_bank_transaction_flow");

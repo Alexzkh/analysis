@@ -6,27 +6,25 @@ package com.zqykj.repository.support;
 
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AggregateBuilder;
+import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
-import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
-import com.zqykj.parameters.aggregate.AggregationParameters;
-import com.zqykj.parameters.query.QueryParameters;
+import com.zqykj.domain.*;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
+import com.zqykj.util.ReflectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.*;
+import org.elasticsearch.search.aggregations.bucket.histogram.*;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.Stats;
 import com.zqykj.core.*;
 import com.zqykj.core.aggregation.AggregatedPage;
 import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
 import com.zqykj.core.mapping.ElasticsearchPersistentProperty;
 import com.zqykj.core.query.NativeSearchQueryBuilder;
-import com.zqykj.domain.Page;
-import com.zqykj.domain.PageImpl;
-import com.zqykj.domain.PageRequest;
-import com.zqykj.domain.Pageable;
 import com.zqykj.enums.AggsType;
 import com.zqykj.enums.DateIntervalUnit;
 import com.zqykj.mapping.context.MappingContext;
@@ -39,13 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
-import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
-import org.elasticsearch.search.aggregations.bucket.histogram.ParsedHistogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.*;
-import org.elasticsearch.search.aggregations.pipeline.BucketSelectorPipelineAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -57,8 +51,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -712,6 +707,141 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return ParseAggregationResultUtil.parse(searchResponse, name);
     }
 
+    @Override
+    public <T> Map histogramAggs(String field, String routing, Double intervel, Double min, Double max, Class<T> clazz) {
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
+        String indexName = entity.getIndexName();
+        String bucketAliasName = entity.getRequiredPersistentProperty(field).getFieldName();
+        // the name of aggregation
+        String bucket = "histogram_" + bucketAliasName;
+
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        AggregationBuilder aggregation = AggregationBuilders.histogram(bucket).field(bucketAliasName).interval(intervel)
+
+                .extendedBounds(min, max);
+
+        searchSourceBuilder.size(0);
+        searchSourceBuilder.aggregation(aggregation);
+        SearchRequest searchRequest = new SearchRequest(indexName);
+        if (StringUtils.isNotEmpty(routing)) {
+            searchRequest.routing(routing);
+        }
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        ParsedHistogram agg = searchResponse.getAggregations().get(bucket);
+        Map map = new LinkedHashMap();
+        for (Histogram.Bucket entry : agg.getBuckets()) {
+            map.put(entry.getKey(), entry.getDocCount());
+        }
+        return map;
+    }
+
+    @Override
+    public <T> Map rangeAggs(List<QueryParams> queryParams, String field, String routing, List<Range> ranges, Class<T> clazz) {
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
+        String indexName = entity.getIndexName();
+        String bucketAliasName = entity.getRequiredPersistentProperty(field).getFieldName();
+        // the name of aggregation
+        String bucket = "range" + bucketAliasName;
+
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        AggregationBuilder aggregation = AggregationBuilders.range(bucket).field(bucketAliasName);
+        ranges.stream().forEach(range -> {
+            ((RangeAggregationBuilder) aggregation).addRange(range.getFrom(), range.getTo());
+
+        });
+
+        searchSourceBuilder.size(0);
+        searchSourceBuilder.aggregation(aggregation);
+        SearchRequest searchRequest = new SearchRequest(indexName);
+        if (StringUtils.isNotEmpty(routing)) {
+            searchRequest.routing(routing);
+        }
+        if (!CollectionUtils.isEmpty(queryParams)) {
+            BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+            queryParams.stream().forEach(queryParam -> {
+                String queryField = entity.getRequiredPersistentProperty(queryParam.getField()).getFieldName();
+                if (queryParam.getQueryType().equals("term")) {
+                    TermsQueryBuilder termsQueryBuilder = QueryBuilders.termsQuery("term_" + queryField, queryParam.getValue());
+                }
+
+                if (queryParam.getQueryType().equals("range")) {
+                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("range_" + queryField);
+
+                    queryParam.getOperatorParams().stream().forEach(operatorParam -> {
+
+                        Optional<Method> method = null;
+                        try {
+                            method = ReflectionUtils.findMethod(Class.forName("org.elasticsearch.index.query.RangeQueryBuilder"),
+                                    operatorParam.getOperator().toString(), Object.class, boolean.class);
+                            Method method1 = method.get();
+                            method1.invoke(rangeQueryBuilder, operatorParam.getOperatorValue(), operatorParam.isInclude());
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                }
+
+
+            });
+            searchSourceBuilder.query(boolQueryBuilder);
+        }
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        ParsedRange agg = searchResponse.getAggregations().get(bucket);
+        Map map = new LinkedHashMap();
+        for (org.elasticsearch.search.aggregations.bucket.range.Range.Bucket entry : agg.getBuckets()) {
+            map.put(entry.getKey(), entry.getDocCount());
+        }
+        return map;
+    }
+
+    @Override
+    public <T> Map dateHistogramAggs(DateHistogramBuilder dateHistogramBuilder, String routing, Class<T> clazz) {
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
+        String indexName = entity.getIndexName();
+        String bucketAliasName = entity.getRequiredPersistentProperty(dateHistogramBuilder.getField()).getFieldName();
+        // the name of aggregation
+        String bucket = "date_histogram" + bucketAliasName;
+
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        DateHistogramAggregationBuilder dateHistogramAggregationBuilder = new DateHistogramAggregationBuilder(bucket);
+        dateHistogramAggregationBuilder.field(bucketAliasName);
+        dateHistogramAggregationBuilder.calendarInterval(new DateHistogramInterval(dateHistogramBuilder.getDateIntervalUnit()));
+        dateHistogramAggregationBuilder.format(dateHistogramBuilder.getFormat());
+        dateHistogramAggregationBuilder.minDocCount(dateHistogramBuilder.getMinDocCount());
+        dateHistogramBuilder.getChildDateHistogramBuilders().stream().forEach(child -> {
+            String aliasName = entity.getRequiredPersistentProperty(child.getField()).getFieldName();
+            String name = child.getAggsType() + "_" + aliasName;
+            BiFunction<String, String, ValuesSourceAggregationBuilder> result = DateHistogramIntervalUtil.map.get(AggsType.count);
+            if (result != null) {
+                dateHistogramAggregationBuilder.subAggregation(result.apply(name, aliasName));
+            }
+
+        });
+
+
+        searchSourceBuilder.size(0);
+        searchSourceBuilder.aggregation(dateHistogramAggregationBuilder);
+        SearchRequest searchRequest = new SearchRequest(indexName);
+        if (StringUtils.isNotEmpty(routing)) {
+            searchRequest.routing(routing);
+        }
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        ParsedDateHistogram agg = searchResponse.getAggregations().get(bucket);
+        Map map = new LinkedHashMap();
+        for (Histogram.Bucket entry : agg.getBuckets()) {
+            map.put(entry.getKey(), entry.getDocCount());
+        }
+        return map;
+    }
+
+
     /**
      * @param value: 模糊查询的值
      * @Description: 构建模糊查询参数
@@ -724,32 +854,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 .should(QueryBuilders.regexpQuery("bank", WILDCARD + value + WILDCARD));
 
         return boolQueryBuilder;
-    }
-
-
-    @Override
-    public <T> Map<String, Object> dateGroupAndSum(QueryParameters queryParameters, AggregationParameters parameters, String routing, Class<T> clazz) {
-
-        // 根据聚合参数,生成对应聚合builder的实例
-        Object target = AggregationMappingBuilder.buildAggregationInstance(null, parameters);
-
-        if (null == target) {
-            log.error("could not find this aggregation type = {} for name = {}", parameters.getType(), parameters.getName());
-            throw new ElasticsearchException("could not find this aggregation!");
-        }
-        // 构建搜索请求
-        SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
-        if (StringUtils.isNotBlank(routing)) {
-            searchRequest.routing(routing);
-        }
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        // 因为只需要聚合结果,不需要带出文档数据
-        sourceBuilder.size(0);
-        sourceBuilder.aggregation((AggregationBuilder) target);
-        searchRequest.source(sourceBuilder);
-        SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-        // TODO 需要将response 解析成map, 方便根据聚合名称取出想要的结果
-        return response.getAggregations().get("-_-");
     }
 
 

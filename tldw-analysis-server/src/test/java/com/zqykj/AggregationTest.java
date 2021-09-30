@@ -6,9 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zqykj.common.Constants;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AggregateBuilder;
+import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.AggregationResult;
 import com.zqykj.common.response.PersonalStatisticsResponse;
+import com.zqykj.domain.Range;
+import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
 import com.zqykj.enums.AggsType;
 import com.zqykj.repository.EntranceRepository;
@@ -19,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -242,7 +246,7 @@ public class AggregationTest {
 
 
     @Test
-    public void multilayerPeopleAggsTest() throws JsonProcessingException,ParseException {
+    public void multilayerPeopleAggsTest() throws JsonProcessingException, ParseException {
         AggregateBuilder aggregateBuilder1 = AggregateBuilder.builder()
                 .aggregateName(Constants.Individual.FIFTH_AGGREGATE_NAME)
                 .aggregateType(AggsType.min)
@@ -306,20 +310,21 @@ public class AggregationTest {
                 .build();
 
         Map map = entranceRepository.multilayerAggs(aggregateBuilder, StandardBankTransactionFlow.class);
-        List list =(List) map.get("terms_customer_identity_card");
+        List list = (List) map.get("terms_customer_identity_card");
         List<AggregationResult> personalStatisticsResponses = new ArrayList<>();
         List<PersonalStatisticsResponse> responses = new ArrayList<>();
-        list.stream().forEach(map1->{
-            ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);;
-            AggregationResult aggregationResult =objectMapper.convertValue(map1, AggregationResult.class);
+        list.stream().forEach(map1 -> {
+            ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            ;
+            AggregationResult aggregationResult = objectMapper.convertValue(map1, AggregationResult.class);
             personalStatisticsResponses.add(aggregationResult);
             QueryParams queryParams = QueryParams.builder().field(Constants.Individual.FIRST_AGGREGATE_NAME)
                     .value(aggregationResult.getCard())
                     .build();
-            StandardBankTransactionFlow standardBankTransactionFlow =entranceRepository.query(queryParams,StandardBankTransactionFlow.class);
+            StandardBankTransactionFlow standardBankTransactionFlow = entranceRepository.query(queryParams, StandardBankTransactionFlow.class);
             PersonalStatisticsResponse personalStatisticsResponse;
             try {
-                personalStatisticsResponse  = new PersonalStatisticsResponse(aggregationResult);
+                personalStatisticsResponse = new PersonalStatisticsResponse(aggregationResult);
                 personalStatisticsResponse.setCustomerName(standardBankTransactionFlow.getCustomer_name());
                 personalStatisticsResponse.setCustomerName(standardBankTransactionFlow.getCustomer_name());
                 personalStatisticsResponse.setCustomerIdentityId(aggregationResult.getCard());
@@ -328,6 +333,57 @@ public class AggregationTest {
                 e.printStackTrace();
             }
         });
+    }
+
+    @Test
+    public void histogram() {
+        Map map = new LinkedHashMap();
+
+        map = entranceRepository.histogramAggs("transactionMoney", "", 8996.17, 5015.66, 49996.49, BankTransactionFlow.class);
+        System.out.println("***");
+    }
+
+    @Test
+    public void range() {
+
+        List<Range> list = new ArrayList<>();
+        Range range = new Range(0.0, 8996.17);
+        Range range1 = new Range(8996.17, 8996.17);
+        Range range2 = new Range(17992.34, 26988.510000000002);
+        Range range3 = new Range(26988.510000000002, 35984.68);
+        Range range4 = new Range(35984.68, 44980.85);
+        list.add(range);
+        list.add(range1);
+        list.add(range2);
+        list.add(range3);
+        list.add(range4);
+
+
+//        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
+        System.out.println("***");
+    }
+
+
+    @Test
+    public void histogramTest() {
+        List<DateHistogramBuilder> list = new ArrayList<>();
+        DateHistogramBuilder dateHistogramBuilder1 = DateHistogramBuilder.builder()
+                .aggsType(AggsType.sum)
+                .field("transactionMoney")
+                .build();
+        list.add(dateHistogramBuilder1);
+        DateHistogramBuilder dateHistogramBuilder = DateHistogramBuilder.builder()
+                .aggsType(AggsType.date_histogram)
+                .dateIntervalUnit("day")
+                .field("tradingTime")
+                .minDocCount(1)
+                .format("yyyy-MM-dd")
+                .childDateHistogramBuilders(list)
+                .build();
+
+
+        Map map1 = entranceRepository.dateHistogramAggs(dateHistogramBuilder, "", BankTransactionFlow.class);
+        System.out.println("***");
     }
 
 }

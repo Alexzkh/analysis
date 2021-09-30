@@ -1,7 +1,6 @@
 package com.zqykj.controller;
 
 import com.gitee.starblues.realize.PluginUtils;
-import com.zqykj.BankTransationImpl;
 import com.zqykj.app.service.interfaze.IBankTransaction;
 import com.zqykj.common.request.IndividualRequest;
 import com.zqykj.common.response.CardStatisticsResponse;
@@ -27,7 +26,7 @@ public class BankTransactionController {
 
     private IBankTransaction iBankTransaction;
 
-    public BankTransactionController(PluginUtils pluginUtils){
+    public BankTransactionController(PluginUtils pluginUtils) {
         iBankTransaction = pluginUtils.getMainBean(IBankTransaction.class);
 
     }

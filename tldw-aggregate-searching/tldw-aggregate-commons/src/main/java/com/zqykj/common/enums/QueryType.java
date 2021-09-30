@@ -10,5 +10,10 @@ public enum  QueryType {
     /**
      * term query
      **/
-    term
+    term,
+
+    /**
+     * range
+     * */
+    range
 }
