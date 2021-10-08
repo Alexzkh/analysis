@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zqykj.common.Constants;
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.common.request.AggregateBuilder;
-import com.zqykj.common.request.DateHistogramBuilder;
-import com.zqykj.common.request.QueryParams;
+import com.zqykj.common.request.*;
 import com.zqykj.common.response.AggregationResult;
 import com.zqykj.common.response.PersonalStatisticsResponse;
 import com.zqykj.domain.Range;
@@ -19,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.StopWatch;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -344,23 +343,119 @@ public class AggregationTest {
     }
 
     @Test
-    public void range() {
+    public void range5() {
 
         List<Range> list = new ArrayList<>();
-        Range range = new Range(0.0, 8996.17);
-        Range range1 = new Range(8996.17, 8996.17);
-        Range range2 = new Range(17992.34, 26988.510000000002);
-        Range range3 = new Range(26988.510000000002, 35984.68);
-        Range range4 = new Range(35984.68, 44980.85);
+        Range range = new Range(0.0, 9983d);
+        Range range1 = new Range(9983d, 19967d);
+        Range range2 = new Range(19967d, 29951d);
+        Range range3 = new Range(29951d, 39935d);
+        Range range4 = new Range(39935d, 49918d);
         list.add(range);
         list.add(range1);
         list.add(range2);
         list.add(range3);
         list.add(range4);
 
+        QueryParams termQuery = new QueryParams();
+        termQuery.setField("customerIdentityCard");
+        termQuery.setQueryType(QueryType.term);
+        termQuery.setValue("371601198702200014");
+
+        QueryParams termQuery1 = new QueryParams();
+        termQuery1.setField("caseId");
+        termQuery1.setQueryType(QueryType.term);
+        termQuery1.setValue("100376eb69614df4a7cd63ca6884827b");
+
+        QueryParams rangeQuery = new QueryParams();
+        rangeQuery.setQueryType(QueryType.range);
+        rangeQuery.setField("transactionMoney");
+        OperatorParam operatorParam = new OperatorParam();
+        operatorParam.setOperator(Operator.from);
+        operatorParam.setInclude(true);
+        operatorParam.setOperatorValue(0.0);
+
+        List<OperatorParam> operatorParams = new ArrayList<>();
+        operatorParams.add(operatorParam);
+        rangeQuery.setOperatorParams(operatorParams);
+
+        List<QueryParams> queryParams = new ArrayList<>();
+        queryParams.add(termQuery);
+        queryParams.add(termQuery1);
+        queryParams.add(rangeQuery);
+
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("rangeAggs5");
+        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
+        stopWatch.stop();
 
 //        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
-        System.out.println("***");
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()) ;
+        System.out.println(stopWatch.prettyPrint());
+    }
+
+    @Test
+    public void range10() {
+
+        List<Range> list = new ArrayList<>();
+        Range range = new Range(0.0, 4958d);
+        Range range1 = new Range(4958d, 9917d);
+        Range range2 = new Range(9917d, 14875d);
+        Range range3 = new Range(14875d, 19834d);
+        Range range4 = new Range(19834d, 24793d);
+        Range range5 = new Range(24793d, 29751d);
+        Range range6 = new Range(29751d, 34710d);
+        Range range7 = new Range(34710d, 39669d);
+        Range range8 = new Range(39669d, 44627d);
+        Range range9 = new Range(44627d, 49586d);
+        list.add(range);
+        list.add(range1);
+        list.add(range2);
+        list.add(range3);
+        list.add(range4);
+        list.add(range5);
+        list.add(range6);
+        list.add(range7);
+        list.add(range8);
+        list.add(range9);
+
+        QueryParams termQuery = new QueryParams();
+        termQuery.setField("customerIdentityCard");
+        termQuery.setQueryType(QueryType.term);
+        termQuery.setValue("371601198702200014");
+
+        QueryParams termQuery1 = new QueryParams();
+        termQuery1.setField("caseId");
+        termQuery1.setQueryType(QueryType.term);
+        termQuery1.setValue("100376eb69614df4a7cd63ca6884827b");
+
+        QueryParams rangeQuery = new QueryParams();
+        rangeQuery.setQueryType(QueryType.range);
+        rangeQuery.setField("transactionMoney");
+        OperatorParam operatorParam = new OperatorParam();
+        operatorParam.setOperator(Operator.from);
+        operatorParam.setInclude(true);
+        operatorParam.setOperatorValue(0.0);
+
+        List<OperatorParam> operatorParams = new ArrayList<>();
+        operatorParams.add(operatorParam);
+        rangeQuery.setOperatorParams(operatorParams);
+
+        List<QueryParams> queryParams = new ArrayList<>();
+        queryParams.add(termQuery);
+        queryParams.add(termQuery1);
+        queryParams.add(rangeQuery);
+
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("rangeAggs10");
+        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
+        stopWatch.stop();
+
+//        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()) ;
+        System.out.println(stopWatch.prettyPrint());
     }
 
 

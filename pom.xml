@@ -12,10 +12,6 @@
         <module>tldw-analysis-server</module>
         <module>tldw-analysis-app</module>
         <module>tldw-analysis-domain</module>
-        <module>tldw-analysis-plugins</module>
-        <module>tldw-analysis-runner</module>
-        <module>tldw-analysis-plugin-common</module>
-        <module>tldw-analysis-plugin-parent</module>
         <module>tldw-analysis-commons</module>
     </modules>
 

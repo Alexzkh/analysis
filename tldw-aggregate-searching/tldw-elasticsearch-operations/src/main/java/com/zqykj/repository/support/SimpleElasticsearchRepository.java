@@ -765,12 +765,13 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
             queryParams.stream().forEach(queryParam -> {
                 String queryField = entity.getRequiredPersistentProperty(queryParam.getField()).getFieldName();
-                if (queryParam.getQueryType().equals("term")) {
-                    TermsQueryBuilder termsQueryBuilder = QueryBuilders.termsQuery("term_" + queryField, queryParam.getValue());
+                if (queryParam.getQueryType().equals(QueryType.term)) {
+                    TermsQueryBuilder termsQueryBuilder = QueryBuilders.termsQuery( queryField, queryParam.getValue());
+                    boolQueryBuilder.must(termsQueryBuilder);
                 }
 
-                if (queryParam.getQueryType().equals("range")) {
-                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("range_" + queryField);
+                if (queryParam.getQueryType().equals(QueryType.range)) {
+                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery( queryField);
 
                     queryParam.getOperatorParams().stream().forEach(operatorParam -> {
 
@@ -780,6 +781,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                                     operatorParam.getOperator().toString(), Object.class, boolean.class);
                             Method method1 = method.get();
                             method1.invoke(rangeQueryBuilder, operatorParam.getOperatorValue(), operatorParam.isInclude());
+                            boolQueryBuilder.must(rangeQueryBuilder);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                         } catch (IllegalAccessException e) {
