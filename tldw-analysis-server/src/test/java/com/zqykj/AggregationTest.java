@@ -5,10 +5,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zqykj.common.Constants;
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.common.request.AggregateBuilder;
-import com.zqykj.common.request.QueryParams;
+import com.zqykj.common.request.*;
 import com.zqykj.common.response.AggregationResult;
 import com.zqykj.common.response.PersonalStatisticsResponse;
+import com.zqykj.domain.Range;
+import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
 import com.zqykj.enums.AggsType;
 import com.zqykj.repository.EntranceRepository;
@@ -16,9 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.StopWatch;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -242,7 +245,7 @@ public class AggregationTest {
 
 
     @Test
-    public void multilayerPeopleAggsTest() throws JsonProcessingException,ParseException {
+    public void multilayerPeopleAggsTest() throws JsonProcessingException, ParseException {
         AggregateBuilder aggregateBuilder1 = AggregateBuilder.builder()
                 .aggregateName(Constants.Individual.FIFTH_AGGREGATE_NAME)
                 .aggregateType(AggsType.min)
@@ -306,20 +309,21 @@ public class AggregationTest {
                 .build();
 
         Map map = entranceRepository.multilayerAggs(aggregateBuilder, StandardBankTransactionFlow.class);
-        List list =(List) map.get("terms_customer_identity_card");
+        List list = (List) map.get("terms_customer_identity_card");
         List<AggregationResult> personalStatisticsResponses = new ArrayList<>();
         List<PersonalStatisticsResponse> responses = new ArrayList<>();
-        list.stream().forEach(map1->{
-            ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);;
-            AggregationResult aggregationResult =objectMapper.convertValue(map1, AggregationResult.class);
+        list.stream().forEach(map1 -> {
+            ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            ;
+            AggregationResult aggregationResult = objectMapper.convertValue(map1, AggregationResult.class);
             personalStatisticsResponses.add(aggregationResult);
             QueryParams queryParams = QueryParams.builder().field(Constants.Individual.FIRST_AGGREGATE_NAME)
                     .value(aggregationResult.getCard())
                     .build();
-            StandardBankTransactionFlow standardBankTransactionFlow =entranceRepository.query(queryParams,StandardBankTransactionFlow.class);
+            StandardBankTransactionFlow standardBankTransactionFlow = entranceRepository.query(queryParams, StandardBankTransactionFlow.class);
             PersonalStatisticsResponse personalStatisticsResponse;
             try {
-                personalStatisticsResponse  = new PersonalStatisticsResponse(aggregationResult);
+                personalStatisticsResponse = new PersonalStatisticsResponse(aggregationResult);
                 personalStatisticsResponse.setCustomerName(standardBankTransactionFlow.getCustomer_name());
                 personalStatisticsResponse.setCustomerName(standardBankTransactionFlow.getCustomer_name());
                 personalStatisticsResponse.setCustomerIdentityId(aggregationResult.getCard());
@@ -328,6 +332,153 @@ public class AggregationTest {
                 e.printStackTrace();
             }
         });
+    }
+
+    @Test
+    public void histogram() {
+        Map map = new LinkedHashMap();
+
+        map = entranceRepository.histogramAggs("transactionMoney", "", 8996.17, 5015.66, 49996.49, BankTransactionFlow.class);
+        System.out.println("***");
+    }
+
+    @Test
+    public void range5() {
+
+        List<Range> list = new ArrayList<>();
+        Range range = new Range(0.0, 9983d);
+        Range range1 = new Range(9983d, 19967d);
+        Range range2 = new Range(19967d, 29951d);
+        Range range3 = new Range(29951d, 39935d);
+        Range range4 = new Range(39935d, 49918d);
+        list.add(range);
+        list.add(range1);
+        list.add(range2);
+        list.add(range3);
+        list.add(range4);
+
+        QueryParams termQuery = new QueryParams();
+        termQuery.setField("customerIdentityCard");
+        termQuery.setQueryType(QueryType.term);
+        termQuery.setValue("371601198702200014");
+
+        QueryParams termQuery1 = new QueryParams();
+        termQuery1.setField("caseId");
+        termQuery1.setQueryType(QueryType.term);
+        termQuery1.setValue("100376eb69614df4a7cd63ca6884827b");
+
+        QueryParams rangeQuery = new QueryParams();
+        rangeQuery.setQueryType(QueryType.range);
+        rangeQuery.setField("transactionMoney");
+        OperatorParam operatorParam = new OperatorParam();
+        operatorParam.setOperator(Operator.from);
+        operatorParam.setInclude(true);
+        operatorParam.setOperatorValue(0.0);
+
+        List<OperatorParam> operatorParams = new ArrayList<>();
+        operatorParams.add(operatorParam);
+        rangeQuery.setOperatorParams(operatorParams);
+
+        List<QueryParams> queryParams = new ArrayList<>();
+        queryParams.add(termQuery);
+        queryParams.add(termQuery1);
+        queryParams.add(rangeQuery);
+
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("rangeAggs5");
+        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
+        stopWatch.stop();
+
+//        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()) ;
+        System.out.println(stopWatch.prettyPrint());
+    }
+
+    @Test
+    public void range10() {
+
+        List<Range> list = new ArrayList<>();
+        Range range = new Range(0.0, 4958d);
+        Range range1 = new Range(4958d, 9917d);
+        Range range2 = new Range(9917d, 14875d);
+        Range range3 = new Range(14875d, 19834d);
+        Range range4 = new Range(19834d, 24793d);
+        Range range5 = new Range(24793d, 29751d);
+        Range range6 = new Range(29751d, 34710d);
+        Range range7 = new Range(34710d, 39669d);
+        Range range8 = new Range(39669d, 44627d);
+        Range range9 = new Range(44627d, 49586d);
+        list.add(range);
+        list.add(range1);
+        list.add(range2);
+        list.add(range3);
+        list.add(range4);
+        list.add(range5);
+        list.add(range6);
+        list.add(range7);
+        list.add(range8);
+        list.add(range9);
+
+        QueryParams termQuery = new QueryParams();
+        termQuery.setField("customerIdentityCard");
+        termQuery.setQueryType(QueryType.term);
+        termQuery.setValue("371601198702200014");
+
+        QueryParams termQuery1 = new QueryParams();
+        termQuery1.setField("caseId");
+        termQuery1.setQueryType(QueryType.term);
+        termQuery1.setValue("100376eb69614df4a7cd63ca6884827b");
+
+        QueryParams rangeQuery = new QueryParams();
+        rangeQuery.setQueryType(QueryType.range);
+        rangeQuery.setField("transactionMoney");
+        OperatorParam operatorParam = new OperatorParam();
+        operatorParam.setOperator(Operator.from);
+        operatorParam.setInclude(true);
+        operatorParam.setOperatorValue(0.0);
+
+        List<OperatorParam> operatorParams = new ArrayList<>();
+        operatorParams.add(operatorParam);
+        rangeQuery.setOperatorParams(operatorParams);
+
+        List<QueryParams> queryParams = new ArrayList<>();
+        queryParams.add(termQuery);
+        queryParams.add(termQuery1);
+        queryParams.add(rangeQuery);
+
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("rangeAggs10");
+        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
+        stopWatch.stop();
+
+//        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()) ;
+        System.out.println(stopWatch.prettyPrint());
+    }
+
+
+    @Test
+    public void histogramTest() {
+        List<DateHistogramBuilder> list = new ArrayList<>();
+        DateHistogramBuilder dateHistogramBuilder1 = DateHistogramBuilder.builder()
+                .aggsType(AggsType.sum)
+                .field("transactionMoney")
+                .build();
+        list.add(dateHistogramBuilder1);
+        DateHistogramBuilder dateHistogramBuilder = DateHistogramBuilder.builder()
+                .aggsType(AggsType.date_histogram)
+                .dateIntervalUnit("day")
+                .field("tradingTime")
+                .minDocCount(1)
+                .format("yyyy-MM-dd")
+                .childDateHistogramBuilders(list)
+                .build();
+
+
+        Map map1 = entranceRepository.dateHistogramAggs(dateHistogramBuilder, "", BankTransactionFlow.class);
+        System.out.println("***");
     }
 
 }

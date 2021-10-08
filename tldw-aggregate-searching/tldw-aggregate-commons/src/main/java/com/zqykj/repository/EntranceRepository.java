@@ -4,11 +4,15 @@
 package com.zqykj.repository;
 
 import com.zqykj.common.request.AggregateBuilder;
+import com.zqykj.common.request.DateHistogramBuilder;
+import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
+import com.zqykj.domain.Range;
 import com.zqykj.enums.AggsType;
 import com.zqykj.enums.DateIntervalUnit;
 
+import java.util.List;
 import java.util.Map;
 
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
@@ -130,7 +134,6 @@ public interface EntranceRepository extends CrudRepository {
      **/
     <T> long cardinality(String metricName, String routing, long precisionThreshold, Class<T> clazz, String... indexes);
 
-
     /**
      * @param aggregateBuilder: aggregate builder for multilayer aggs
      * @param clazz:            domain type
@@ -139,6 +142,52 @@ public interface EntranceRepository extends CrudRepository {
      **/
     <T> Map multilayerAggs(AggregateBuilder aggregateBuilder, Class<T> clazz);
 
+
+    /**
+     * A multi-bucket values source based aggregation that can
+     * be applied on numeric values or numeric range values extracted from the documents.
+     * It dynamically builds fixed size (a.k.a. interval) buckets over the values.
+     *
+     * @param field:    the field of aggrating ,the same as domain field name.
+     * @param routing:  the shard of routing.
+     * @param intervel: the histogram interval.
+     * @param min:      minimum
+     * @param max:      maximum
+     * @param clazz:    the domain type
+     * @return: java.util.Map
+     **/
+    <T> Map histogramAggs(String field, String routing, Double intervel, Double min, Double max, Class<T> clazz);
+
+    /**
+     * A multi-bucket value source based aggregation that enables the user to define a set of ranges
+     * - each representing a bucket. During the aggregation process,
+     * the values extracted from each document will be checked against
+     * each bucket range and "bucket" the relevant/matching document.
+     * Note that this aggregation includes the from value and excludes the to value for each range.
+     *
+     * @param queryParams: the quey parameter.
+     * @param field:       the field of aggrating ,the same as domain field name .
+     * @param routing:     the shard of routing.
+     * @param ranges:      range aggregation parameter.
+     * @param clazz:       the domain type .
+     * @return: java.util.Map
+     **/
+    <T> Map rangeAggs(List<QueryParams> queryParams, String field, String routing, List<Range> ranges, Class<T> clazz);
+
+    /**
+     * This multi-bucket aggregation is similar to the normal histogram,
+     * but it can only be used with date or date range values.
+     * Because dates are represented internally in Elasticsearch as long values,
+     * it is possible, but not as accurate, to use the normal histogram on dates as well.
+     * The main difference in the two APIs is that here the interval can be specified using date/time expressions.
+     * Time-based data requires special support because time-based intervals are not always a fixed length
+     *
+     * @param dateHistogramBuilder: the date histogram aggregation parameter .
+     * @param routing:              the shard of routing.
+     * @param clazz:                the domain type .
+     * @return: java.util.Map
+     **/
+    <T> Map dateHistogramAggs(DateHistogramBuilder dateHistogramBuilder, String routing, Class<T> clazz);
 
     /**
      * <h2> 按日期间隔分组并根据某个字段进行汇总求和 </h2>

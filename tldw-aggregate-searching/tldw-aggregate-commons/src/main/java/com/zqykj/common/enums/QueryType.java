@@ -16,6 +16,11 @@ public enum QueryType {
     term,
 
     /**
+     * range
+     * */
+    range,
+
+    /**
      * bool query(组合查询)
      */
     bool,
@@ -49,5 +54,4 @@ public enum QueryType {
                 .findAny()
                 .orElseThrow(() -> new IllegalArgumentException(type + " not exists!"));
     }
-
 }

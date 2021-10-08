@@ -7,6 +7,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * @Description: 聚合之外的查询参数
  * @Author zhangkehou
@@ -42,5 +45,12 @@ public class QueryParams {
      * 查询的个数
      */
     private int size;
+
+
+    /**
+     * 操作符参数
+     */
+    private List<OperatorParam> operatorParams;
+
 
 }

@@ -4,7 +4,9 @@
 package com.zqykj.parameters.aggregate;
 
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * <h1> 一些通用的聚合查询参数 <h1>
