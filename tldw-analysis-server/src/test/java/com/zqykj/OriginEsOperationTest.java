@@ -5,6 +5,7 @@ package com.zqykj;
 
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
+import com.zqykj.common.enums.QueryType;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.domain.EntityClass;
@@ -15,6 +16,9 @@ import com.zqykj.domain.aggregate.TeacherInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
+import com.zqykj.parameters.query.CombinationQueryParams;
+import com.zqykj.parameters.query.CommonQueryParams;
+import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import com.zqykj.util.ReflectionUtils;
@@ -303,9 +307,19 @@ public class OriginEsOperationTest {
     @Test
     public void testDateHistogram() {
 
-        Map<String, Object> map = entranceRepository.dateGroupAndSum(null, "trade_time",
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(QueryType.must);
+
+        combinationQueryParams.addCombinationQueryParams(new CommonQueryParams(QueryType.term, "trade_opposite_name", "静智大师"));
+        combinationQueryParams.addCombinationQueryParams(new CommonQueryParams(QueryType.term, "account_card", "80138218880002452"));
+
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+
+        Map<String, Object> map = entranceRepository.dateGroupAndSum(querySpecialParams, "trade_time",
                 new DateSpecificFormat("1h", "HH"),
-                "trade_amount", StandardBankTransactionFlow.class, "123213qq");
+                "trade_amount", StandardBankTransactionFlow.class, "732c350f-3a2b-46d0-b9cc-0bdcc52fca93");
     }
 
 

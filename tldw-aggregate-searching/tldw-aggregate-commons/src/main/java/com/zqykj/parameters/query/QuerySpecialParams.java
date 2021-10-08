@@ -8,7 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,6 +30,22 @@ public class QuerySpecialParams {
 
     // TODO 分页参数设置 可以放在最外面
     private Pagination pagination;
+
+    public QuerySpecialParams(CommonQueryParams common) {
+        this.commonQuery = common;
+    }
+
+    public QuerySpecialParams(List<CombinationQueryParams> combiningQuery) {
+        this.combiningQuery = combiningQuery;
+    }
+
+    public void addCombiningQueryParams(CombinationQueryParams combinationQueryParams) {
+
+        if (CollectionUtils.isEmpty(this.combiningQuery)) {
+            this.combiningQuery = new ArrayList<>();
+        }
+        this.combiningQuery.add(combinationQueryParams);
+    }
 
     /**
      * <h1> 查询类型的翻译 </h1>

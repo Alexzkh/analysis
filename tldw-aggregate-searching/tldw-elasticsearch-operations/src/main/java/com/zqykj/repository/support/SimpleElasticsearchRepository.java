@@ -759,7 +759,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             searchRequest.routing(routing);
         }
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.size(0);
+        sourceBuilder.size(10);
         // 聚合查询
         sourceBuilder.aggregation((AggregationBuilder) target);
         // 普通查询

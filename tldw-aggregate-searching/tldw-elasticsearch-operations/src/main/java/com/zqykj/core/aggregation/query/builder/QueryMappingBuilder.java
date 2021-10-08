@@ -58,12 +58,7 @@ public class QueryMappingBuilder {
             if (null != params.getCommonQuery() && !CollectionUtils.isEmpty(params.getCombiningQuery())) {
                 throw new IllegalArgumentException("Cannot use [commonQuery] with [combiningQuery] configuration option.");
             }
-            Field[] declaredFields = ReflectionUtils.getDeclaredFields(params.getClass());
-            Object target = null;
-            for (Field field : declaredFields) {
-                target = buildingQueryViaField(params, field);
-            }
-            return target;
+            return buildingQueryViaField(params);
         } catch (Exception e) {
             log.error("could not build dsl query, error msg = {}", e.getMessage());
             throw new ElasticsearchException("could not build dsl query", e);
@@ -71,27 +66,29 @@ public class QueryMappingBuilder {
     }
 
 
-    private static Object buildingQueryViaField(QuerySpecialParams parameters, Field field) throws ClassNotFoundException {
+    private static Object buildingQueryViaField(QuerySpecialParams params) throws ClassNotFoundException {
 
-        // 单个查询 和 组合查询只会构建一个
-        if (CommonQueryParams.class.isAssignableFrom(field.getType()) && null != parameters.getCommonQuery()) {
+        Field[] declaredFields = ReflectionUtils.getDeclaredFields(params.getClass());
+        for (Field field : declaredFields) {
+            // 单个查询 和 组合查询只会构建一个
+            if (CommonQueryParams.class.isAssignableFrom(field.getType()) && null != params.getCommonQuery()) {
 
-            // 单个查询
-            return addCommonQueryMapping(parameters.getCommonQuery());
+                // 单个查询
+                return addCommonQueryMapping(params.getCommonQuery());
 
-        } else if (List.class.isAssignableFrom(field.getType()) && !CollectionUtils.isEmpty(parameters.getCombiningQuery())) {
+            } else if (List.class.isAssignableFrom(field.getType()) && !CollectionUtils.isEmpty(params.getCombiningQuery())) {
 
-            Optional<Class<?>> parameterType = ReflectionUtils.findParameterType(parameters.getClass(), field.getName());
-            if (!parameterType.isPresent()) {
-                return null;
+                Optional<Class<?>> parameterType = ReflectionUtils.findParameterType(params.getClass(), field.getName());
+                if (!parameterType.isPresent()) {
+                    return null;
+                }
+                if (CombinationQueryParams.class.isAssignableFrom(parameterType.get())) {
+                    // 组合查询
+                    return addCombinationQueryMapping(params.getCombiningQuery(), field.getType());
+                }
+            } else {
+
             }
-            if (CommonQueryParams.class.isAssignableFrom(parameterType.get())) {
-                // 组合查询
-                return addCombinationQueryMapping(parameters.getCombiningQuery(), field.getType());
-            }
-        } else {
-
-            // TODO
         }
         return null;
     }

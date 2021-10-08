@@ -4,6 +4,7 @@
 package com.zqykj.parameters.query;
 
 import com.zqykj.common.enums.QueryType;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,6 +15,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class CommonQueryParams {
 
     /**

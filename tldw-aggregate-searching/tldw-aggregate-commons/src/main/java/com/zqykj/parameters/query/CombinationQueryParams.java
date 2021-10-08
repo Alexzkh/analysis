@@ -8,7 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,6 +31,14 @@ public class CombinationQueryParams {
      * 组合查询参数
      */
     private List<CommonQueryParams> combinationQuery;
+
+    public void addCombinationQueryParams(CommonQueryParams commonQueryParams) {
+
+        if (CollectionUtils.isEmpty(this.combinationQuery)) {
+            this.combinationQuery = new ArrayList<>();
+        }
+        this.combinationQuery.add(commonQueryParams);
+    }
 
 
     public String convert(QueryType type) {
