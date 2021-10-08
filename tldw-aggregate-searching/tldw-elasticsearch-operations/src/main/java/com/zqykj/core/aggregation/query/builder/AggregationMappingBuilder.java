@@ -3,11 +3,13 @@
  */
 package com.zqykj.core.aggregation.query.builder;
 
-import com.zqykj.parameters.aggregate.DateParameters;
-import com.zqykj.parameters.aggregate.AggregationGeneralParameters;
-import com.zqykj.parameters.aggregate.AggregationParameters;
+import com.zqykj.core.aggregation.AggregateRequestFactory;
+import com.zqykj.parameters.aggregate.date.DateParams;
+import com.zqykj.parameters.aggregate.CommonAggregationParams;
+import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.Pagination;
-import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParameters;
+import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
+import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.aggregate.bucket.ClassNameForBeanClassOfBucket;
 import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOfMetrics;
@@ -28,15 +30,14 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ConcurrentReferenceHashMap;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -61,7 +62,7 @@ public class AggregationMappingBuilder {
     private static final Class<?> SUB_AGGREGATION_TYPE = AggregationBuilder.class;
     private static final Class<?> SUB_AGGREGATION_TYPE_PIPELINE = PipelineAggregationBuilder.class;
 
-    private static Map<String, Class<?>> aggregateNameForClass = new ConcurrentHashMap<>();
+    private static Map<String, Class<?>> aggregateNameForClass = new ConcurrentReferenceHashMap<>(256);
 
     static {
         aggregateNameForClass.putAll(new ClassNameForBeanClassOfBucket().getAggregateNameForClass());
@@ -79,6 +80,9 @@ public class AggregationMappingBuilder {
         }
     }
 
+    public static Object buildAggregation(AggregationParams parameters) {
+        return AggregationMappingBuilder.buildAggregationInstance(null, parameters);
+    }
 
     /**
      * <h2> 构建AggregationBuilder 聚合 </h2>
@@ -86,7 +90,7 @@ public class AggregationMappingBuilder {
      * @param father     第一次传递null
      * @param parameters 聚合参数
      */
-    public static Object buildAggregationInstance(@Nullable Object father, AggregationParameters parameters) {
+    private static Object buildAggregationInstance(@Nullable Object father, AggregationParams parameters) {
 
         try {
             // TODO 聚合类型需要翻译 成对应数据源有的聚合类型
@@ -119,12 +123,12 @@ public class AggregationMappingBuilder {
         }
     }
 
-    private static Object buildSpecialAggregationConstructor(Class<?> aggregationClass, AggregationParameters parameters) {
+    private static Object buildSpecialAggregationConstructor(Class<?> aggregationClass, AggregationParams parameters) {
 
         if (FilterAggregationBuilder.class.isAssignableFrom(aggregationClass)) {
             // 特殊处理这种过滤器聚合查询
             // 首先构建QueryBuilder
-            Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(parameters.getQueryParameters());
+            Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(parameters.getQuerySpecialParams());
             Optional<Constructor<?>> constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), queryTarget);
             if (constructor.isPresent()) {
                 return ReflectionUtils.getTargetInstanceViaReflection(constructor, aggregationClass, parameters.getName(), queryTarget);
@@ -136,7 +140,7 @@ public class AggregationMappingBuilder {
     /**
      * <h2> 构建PipelineAggregationBuilder 聚合 </h2>
      */
-    public static Object buildPipelineAggregationInstance(PipelineAggregationParameters parameters) {
+    public static Object buildPipelineAggregationInstance(PipelineAggregationParams parameters) {
 
         try {
             // TODO 聚合类型需要翻译 成对应数据源有的聚合类型
@@ -186,7 +190,7 @@ public class AggregationMappingBuilder {
         }
     }
 
-    private static Object buildSpecialPipelineAggregation(Class<?> aggregationClass, PipelineAggregationParameters parameters) {
+    private static Object buildSpecialPipelineAggregation(Class<?> aggregationClass, PipelineAggregationParams parameters) {
 
         Optional<Constructor<?>> constructor;
         Object target = null;
@@ -233,7 +237,7 @@ public class AggregationMappingBuilder {
     }
 
 
-    private static Object mapAggregation(Object father, Object target, AggregationParameters parameters, Class<?> aggregationClass) {
+    private static Object mapAggregation(Object father, Object target, AggregationParams parameters, Class<?> aggregationClass) {
 
         // 处理 AggregationParameters 中不同类型的参数, 为 aggregation instance target 赋值
         org.springframework.util.ReflectionUtils.doWithFields(parameters.getClass(), field -> {
@@ -250,26 +254,26 @@ public class AggregationMappingBuilder {
     }
 
 
-    private static void buildingAggregationViaField(Object father, Object target, AggregationParameters parameters, Class<?> aggregationClass,
+    private static void buildingAggregationViaField(Object father, Object target, AggregationParams parameters, Class<?> aggregationClass,
                                                     Field field) throws ClassNotFoundException {
 
-        if (AggregationGeneralParameters.class.isAssignableFrom(field.getType())) {
+        if (CommonAggregationParams.class.isAssignableFrom(field.getType())) {
 
-            addGeneraParametersMapping(target, parameters.getAggregationGeneralParameters(), aggregationClass, field, field.getType());
-        } else if (DateParameters.class.isAssignableFrom(field.getType())) {
+            addGeneraParametersMapping(target, parameters.getCommonAggregationParams(), aggregationClass, field, field.getType());
+        } else if (DateParams.class.isAssignableFrom(field.getType())) {
 
-            addDateParametersMapping(target, parameters.getDateParameters(), aggregationClass, field, field.getType());
+            addDateParametersMapping(target, parameters.getDateParams(), aggregationClass, field, field.getType());
         } else if (List.class.isAssignableFrom(field.getType())) {
 
             Optional<Class<?>> parameterType = ReflectionUtils.findParameterType(parameters.getClass(), field.getName());
             if (!parameterType.isPresent()) {
                 return;
             }
-            if (AggregationParameters.class.isAssignableFrom(parameterType.get())) {
+            if (AggregationParams.class.isAssignableFrom(parameterType.get())) {
 
                 // AggregationBuilder 类型子聚合处理
                 addSubAggregationMapping(target, parameters.getSubAggregation(), aggregationClass);
-            } else if (PipelineAggregationParameters.class.isAssignableFrom(parameterType.get())) {
+            } else if (PipelineAggregationParams.class.isAssignableFrom(parameterType.get())) {
 
                 // PipelineAggregationBuilder 类型聚合处理
                 addPipelineAggregationMapping(father, parameters.getPipelineAggregation(), aggregationClass);
@@ -287,24 +291,24 @@ public class AggregationMappingBuilder {
         }
     }
 
-    private static void addSubAggregationMapping(Object target, List<AggregationParameters> subParameters, Class<?> aggregationClass) {
+    private static void addSubAggregationMapping(Object target, List<AggregationParams> subParameters, Class<?> aggregationClass) {
 
         if (CollectionUtils.isEmpty(subParameters)) {
             return;
         }
-        for (AggregationParameters subParameter : subParameters) {
+        for (AggregationParams subParameter : subParameters) {
             Object subTarget = buildAggregationInstance(target, subParameter);
             //
             applySubAggregation(target, aggregationClass, subTarget);
         }
     }
 
-    private static void addPipelineAggregationMapping(Object target, List<PipelineAggregationParameters> subParameters, Class<?> aggregationClass) {
+    private static void addPipelineAggregationMapping(Object target, List<PipelineAggregationParams> subParameters, Class<?> aggregationClass) {
 
         if (CollectionUtils.isEmpty(subParameters)) {
             return;
         }
-        for (PipelineAggregationParameters subParameter : subParameters) {
+        for (PipelineAggregationParams subParameter : subParameters) {
             Object subTarget = buildPipelineAggregationInstance(subParameter);
             //
             applySubAggregation(target, aggregationClass, subTarget);
@@ -312,7 +316,7 @@ public class AggregationMappingBuilder {
     }
 
 
-    private static void addGeneraParametersMapping(Object target, AggregationGeneralParameters parameters,
+    private static void addGeneraParametersMapping(Object target, CommonAggregationParams parameters,
                                                    Class<?> aggregationClass, Field field, Class<?> fieldClass) {
 
         if (null == parameters) {
@@ -327,7 +331,7 @@ public class AggregationMappingBuilder {
         });
     }
 
-    private static void addDateParametersMapping(Object target, DateParameters parameters,
+    private static void addDateParametersMapping(Object target, DateParams parameters,
                                                  Class<?> aggregationClass, Field field, Class<?> fieldClass) {
 
         // Cannot use [fixed_interval] with [calendar_interval] configuration option.
@@ -421,21 +425,9 @@ public class AggregationMappingBuilder {
     public static void main(String[] args) {
 
         // DateHistogram 例子
-        AggregationParameters root = new AggregationParameters(
-                "account_date_histogram", "date_histogram", "trade_time",
-                new DateParameters("1h", "HH", 1));
-
-        AggregationParameters sub = new AggregationParameters("sum_date_money",
-                "sum", "trade_amount");
-
-        Map<String, String> bucketsPathMap = new HashMap<>();
-        bucketsPathMap.put("final_sum", "sum_date_money");
-        PipelineAggregationParameters pipelineAggregationParameters =
-                new PipelineAggregationParameters("sum_bucket_selector", "bucket_selector",
-                        bucketsPathMap, "params.final_sum > 0");
-
-        root.setPerSubAggregation(sub, pipelineAggregationParameters);
-        Object target = buildAggregationInstance(null, root);
+        AggregationParams dateGroupAndSum = AggregateRequestFactory.createDateGroupAndSum("trade_time",
+                new DateSpecificFormat("1h", "HH"), "trade_amount");
+        Object target = buildAggregation(dateGroupAndSum);
         System.out.println(target);
     }
 }

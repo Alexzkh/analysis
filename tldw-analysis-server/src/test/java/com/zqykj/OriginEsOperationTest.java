@@ -5,12 +5,8 @@ package com.zqykj;
 
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
-import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
-import com.zqykj.parameters.aggregate.AggregationGeneralParameters;
-import com.zqykj.parameters.aggregate.AggregationParameters;
-import com.zqykj.parameters.aggregate.DateParameters;
-import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParameters;
+import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -38,23 +34,16 @@ import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketScriptPipelineAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.AssignableTypeFilter;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.StopWatch;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -314,22 +303,9 @@ public class OriginEsOperationTest {
     @Test
     public void testDateHistogram() {
 
-        AggregationParameters root = new AggregationParameters(
-                "account_date_histogram", "date_histogram", "trade_time",
-                new DateParameters("1h", "HH", 1));
-
-        AggregationParameters sub = new AggregationParameters("sum_date_money",
-                "sum", "trade_amount");
-
-        Map<String, String> bucketsPathMap = new HashMap<>();
-        bucketsPathMap.put("final_sum", "sum_date_money");
-        PipelineAggregationParameters pipelineAggregationParameters =
-                new PipelineAggregationParameters("sum_bucket_selector", "bucket_selector",
-                        bucketsPathMap, "params.final_sum > 0");
-
-        root.setPerSubAggregation(sub, pipelineAggregationParameters);
-        Map<String, Object> map = entranceRepository.dateGroupAndSum(null, root,
-                null, StandardBankTransactionFlow.class);
+        Map<String, Object> map = entranceRepository.dateGroupAndSum(null, "trade_time",
+                new DateSpecificFormat("1h", "HH"),
+                "trade_amount", StandardBankTransactionFlow.class, "123213qq");
     }
 
 

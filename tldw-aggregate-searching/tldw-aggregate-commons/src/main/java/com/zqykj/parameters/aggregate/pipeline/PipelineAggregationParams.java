@@ -22,7 +22,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PipelineAggregationParameters {
+public class PipelineAggregationParams {
 
     /**
      * 聚合名称
@@ -68,42 +68,42 @@ public class PipelineAggregationParameters {
         this.fieldSort.add(fieldSort);
     }
 
-    public PipelineAggregationParameters(String name, String type, List<FieldSort> fieldSort) {
+    public PipelineAggregationParams(String name, String type, List<FieldSort> fieldSort) {
         this.name = name;
         this.type = type;
         this.fieldSort = fieldSort;
     }
 
-    public PipelineAggregationParameters(String name, String type, List<FieldSort> fieldSort, Pagination pagination) {
+    public PipelineAggregationParams(String name, String type, List<FieldSort> fieldSort, Pagination pagination) {
         this.name = name;
         this.type = type;
         this.fieldSort = fieldSort;
         this.pagination = pagination;
     }
 
-    public PipelineAggregationParameters(Map<String, String> bucketsPathMap, String script) {
+    public PipelineAggregationParams(Map<String, String> bucketsPathMap, String script) {
         this.bucketsPathMap = bucketsPathMap;
         this.script = script;
     }
 
-    public PipelineAggregationParameters(String bucketsPath) {
+    public PipelineAggregationParams(String bucketsPath) {
         this.bucketsPath = bucketsPath;
     }
 
-    public PipelineAggregationParameters(String name, String type, Map<String, String> bucketsPathMap, String script) {
+    public PipelineAggregationParams(String name, String type, Map<String, String> bucketsPathMap, String script) {
         this.name = name;
         this.type = type;
         this.bucketsPathMap = bucketsPathMap;
         this.script = script;
     }
 
-    public PipelineAggregationParameters(String name, String type, String bucketsPath) {
+    public PipelineAggregationParams(String name, String type, String bucketsPath) {
         this.name = name;
         this.type = type;
         this.bucketsPath = bucketsPath;
     }
 
-    public PipelineAggregationParameters(String name, String type, String bucketsPath, String script) {
+    public PipelineAggregationParams(String name, String type, String bucketsPath, String script) {
         this.name = name;
         this.type = type;
         this.bucketsPath = bucketsPath;

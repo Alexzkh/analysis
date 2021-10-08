@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * <h1> 查询参数 </h1>
  */
@@ -16,27 +18,15 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class QueryParameters {
+public class QuerySpecialParams {
 
-    /**
-     * 查询类型
-     */
-    private String type;
+    // 单个查询(不能和组合查询同时使用)
+    private CommonQueryParams commonQuery;
 
-    /**
-     * 要查询的字段
-     */
-    private String field;
+    // 组合查询
+    private List<CombinationQueryParams> combiningQuery;
 
-    /**
-     * 字段的值
-     */
-    private Object value;
-
-    // 查询的一些通用参数设置
-    private QueryGeneralParameters generalParameters;
-
-    // 分页参数设置
+    // TODO 分页参数设置 可以放在最外面
     private Pagination pagination;
 
     /**

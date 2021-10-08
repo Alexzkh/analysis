@@ -26,6 +26,11 @@ public final class ReflectionUtils {
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
     private static final Map<Class<?>, Method[]> declaredMethodsCache = new ConcurrentReferenceHashMap<>(256);
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
+    /**
+     * Cache for {@link Class#getDeclaredFields()}, allowing for fast iteration.
+     */
+    private static final Map<Class<?>, Field[]> declaredFieldsCache = new ConcurrentReferenceHashMap<>(256);
+    private static final Field[] EMPTY_FIELD_ARRAY = new Field[0];
 
     /**
      * Finds a constructor on the given type that matches the given constructor arguments.
@@ -321,5 +326,20 @@ public final class ReflectionUtils {
         }
 
         return Optional.empty();
+    }
+
+    public static Field[] getDeclaredFields(Class<?> clazz) {
+        Assert.notNull(clazz, "Class must not be null");
+        Field[] result = declaredFieldsCache.get(clazz);
+        if (result == null) {
+            try {
+                result = clazz.getDeclaredFields();
+                declaredFieldsCache.put(clazz, (result.length == 0 ? EMPTY_FIELD_ARRAY : result));
+            } catch (Throwable ex) {
+                throw new IllegalStateException("Failed to introspect Class [" + clazz.getName() +
+                        "] from ClassLoader [" + clazz.getClassLoader() + "]", ex);
+            }
+        }
+        return result;
     }
 }

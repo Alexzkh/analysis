@@ -12,6 +12,6 @@ import lombok.*;
 @Setter
 @Getter
 @NoArgsConstructor
-public class AggregationGeneralParameters {
+public class CommonAggregationParams {
 
 }

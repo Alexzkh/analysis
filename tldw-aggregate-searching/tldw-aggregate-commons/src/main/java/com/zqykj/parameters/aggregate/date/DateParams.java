@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.parameters.aggregate;
+package com.zqykj.parameters.aggregate.date;
 
 import com.zqykj.parameters.annotation.DateIntervalParameter;
 import lombok.*;
@@ -14,7 +14,7 @@ import org.springframework.lang.Nullable;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DateParameters {
+public class DateParams {
 
     /**
      * 仅仅支持单个日历单位 eg. 1h(代表间隔一小时) , 这里不能超过1, eg. 2h(就会报错), 如果需要固定间隔,请使用fixedInterval(这里就可以输入2h等等)
@@ -30,6 +30,7 @@ public class DateParameters {
 
     /**
      * 固定日历间隔参数配置 (支持的单位: s(秒)、m(分钟)、h(小时)、d(天))
+     * 如果 使用了此参数, calendarInterval 这个参数就不能赋值, 2者不能同时存在
      */
     @DateIntervalParameter
     private String fixedInterval;
@@ -44,29 +45,29 @@ public class DateParameters {
      */
     private Object missing;
 
-    public DateParameters(String calendarInterval, String format) {
+    public DateParams(String calendarInterval, String format) {
         this.calendarInterval = calendarInterval;
         this.format = format;
     }
 
-    public DateParameters(String fixedInterval, String format, @Nullable String calendarInterval) {
+    public DateParams(String fixedInterval, String format, @Nullable String calendarInterval) {
         this.fixedInterval = fixedInterval;
         this.format = format;
     }
 
-    public DateParameters(String calendarInterval, String format, long minDocCount) {
+    public DateParams(String calendarInterval, String format, long minDocCount) {
         this.calendarInterval = calendarInterval;
         this.format = format;
         this.minDocCount = minDocCount;
     }
 
-    public DateParameters(String calendarInterval, String format, Object missing) {
+    public DateParams(String calendarInterval, String format, Object missing) {
         this.calendarInterval = calendarInterval;
         this.format = format;
         this.missing = missing;
     }
 
-    public DateParameters(String calendarInterval, String format, long minDocCount, Object missing) {
+    public DateParams(String calendarInterval, String format, long minDocCount, Object missing) {
         this.calendarInterval = calendarInterval;
         this.format = format;
         this.minDocCount = minDocCount;
