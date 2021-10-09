@@ -3,9 +3,10 @@
  */
 package com.zqykj.parameters.aggregate;
 
-import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParameters;
+import com.zqykj.parameters.aggregate.date.DateParams;
+import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.annotation.OptionalParameter;
-import com.zqykj.parameters.query.QueryParameters;
+import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.*;
 import org.springframework.util.CollectionUtils;
 
@@ -20,7 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
-public class AggregationParameters {
+public class AggregationParams {
 
     /**
      * 聚合名称
@@ -53,95 +54,95 @@ public class AggregationParameters {
     /**
      * 通用参数
      */
-    private AggregationGeneralParameters aggregationGeneralParameters;
+    private CommonAggregationParams commonAggregationParams;
 
     /**
      * 日期参数
      */
-    private DateParameters dateParameters;
+    private DateParams dateParams;
 
     /**
      * 子聚合
      */
-    private List<AggregationParameters> subAggregation;
+    private List<AggregationParams> subAggregation;
 
     /**
      * 管道聚合
      */
-    private List<PipelineAggregationParameters> pipelineAggregation;
+    private List<PipelineAggregationParams> pipelineAggregation;
 
     /**
      * 查询参数
      */
-    private QueryParameters queryParameters;
+    private QuerySpecialParams querySpecialParams;
 
-    public AggregationParameters(String name, String type, String field) {
+    public AggregationParams(String name, String type, String field) {
         this.name = name;
         this.type = type;
         this.field = field;
     }
 
-    public AggregationParameters(String name, String type, String field, int size) {
+    public AggregationParams(String name, String type, String field, int size) {
         this.name = name;
         this.type = type;
         this.field = field;
         this.size = size;
     }
 
-    public AggregationParameters(String name, String type, int size) {
+    public AggregationParams(String name, String type, int size) {
         this.name = name;
         this.type = type;
         this.size = size;
     }
 
-    public AggregationParameters(String name, String type, AggregationGeneralParameters generalParameters) {
+    public AggregationParams(String name, String type, CommonAggregationParams generalParameters) {
         this.name = name;
         this.type = type;
-        this.aggregationGeneralParameters = generalParameters;
+        this.commonAggregationParams = generalParameters;
     }
 
-    public AggregationParameters(String name, String type, String field,
-                                 AggregationGeneralParameters generalParameters) {
-        this.name = name;
-        this.type = type;
-        this.field = field;
-        this.aggregationGeneralParameters = generalParameters;
-    }
-
-    public AggregationParameters(String name, String type, DateParameters dateParameters) {
-        this.name = name;
-        this.type = type;
-        this.dateParameters = dateParameters;
-    }
-
-    public AggregationParameters(String name, String type, String field, DateParameters dateParameters) {
+    public AggregationParams(String name, String type, String field,
+                             CommonAggregationParams generalParameters) {
         this.name = name;
         this.type = type;
         this.field = field;
-        this.dateParameters = dateParameters;
+        this.commonAggregationParams = generalParameters;
     }
 
-    public AggregationParameters(String name, String type, AggregationGeneralParameters generalParameters, DateParameters dateParameters) {
+    public AggregationParams(String name, String type, DateParams dateParams) {
         this.name = name;
         this.type = type;
-        this.aggregationGeneralParameters = generalParameters;
-        this.dateParameters = dateParameters;
+        this.dateParams = dateParams;
     }
 
-    public AggregationParameters(String name, String type, String field, AggregationGeneralParameters generalParameters, DateParameters dateParameters) {
+    public AggregationParams(String name, String type, String field, DateParams dateParams) {
         this.name = name;
         this.type = type;
         this.field = field;
-        this.aggregationGeneralParameters = generalParameters;
-        this.dateParameters = dateParameters;
+        this.dateParams = dateParams;
     }
 
-    public AggregationParameters(String name, String type) {
+    public AggregationParams(String name, String type, CommonAggregationParams generalParameters, DateParams dateParams) {
+        this.name = name;
+        this.type = type;
+        this.commonAggregationParams = generalParameters;
+        this.dateParams = dateParams;
+    }
+
+    public AggregationParams(String name, String type, String field, CommonAggregationParams generalParameters, DateParams dateParams) {
+        this.name = name;
+        this.type = type;
+        this.field = field;
+        this.commonAggregationParams = generalParameters;
+        this.dateParams = dateParams;
+    }
+
+    public AggregationParams(String name, String type) {
         this.name = name;
         this.type = type;
     }
 
-    public void setPerSubAggregation(AggregationParameters aggregation) {
+    public void setPerSubAggregation(AggregationParams aggregation) {
         if (CollectionUtils.isEmpty(this.subAggregation)) {
             this.subAggregation = new ArrayList<>();
         }
@@ -149,7 +150,7 @@ public class AggregationParameters {
     }
 
 
-    public void setPerSubAggregation(AggregationParameters aggregation, PipelineAggregationParameters pipelineAggregationParameters) {
+    public void setPerSubAggregation(AggregationParams aggregation, PipelineAggregationParams pipelineAggregationParams) {
         if (CollectionUtils.isEmpty(this.subAggregation)) {
             this.subAggregation = new ArrayList<>();
         }
@@ -157,12 +158,12 @@ public class AggregationParameters {
 
         // 需要塞入这层子聚合的管道聚合
         int index = this.subAggregation.indexOf(aggregation);
-        AggregationParameters aggregationParameters = this.subAggregation.get(index);
-        aggregationParameters.setPerPipelineAggregation(pipelineAggregationParameters);
+        AggregationParams aggregationParams = this.subAggregation.get(index);
+        aggregationParams.setPerPipelineAggregation(pipelineAggregationParams);
     }
 
 
-    public void setPerPipelineAggregation(PipelineAggregationParameters aggregation) {
+    public void setPerPipelineAggregation(PipelineAggregationParams aggregation) {
         if (CollectionUtils.isEmpty(this.pipelineAggregation)) {
             this.pipelineAggregation = new ArrayList<>();
         }

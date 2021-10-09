@@ -9,10 +9,13 @@ import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
+import com.zqykj.core.aggregation.AggregateRequestFactory;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
+import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
+import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
+import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.domain.*;
-import com.zqykj.parameters.aggregate.AggregationParameters;
-import com.zqykj.parameters.query.QueryParameters;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
 import com.zqykj.util.ReflectionUtils;
@@ -848,14 +851,29 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
-    public <T> Map<String, Object> dateGroupAndSum(QueryParameters queryParameters, AggregationParameters parameters, String routing, Class<T> clazz) {
+    public <T> Map<String, Object> dateGroupAndSum(QuerySpecialParams params, String dateField, DateSpecificFormat specificFormat,
+                                                   String sumField, Class<T> clazz, String routing) {
 
-        // 根据聚合参数,生成对应聚合builder的实例
-        Object target = AggregationMappingBuilder.buildAggregationInstance(null, parameters);
+        // 构建查询实例
+        Object queryTarget = null;
+        if (null != params) {
+
+            queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(params);
+            if (null == queryTarget) {
+                log.error("could not build this query instance");
+                throw new ElasticsearchException("could not build this query,please check  build method  QueryMappingBuilder.buildDslQueryBuilderMapping() ");
+            }
+        }
+
+        // 构建聚合参数
+        AggregationParams root =
+                AggregateRequestFactory.createDateGroupAndSum(dateField, specificFormat, sumField);
+        // 构建聚合实例
+        Object target = AggregationMappingBuilder.buildAggregation(root);
 
         if (null == target) {
-            log.error("could not find this aggregation type = {} for name = {}", parameters.getType(), parameters.getName());
-            throw new ElasticsearchException("could not find this aggregation!");
+            log.error("could not build this aggregation instance");
+            throw new ElasticsearchException("could not build this aggregation,please check  build method  AggregationMappingBuilder.buildAggregationInstance() ");
         }
         // 构建搜索请求
         SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
@@ -863,9 +881,13 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             searchRequest.routing(routing);
         }
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        // 因为只需要聚合结果,不需要带出文档数据
-        sourceBuilder.size(0);
+        sourceBuilder.size(10);
+        // 聚合查询
         sourceBuilder.aggregation((AggregationBuilder) target);
+        // 普通查询
+        if (null != queryTarget) {
+            sourceBuilder.query((QueryBuilder) queryTarget);
+        }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         // TODO 需要将response 解析成map, 方便根据聚合名称取出想要的结果

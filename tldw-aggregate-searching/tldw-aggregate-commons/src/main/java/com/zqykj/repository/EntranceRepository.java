@@ -6,6 +6,7 @@ package com.zqykj.repository;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
+import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
 import com.zqykj.domain.Range;
 import com.zqykj.enums.AggsType;
@@ -14,10 +15,9 @@ import com.zqykj.enums.DateIntervalUnit;
 import java.util.List;
 import java.util.Map;
 
-import com.zqykj.parameters.aggregate.AggregationParameters;
-import com.zqykj.parameters.query.QueryParameters;
+import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
+import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.context.annotation.Primary;
-import org.springframework.lang.Nullable;
 
 /**
  * <h1> 提供给外部使用的公共入口Repository </h1>
@@ -190,13 +190,15 @@ public interface EntranceRepository extends CrudRepository {
     <T> Map dateHistogramAggs(DateHistogramBuilder dateHistogramBuilder, String routing, Class<T> clazz);
 
     /**
-     * <h2> 按日期间隔分组并根据某个字段进行求和 </h2>
+     * <h2> 按日期间隔分组并根据某个字段进行汇总求和 </h2>
      *
-     * @param queryParameters       {@link QueryParameters}  查询参数   (目的是可能需要先过滤数据,然后再做一些聚合相关的统计分析)
-     * @param aggregationParameters {@link AggregationParameters}  聚合查询参数
-     * @param routing               路由参数
-     * @param clazz                 实体类
+     * @param query          查询参数 (eg. 可以先筛选数据,在对数据进行聚合统计分析)
+     * @param dateField      日期聚合字段
+     * @param specificFormat 日期特有参数设置 eg. 按照固定时间分组、日期的格式化等
+     * @param sumField       求和字段
+     * @param clazz          实体类
+     * @param routing        路由
      */
-    <T> Map<String, Object> dateGroupAndSum(@Nullable QueryParameters queryParameters, AggregationParameters aggregationParameters,
-                                            @Nullable String routing, Class<T> clazz);
+    <T> Map<String, Object> dateGroupAndSum(QuerySpecialParams query, String dateField, DateSpecificFormat specificFormat,
+                                            String sumField, Class<T> clazz, String routing);
 }

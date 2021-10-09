@@ -3,7 +3,7 @@
  */
 package com.zqykj.parameters.aggregate.histogram;
 
-public class DateHistogramIntervalParam {
+public class DateHistogramIntervalParams {
 
     public static final String SECOND = "1s";
     public static final String MINUTE = "1m";
