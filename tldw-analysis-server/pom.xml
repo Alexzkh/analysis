@@ -5,14 +5,14 @@
     <parent>
         <artifactId>analysis-service</artifactId>
         <groupId>com.zqykj</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>2.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>analysis-server</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>tldw-analysis-server</name>
     <description>数据分析服务</description>
@@ -23,7 +23,7 @@
         <compiler.source>1.8</compiler.source>
         <compiler.target>1.8</compiler.target>
         <springboot.plugins.version>2.4.4-RELEASE</springboot.plugins.version>
-        <analysis.server>1.0-SNAPSHOT</analysis.server>
+        <project.version>2.0-SNAPSHOT</project.version>
         <jackson-databind.version>2.11.4</jackson-databind.version>
     </properties>
 
@@ -32,7 +32,7 @@
         <dependency>
             <groupId>com.zqykj</groupId>
             <artifactId>tldw-analysis-app</artifactId>
-            <version>${analysis.server}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
