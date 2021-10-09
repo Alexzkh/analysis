@@ -5,19 +5,20 @@
     <parent>
         <artifactId>analysis-service</artifactId>
         <groupId>com.zqykj</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
 
     <artifactId>tldw-analysis-commons</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>tldw-analysis-commons</name>
     <properties>
         <lombok.version>1.18.20</lombok.version>
         <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
+        <project.version>2.0-SNAPSHOT</project.version>
     </properties>
 
 
