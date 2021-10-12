@@ -5,8 +5,16 @@ package com.zqykj;
 
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
+import com.zqykj.app.service.interfaze.ITransactionStatistics;
+import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
+import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.enums.AmountOperationSymbol;
+import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
+import com.zqykj.common.vo.DateRangeRequest;
+import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Page;
@@ -66,6 +74,9 @@ public class OriginEsOperationTest {
 
     @Autowired
     private RestHighLevelClient restHighLevelClient;
+
+    @Autowired
+    private ITransactionStatistics iTransactionStatistics;
 
     @Autowired
     private ApplicationContext context;
@@ -305,21 +316,19 @@ public class OriginEsOperationTest {
     }
 
     @Test
-    public void testDateHistogram() {
+    public void testDateHistogramService() {
 
-
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(QueryType.must);
-
-        combinationQueryParams.addCombinationQueryParams(new CommonQueryParams(QueryType.term, "trade_opposite_name", "静智大师"));
-        combinationQueryParams.addCombinationQueryParams(new CommonQueryParams(QueryType.term, "account_card", "80138218880002452"));
-
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-
-        Map<String, Object> map = entranceRepository.dateGroupAndSum(querySpecialParams, "trade_time",
-                new DateSpecificFormat("1h", "HH"),
-                "trade_amount", StandardBankTransactionFlow.class, "732c350f-3a2b-46d0-b9cc-0bdcc52fca93");
+        // 732c350f-3a2b-46d0-b9cc-0bdcc52fca93
+        TradeStatisticalAnalysisPreRequest request = new TradeStatisticalAnalysisPreRequest();
+        request.setCardNums(Arrays.asList("60138216660037818", "60138216660042019", "60138216660023809"));
+        request.setDateRange(new DateRangeRequest("2019-04-05", "2020-03-13"));
+        request.setFund("0");
+        request.setOperator(AmountOperationSymbol.gte);
+        ServerResponse<TimeGroupTradeAmountSum> tradeAmountByTime =
+                iTransactionStatistics.getTradeAmountByTime("100376eb69614df4a7cd63ca6884827b", request, TimeTypeRequest.h);
+        if (tradeAmountByTime.isSuccess()) {
+            log.info(JacksonUtils.toJson(tradeAmountByTime.getData()));
+        }
     }
 
 

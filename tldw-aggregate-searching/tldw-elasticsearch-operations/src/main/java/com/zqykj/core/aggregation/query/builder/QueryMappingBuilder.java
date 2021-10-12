@@ -5,15 +5,14 @@ package com.zqykj.core.aggregation.query.builder;
 
 
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.parameters.query.CombinationQueryParams;
-import com.zqykj.parameters.query.CommonQueryParams;
-import com.zqykj.parameters.query.QuerySpecialParams;
+import com.zqykj.parameters.query.*;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.query.QueryNameForBeanClass;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
@@ -33,6 +32,9 @@ public class QueryMappingBuilder {
     private static Map<String, Class<?>> dslNameForClass = new ConcurrentReferenceHashMap<>(256);
 
     private static final Class<?> COMBINATION_QUERY_METHOD_TYPE = QueryBuilder.class;
+
+    private static final String FROM_METHOD_NAME = "from";
+    private static final String TO_METHOD_NAME = "to";
 
     static {
         dslNameForClass.putAll(new QueryNameForBeanClass().getAggregateNameForClass());
@@ -88,6 +90,7 @@ public class QueryMappingBuilder {
                 }
             } else {
 
+                //TODO
             }
         }
         return null;
@@ -119,7 +122,7 @@ public class QueryMappingBuilder {
             methodOptional.ifPresent(method -> {
 
                 // 处理组合查询中的每一个单独查询参数
-                dealWithCombination(method, target, params.getCombinationQuery());
+                dealWithCombination(method, target, params.getCommonQueryParams());
             });
         }
 
@@ -174,9 +177,77 @@ public class QueryMappingBuilder {
     }
 
     private static Object buildSpecialAggregationConstructor(Class<?> queryClass, CommonQueryParams common) {
-        //TODO  一些特殊的查询类
-        return null;
+
+        Object target = null;
+        // 1. 范围查询 Range -> 针对一些日期、数值的范围匹配
+        if (RangeQueryBuilder.class.isAssignableFrom(queryClass)) {
+
+            // 范围查询(对于日期、数值类的范围)
+            if (null != common.getDateRange()) {
+                DateRange dateRange = common.getDateRange();
+
+                target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
+
+                applyDateRange(queryClass, dateRange, target);
+            } else if (null != common.getQueryOperator()) {
+
+                // 数值类的范围查询
+                QueryOperator queryOperator = common.getQueryOperator();
+                target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
+                applyNumericalValueRange(queryClass, queryOperator, target, common.getValue());
+            }
+        }
+
+        return target;
     }
+
+
+    /**
+     * <h2> 数值范围处理 </h2>
+     */
+    private static void applyNumericalValueRange(Class<?> queryClass, QueryOperator operator, Object target, Object value) {
+
+        String methodName = getRangeMethodNameConvertFromOperator(operator);
+
+        if (QueryOperator.eq.name().equals(methodName)) {
+
+            Optional<Method> methodFromOptional = ReflectionUtils.findMethod(queryClass, FROM_METHOD_NAME, Object.class);
+            methodFromOptional.ifPresent(fromMethod -> org.springframework.util.ReflectionUtils.invokeMethod(fromMethod, target, value));
+            Optional<Method> methodToOptional = ReflectionUtils.findMethod(queryClass, TO_METHOD_NAME, Object.class);
+            methodToOptional.ifPresent(toMethod -> org.springframework.util.ReflectionUtils.invokeMethod(toMethod, target, value));
+        } else {
+
+            Optional<Method> methodOptional = ReflectionUtils.findMethod(queryClass, methodName, Object.class);
+            methodOptional.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, value));
+        }
+    }
+
+
+    /**
+     * <h2> 日期范围处理 </h2>
+     */
+    private static void applyDateRange(Class<?> queryClass, DateRange dateRange, Object target) {
+
+        org.springframework.util.ReflectionUtils.doWithFields(dateRange.getClass(), field -> {
+
+            Optional<Method> methodOptional = ReflectionUtils.findMethod(queryClass, field.getName(), field.getType());
+
+            methodOptional.ifPresent(method -> {
+                org.springframework.util.ReflectionUtils.makeAccessible(field);
+                Object value = org.springframework.util.ReflectionUtils.getField(field, dateRange);
+                org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
+            });
+        });
+    }
+
+    /**
+     * <h2> 根据操作符 获取对应方法名称  eg. 大于 -> gt, 大于等于 -> gte, 小于 -> lt,小于等于 -> lte </h2>
+     */
+    private static String getRangeMethodNameConvertFromOperator(QueryOperator operator) {
+
+        return operator.name();
+    }
+
 
     private static Class<?> getQueryTypeClass(String type) {
 

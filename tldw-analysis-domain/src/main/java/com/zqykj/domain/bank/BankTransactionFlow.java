@@ -1,7 +1,6 @@
 package com.zqykj.domain.bank;
 
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.zqykj.annotations.*;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;

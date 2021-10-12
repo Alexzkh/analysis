@@ -3,6 +3,7 @@
  */
 package com.zqykj.parameters.query;
 
+import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,25 +26,25 @@ public class CombinationQueryParams {
     /**
      * 查询类型 eg. must -> and , should -> or, must_not -> != , filter -> where
      */
-    private QueryType type;
+    private ConditionType type;
 
     /**
      * 组合查询参数
      */
-    private List<CommonQueryParams> combinationQuery;
+    private List<CommonQueryParams> commonQueryParams;
 
-    public void addCombinationQueryParams(CommonQueryParams commonQueryParams) {
+    public void addCommonQueryParams(CommonQueryParams commonQueryParams) {
 
-        if (CollectionUtils.isEmpty(this.combinationQuery)) {
-            this.combinationQuery = new ArrayList<>();
+        if (CollectionUtils.isEmpty(this.commonQueryParams)) {
+            this.commonQueryParams = new ArrayList<>();
         }
-        this.combinationQuery.add(commonQueryParams);
+        this.commonQueryParams.add(commonQueryParams);
     }
 
 
-    public String convert(QueryType type) {
+    public String convert(ConditionType type) {
 
-        if (QueryType.must_not == type) {
+        if (ConditionType.must_not == type) {
             return "mustNot";
         }
         return type.toString();

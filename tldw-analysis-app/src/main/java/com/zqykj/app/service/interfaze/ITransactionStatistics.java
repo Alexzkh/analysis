@@ -1,7 +1,12 @@
 package com.zqykj.app.service.interfaze;
 
+import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
+import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.common.response.TransactionStatisticsResponse;
+import com.zqykj.common.vo.TimeTypeRequest;
+import com.zqykj.infrastructure.core.ServerResponse;
+import com.zqykj.parameters.query.QuerySpecialParams;
 
 /**
  * @Description: 交易统计
@@ -18,4 +23,11 @@ public interface ITransactionStatistics {
      * @return: com.zqykj.common.response。TransactionStatisticsResponse
      **/
     TransactionStatisticsResponse calculateStatisticalResults(TransactionStatisticsRequest transactionStatisticsRequest);
+
+    ServerResponse<TimeGroupTradeAmountSum> getTradeAmountByTime(String caseId, TradeStatisticalAnalysisPreRequest request, TimeTypeRequest timeType);
+
+    /**
+     * <h2> 交易统计分析前置查询 </h2>
+     */
+    QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, TradeStatisticalAnalysisPreRequest request);
 }
