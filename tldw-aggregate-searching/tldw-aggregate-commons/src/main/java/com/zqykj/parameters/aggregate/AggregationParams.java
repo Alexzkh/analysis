@@ -5,7 +5,7 @@ package com.zqykj.parameters.aggregate;
 
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
-import com.zqykj.parameters.annotation.OptionalParameter;
+import com.zqykj.parameters.annotation.OptionalParam;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.*;
 import org.springframework.util.CollectionUtils;
@@ -31,7 +31,7 @@ public class AggregationParams {
     /**
      * 脚本表达式
      */
-    @OptionalParameter
+    @OptionalParam
     private String script;
 
     /**
@@ -42,13 +42,13 @@ public class AggregationParams {
     /**
      * 聚合需要的字段 (如果此聚合需要对某个字段进行操作的话)
      */
-    @OptionalParameter
+    @OptionalParam
     private String field;
 
     /**
      * 聚合桶数量返回 限制 (若此聚合产生的结果是多个,可以使用此参数做相应限制)
      */
-    @OptionalParameter
+    @OptionalParam
     private int size = 1;
 
     /**

@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation;
+package com.zqykj.core.aggregation.query;
 
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.date.DateParams;
@@ -53,6 +53,21 @@ public class AggregateRequestFactory {
                         bucketsPathMap, "params.final_sum > 0");
         root.setPerSubAggregation(sub, pipelineAggregationParams);
         return root;
+    }
+
+
+    public static DateSpecificFormat convertFromTimeType(String timeType) {
+
+        switch (timeType) {
+            case "d":
+                return new DateSpecificFormat("1d", "yyyy-MM-dd");
+            case "M":
+                return new DateSpecificFormat("1M", "yyyy-MM");
+            case "y":
+                return new DateSpecificFormat("1y", "yyyy");
+            default:
+                return new DateSpecificFormat("1h", "HH");
+        }
     }
 
 }

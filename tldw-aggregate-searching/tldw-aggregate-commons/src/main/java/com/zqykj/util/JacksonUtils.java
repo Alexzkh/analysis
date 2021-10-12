@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -53,6 +54,25 @@ public final class JacksonUtils {
             }
         }
         return json;
+    }
+
+    /**
+     * json 字符串 => json对象
+     *
+     * @param str json 字符串
+     */
+    public static JsonNode toJsonNode(String str) {
+
+        JsonNode jsonNode = null;
+        if (StringUtils.isNotBlank(str)) {
+            try {
+                jsonNode = objectMapper.readTree(str);
+            } catch (JsonProcessingException e) {
+                log.warn(e.getMessage(), e);
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
+        return jsonNode;
     }
 
     /**
