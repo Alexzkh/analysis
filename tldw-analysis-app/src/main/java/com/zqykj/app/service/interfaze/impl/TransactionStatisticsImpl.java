@@ -9,7 +9,8 @@ import com.zqykj.common.constant.Constants;
 import com.zqykj.common.enums.HistogramStatistic;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.common.response.HistogramStatisticResponse;
 import com.zqykj.common.response.ParsedStats;
@@ -53,52 +54,47 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         return null;
     }
 
+
     @Override
-    public HistogramStatisticResponse accessHistogramStatistics(TransactionStatisticsRequest transactionStatisticsRequest) {
+    public HistogramStatisticResponse getHistogramStatistics(String caseId, TradeStatisticalAnalysisPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs) {
         List<HistogramStatistic> responseList = new ArrayList<>();
         HistogramStatisticResponse histogramStatisticResponse = new HistogramStatisticResponse();
-        try {
 
+        // 构建查询参数
+        QuerySpecialParams query = this.preQueryTransactionStatisticsAnalysis(caseId, request);
+        /**
+         * 根据查询条件计算出当前数据中最大值.
+         * */
+        Map<String, ParsedStats> map = entranceRepository.statsAggs(query, Constants.Individual.FOURTH_AGGREGATE_NAME,
+                caseId, BankTransactionFlow.class);
+        ParsedStats parsedStats = map.get(Constants.BucketName.STATS);
+        Double max = parsedStats.getMax();
 
-            /**
-             * 构建交易统计查询条件.
-             * */
-            List<QueryParams> queryParams = QueryBuilderExecutor.buildTransactionStatisticsQuery(transactionStatisticsRequest);
+        /**
+         * 然后根据最大值和传入的区间个数来获取range范围,从而作为直方图聚合参数range的入参.
+         * */
+        List<Range> ranges = NumericalConversion.intervalConversion(max, transactionStatisticsAggs.getHistorgramNumbers());
 
-            /**
-             * 根据查询条件计算出当前数据中最大值.
-             * */
-            Map<String, ParsedStats> map = entranceRepository.statsAggs(queryParams, Constants.Individual.FOURTH_AGGREGATE_NAME,
-                    transactionStatisticsRequest.getCaseId(), BankTransactionFlow.class);
-            ParsedStats parsedStats = map.get(Constants.BucketName.STATS);
-            Double max = parsedStats.getMax();
+        /**
+         * 根据range参数和构建好的queryParams做聚合统计算出日志直方图结果.
+         * */
+        Map queryResultMap = entranceRepository.rangeAggs(query, Constants.Individual.FOURTH_AGGREGATE_NAME
+                , caseId,
+                ranges, BankTransactionFlow.class);
+        /**
+         * 转换结果封装业务层数据给前台.
+         * */
+        queryResultMap.forEach((key, value) -> {
+            HistogramStatistic histogramStatistic = HistogramStatistic.builder()
+                    .abscissa((String) key)
+                    .ordinate((Long) value)
+                    .build();
+            responseList.add(histogramStatistic);
+        });
+        histogramStatisticResponse.setHistogramStatisticList(responseList);
 
-            /**
-             * 然后根据最大值和传入的区间个数来获取range范围,从而作为直方图聚合参数range的入参.
-             * */
-            List<Range> ranges = NumericalConversion.intervalConversion(max, transactionStatisticsRequest.getTransactionStatisticsAggs().getHistorgramNumbers());
-
-            /**
-             * 根据range参数和构建好的queryParams做聚合统计算出日志直方图结果.
-             * */
-            Map queryResultMap = entranceRepository.rangeAggs(queryParams, Constants.Individual.FOURTH_AGGREGATE_NAME
-                    , transactionStatisticsRequest.getCaseId(),
-                    ranges, BankTransactionFlow.class);
-            /**
-             * 转换结果封装业务层数据给前台.
-             * */
-            queryResultMap.forEach((key, value) -> {
-                HistogramStatistic histogramStatistic = HistogramStatistic.builder()
-                        .abscissa((String) key)
-                        .ordinate((Long) value)
-                        .build();
-                responseList.add(histogramStatistic);
-            });
-            histogramStatisticResponse.setHistogramStatisticList(responseList);
-        } catch (Exception e) {
-            log.error("获取柱状图统计结果失败：{}", e);
-        }
         return histogramStatisticResponse;
+
     }
 
     @Override

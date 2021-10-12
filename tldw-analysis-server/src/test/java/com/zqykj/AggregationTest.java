@@ -387,7 +387,7 @@ public class AggregationTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start("rangeAggs5");
-        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
+//        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
         stopWatch.stop();
 
 //        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
@@ -450,7 +450,7 @@ public class AggregationTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start("rangeAggs10");
-        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
+//        Map map1 = entranceRepository.rangeAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",list,BankTransactionFlow.class);
         stopWatch.stop();
 
 //        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
@@ -529,7 +529,7 @@ public class AggregationTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start("rangeAggs5");
-        Map map1 = entranceRepository.statsAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",BankTransactionFlow.class);
+//        Map map1 = entranceRepository.statsAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",BankTransactionFlow.class);
         stopWatch.stop();
 
 

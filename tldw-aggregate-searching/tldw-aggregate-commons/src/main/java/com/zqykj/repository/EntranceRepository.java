@@ -157,21 +157,7 @@ public interface EntranceRepository extends CrudRepository {
      **/
     <T> Map histogramAggs(String field, String routing, Double intervel, Double min, Double max, Class<T> clazz);
 
-    /**
-     * A multi-bucket value source based aggregation that enables the user to define a set of ranges
-     * - each representing a bucket. During the aggregation process,
-     * the values extracted from each document will be checked against
-     * each bucket range and "bucket" the relevant/matching document.
-     * Note that this aggregation includes the from value and excludes the to value for each range.
-     *
-     * @param queryParams: the query parameter.
-     * @param field:       the field of aggrating ,the same as domain field name .
-     * @param routing:     the shard of routing.
-     * @param ranges:      range aggregation parameter.
-     * @param clazz:       the domain type .
-     * @return: java.util.Map
-     **/
-    <T> Map rangeAggs(List<QueryParams> queryParams, String field, String routing, List<Range> ranges, Class<T> clazz);
+
 
     /**
      * A multi-bucket value source based aggregation that enables the user to define a set of ranges
@@ -180,13 +166,31 @@ public interface EntranceRepository extends CrudRepository {
      * each bucket range and "bucket" the relevant/matching document.
      * Note that this aggregation includes the from value and excludes the to value for each range.
      *
-     * @param queryParams: the query parameter.
+     * @param query: the query parameter.
+     * @param field:       the field of aggrating ,the same as domain field name .
+     * @param routing:     the shard of routing.
+     * @param ranges:      range aggregation parameter.
+     * @param clazz:       the domain type .
+     * @return: java.util.Map
+     **/
+    <T> Map rangeAggs(QuerySpecialParams query, String field, String routing, List<Range> ranges, Class<T> clazz);
+
+
+
+    /**
+     * A multi-bucket value source based aggregation that enables the user to define a set of ranges
+     * - each representing a bucket. During the aggregation process,
+     * the values extracted from each document will be checked against
+     * each bucket range and "bucket" the relevant/matching document.
+     * Note that this aggregation includes the from value and excludes the to value for each range.
+     *
+     * @param query: the query parameter.
      * @param field:       the field of aggrating ,the same as domain field name .
      * @param routing:     the shard of routing.
      * @param clazz:       the domain type .
      * @return: java.util.Map
      **/
-    <T> Map statsAggs(List<QueryParams> queryParams, String field, String routing, Class<T> clazz);
+    <T> Map statsAggs(QuerySpecialParams query, String field, String routing, Class<T> clazz);
 
     /**
      * This multi-bucket aggregation is similar to the normal histogram,

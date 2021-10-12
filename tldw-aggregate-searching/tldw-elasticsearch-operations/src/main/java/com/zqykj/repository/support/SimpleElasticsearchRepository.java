@@ -746,7 +746,19 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
-    public <T> Map rangeAggs(List<QueryParams> queryParams, String field, String routing, List<Range> ranges, Class<T> clazz) {
+    public <T> Map rangeAggs(QuerySpecialParams query, String field, String routing, List<Range> ranges, Class<T> clazz) {
+
+        // 构建查询实例
+        Object queryTarget = null;
+        if (null != query) {
+
+            queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
+            if (null == queryTarget) {
+                log.error("could not build this query instance");
+                throw new ElasticsearchException("could not build this query,please check  build method  QueryMappingBuilder.buildDslQueryBuilderMapping() ");
+            }
+        }
+
         ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
         String indexName = entity.getIndexName();
         String bucketAliasName = entity.getRequiredPersistentProperty(field).getFieldName();
@@ -766,7 +778,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (StringUtils.isNotEmpty(routing)) {
             searchRequest.routing(routing);
         }
-        QueryAndAggregationBuilder.queryAndAggregationBuilder(queryParams, searchSourceBuilder, entity);
+        if (null != queryTarget) {
+            searchSourceBuilder.query((QueryBuilder) queryTarget);
+        }
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         ParsedRange agg = searchResponse.getAggregations().get(bucket);
@@ -778,7 +792,19 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
-    public <T> Map statsAggs(List<QueryParams> queryParams, String field, String routing, Class<T> clazz) {
+    public <T> Map statsAggs(QuerySpecialParams query, String field, String routing, Class<T> clazz) {
+
+        // 构建查询实例
+        Object queryTarget = null;
+        if (null != query) {
+
+            queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
+            if (null == queryTarget) {
+                log.error("could not build this query instance");
+                throw new ElasticsearchException("could not build this query,please check  build method  QueryMappingBuilder.buildDslQueryBuilderMapping() ");
+            }
+        }
+
         ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
         String indexName = entity.getIndexName();
 
@@ -790,10 +816,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         searchSourceBuilder.size(0);
         searchSourceBuilder.aggregation(aggregation);
         SearchRequest searchRequest = new SearchRequest(indexName);
-        if (StringUtils.isNotEmpty(routing)) {
-            searchRequest.routing(routing);
+        if (null != queryTarget) {
+            searchSourceBuilder.query((QueryBuilder) queryTarget);
         }
-        QueryAndAggregationBuilder.queryAndAggregationBuilder(queryParams, searchSourceBuilder, entity);
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         org.elasticsearch.search.aggregations.metrics.ParsedStats agg = searchResponse.getAggregations().get(bucket);

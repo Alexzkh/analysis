@@ -7,7 +7,7 @@ package com.zqykj;
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.TimeTypeRequest;

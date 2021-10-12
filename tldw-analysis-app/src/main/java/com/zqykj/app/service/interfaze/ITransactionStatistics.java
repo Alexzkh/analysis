@@ -1,7 +1,8 @@
 package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.common.response.HistogramStatisticResponse;
 import com.zqykj.common.response.TransactionStatisticsResponse;
@@ -26,8 +27,7 @@ public interface ITransactionStatistics {
      **/
     TransactionStatisticsResponse calculateStatisticalResults(TransactionStatisticsRequest transactionStatisticsRequest);
 
-
-    HistogramStatisticResponse accessHistogramStatistics(TransactionStatisticsRequest transactionStatisticsRequest);
+    HistogramStatisticResponse getHistogramStatistics(String caseId , TradeStatisticalAnalysisPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs);
 
     ServerResponse<TimeGroupTradeAmountSum> getTradeAmountByTime(String caseId, TradeStatisticalAnalysisPreRequest request, TimeTypeRequest timeType);
 
