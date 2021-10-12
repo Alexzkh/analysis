@@ -27,4 +27,8 @@ public interface IBankTransaction {
     <T> ServerResponse<List<CardStatisticsResponse>> accessCardIndividualStatistics(IndividualRequest individualRequest);
 
 
+
+//    <T> ServerResponse<List<HistogramStatisticResponse>> accessHistogramStatistics();
+
+
 }

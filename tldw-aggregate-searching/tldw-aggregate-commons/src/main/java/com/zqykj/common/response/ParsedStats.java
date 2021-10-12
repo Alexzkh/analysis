@@ -1,8 +1,10 @@
 package com.zqykj.common.response;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -12,6 +14,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ParsedStats {
 
 
@@ -39,4 +43,15 @@ public class ParsedStats {
      * average value
      */
     private double avg;
+
+    public static ParsedStats build(org.elasticsearch.search.aggregations.metrics.ParsedStats parsedStats) {
+        return ParsedStats.builder()
+                .avg(parsedStats.getAvg())
+                .sum(parsedStats.getSum())
+                .min(parsedStats.getMin())
+                .count(parsedStats.getCount())
+                .max(parsedStats.getMax())
+                .build();
+
+    }
 }

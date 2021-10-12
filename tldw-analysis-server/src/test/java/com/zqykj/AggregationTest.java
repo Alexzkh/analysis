@@ -3,7 +3,7 @@ package com.zqykj;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zqykj.common.Constants;
+import com.zqykj.common.constant.Constants;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.*;
 import com.zqykj.common.response.AggregationResult;
@@ -479,6 +479,64 @@ public class AggregationTest {
 
         Map map1 = entranceRepository.dateHistogramAggs(dateHistogramBuilder, "", BankTransactionFlow.class);
         System.out.println("***");
+    }
+
+
+    @Test
+    public void statsAggs() {
+
+        List<String> list = new ArrayList<>();
+
+        list.add("60138216660012614");
+        list.add("60138216660042014");
+
+
+        QueryParams termQuery = new QueryParams();
+        termQuery.setField("customerIdentityCard");
+        termQuery.setQueryType(QueryType.term);
+        termQuery.setValue("371601198702200014");
+
+        QueryParams termQuery1 = new QueryParams();
+        termQuery1.setField("caseId");
+        termQuery1.setQueryType(QueryType.term);
+        termQuery1.setValue("100376eb69614df4a7cd63ca6884827b");
+
+        QueryParams rangeQuery = new QueryParams();
+        rangeQuery.setQueryType(QueryType.range);
+        rangeQuery.setField("transactionMoney");
+
+
+        QueryParams termsQuery = new QueryParams();
+        termsQuery.setQueryType(QueryType.terms);
+        termsQuery.setField("queryCard");
+        termsQuery.setTermsValues(list);
+
+        OperatorParam operatorParam = new OperatorParam();
+        operatorParam.setOperator(Operator.from);
+        operatorParam.setInclude(true);
+        operatorParam.setOperatorValue(0.0);
+
+        List<OperatorParam> operatorParams = new ArrayList<>();
+        operatorParams.add(operatorParam);
+        rangeQuery.setOperatorParams(operatorParams);
+
+        List<QueryParams> queryParams = new ArrayList<>();
+        queryParams.add(termQuery);
+        queryParams.add(termQuery1);
+        queryParams.add(rangeQuery);
+        queryParams.add(termsQuery);
+
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("rangeAggs5");
+        Map map1 = entranceRepository.statsAggs(queryParams,"transactionMoney","100376eb69614df4a7cd63ca6884827b",BankTransactionFlow.class);
+        stopWatch.stop();
+
+
+
+//        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()+"s") ;
+        System.out.println(stopWatch.prettyPrint());
     }
 
 }

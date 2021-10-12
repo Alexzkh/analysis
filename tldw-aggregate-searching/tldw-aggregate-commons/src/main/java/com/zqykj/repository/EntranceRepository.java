@@ -6,7 +6,6 @@ package com.zqykj.repository;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
-import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
 import com.zqykj.domain.Range;
 import com.zqykj.enums.AggsType;
@@ -165,7 +164,7 @@ public interface EntranceRepository extends CrudRepository {
      * each bucket range and "bucket" the relevant/matching document.
      * Note that this aggregation includes the from value and excludes the to value for each range.
      *
-     * @param queryParams: the quey parameter.
+     * @param queryParams: the query parameter.
      * @param field:       the field of aggrating ,the same as domain field name .
      * @param routing:     the shard of routing.
      * @param ranges:      range aggregation parameter.
@@ -173,6 +172,21 @@ public interface EntranceRepository extends CrudRepository {
      * @return: java.util.Map
      **/
     <T> Map rangeAggs(List<QueryParams> queryParams, String field, String routing, List<Range> ranges, Class<T> clazz);
+
+    /**
+     * A multi-bucket value source based aggregation that enables the user to define a set of ranges
+     * - each representing a bucket. During the aggregation process,
+     * the values extracted from each document will be checked against
+     * each bucket range and "bucket" the relevant/matching document.
+     * Note that this aggregation includes the from value and excludes the to value for each range.
+     *
+     * @param queryParams: the query parameter.
+     * @param field:       the field of aggrating ,the same as domain field name .
+     * @param routing:     the shard of routing.
+     * @param clazz:       the domain type .
+     * @return: java.util.Map
+     **/
+    <T> Map statsAggs(List<QueryParams> queryParams, String field, String routing, Class<T> clazz);
 
     /**
      * This multi-bucket aggregation is similar to the normal histogram,
@@ -190,7 +204,7 @@ public interface EntranceRepository extends CrudRepository {
     <T> Map dateHistogramAggs(DateHistogramBuilder dateHistogramBuilder, String routing, Class<T> clazz);
 
     /**
-     * <h2> 按日期间隔分组并根据某个字段进行汇总求和 </h2>
+     * <h2> 按日期间隔分组并根据某个字段进行汇总求和 </h2> d
      *
      * @param query          查询参数 (eg. 可以先筛选数据,在对数据进行聚合统计分析)
      * @param dateField      日期聚合字段

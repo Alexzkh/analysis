@@ -16,11 +16,6 @@ public enum QueryType {
     term,
 
     /**
-     * terms query(对于一个field , 可以指定多组value值)
-     **/
-    terms,
-
-    /**
      * range
      */
     range,
@@ -28,7 +23,32 @@ public enum QueryType {
     /**
      * bool query(组合查询)
      */
-    bool;
+    bool,
+
+    /**
+     * 类似于 and
+     */
+    must,
+
+    /**
+     * 类似于 !=
+     */
+    must_not,
+
+    /**
+     * 类似于 or 查询条件
+     */
+    should,
+
+    /**
+     * 过滤
+     */
+    filter,
+
+    /**
+     * 多值查询
+     */
+    terms;
 
     public static QueryType of(String type) {
 

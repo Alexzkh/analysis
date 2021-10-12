@@ -25,7 +25,12 @@ public class TransactionStatisticsQuery implements Serializable {
     /**
      * 选择的调单个体(身份证件号或卡号)
      */
-    private List<String> condition;
+    private String identityCard;
+
+    /**
+     * 选中的个体卡号
+     */
+    private List<String> individualCard;
 
     /**
      * 交易统计日期范围

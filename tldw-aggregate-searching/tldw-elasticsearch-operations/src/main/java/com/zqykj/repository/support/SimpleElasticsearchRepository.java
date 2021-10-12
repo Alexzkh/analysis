@@ -13,6 +13,7 @@ import com.zqykj.core.aggregation.query.AggregateRequestFactory;
 import com.zqykj.core.aggregation.parse.AggregationParser;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
+import com.zqykj.core.query.QueryAndAggregationBuilder;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.query.QuerySpecialParams;
@@ -765,41 +766,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (StringUtils.isNotEmpty(routing)) {
             searchRequest.routing(routing);
         }
-        if (!CollectionUtils.isEmpty(queryParams)) {
-            BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-            queryParams.stream().forEach(queryParam -> {
-                String queryField = entity.getRequiredPersistentProperty(queryParam.getField()).getFieldName();
-                if (queryParam.getQueryType().equals(QueryType.term)) {
-                    TermsQueryBuilder termsQueryBuilder = QueryBuilders.termsQuery(queryField, queryParam.getValue());
-                    boolQueryBuilder.must(termsQueryBuilder);
-                }
-
-                if (queryParam.getQueryType().equals(QueryType.range)) {
-                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(queryField);
-
-                    queryParam.getOperatorParams().stream().forEach(operatorParam -> {
-
-                        Optional<Method> method = null;
-                        try {
-                            method = ReflectionUtils.findMethod(Class.forName("org.elasticsearch.index.query.RangeQueryBuilder"),
-                                    operatorParam.getOperator().toString(), Object.class, boolean.class);
-                            Method method1 = method.get();
-                            method1.invoke(rangeQueryBuilder, operatorParam.getOperatorValue(), operatorParam.isInclude());
-                            boolQueryBuilder.must(rangeQueryBuilder);
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (InvocationTargetException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                }
-
-
-            });
-            searchSourceBuilder.query(boolQueryBuilder);
-        }
+        QueryAndAggregationBuilder.queryAndAggregationBuilder(queryParams, searchSourceBuilder, entity);
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         ParsedRange agg = searchResponse.getAggregations().get(bucket);
@@ -808,6 +775,31 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             map.put(entry.getKey(), entry.getDocCount());
         }
         return map;
+    }
+
+    @Override
+    public <T> Map statsAggs(List<QueryParams> queryParams, String field, String routing, Class<T> clazz) {
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
+        String indexName = entity.getIndexName();
+
+        String bucketAliasName = entity.getRequiredPersistentProperty(field).getFieldName();
+        // the name of aggregation
+        String bucket = "stats" + bucketAliasName;
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        AggregationBuilder aggregation = AggregationBuilders.stats(bucket).field(bucketAliasName);
+        searchSourceBuilder.size(0);
+        searchSourceBuilder.aggregation(aggregation);
+        SearchRequest searchRequest = new SearchRequest(indexName);
+        if (StringUtils.isNotEmpty(routing)) {
+            searchRequest.routing(routing);
+        }
+        QueryAndAggregationBuilder.queryAndAggregationBuilder(queryParams, searchSourceBuilder, entity);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        org.elasticsearch.search.aggregations.metrics.ParsedStats agg = searchResponse.getAggregations().get(bucket);
+        Map<String, ParsedStats> result = new HashMap<>();
+        result.put("stats", ParsedStats.build(agg));
+        return result;
     }
 
     @Override
@@ -833,7 +825,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             }
 
         });
-
 
         searchSourceBuilder.size(0);
         searchSourceBuilder.aggregation(dateHistogramAggregationBuilder);

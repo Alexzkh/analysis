@@ -1,4 +1,4 @@
-package com.zqykj.common;
+package com.zqykj.common.constant;
 
 
 /**
@@ -49,7 +49,28 @@ public class Constants {
          */
         String TERMS_CUSTOM_IDENTITY_CARD = "terms_customer_identity_card";
 
+        /**
+         * 案件编号
+         */
+        String CASE_ID = "caseId";
+
     }
 
+
+    /**
+     * 聚合统计返回结果桶名称
+     */
+    public interface BucketName {
+
+        /**
+         * 统计计算
+         */
+        String STATS = "stats";
+
+        /**
+         * 聚合卡号
+         * */
+        String TERMS_ACCOUNT_CARD = "terms_account_card";
+    }
 
 }

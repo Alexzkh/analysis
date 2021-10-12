@@ -1,6 +1,6 @@
 package com.zqykj.app.service.system;
 
-import com.zqykj.common.Constants;
+import com.zqykj.common.constant.Constants;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.IndividualRequest;
