@@ -27,9 +27,6 @@ public interface ITransactionStatistics {
      **/
     TransactionStatisticsResponse calculateStatisticalResults(TransactionStatisticsRequest transactionStatisticsRequest);
 
-
-    HistogramStatisticResponse accessHistogramStatistics(TransactionStatisticsRequest transactionStatisticsRequest);
-
     HistogramStatisticResponse getHistogramStatistics(String caseId , TradeStatisticalAnalysisPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs);
 
     ServerResponse<TimeGroupTradeAmountSum> getTradeAmountByTime(String caseId, TradeStatisticalAnalysisPreRequest request, TimeTypeRequest timeType);
