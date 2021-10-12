@@ -3,12 +3,10 @@ package com.zqykj.app.service.interfaze.impl;
 import com.zqykj.app.service.factory.TradeStatisticsAnalysisQueryRequestFactory;
 import com.zqykj.app.service.field.TacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
-import com.zqykj.app.service.system.QueryBuilderExecutor;
 import com.zqykj.app.service.transform.NumericalConversion;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.enums.HistogramStatistic;
-import com.zqykj.common.request.QueryParams;
-import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
+import com.zqykj.common.response.TimeGroupTradeAmountSum;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
@@ -22,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.core.aggregation.query.AggregateRequestFactory;
-import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,9 +46,31 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     private final EntranceRepository entranceRepository;
 
     @Override
-    public TransactionStatisticsResponse calculateStatisticalResults(TransactionStatisticsRequest transactionStatisticsRequest) {
+    public TransactionStatisticsResponse calculateStatisticalResults(String caseId, TransactionStatisticsRequest transactionStatisticsRequest) {
+        TradeStatisticalAnalysisPreRequest tradeStatisticalAnalysisPreRequest = transactionStatisticsRequest.getTradeStatisticalAnalysisPreRequest();
+        TransactionStatisticsAggs transactionStatisticsAggs = transactionStatisticsRequest.getTransactionStatisticsAggs();
+        TimeTypeRequest timeTypeRequest = transactionStatisticsAggs.getDateType();
 
-        return null;
+        /**
+         * 获取交易金额聚合统计直方图结果.
+         * */
+        HistogramStatisticResponse histogramStatisticResponse = this.getHistogramStatistics(caseId, tradeStatisticalAnalysisPreRequest, transactionStatisticsAggs);
+
+        /**
+         * 获取日期折现图聚合统计结果.
+         * */
+        TimeGroupTradeAmountSum timeGroupTradeAmountSum = this.getTradeAmountByTime(caseId, tradeStatisticalAnalysisPreRequest, timeTypeRequest);
+
+
+        // todo 获取卡聚合统计列表
+
+        /**
+         * 交易统计返回结果封装.
+         * */
+        TransactionStatisticsResponse transactionStatisticsResponse = new TransactionStatisticsResponse(histogramStatisticResponse, timeGroupTradeAmountSum, null);
+
+
+        return transactionStatisticsResponse;
     }
 
 
@@ -104,7 +123,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     }
 
     @Override
-    public ServerResponse<TimeGroupTradeAmountSum> getTradeAmountByTime(String caseId, TradeStatisticalAnalysisPreRequest request, TimeTypeRequest timeType) {
+    public TimeGroupTradeAmountSum getTradeAmountByTime(String caseId, TradeStatisticalAnalysisPreRequest request, TimeTypeRequest timeType) {
 
         // 构建查询参数
         QuerySpecialParams query = this.preQueryTransactionStatisticsAnalysis(caseId, request);
@@ -133,7 +152,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
             }
         }
 
-        return ServerResponse.createBySuccess(groupTradeAmountSum);
+        return groupTradeAmountSum;
     }
 
 }
