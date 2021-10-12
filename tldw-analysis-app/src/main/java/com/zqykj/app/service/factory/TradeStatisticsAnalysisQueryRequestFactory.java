@@ -4,7 +4,7 @@
 package com.zqykj.app.service.factory;
 
 import com.zqykj.app.service.field.TacticsAnalysisField;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.infrastructure.util.StringUtils;
