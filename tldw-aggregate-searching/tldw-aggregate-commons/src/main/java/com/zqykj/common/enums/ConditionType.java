@@ -1,36 +1,34 @@
+/**
+ * @作者 Mcj
+ */
 package com.zqykj.common.enums;
 
 import java.util.Objects;
 import java.util.stream.Stream;
 
-/**
- * @Description: 聚合之外的查询类型
- * @Author zhangkehou
- * @Date 2021/9/24
- */
-public enum QueryType {
+public enum ConditionType {
 
     /**
-     * term query
-     **/
-    term,
-
-    /**
-     * terms query(对于一个field , 可以指定多组value值)
-     **/
-    terms,
-
-    /**
-     * range
+     * 类似于 and
      */
-    range,
+    must,
 
     /**
-     * bool query(组合查询)
+     * 类似于 !=
      */
-    bool;
+    must_not,
 
-    public static QueryType of(String type) {
+    /**
+     * 类似于 or 查询条件
+     */
+    should,
+
+    /**
+     * 过滤
+     */
+    filter;
+
+    public static ConditionType of(String type) {
 
         Objects.requireNonNull(type);
 

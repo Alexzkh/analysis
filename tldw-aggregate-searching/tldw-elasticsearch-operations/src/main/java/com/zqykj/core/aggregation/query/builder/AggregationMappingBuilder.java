@@ -3,7 +3,7 @@
  */
 package com.zqykj.core.aggregation.query.builder;
 
-import com.zqykj.core.aggregation.AggregateRequestFactory;
+import com.zqykj.core.aggregation.query.AggregateRequestFactory;
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.CommonAggregationParams;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -14,8 +14,9 @@ import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.aggregate.bucket.ClassNameForBeanClassOfBucket;
 import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOfMetrics;
 import com.zqykj.core.aggregation.util.aggregate.pipeline.ClassNameForBeanClassOfPipeline;
-import com.zqykj.parameters.annotation.DateIntervalParameter;
-import com.zqykj.parameters.annotation.OptionalParameter;
+import com.zqykj.parameters.annotation.DateIntervalParam;
+import com.zqykj.parameters.annotation.DateTimeZoneParam;
+import com.zqykj.parameters.annotation.OptionalParam;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -35,6 +36,7 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,6 +63,9 @@ public class AggregationMappingBuilder {
 
     private static final Class<?> SUB_AGGREGATION_TYPE = AggregationBuilder.class;
     private static final Class<?> SUB_AGGREGATION_TYPE_PIPELINE = PipelineAggregationBuilder.class;
+
+    // 日期直方图 设置时区方法参数类型
+    private static final Class<?> DATE_ZONE_CLASS = ZoneId.class;
 
     private static Map<String, Class<?>> aggregateNameForClass = new ConcurrentReferenceHashMap<>(256);
 
@@ -286,7 +291,7 @@ public class AggregationMappingBuilder {
     private static void addOptionalParameterMapping(Object target, Class<?> aggregationClass,
                                                     Field field, Object parameters) {
 
-        if (field.isAnnotationPresent(OptionalParameter.class)) {
+        if (field.isAnnotationPresent(OptionalParam.class)) {
             applyDefaultField(target, aggregationClass, field, parameters);
         }
     }
@@ -358,8 +363,10 @@ public class AggregationMappingBuilder {
             // 检测aggregationClass 是否拥有 subField这个方法
             // 日期类型的需要特殊处理
             // 目前先处理 date histogram 的相关参数
-            if (subField.isAnnotationPresent(DateIntervalParameter.class)) {
-                applyDateInterval(target, aggregationClass, subField, parameters);
+            if (subField.isAnnotationPresent(DateIntervalParam.class)) {
+                applyDate(target, aggregationClass, subField, parameters, DATE_INTERVAL_TYPE);
+            } else if (subField.isAnnotationPresent(DateTimeZoneParam.class)) {
+                applyDate(target, aggregationClass, subField, parameters, DATE_ZONE_CLASS);
             } else {
                 // field 都正常按照名称处理
                 applyDefaultField(target, aggregationClass, subField, parameters);
@@ -386,19 +393,24 @@ public class AggregationMappingBuilder {
         });
     }
 
-    private static void applyDateInterval(Object target, Class<?> aggregationClass, Field field, Object parameters) {
+    private static void applyDate(Object target, Class<?> aggregationClass, Field field, Object parameters, Class<?> type) {
         // 检测当前 aggregationClass 是否有此方法 (此方法的类型为 DateHistogramInterval)
-        Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, field.getName(), DATE_INTERVAL_TYPE);
+        Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, field.getName(), type);
         optionalMethod.ifPresent(method -> {
             org.springframework.util.ReflectionUtils.makeAccessible(field);
-            Object intervalValue = org.springframework.util.ReflectionUtils.getField(field, parameters);
-            if (null != intervalValue) {
-                DateHistogramInterval value = new DateHistogramInterval(intervalValue.toString());
-                org.springframework.util.ReflectionUtils.invokeMethod(optionalMethod.get(), target, value);
+            Object value = org.springframework.util.ReflectionUtils.getField(field, parameters);
+            if (null != value) {
+                if (DATE_INTERVAL_TYPE.isAssignableFrom(type)) {
+                    DateHistogramInterval intervalValue = new DateHistogramInterval(value.toString());
+                    org.springframework.util.ReflectionUtils.invokeMethod(optionalMethod.get(), target, intervalValue);
+                } else if (DATE_ZONE_CLASS.isAssignableFrom(type)) {
+                    // 如果是时区设置,需要特殊处理
+                    ZoneId zoneIdValue = ZoneId.of(value.toString());
+                    org.springframework.util.ReflectionUtils.invokeMethod(optionalMethod.get(), target, zoneIdValue);
+                }
             }
         });
     }
-
 
     private static void applyDefaultField(Object target, Class<?> aggregationClass, Field subField, Object parameters) {
         // 检测aggregationClass 是否拥有 subField这个方法

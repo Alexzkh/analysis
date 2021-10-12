@@ -3,12 +3,15 @@
  */
 package com.zqykj.parameters.aggregate.date;
 
-import com.zqykj.parameters.annotation.DateIntervalParameter;
+import com.zqykj.parameters.annotation.DateIntervalParam;
+import com.zqykj.parameters.annotation.DateTimeZoneParam;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.lang.Nullable;
+
+import java.time.ZoneId;
 
 /**
  * <h1> Date 聚合参数 </h1>
@@ -23,7 +26,7 @@ public class DateParams {
      * 仅仅支持单个日历单位 eg. 1h(代表间隔一小时) , 这里不能超过1, eg. 2h(就会报错), 如果需要固定间隔,请使用fixedInterval(这里就可以输入2h等等)
      * 支持的单位 s(秒),m(分钟),h(小时),d(天),w(周),M(月),y(年)
      */
-    @DateIntervalParameter
+    @DateIntervalParam
     private String calendarInterval;
 
     /**
@@ -35,7 +38,7 @@ public class DateParams {
      * 固定日历间隔参数配置 (支持的单位: s(秒)、m(分钟)、h(小时)、d(天))
      * 如果 使用了此参数, calendarInterval 这个参数就不能赋值, 2者不能同时存在
      */
-    @DateIntervalParameter
+    @DateIntervalParam
     private String fixedInterval;
 
     /**
@@ -47,6 +50,9 @@ public class DateParams {
      * 需要忽略的
      */
     private Object missing;
+
+    @DateTimeZoneParam
+    private String timeZone = "+08:00";
 
     public DateParams(String calendarInterval, String format) {
         this.calendarInterval = calendarInterval;

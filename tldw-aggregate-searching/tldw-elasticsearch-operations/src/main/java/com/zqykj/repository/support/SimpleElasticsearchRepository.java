@@ -9,7 +9,8 @@ import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
-import com.zqykj.core.aggregation.AggregateRequestFactory;
+import com.zqykj.core.aggregation.query.AggregateRequestFactory;
+import com.zqykj.core.aggregation.parse.AggregationParser;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -769,12 +770,12 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             queryParams.stream().forEach(queryParam -> {
                 String queryField = entity.getRequiredPersistentProperty(queryParam.getField()).getFieldName();
                 if (queryParam.getQueryType().equals(QueryType.term)) {
-                    TermsQueryBuilder termsQueryBuilder = QueryBuilders.termsQuery( queryField, queryParam.getValue());
+                    TermsQueryBuilder termsQueryBuilder = QueryBuilders.termsQuery(queryField, queryParam.getValue());
                     boolQueryBuilder.must(termsQueryBuilder);
                 }
 
                 if (queryParam.getQueryType().equals(QueryType.range)) {
-                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery( queryField);
+                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(queryField);
 
                     queryParam.getOperatorParams().stream().forEach(operatorParam -> {
 
@@ -891,7 +892,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         // TODO 需要将response 解析成map, 方便根据聚合名称取出想要的结果
-        return response.getAggregations().get("-_-");
+        Map<String, Object> result = AggregationParser.parseDateGroupAndSum(response.getAggregations());
+
+        return result;
     }
 
 
