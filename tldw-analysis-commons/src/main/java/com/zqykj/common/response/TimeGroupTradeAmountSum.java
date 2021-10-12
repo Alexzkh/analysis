@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.vo.tarde_statistics;
+package com.zqykj.common.response;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -24,13 +24,13 @@ public class TransactionStatisticsResponse implements Serializable {
      * 交易统计直方图数据集.
      * Map<String,Double> key: 对应交易金额、入账金额、出账金额的区间;value 对应各区间下的交易笔数.
      */
-    private List<Map<String, Double>> histogram;
+    private HistogramStatisticResponse histogram;
 
     /**
      * 交易统计折线图数据集.
      * Map<String,Double> key: 对应时间类型（年、月、日、时）区间 ;value 对应各区间交易金额总和.
      */
-    private List<Map<String, Double>> lineChart;
+    private TimeGroupTradeAmountSum lineChart;
 
     /**
      * 交易统计个体列表数据.

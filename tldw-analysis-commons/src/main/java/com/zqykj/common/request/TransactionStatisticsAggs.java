@@ -2,6 +2,7 @@ package com.zqykj.common.request;
 
 import com.zqykj.common.enums.DateType;
 import com.zqykj.common.enums.HistogramField;
+import com.zqykj.common.vo.TimeTypeRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,6 +34,6 @@ public class TransactionStatisticsAggs implements Serializable {
     /**
      * 折线图分桶依据的时间类型
      */
-    private DateType dateType;
+    private TimeTypeRequest dateType;
 
 }

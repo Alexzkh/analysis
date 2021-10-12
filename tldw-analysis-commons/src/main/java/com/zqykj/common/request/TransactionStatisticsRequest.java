@@ -23,7 +23,7 @@ public class TransactionStatisticsRequest implements Serializable {
     /**
      * 交易统计查询请求体
      */
-    private TransactionStatisticsQuery transactionStatisticsQuery;
+    private TradeStatisticalAnalysisPreRequest tradeStatisticalAnalysisPreRequest;
 
 
     /**
@@ -31,9 +31,5 @@ public class TransactionStatisticsRequest implements Serializable {
      */
     private TransactionStatisticsAggs transactionStatisticsAggs;
 
-    /**
-     * 案件编号
-     */
-    private String caseId;
 
 }
