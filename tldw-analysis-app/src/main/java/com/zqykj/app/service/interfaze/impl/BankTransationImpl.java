@@ -4,15 +4,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zqykj.app.service.interfaze.IBankTransaction;
 import com.zqykj.app.service.system.AggregateBuilderExcutor;
-import com.zqykj.common.Constants;
-import com.zqykj.common.request.AggregateBuilder;
+import com.zqykj.common.constant.Constants;
 import com.zqykj.common.request.IndividualRequest;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.AggregationResult;
 import com.zqykj.common.response.CardStatisticsResponse;
 import com.zqykj.common.response.PersonalStatisticsResponse;
 import com.zqykj.domain.bank.BankTransactionFlow;
-import com.zqykj.domain.bank.StandardBankTransactionFlow;
 import com.zqykj.infrastructure.core.ResponseCode;
 import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.repository.EntranceRepository;
@@ -79,7 +77,7 @@ public class BankTransationImpl implements IBankTransaction {
 
         try {
             Map map = entranceRepository.multilayerAggs(AggregateBuilderExcutor.buildCardAggregateBuilder(individualRequest), BankTransactionFlow.class);
-            List list = (List) map.get("terms_account_card");
+            List list = (List) map.get(Constants.BucketName.TERMS_ACCOUNT_CARD);
             List<AggregationResult> personalStatisticsResponses = new ArrayList<>();
             List<CardStatisticsResponse> responses = new ArrayList<>();
             list.stream().forEach(map1 -> {

@@ -1,7 +1,10 @@
 package com.zqykj.app.service.interfaze;
 
 import com.zqykj.common.request.TransactionStatisticsRequest;
+import com.zqykj.common.response.HistogramStatisticResponse;
 import com.zqykj.common.response.TransactionStatisticsResponse;
+
+import java.util.List;
 
 /**
  * @Description: 交易统计
@@ -18,4 +21,7 @@ public interface ITransactionStatistics {
      * @return: com.zqykj.common.response。TransactionStatisticsResponse
      **/
     TransactionStatisticsResponse calculateStatisticalResults(TransactionStatisticsRequest transactionStatisticsRequest);
+
+
+    HistogramStatisticResponse accessHistogramStatistics(TransactionStatisticsRequest transactionStatisticsRequest);
 }

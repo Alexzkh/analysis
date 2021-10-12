@@ -17,7 +17,7 @@ public enum QueryType {
 
     /**
      * range
-     * */
+     */
     range,
 
     /**
@@ -43,7 +43,12 @@ public enum QueryType {
     /**
      * 过滤
      */
-    filter;
+    filter,
+
+    /**
+     * 多值查询
+     */
+    terms;
 
     public static QueryType of(String type) {
 

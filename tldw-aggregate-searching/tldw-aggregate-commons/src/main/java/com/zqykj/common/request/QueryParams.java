@@ -46,6 +46,10 @@ public class QueryParams {
      */
     private int size;
 
+    /**
+     * terms查询时的参数值
+     */
+    private List<String> termsValues;
 
     /**
      * 操作符参数
