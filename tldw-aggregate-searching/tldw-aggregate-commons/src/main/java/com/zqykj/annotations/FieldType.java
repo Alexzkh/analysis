@@ -37,5 +37,7 @@ public enum FieldType {
     /**
      * @since 4.1
      */
-    Rank_Features //
+    Rank_Features, //
+    // 通配符类型
+    Wildcard
 }

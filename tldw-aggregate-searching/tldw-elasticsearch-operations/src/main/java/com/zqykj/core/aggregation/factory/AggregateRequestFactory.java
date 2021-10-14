@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.core.aggregation.query;
+package com.zqykj.core.aggregation.factory;
 
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.date.DateParams;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * <h1> 聚合查询请求参数 factory</h1>
+ * <h1> 内部聚合查询请求参数 构建factory</h1>
  */
 public class AggregateRequestFactory {
 

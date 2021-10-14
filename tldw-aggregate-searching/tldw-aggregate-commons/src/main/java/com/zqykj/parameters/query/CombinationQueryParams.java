@@ -41,7 +41,6 @@ public class CombinationQueryParams {
         this.commonQueryParams.add(commonQueryParams);
     }
 
-
     public String convert(ConditionType type) {
 
         if (ConditionType.must_not == type) {
