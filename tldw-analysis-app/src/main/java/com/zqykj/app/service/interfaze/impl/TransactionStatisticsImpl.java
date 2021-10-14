@@ -1,11 +1,10 @@
 package com.zqykj.app.service.interfaze.impl;
 
+import com.zqykj.app.service.factory.TradeStatisticsAnalysisQueryRequestFactory;
 import com.zqykj.app.service.field.TacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.transform.NumericalConversion;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.constant.Constants;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.enums.HistogramStatistic;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.response.*;
@@ -14,14 +13,13 @@ import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
-import com.zqykj.factory.AggregationRequestParamFactory;
-import com.zqykj.factory.QueryRequestParamFactory;
-import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.infrastructure.core.PageServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.repository.EntranceRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
-import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
+import com.zqykj.core.aggregation.query.AggregateRequestFactory;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,11 +44,6 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
 
     private final EntranceRepository entranceRepository;
-
-    private final AggregationRequestParamFactory aggregationRequestParamFactory;
-
-    private final QueryRequestParamFactory queryRequestParamFactory;
-
 
     @Override
     public TransactionStatisticsResponse calculateStatisticalResults(String caseId, TransactionStatisticsRequest transactionStatisticsRequest) {
@@ -126,7 +119,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     @Override
     public QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, TradeStatisticalAnalysisPreRequest request) {
         // 构建查询参数
-        return queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
+        return TradeStatisticsAnalysisQueryRequestFactory.createTradeAmountByTimeQuery(request, caseId);
     }
 
     @Override
@@ -174,19 +167,6 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         }
 
         return groupTradeAmountSum;
-    }
-
-    public ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) {
-
-        // 构建交易统计结果查询
-        QuerySpecialParams query = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequest(caseId, queryRequest);
-
-        // 构建交易统计分析聚合查询
-        AggregationParams agg = aggregationRequestParamFactory.createTradeStatisticsAnalysisQueryAgg(queryRequest);
-
-        Map<String, Object> result = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionFlow.class, caseId);
-
-        return ServerResponse.createBySuccess(result);
     }
 
 }

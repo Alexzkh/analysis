@@ -49,7 +49,7 @@ public class AggregationParams {
      * 聚合桶数量返回 限制 (若此聚合产生的结果是多个,可以使用此参数做相应限制)
      */
     @OptionalParam
-    private int size = 1000;
+    private int size = 1;
 
     /**
      * 通用参数
@@ -140,12 +140,6 @@ public class AggregationParams {
     public AggregationParams(String name, String type) {
         this.name = name;
         this.type = type;
-    }
-
-    public AggregationParams(String name, String type, QuerySpecialParams query) {
-        this.name = name;
-        this.type = type;
-        this.querySpecialParams = query;
     }
 
     public void setPerSubAggregation(AggregationParams aggregation) {

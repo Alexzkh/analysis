@@ -3,6 +3,7 @@
  */
 package com.zqykj.parameters;
 
+import com.zqykj.domain.Sort;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,5 +22,5 @@ public class FieldSort {
     private String fieldName;
 
     // 排序方向  ASC,DESC
-    private String direction;
+    private Sort.Direction direction;
 }

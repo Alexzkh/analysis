@@ -40,12 +40,4 @@ public interface TacticsAnalysisField {
      */
     String CASE_ID = "case_id";
 
-    /**
-     * 借贷标识
-     */
-    String LOAN_FLAG = "loan_flag";
-
-    String LOAN_FLAG_OUT = "出";
-
-    String LOAN_FLAG_IN = "进";
 }

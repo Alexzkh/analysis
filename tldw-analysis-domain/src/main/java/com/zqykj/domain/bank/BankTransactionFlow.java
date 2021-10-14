@@ -35,33 +35,19 @@ public class BankTransactionFlow {
     @Field(type = FieldType.Long, name = "resource_key_id")
     private String resourceKeyId;
 
-    // fields 多字段类型在 mapping 创建之后, 是可以继续更新的(另外Object 对象也可以添加新的属性, 字段还可以添加 ignore_above属性)
-    // 以上这种三种情况 , 不用着急reindex更新索引，直接更新Mapping也是可以的
-    @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "bank", analyzer = "ik_max_word"),
-            otherFields = {@InnerField(suffix = "bank_wildcard", type = FieldType.Wildcard)}
-    )
+    @Field(type = FieldType.Text, name = "bank", analyzer = "ik_max_word")
     private String bank;
 
-    @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "customer_name", analyzer = "ik_max_word"),
-            otherFields = {@InnerField(suffix = "customer_name_wildcard", type = FieldType.Wildcard)}
-    )
+    @Field(type = FieldType.Text, name = "customer_name", analyzer = "ik_max_word")
     private String customerName;
 
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "customer_identity_card"),
-            otherFields = {@InnerField(suffix = "customer_identity_card_wildcard", type = FieldType.Wildcard)}
-    )
+    @Field(type = FieldType.Keyword, name = "customer_identity_card")
     private String customerIdentityCard;
 
     @Field(type = FieldType.Text, name = "query_account", analyzer = "ik_max_word")
     private String queryAccount;
 
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "query_card"),
-            otherFields = {@InnerField(suffix = "query_card_wildcard", type = FieldType.Wildcard)}
-    )
+    @Field(type = FieldType.Keyword, name = "query_card")
     private String queryCard;
 
     @Field(type = FieldType.Text, name = "transaction_opposite_name", analyzer = "ik_max_word")
@@ -91,7 +77,7 @@ public class BankTransactionFlow {
     @Field(type = FieldType.Double, name = "transaction_balance")
     private Double transactionBalance;
 
-    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.custom, pattern = "yyyy-MM-dd HH:mm:ss")
+    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.custom,pattern ="yyyy-MM-dd HH:mm:ss")
     private Date tradingTime;
 
     @Field(type = FieldType.Keyword, name = "transaction_serial_number")
@@ -151,10 +137,7 @@ public class BankTransactionFlow {
     @Field(type = FieldType.Keyword, name = "transaction_teller_number")
     private String transactionTellerNumber;
 
-    @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "note", analyzer = "ik_max_word"),
-            otherFields = {@InnerField(suffix = "note_wildcard", type = FieldType.Wildcard)}
-    )
+    @Field(type = FieldType.Text, name = "note", analyzer = "ik_max_word")
     private String note;
 
     @Field(type = FieldType.Keyword, name = "data_schema_id")
@@ -167,14 +150,9 @@ public class BankTransactionFlow {
     private List<EntityGraph> entityGraphs;
 
     /**
-     * 链接嵌套数据(图数据id - 实体Id 和 链接Id )
+     * 链接嵌套数据
      */
     @Field(name = "link", type = FieldType.Nested)
     private List<LinkGraph> linkGraphs;
 
-    /**
-     * 数据补全标志位
-     */
-    @Field(name = "completion_flag", type = FieldType.Keyword)
-    private String completionFlag;
 }

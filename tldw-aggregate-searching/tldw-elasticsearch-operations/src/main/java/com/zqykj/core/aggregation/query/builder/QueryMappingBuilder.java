@@ -19,7 +19,9 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * <h1> es 的 dsl builder 构建 </h1>
@@ -51,9 +53,6 @@ public class QueryMappingBuilder {
     public static Object buildDslQueryBuilderMapping(QuerySpecialParams params) {
 
         try {
-            if (null == params) {
-                return null;
-            }
             if (CollectionUtils.isEmpty(dslNameForClass)) {
                 throw new IllegalArgumentException("dslNameForClass is empty!");
             }
@@ -69,33 +68,32 @@ public class QueryMappingBuilder {
     }
 
 
-    private static Object buildingQueryViaField(QuerySpecialParams params) {
+    private static Object buildingQueryViaField(QuerySpecialParams params) throws ClassNotFoundException {
 
-        Object target = null;
-        if (null != params.getCommonQuery()) {
-            // 单个查询
-            target = addCommonQueryMapping(params.getCommonQuery());
-        } else if (!CollectionUtils.isEmpty(params.getCombiningQuery())) {
-            // 组合查询
+        Field[] declaredFields = ReflectionUtils.getDeclaredFields(params.getClass());
+        for (Field field : declaredFields) {
+            // 单个查询 和 组合查询只会构建一个
+            if (CommonQueryParams.class.isAssignableFrom(field.getType()) && null != params.getCommonQuery()) {
 
-            target = addCombinationQueryMapping(params.getCombiningQuery());
-        }
+                // 单个查询
+                return addCommonQueryMapping(params.getCommonQuery());
 
-        // 通用参数设置
-        DefaultQueryParam defaultParam = params.getDefaultParam();
-        if (null != defaultParam && null != target) {
+            } else if (List.class.isAssignableFrom(field.getType()) && !CollectionUtils.isEmpty(params.getCombiningQuery())) {
 
-            Field[] declaredFields = ReflectionUtils.getDeclaredFields(defaultParam.getClass());
-            for (Field field : declaredFields) {
+                Optional<Class<?>> parameterType = ReflectionUtils.findParameterType(params.getClass(), field.getName());
+                if (!parameterType.isPresent()) {
+                    return null;
+                }
+                if (CombinationQueryParams.class.isAssignableFrom(parameterType.get())) {
+                    // 组合查询
+                    return addCombinationQueryMapping(params.getCombiningQuery(), field.getType());
+                }
+            } else {
 
-                org.springframework.util.ReflectionUtils.makeAccessible(field);
-                Object value = org.springframework.util.ReflectionUtils.getField(field, defaultParam);
-                Optional<Method> methodOptional = ReflectionUtils.findMethod(target.getClass(), field.getName(), field.getType());
-                Object finalTarget = target;
-                methodOptional.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, finalTarget, value));
+                //TODO
             }
         }
-        return target;
+        return null;
     }
 
     /**
@@ -111,7 +109,7 @@ public class QueryMappingBuilder {
     /**
      * <h2> 添加组合查询的参数映射 </h2>
      */
-    private static Object addCombinationQueryMapping(List<CombinationQueryParams> combiningQuery) {
+    private static Object addCombinationQueryMapping(List<CombinationQueryParams> combiningQuery, Class<?> fielsClass) {
 
         Class<?> queryTypeClass = getQueryTypeClass(QueryType.bool.toString());
         // 组合查询实例
@@ -145,17 +143,9 @@ public class QueryMappingBuilder {
 
         for (CommonQueryParams common : commonQueryParams) {
 
-            // 如果还是 bool 查询(需要特殊处理)
-            Object perTarget;
-            if (null != common.getCompoundQueries()) {
+            Object single = addCommonQueryMapping(common);
 
-                // 仍然是bool 对象
-                perTarget = addCombinationQueryMapping(Collections.singletonList(common.getCompoundQueries()));
-            } else {
-                // 单个对象
-                perTarget = addCommonQueryMapping(common);
-            }
-            org.springframework.util.ReflectionUtils.invokeMethod(method, target, perTarget);
+            org.springframework.util.ReflectionUtils.invokeMethod(method, target, single);
         }
     }
 

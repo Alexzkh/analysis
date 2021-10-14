@@ -3,7 +3,7 @@
  */
 package com.zqykj.core.aggregation.query.builder;
 
-import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
+import com.zqykj.core.aggregation.query.AggregateRequestFactory;
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.CommonAggregationParams;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -86,9 +86,6 @@ public class AggregationMappingBuilder {
     }
 
     public static Object buildAggregation(AggregationParams parameters) {
-        if (null == parameters) {
-            return null;
-        }
         return AggregationMappingBuilder.buildAggregationInstance(null, parameters);
     }
 
@@ -173,10 +170,6 @@ public class AggregationMappingBuilder {
             }
             if (StringUtils.isBlank(parameters.getScript())) {
 
-                if (CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
-                    return buildSpecialPipelineAggregation(aggregationClass, parameters);
-                }
-
                 constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), parameters.getBucketsPath());
                 if (constructor.isPresent()) {
                     target = ReflectionUtils.getTargetInstanceViaReflection(constructor, aggregationClass, parameters.getName(), parameters.getBucketsPath());
@@ -213,7 +206,7 @@ public class AggregationMappingBuilder {
                 List<FieldSortBuilder> fieldSortBuilders = parameters.getFieldSort().stream().map(
                         fieldSort -> {
                             FieldSortBuilder fieldSortBuilder = new FieldSortBuilder(fieldSort.getFieldName());
-                            fieldSortBuilder.order(SortOrder.fromString(fieldSort.getDirection()));
+                            fieldSortBuilder.order(SortOrder.fromString(fieldSort.getDirection().toString().toLowerCase()));
                             return fieldSortBuilder;
                         }
                 ).collect(Collectors.toList());
@@ -288,9 +281,6 @@ public class AggregationMappingBuilder {
             } else if (PipelineAggregationParams.class.isAssignableFrom(parameterType.get())) {
 
                 // PipelineAggregationBuilder 类型聚合处理
-                if (null == father) {
-                    father = target;
-                }
                 addPipelineAggregationMapping(father, parameters.getPipelineAggregation(), aggregationClass);
             }
         } else {

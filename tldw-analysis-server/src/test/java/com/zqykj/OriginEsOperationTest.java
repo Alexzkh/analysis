@@ -6,13 +6,12 @@ package com.zqykj;
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.response.TimeGroupTradeAmountSum;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.TimeTypeRequest;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -33,6 +32,7 @@ import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.MaxAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
@@ -324,59 +324,22 @@ public class OriginEsOperationTest {
 
     }
 
-    @Test
-    public void testTradeStatisticalResultQuery() {
 
-        TradeStatisticalAnalysisQueryRequest request = new TradeStatisticalAnalysisQueryRequest();
-        request.setCardNums(Arrays.asList("60138216660000014",
-                "60138216660001414",
-                "60138216660002814",
-                "60138216660004214",
-                "60138216660005614",
-                "60138216660007014",
-                "60138216660008414",
-                "60138216660009814",
-                "60138216660011214",
-                "60138216660012614",
-                "60138216660014014",
-                "60138216660015414",
-                "60138216660016814",
-                "60138216660018214",
-                "60138216660019614",
-                "60138216660021014",
-                "60138216660022414",
-                "60138216660023814",
-                "60138216660025214",
-                "60138216660026614",
-                "60138216660028014",
-                "60138216660029414",
-                "60138216660030814",
-                "60138216660032214",
-                "60138216660033614",
-                "60138216660035014",
-                "60138216660036414",
-                "60138216660037814",
-                "60138216660039214",
-                "60138216660040614",
-                "60138216660042014",
-                "60138216660043414",
-                "60138216660044814",
-                "60138216660046214",
-                "60138216660047614"));
-        request.setDateRange(new DateRangeRequest("2020-01-01", "2021-10-14"));
-        request.setFund("0");
-        request.setOperator(AmountOperationSymbol.gte);
-        request.setPageRequest(new com.zqykj.common.vo.PageRequest(0, 25));
-        request.setKeyword("*平安*");
+    public static void main(String[] args) {
 
-        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("9046a9b85f17428885d14a491a12731d", request);
+        // 利用上面的map 去做一个简单的测试查询
+        SearchRequest request = new SearchRequest("standard_bank_transaction_flow");
 
-        if (serverResponse.isSuccess()) {
+        request.routing("7f071cdf-9197-479f-95a9-9ae46045cca9");
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.size(0);
 
-            Object data = serverResponse.getData();
+        // 对每个人账号进行分组
+//        TermsAggregationBuilder termsAggregationBuilderByMainAccount = new TermsAggregationBuilder("main_account_per");
+//        termsAggregationBuilderByMainAccount.field("customer_identity_card");
+//        termsAggregationBuilderByMainAccount.collectMode(Aggregator.SubAggCollectionMode.BREADTH_FIRST);
+//        termsAggregationBuilderByMainAccount.size(10);
 
-        }
+        DateHistogramAggregationBuilder aggregationBuilder = new DateHistogramAggregationBuilder("date_test");
     }
-
-
 }

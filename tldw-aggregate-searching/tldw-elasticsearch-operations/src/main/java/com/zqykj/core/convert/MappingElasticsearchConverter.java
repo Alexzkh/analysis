@@ -69,6 +69,7 @@ public class MappingElasticsearchConverter implements ElasticsearchConverter, In
 
         ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(type);
 
+        entity.getPersistentPropertyWithFieldName("");
         readProperties(entity, source);
         // 上述source 填充完成( type property name 基本都有对应), 开始反序列化
         return JacksonUtils.parse(JacksonUtils.toJson(source), type);

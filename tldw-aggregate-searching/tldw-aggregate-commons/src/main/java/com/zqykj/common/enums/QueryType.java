@@ -26,14 +26,29 @@ public enum QueryType {
     bool,
 
     /**
-     * 多值查询
+     * 类似于 and
      */
-    terms,
+    must,
 
     /**
-     * 通配符查询
+     * 类似于 !=
      */
-    wildcard;
+    must_not,
+
+    /**
+     * 类似于 or 查询条件
+     */
+    should,
+
+    /**
+     * 过滤
+     */
+    filter,
+
+    /**
+     * 多值查询
+     */
+    terms;
 
     public static QueryType of(String type) {
 
