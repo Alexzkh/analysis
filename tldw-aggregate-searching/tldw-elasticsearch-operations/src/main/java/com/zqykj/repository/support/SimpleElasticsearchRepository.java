@@ -10,12 +10,10 @@ import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
-import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
+import com.zqykj.core.aggregation.query.AggregateRequestFactory;
 import com.zqykj.core.aggregation.parse.AggregationParser;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
-import com.zqykj.parameters.FieldSort;
-import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.query.QuerySpecialParams;
@@ -60,6 +58,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -933,53 +932,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // TODO 需要将response 解析成map, 方便根据聚合名称取出想要的结果
         Map<String, Object> result = AggregationParser.parseDateGroupAndSum(response.getAggregations());
 
-        return result;
-    }
-
-    public <T> Map<String, Object> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
-
-        // 构建查询对象
-        Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
-        // 构建聚合对象
-        Object aggTarget = AggregationMappingBuilder.buildAggregation(agg);
-
-        // 构建搜索请求
-        SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
-        if (StringUtils.isNotBlank(routing)) {
-            searchRequest.routing(routing);
-        }
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-
-        // 设置默认参数
-        if (null != query) {
-
-            // 设置分页参数
-            if (null != query.getPagination()) {
-
-                Pagination pagination = query.getPagination();
-                sourceBuilder.from(pagination.getFrom());
-                sourceBuilder.size(pagination.getSize());
-            }
-            // 设置排序参数
-            if (null != query.getSort()) {
-
-                FieldSort sort = query.getSort();
-                sourceBuilder.sort(sort.getFieldName(), SortOrder.valueOf(sort.getDirection()));
-            }
-        }
-
-        // 聚合查询
-        if (null != aggTarget) {
-            sourceBuilder.aggregation((AggregationBuilder) aggTarget);
-        }
-        // 普通查询
-        if (null != queryTarget) {
-            sourceBuilder.query((QueryBuilder) queryTarget);
-        }
-        searchRequest.source(sourceBuilder);
-        SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-        // 需要返回一个查询的对象, 一个聚合的对象
-        Map<String, Object> result = new HashMap<>();
         return result;
     }
 

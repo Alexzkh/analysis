@@ -1,18 +1,20 @@
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.response.TimeGroupTradeAmountSum;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.common.response.HistogramStatisticResponse;
+import com.zqykj.common.response.TransactionStatisticDetailResponse;
 import com.zqykj.common.response.TransactionStatisticsResponse;
 import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.infrastructure.core.PageServerResponse;
 import com.zqykj.parameters.query.QuerySpecialParams;
+
+import java.util.List;
 
 
 /**
@@ -57,9 +59,6 @@ public interface ITransactionStatistics {
      * @return: com.zqykj.parameters.query.QuerySpecialParams
      **/
     QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, TradeStatisticalAnalysisPreRequest request);
-
-
-    ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest);
 
     /**
      * @param caseId: 案件编号.
