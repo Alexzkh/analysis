@@ -6,15 +6,15 @@ import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.transform.NumericalConversion;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.enums.HistogramStatistic;
-import com.zqykj.common.response.TimeGroupTradeAmountSum;
+import com.zqykj.common.request.TransactionStatisticsDetailRequest;
+import com.zqykj.common.response.*;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
-import com.zqykj.common.response.HistogramStatisticResponse;
-import com.zqykj.common.response.ParsedStats;
-import com.zqykj.common.response.TransactionStatisticsResponse;
-import com.zqykj.domain.Range;
+import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.infrastructure.core.PageServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.repository.EntranceRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,6 +120,20 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     public QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, TradeStatisticalAnalysisPreRequest request) {
         // 构建查询参数
         return TradeStatisticsAnalysisQueryRequestFactory.createTradeAmountByTimeQuery(request, caseId);
+    }
+
+    @Override
+    public Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) throws Exception{
+
+
+        PageRequest pageRequest = PageRequest.of(transactionStatisticsDetailRequest.getQueryRequest().getPaging().getPage(),
+                transactionStatisticsDetailRequest.getQueryRequest().getPaging().getPageSize(),
+                transactionStatisticsDetailRequest.getQueryRequest().getSorting().getOrder().isAscending() ? Sort.Direction.ASC : Sort.Direction.DESC,
+                transactionStatisticsDetailRequest.getQueryRequest().getSorting().getProperty());
+        Page<BankTransactionFlow> page = entranceRepository.findByCondition(pageRequest, caseId, BankTransactionFlow.class
+                , transactionStatisticsDetailRequest.getCardNumber(), caseId, transactionStatisticsDetailRequest.getQueryRequest().getKeyword());
+        return page;
+
     }
 
     @Override

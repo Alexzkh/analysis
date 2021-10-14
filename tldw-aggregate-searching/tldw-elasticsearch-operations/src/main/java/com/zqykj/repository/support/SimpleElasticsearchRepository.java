@@ -5,6 +5,7 @@ package com.zqykj.repository.support;
 
 
 import com.zqykj.common.enums.QueryType;
+import com.zqykj.common.es.BuilderQuery;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
@@ -13,14 +14,12 @@ import com.zqykj.core.aggregation.query.AggregateRequestFactory;
 import com.zqykj.core.aggregation.parse.AggregationParser;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
-import com.zqykj.core.query.QueryAndAggregationBuilder;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.domain.*;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
-import com.zqykj.util.ReflectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.*;
@@ -59,9 +58,8 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -267,6 +265,30 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             operations.delete(query, entityClass, indexCoordinates);
             return null;
         }, entityClass);
+    }
+
+    @Override
+    public <T> Page<T> findByCondition(Pageable pageable, String routing, Class<T> entityClass, String... values) {
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(entityClass);
+        String propertyName = entity.getRequiredPersistentProperty(pageable.getSort().getOrders().get(0).getProperty()).getFieldName();
+        if (StringUtils.isEmpty(propertyName)) {
+            throw new ElasticsearchException("The sort field cannot be null or empty,but it is null or empty at this time!");
+        }
+        String indexName = getIndexCoordinates(entityClass);
+        SearchRequest searchRequest = new SearchRequest(indexName);
+        QueryBuilder boolQueryBuilder = BuilderQuery.build(values);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(boolQueryBuilder);
+        searchSourceBuilder.sort(propertyName, pageable.getSort().getOrders().get(0).getDirection().isDescending()
+                ? SortOrder.DESC : SortOrder.ASC);
+        searchSourceBuilder.from(pageable.getPageNumber() * pageable.getPageSize());
+        searchSourceBuilder.size(pageable.getPageSize());
+        searchRequest.source(searchSourceBuilder);
+        searchRequest.routing(routing);
+        SearchHits<T> searchHits = execute(operations -> operations.search(searchRequest, entityClass,
+                getIndexCoordinates(entityClass)), entityClass);
+        AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, pageable);
+        return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
     }
 
     /**

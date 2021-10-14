@@ -5,7 +5,6 @@ package com.zqykj.repository;
 
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
-import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
 import com.zqykj.domain.Range;
 import com.zqykj.enums.AggsType;
