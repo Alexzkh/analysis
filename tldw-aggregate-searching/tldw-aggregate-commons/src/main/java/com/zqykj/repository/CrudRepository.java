@@ -118,4 +118,16 @@ public interface CrudRepository extends Repository {
      * @param entityClass 实体类   must not be {@literal null}.
      */
     <T> void deleteAll(@Nullable String routing, @NonNull Class<T> entityClass);
+
+
+    /**
+     * <h2> 根据路由(可选)  分页查询当前索引下的文档数据 </h2>
+     *
+     * @param pageable    分页参数  must not be {@literal null}.
+     * @param routing     路由参数
+     * @param entityClass 实体类    must not be {@literal null}.
+     */
+    <T> Page<T> findByCondition(Pageable pageable, @Nullable String routing,@NonNull Class<T> entityClass,String... values);
+
+
 }

@@ -4,6 +4,7 @@
 package com.zqykj.core;
 
 import com.zqykj.repository.query.Query;
+import org.elasticsearch.action.search.SearchRequest;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -33,6 +34,17 @@ public interface SearchOperations {
      * @return SearchHits containing the list of found objects
      */
     <T> SearchHits<T> search(Query query, Class<T> clazz, String index);
+
+    /**
+     * Execute the criteria query against elasticsearch and return result as {@link SearchHits}
+     *
+     * @param <T>   element return type
+     * @param query the query to execute
+     * @param clazz the entity clazz used for property mapping
+     * @param index the index to run the query against
+     * @return SearchHits containing the list of found objects
+     */
+    <T> SearchHits<T> search(SearchRequest query, Class<T> clazz, String index);
 
     @Nullable
     default <T> SearchHit<T> searchOne(Query query, Class<T> clazz, String index) {

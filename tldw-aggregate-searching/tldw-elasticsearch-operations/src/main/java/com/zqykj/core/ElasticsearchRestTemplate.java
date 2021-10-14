@@ -204,6 +204,14 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     }
 
     @Override
+    public <T> SearchHits<T> search(SearchRequest searchRequest, Class<T> clazz, String index) {
+        SearchResponse response = execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+
+        SearchDocumentResponseCallback<SearchHits<T>> callback = new ReadSearchDocumentResponseCallback<>(clazz, index);
+        return callback.doWith(SearchDocumentResponse.from(response));
+    }
+
+    @Override
     public <T> SearchHitsIterator<T> searchForStream(Query query, Class<T> clazz) {
         return searchForStream(query, clazz, getIndexCoordinatesFor(clazz));
     }

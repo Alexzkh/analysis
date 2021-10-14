@@ -360,7 +360,7 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     /**
      * <h2> 搜索文档相应回调 </h2>
      */
-    protected interface SearchDocumentResponseCallback<T> {
+    public interface SearchDocumentResponseCallback<T> {
         @NonNull
         T doWith(@NonNull SearchDocumentResponse response);
     }
@@ -368,7 +368,7 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     /**
      * <h2> 读取搜索文档相应回调 </h2>
      */
-    protected class ReadSearchDocumentResponseCallback<T> implements SearchDocumentResponseCallback<SearchHits<T>> {
+    public class ReadSearchDocumentResponseCallback<T> implements SearchDocumentResponseCallback<SearchHits<T>> {
         private final DocumentCallback<T> delegate;
         private final Class<T> type;
 
