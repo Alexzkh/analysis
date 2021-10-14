@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @AllArgsConstructor
 @NoArgsConstructor
 @ConfigurationProperties(prefix = "elasticsearch.data.source")
-@ConditionalOnProperty(name = "enable.datasource.type", value = "elasticsearch")
+@ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 public class ElasticsearchRestClientProperties {
 
     /**

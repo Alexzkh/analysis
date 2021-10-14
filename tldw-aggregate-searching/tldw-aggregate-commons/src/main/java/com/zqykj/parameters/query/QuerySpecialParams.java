@@ -3,6 +3,7 @@
  */
 package com.zqykj.parameters.query;
 
+import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,8 +29,14 @@ public class QuerySpecialParams {
     // 组合查询
     private List<CombinationQueryParams> combiningQuery;
 
+    // 全局查询默认参数
+    private DefaultQueryParam defaultParam;
+
     // TODO 分页参数设置 可以放在最外面
     private Pagination pagination;
+
+    // 排序
+    private FieldSort sort;
 
     public QuerySpecialParams(CommonQueryParams common) {
         this.commonQuery = common;
