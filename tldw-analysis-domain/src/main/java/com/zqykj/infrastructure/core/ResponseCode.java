@@ -19,7 +19,12 @@ public enum ResponseCode {
     ILLEGAL_ARGUMENT(10003, "ILLEGAL_ARGUMENT"),
 
     /** 资金战法*/
-    ACCESS_DATA(30001,"数据获取失败");
+    ACCESS_DATA(30001,"数据获取失败"),
+
+    /**
+     * 请求服务异常
+     */
+    SERVER_ERROR(500, "Server Error");
 
     private final int code;
     private final String desc;
