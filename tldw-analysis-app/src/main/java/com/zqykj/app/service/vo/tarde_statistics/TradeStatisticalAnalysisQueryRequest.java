@@ -3,9 +3,9 @@
  */
 package com.zqykj.app.service.vo.tarde_statistics;
 
+import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
-import com.zqykj.parameters.Pagination;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
