@@ -7,6 +7,10 @@ import com.zqykj.common.enums.QueryType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.util.CollectionUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <h1> 查询的通用参数 </h1>
@@ -27,7 +31,7 @@ public class CommonQueryParams {
     private String field;
 
     /**
-     * 字段的值
+     * 字段的值/模糊查询的值
      */
     private Object value;
 
@@ -41,7 +45,17 @@ public class CommonQueryParams {
      */
     private QueryOperator queryOperator;
 
+    // 内部依然可以是组合查询  (eg. 需要满足 满足a=1或b=2, 并且c=3)
+    private CombinationQueryParams compoundQueries;
+
     public CommonQueryParams(QueryType type, String field, Object value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
+    public CommonQueryParams(QueryType type, String field, String value) {
 
         this.type = type;
         this.field = field;
