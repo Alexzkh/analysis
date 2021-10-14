@@ -5,6 +5,8 @@ package com.zqykj.infrastructure.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -13,28 +15,30 @@ import java.io.Serializable;
  */
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 // 保证序列化json的时候,如果是null的对象,key也会消失
+@NoArgsConstructor
+@Data
 public class ServerResponse<T> implements Serializable {
 
     private int code;
     private String message;
     private T data;
 
-    private ServerResponse(int code) {
+    public ServerResponse(int code) {
         this.code = code;
     }
 
-    private ServerResponse(int code, T data) {
+    public ServerResponse(int code, T data) {
         this.code = code;
         this.data = data;
     }
 
-    private ServerResponse(int code, String msg, T data) {
+    public ServerResponse(int code, String msg, T data) {
         this.code = code;
         this.message = msg;
         this.data = data;
     }
 
-    private ServerResponse(int code, String msg) {
+    public ServerResponse(int code, String msg) {
         this.code = code;
         this.message = msg;
     }

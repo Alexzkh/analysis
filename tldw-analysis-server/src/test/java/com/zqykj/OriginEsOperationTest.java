@@ -6,13 +6,13 @@ package com.zqykj;
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
-import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.response.TimeGroupTradeAmountSum;
+import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.TimeTypeRequest;
-import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.domain.EntityClass;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -317,11 +317,11 @@ public class OriginEsOperationTest {
         request.setDateRange(new DateRangeRequest("2019-04-05", "2020-03-13"));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
-        ServerResponse<TimeGroupTradeAmountSum> tradeAmountByTime =
+        TimeGroupTradeAmountSum tradeAmountByTime =
                 iTransactionStatistics.getTradeAmountByTime("100376eb69614df4a7cd63ca6884827b", request, TimeTypeRequest.h);
-        if (tradeAmountByTime.isSuccess()) {
-            log.info(JacksonUtils.toJson(tradeAmountByTime.getData()));
-        }
+
+        log.info(JacksonUtils.toJson(tradeAmountByTime));
+
     }
 
     @Test

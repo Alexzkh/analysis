@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.vo.tarde_statistics;
+package com.zqykj.common.request;
 
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;

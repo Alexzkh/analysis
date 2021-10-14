@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * @Description: 交易统计请求体
@@ -17,13 +16,13 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransactionStatisticsRequest implements Serializable {
+public class TransactionStatisticsHistogramRequest implements Serializable {
 
 
     /**
      * 交易统计查询请求体
      */
-    private TradeStatisticalAnalysisPreRequest tradeStatisticalAnalysisPreRequest;
+    private TradeStatisticalAnalysisPreRequest transactionStatisticsQuery;
 
 
     /**

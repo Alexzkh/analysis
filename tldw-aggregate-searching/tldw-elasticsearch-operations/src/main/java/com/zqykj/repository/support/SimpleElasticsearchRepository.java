@@ -5,6 +5,7 @@ package com.zqykj.repository.support;
 
 
 import com.zqykj.common.enums.QueryType;
+import com.zqykj.common.es.BuilderQuery;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
@@ -13,7 +14,6 @@ import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
 import com.zqykj.core.aggregation.parse.AggregationParser;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
-import com.zqykj.core.query.QueryAndAggregationBuilder;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -266,6 +266,30 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             operations.delete(query, entityClass, indexCoordinates);
             return null;
         }, entityClass);
+    }
+
+    @Override
+    public <T> Page<T> findByCondition(Pageable pageable, String routing, Class<T> entityClass, String... values) {
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(entityClass);
+        String propertyName = entity.getRequiredPersistentProperty(pageable.getSort().getOrders().get(0).getProperty()).getFieldName();
+        if (StringUtils.isEmpty(propertyName)) {
+            throw new ElasticsearchException("The sort field cannot be null or empty,but it is null or empty at this time!");
+        }
+        String indexName = getIndexCoordinates(entityClass);
+        SearchRequest searchRequest = new SearchRequest(indexName);
+        QueryBuilder boolQueryBuilder = BuilderQuery.build(values);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(boolQueryBuilder);
+        searchSourceBuilder.sort(propertyName, pageable.getSort().getOrders().get(0).getDirection().isDescending()
+                ? SortOrder.DESC : SortOrder.ASC);
+        searchSourceBuilder.from(pageable.getPageNumber() * pageable.getPageSize());
+        searchSourceBuilder.size(pageable.getPageSize());
+        searchRequest.source(searchSourceBuilder);
+        searchRequest.routing(routing);
+        SearchHits<T> searchHits = execute(operations -> operations.search(searchRequest, entityClass,
+                getIndexCoordinates(entityClass)), entityClass);
+        AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, pageable);
+        return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
     }
 
     /**
@@ -745,7 +769,19 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
-    public <T> Map rangeAggs(List<QueryParams> queryParams, String field, String routing, List<Range> ranges, Class<T> clazz) {
+    public <T> Map rangeAggs(QuerySpecialParams query, String field, String routing, List<Range> ranges, Class<T> clazz) {
+
+        // 构建查询实例
+        Object queryTarget = null;
+        if (null != query) {
+
+            queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
+            if (null == queryTarget) {
+                log.error("could not build this query instance");
+                throw new ElasticsearchException("could not build this query,please check  build method  QueryMappingBuilder.buildDslQueryBuilderMapping() ");
+            }
+        }
+
         ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
         String indexName = entity.getIndexName();
         String bucketAliasName = entity.getRequiredPersistentProperty(field).getFieldName();
@@ -765,7 +801,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (StringUtils.isNotEmpty(routing)) {
             searchRequest.routing(routing);
         }
-        QueryAndAggregationBuilder.queryAndAggregationBuilder(queryParams, searchSourceBuilder, entity);
+        if (null != queryTarget) {
+            searchSourceBuilder.query((QueryBuilder) queryTarget);
+        }
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         ParsedRange agg = searchResponse.getAggregations().get(bucket);
@@ -777,7 +815,19 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
-    public <T> Map statsAggs(List<QueryParams> queryParams, String field, String routing, Class<T> clazz) {
+    public <T> Map statsAggs(QuerySpecialParams query, String field, String routing, Class<T> clazz) {
+
+        // 构建查询实例
+        Object queryTarget = null;
+        if (null != query) {
+
+            queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
+            if (null == queryTarget) {
+                log.error("could not build this query instance");
+                throw new ElasticsearchException("could not build this query,please check  build method  QueryMappingBuilder.buildDslQueryBuilderMapping() ");
+            }
+        }
+
         ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
         String indexName = entity.getIndexName();
 
@@ -789,10 +839,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         searchSourceBuilder.size(0);
         searchSourceBuilder.aggregation(aggregation);
         SearchRequest searchRequest = new SearchRequest(indexName);
-        if (StringUtils.isNotEmpty(routing)) {
-            searchRequest.routing(routing);
+        if (null != queryTarget) {
+            searchSourceBuilder.query((QueryBuilder) queryTarget);
         }
-        QueryAndAggregationBuilder.queryAndAggregationBuilder(queryParams, searchSourceBuilder, entity);
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         org.elasticsearch.search.aggregations.metrics.ParsedStats agg = searchResponse.getAggregations().get(bucket);
