@@ -2,6 +2,7 @@ package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.tarde_statistics.TimeGroupTradeAmountSum;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.common.response.HistogramStatisticResponse;
 import com.zqykj.common.response.TransactionStatisticsResponse;
@@ -35,4 +36,7 @@ public interface ITransactionStatistics {
      * <h2> 交易统计分析前置查询 </h2>
      */
     QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, TradeStatisticalAnalysisPreRequest request);
+
+
+    ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest);
 }

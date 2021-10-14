@@ -14,6 +14,7 @@ import com.zqykj.enums.DateIntervalUnit;
 import java.util.List;
 import java.util.Map;
 
+import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.context.annotation.Primary;
@@ -204,7 +205,7 @@ public interface EntranceRepository extends CrudRepository {
     <T> Map dateHistogramAggs(DateHistogramBuilder dateHistogramBuilder, String routing, Class<T> clazz);
 
     /**
-     * <h2> 按日期间隔分组并根据某个字段进行汇总求和 </h2> d
+     * <h2> 按日期间隔分组并根据某个字段进行汇总求和 </h2>
      *
      * @param query          查询参数 (eg. 可以先筛选数据,在对数据进行聚合统计分析)
      * @param dateField      日期聚合字段
@@ -215,4 +216,14 @@ public interface EntranceRepository extends CrudRepository {
      */
     <T> Map<String, Object> dateGroupAndSum(QuerySpecialParams query, String dateField, DateSpecificFormat specificFormat,
                                             String sumField, Class<T> clazz, String routing);
+
+    /**
+     * <h2> 组合查询与聚合 </h2>
+     *
+     * @param query   查询参数
+     * @param agg     聚合参数
+     * @param clazz   实体类
+     * @param routing 路由
+     */
+    <T> Map<String, Object> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing);
 }
