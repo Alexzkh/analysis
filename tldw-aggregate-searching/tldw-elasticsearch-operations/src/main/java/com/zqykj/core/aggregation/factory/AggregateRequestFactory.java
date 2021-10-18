@@ -65,6 +65,8 @@ public class AggregateRequestFactory {
                 return new DateSpecificFormat("1M", "yyyy-MM");
             case "y":
                 return new DateSpecificFormat("1y", "yyyy");
+            case "q":
+                return new DateSpecificFormat("1q", "yyyy-MM");
             default:
                 return new DateSpecificFormat("1h", "HH");
         }
