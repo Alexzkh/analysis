@@ -410,5 +410,5 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         }
     }
 
-
+    // 聚合解析
 }

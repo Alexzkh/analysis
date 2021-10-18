@@ -24,7 +24,7 @@ public class DateParams {
 
     /**
      * 仅仅支持单个日历单位 eg. 1h(代表间隔一小时) , 这里不能超过1, eg. 2h(就会报错), 如果需要固定间隔,请使用fixedInterval(这里就可以输入2h等等)
-     * 支持的单位 s(秒),m(分钟),h(小时),d(天),w(周),M(月),y(年)
+     * 支持的单位 s(秒),m(分钟),h(小时),d(天),w(周),M(月),y(年),q(季度)
      */
     @DateIntervalParam
     private String calendarInterval;

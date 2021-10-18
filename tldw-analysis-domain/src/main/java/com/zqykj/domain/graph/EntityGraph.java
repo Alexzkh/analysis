@@ -20,5 +20,8 @@ public class EntityGraph {
     private Long id;
 
     @Field(name = "type", type = FieldType.Keyword)
+    private String entityId;
+
+    @Field(name = "type", type = FieldType.Keyword)
     private String type;
 }

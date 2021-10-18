@@ -76,10 +76,20 @@ public class AggregationParams {
      */
     private QuerySpecialParams querySpecialParams;
 
+
+    // 聚合里面也可以带出相关的字段
+    private FetchSource fetchSource;
+
     public AggregationParams(String name, String type, String field) {
         this.name = name;
         this.type = type;
         this.field = field;
+    }
+
+    public AggregationParams(String name, String type, FetchSource fetchSource) {
+        this.name = name;
+        this.type = type;
+        this.fetchSource = fetchSource;
     }
 
     public AggregationParams(String name, String type, String field, int size) {

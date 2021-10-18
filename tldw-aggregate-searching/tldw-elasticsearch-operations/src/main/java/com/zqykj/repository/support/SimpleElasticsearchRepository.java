@@ -975,9 +975,12 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // 普通查询
         if (null != queryTarget) {
             sourceBuilder.query((QueryBuilder) queryTarget);
+            // 聚合查询不需要 带出具体数据
+            sourceBuilder.size(0);
         }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
+        AggregationParser.standardParse(response.getAggregations(), "", "");
         // 需要返回一个查询的对象, 一个聚合的对象
         Map<String, Object> result = new HashMap<>();
         return result;
