@@ -4,8 +4,10 @@
 package com.zqykj.core.aggregation.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 
 import java.util.*;
@@ -20,6 +22,7 @@ public class AggregationParser {
     private final static String VALUE_AS_STRING = "valueAsString";
     private final static String AGGREGATIONS_KEY = "aggregations";
     private final static String AS_MAP_KEY = "asMap";
+    private final static String AGG_NAME = "name";
 
     public static Map<String, Object> parseDateGroupAndSum(Aggregations aggregations) {
 
@@ -104,4 +107,33 @@ public class AggregationParser {
 //                .forEachOrdered(x -> result.put(x.getKey(), x.getValue()));
         return result;
     }
+
+    public static void standardParse(Aggregations aggregations, String name, String key) {
+
+        ArrayList<Object> list = JacksonUtils.parse(JacksonUtils.toJson(aggregations.asList()), new TypeReference<ArrayList<Object>>() {
+        });
+
+        for (Object agg : list) {
+
+
+            Map<String, Object> map = (LinkedHashMap<String, Object>) agg;
+            if (map.containsKey(BUCKET_KEY)) {
+
+                List<Map<String, Object>> bucketObj = (List<Map<String, Object>>) map.get(BUCKET_KEY);
+
+                if (name.equals(map.get(AGG_NAME))) {
+
+
+                } else {
+
+                }
+                // 需要进一步找到桶类的聚合
+            } else {
+
+                // 直接get key 返回对应的值
+            }
+        }
+    }
+
+
 }

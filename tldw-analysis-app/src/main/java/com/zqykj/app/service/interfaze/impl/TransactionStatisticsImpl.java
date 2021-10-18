@@ -12,6 +12,7 @@ import com.zqykj.common.response.*;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
+import com.zqykj.core.AbstractElasticsearchTemplate;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.factory.AggregationRequestParamFactory;
@@ -130,7 +131,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     }
 
     @Override
-    public Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) throws Exception{
+    public Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) throws Exception {
 
 
         PageRequest pageRequest = PageRequest.of(transactionStatisticsDetailRequest.getQueryRequest().getPaging().getPage(),
@@ -179,7 +180,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     public ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) {
 
         // 构建交易统计结果查询
-        QuerySpecialParams query = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequest(caseId, queryRequest);
+        QuerySpecialParams query = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequest(queryRequest, caseId);
 
         // 构建交易统计分析聚合查询
         AggregationParams agg = aggregationRequestParamFactory.createTradeStatisticsAnalysisQueryAgg(queryRequest);
