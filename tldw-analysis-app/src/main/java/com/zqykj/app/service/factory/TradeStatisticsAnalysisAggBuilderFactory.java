@@ -12,6 +12,8 @@ import com.zqykj.infrastructure.util.StringUtils;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.aggregate.FetchSource;
+import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
@@ -93,16 +95,19 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
             sortPath = tradeMoneySum;
         }
         setSubPipelineAggregation(request, root, tradeNetBucketsPath, tradeNetScript, sortPath, direction);
+
+        // 添加聚合桶中聚合需要显示的字段
+        addTopHits(root);
         return root;
     }
 
-    private static void setSubAggregation(AggregationParams root, AggregationParams sub) {
+    private void setSubAggregation(AggregationParams root, AggregationParams sub) {
         root.setPerSubAggregation(sub);
     }
 
-    private static void setSubPipelineAggregation(TradeStatisticalAnalysisQueryRequest request, AggregationParams root,
-                                                  Map<String, String> tradeNetBucketsPath, String tradeNetScript,
-                                                  String sortField, Direction direction) {
+    private void setSubPipelineAggregation(TradeStatisticalAnalysisQueryRequest request, AggregationParams root,
+                                           Map<String, String> tradeNetBucketsPath, String tradeNetScript,
+                                           String sortField, Direction direction) {
 
 
         // 计算交易净和
@@ -116,5 +121,21 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
         PipelineAggregationParams tradeResultOrderAgg = new PipelineAggregationParams("trade_result_order",
                 "bucket_sort", Collections.singletonList(fieldSort), pagination);
         root.setPerPipelineAggregation(tradeResultOrderAgg);
+    }
+
+    private void addTopHits(AggregationParams root) {
+
+        FetchSource fetchSource = new FetchSource(TacticsAnalysisField.tradeStatisticalAggShowField());
+        AggregationParams hitsAgg = new AggregationParams("agg_show_fields", "top_hits", fetchSource);
+        root.setPerSubAggregation(hitsAgg);
+    }
+
+
+    public static void main(String[] args) {
+        AggregationParams date = new AggregationParams("", "", new DateParams());
+
+
+        AggregationParams sum = new AggregationParams();
+
     }
 }

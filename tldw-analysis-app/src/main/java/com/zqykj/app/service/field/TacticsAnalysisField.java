@@ -45,7 +45,27 @@ public interface TacticsAnalysisField {
      */
     String LOAN_FLAG = "loan_flag";
 
+    /**
+     * 开户名称
+     */
+    String CUSTOMER_NAME = "customer_name";
+
+    /**
+     * 开户银行
+     */
+    String BANK = "bank";
+
+    /**
+     * 查询账号
+     */
+    String QUERY_ACCOUNT = "query_account";
+
     String LOAN_FLAG_OUT = "出";
 
     String LOAN_FLAG_IN = "进";
+
+    static String[] tradeStatisticalAggShowField() {
+
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
+    }
 }

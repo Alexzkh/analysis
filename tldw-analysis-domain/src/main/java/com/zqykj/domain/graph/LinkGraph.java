@@ -20,5 +20,8 @@ public class LinkGraph {
     private Long id;
 
     @Field(name = "type", type = FieldType.Keyword)
+    private String linkId;
+
+    @Field(name = "type", type = FieldType.Keyword)
     private String type;
 }

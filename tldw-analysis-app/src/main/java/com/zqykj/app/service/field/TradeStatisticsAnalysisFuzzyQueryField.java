@@ -6,7 +6,7 @@ package com.zqykj.app.service.field;
 /**
  * <h1> 银行交易流水模糊匹配字段 </h1>
  */
-public interface BankFlowFuzzyQueryField {
+public interface TradeStatisticsAnalysisFuzzyQueryField {
 
     // 开户名称 customer_name eg  customer_name.customer_name_wildcard 中 customer_name_wildcard 属于多字段类型(专门用来模糊匹配)
 

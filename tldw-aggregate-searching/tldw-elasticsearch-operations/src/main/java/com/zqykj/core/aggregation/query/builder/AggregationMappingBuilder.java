@@ -4,6 +4,7 @@
 package com.zqykj.core.aggregation.query.builder;
 
 import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
+import com.zqykj.parameters.aggregate.FetchSource;
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.CommonAggregationParams;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -293,6 +294,10 @@ public class AggregationMappingBuilder {
                 }
                 addPipelineAggregationMapping(father, parameters.getPipelineAggregation(), aggregationClass);
             }
+        } else if (FetchSource.class.isAssignableFrom(field.getType())) {
+            // 处理聚合查询需要展示的字段
+            addFetchField(target, parameters.getFetchSource(), aggregationClass, field);
+
         } else {
             addOptionalParameterMapping(target, aggregationClass, field, parameters);
         }
@@ -330,6 +335,27 @@ public class AggregationMappingBuilder {
         }
     }
 
+    private static void addFetchField(Object target, FetchSource fetchSource, Class<?> aggregationClass, Field field) {
+
+        if (null == fetchSource) {
+            return;
+        }
+        Optional<Method> methodOptional = ReflectionUtils.findMethod(aggregationClass, field.getName(), String[].class, String[].class);
+        methodOptional.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target,
+                fetchSource.getIncludes(), fetchSource.getExcludes()));
+        // 设置from,size
+        org.springframework.util.ReflectionUtils.doWithFields(field.getType(), subField -> {
+
+            Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), subField.getType());
+
+            optionalMethod.ifPresent(method -> {
+
+                org.springframework.util.ReflectionUtils.makeAccessible(subField);
+                Object value = org.springframework.util.ReflectionUtils.getField(subField, fetchSource);
+                org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
+            });
+        });
+    }
 
     private static void addGeneraParametersMapping(Object target, CommonAggregationParams parameters,
                                                    Class<?> aggregationClass, Field field, Class<?> fieldClass) {

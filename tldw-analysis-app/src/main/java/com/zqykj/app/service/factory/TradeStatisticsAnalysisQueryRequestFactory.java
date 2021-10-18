@@ -3,19 +3,34 @@
  */
 package com.zqykj.app.service.factory;
 
+import com.zqykj.app.service.field.TradeStatisticsAnalysisFuzzyQueryField;
 import com.zqykj.app.service.field.TacticsAnalysisField;
+import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.infrastructure.util.StringUtils;
+import com.zqykj.common.vo.PageRequest;
+import com.zqykj.common.vo.SortRequest;
+import com.zqykj.factory.QueryRequestParamFactory;
+import com.zqykj.parameters.FieldSort;
+import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.query.*;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 /**
  * 交易统计分析查询参数构建工厂
  */
-public class TradeStatisticsAnalysisQueryRequestFactory {
+@ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
+@Service
+public class TradeStatisticsAnalysisQueryRequestFactory implements QueryRequestParamFactory {
 
-    public static QuerySpecialParams createTradeAmountByTimeQuery(TradeStatisticalAnalysisPreRequest request, String caseId) {
+    public <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T requestParam, V other) {
+
+        TradeStatisticalAnalysisPreRequest request = (TradeStatisticalAnalysisPreRequest) requestParam;
+
+        String caseId = other.toString();
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
 
@@ -40,6 +55,39 @@ public class TradeStatisticsAnalysisQueryRequestFactory {
         ));
         // 添加组合查询
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        return querySpecialParams;
+    }
+
+
+    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequest(T requestParam, V other) {
+
+        TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) requestParam;
+        // 获取前置请求
+        TradeStatisticalAnalysisPreRequest preRequest = request.convertFrom(request);
+        QuerySpecialParams querySpecialParams = this.createTradeAmountByTimeQuery(preRequest, other);
+
+        // 组装模糊查询
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+
+            CombinationQueryParams fuzzyCombinationQueryParams = new CombinationQueryParams();
+            fuzzyCombinationQueryParams.setType(ConditionType.should);
+            for (String fuzzyField : TradeStatisticsAnalysisFuzzyQueryField.fuzzyFields) {
+
+                fuzzyCombinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.wildcard, fuzzyField, request.getKeyword()));
+            }
+            querySpecialParams.addCombiningQueryParams(fuzzyCombinationQueryParams);
+            querySpecialParams.setDefaultParam(new DefaultQueryParam());
+        }
+
+        // 补充查询的分页 和 排序
+        PageRequest pageRequest = request.getPageRequest();
+        if (null != pageRequest) {
+            querySpecialParams.setPagination(new Pagination(pageRequest.getPage(), pageRequest.getPageSize()));
+        }
+        SortRequest sortRequest = request.getSortRequest();
+        if (null != sortRequest) {
+            querySpecialParams.setSort(new FieldSort(sortRequest.getProperty(), sortRequest.getOrder().name()));
+        }
         return querySpecialParams;
     }
 }

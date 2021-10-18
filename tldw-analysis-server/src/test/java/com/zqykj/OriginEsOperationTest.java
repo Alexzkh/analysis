@@ -221,13 +221,13 @@ public class OriginEsOperationTest {
 //            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2020-07-04 12:09:44");
             bankTransactionFlow.setTradingTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2020-07-04 12:09:44"));
             bankTransactionFlow.setDataSchemaId("21321dataSchemaId");
-            EntityGraph entityGraph = new EntityGraph(132132131L, "bank_card");
-            EntityGraph entityGraph1 = new EntityGraph(2222132132131L, "bank_card");
+            EntityGraph entityGraph = new EntityGraph(132132131L, "bank_card", "");
+            EntityGraph entityGraph1 = new EntityGraph(2222132132131L, "bank_card", "");
             List<EntityGraph> entityGraphs = new ArrayList<>();
             entityGraphs.add(entityGraph);
             entityGraphs.add(entityGraph1);
-            LinkGraph linkGraph = new LinkGraph(2132131221324324L, "trade_bank_card");
-            LinkGraph linkGraph1 = new LinkGraph(33332132131224L, "trade_bank_card");
+            LinkGraph linkGraph = new LinkGraph(2132131221324324L, "trade_bank_card", "");
+            LinkGraph linkGraph1 = new LinkGraph(33332132131224L, "trade_bank_card", "");
             List<LinkGraph> linkGraphs = new ArrayList<>();
             linkGraphs.add(linkGraph);
             linkGraphs.add(linkGraph1);
@@ -369,7 +369,7 @@ public class OriginEsOperationTest {
         request.setPageRequest(new com.zqykj.common.vo.PageRequest(0, 25));
         request.setKeyword("*平安*");
 
-        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("9046a9b85f17428885d14a491a12731d", request);
+        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
 
         if (serverResponse.isSuccess()) {
 
