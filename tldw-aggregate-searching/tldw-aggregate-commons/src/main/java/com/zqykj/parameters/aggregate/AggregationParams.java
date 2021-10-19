@@ -12,6 +12,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <h1> 聚合参数封装 </h1>
@@ -79,6 +80,9 @@ public class AggregationParams {
 
     // 聚合里面也可以带出相关的字段
     private FetchSource fetchSource;
+
+    // key: 聚合名称,  value: 聚合结果中需要取出的属性结果
+    private Map<String, String> mapping;
 
     public AggregationParams(String name, String type, String field) {
         this.name = name;

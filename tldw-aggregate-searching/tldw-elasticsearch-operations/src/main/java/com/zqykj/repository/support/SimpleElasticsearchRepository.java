@@ -936,7 +936,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return result;
     }
 
-    public <T> Map<String, Object> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
+    public <T> List<List<Object>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
 
         // 构建查询对象
         Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
@@ -980,12 +980,17 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-        AggregationParser.standardParse(response.getAggregations(), "", "");
-        // 需要返回一个查询的对象, 一个聚合的对象
-        Map<String, Object> result = new HashMap<>();
+
+        Map<String, String> mapping = new LinkedHashMap<>();
+
+        mapping.put("sum_pay_in_transaction_money", "valueAsString");
+        mapping.put("tradeNetMoney", "valueAsString");
+        mapping.put("count_query_card", "value");
+
+        List<List<Object>> result = AggregationParser.parseMulti(response.getAggregations(), mapping);
+
         return result;
     }
-
 
     /**
      * @param value: 模糊查询的值
