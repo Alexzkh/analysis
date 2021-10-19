@@ -981,13 +981,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
 
-        Map<String, String> mapping = new LinkedHashMap<>();
-
-        mapping.put("sum_pay_in_transaction_money", "valueAsString");
-        mapping.put("tradeNetMoney", "valueAsString");
-        mapping.put("count_query_card", "value");
-
-        List<List<Object>> result = AggregationParser.parseMulti(response.getAggregations(), mapping);
+        List<List<Object>> result = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
 
         return result;
     }
