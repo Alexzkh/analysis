@@ -7,6 +7,7 @@ import com.zqykj.app.service.field.TacticsAnalysisField;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.vo.Direction;
+import com.zqykj.core.aggregation.response.ElasticsearchAggregationResponseAttributes;
 import com.zqykj.enums.AggsType;
 import com.zqykj.factory.AggregationRequestParamFactory;
 import com.zqykj.infrastructure.util.StringUtils;
@@ -36,7 +37,9 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
 
     public <T> AggregationParams createTradeStatisticsAnalysisQueryAgg(T param) {
 
+        // 需要取出的聚合结果值 key: 聚合名称 value: 聚合属性
         Map<String, String> mapping = new LinkedHashMap<>();
+
         TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) param;
         String terms = AggsType.terms.name();
         String cardGroupName = TacticsAnalysisField.QUERY_CARD + AGG_NAME_SPLIT + terms;
@@ -47,12 +50,14 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
         String tradeMoneySum = TacticsAnalysisField.TRANSACTION_MONEY + AGG_NAME_SPLIT + sum;
         AggregationParams subTradeMoneySumAgg = new AggregationParams(tradeMoneySum, sum, TacticsAnalysisField.TRANSACTION_MONEY);
         setSubAggregation(root, subTradeMoneySumAgg);
+        mapping.put(tradeMoneySum, ElasticsearchAggregationResponseAttributes.valueAsString);
 
         // 计算每个查询卡号的交易总次数
         String count = AggsType.count.name();
         String tradeCount = TacticsAnalysisField.QUERY_CARD + AGG_NAME_SPLIT + count;
         AggregationParams subTradeTotalAgg = new AggregationParams(tradeCount, count, TacticsAnalysisField.QUERY_CARD);
         setSubAggregation(root, subTradeTotalAgg);
+        mapping.put(tradeCount, ElasticsearchAggregationResponseAttributes.value);
 
         // 计算每个查询卡号的入账数据过滤(该聚合能统计入账次数)
         String filter = AggsType.filter.name();
@@ -60,11 +65,13 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
         QuerySpecialParams payInQuery = new QuerySpecialParams();
         payInQuery.setCommonQuery(new CommonQueryParams(QueryType.term, TacticsAnalysisField.LOAN_FLAG, TacticsAnalysisField.LOAN_FLAG_IN));
         AggregationParams subPayInAgg = new AggregationParams(payIn, filter, payInQuery);
+        mapping.put(payIn, ElasticsearchAggregationResponseAttributes.docCount);
+
         // 继续子聚合
         // 计算每个查询卡号的入账总金额
-
         String payInMoneySum = TacticsAnalysisField.TRANSACTION_MONEY + AGG_NAME_SPLIT + sum + AGG_NAME_SPLIT + TacticsAnalysisField.LOAN_FLAG_IN_EN;
         AggregationParams payInMoneySumAgg = new AggregationParams(payInMoneySum, sum, TacticsAnalysisField.TRANSACTION_MONEY);
+        mapping.put(payInMoneySum, ElasticsearchAggregationResponseAttributes.valueAsString);
         setSubAggregation(subPayInAgg, payInMoneySumAgg);
         setSubAggregation(root, subPayInAgg);
 
@@ -74,10 +81,13 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
         QuerySpecialParams payOutQuery = new QuerySpecialParams();
         payOutQuery.setCommonQuery(new CommonQueryParams(QueryType.term, TacticsAnalysisField.LOAN_FLAG, TacticsAnalysisField.LOAN_FLAG_OUT));
         AggregationParams subPayOutAgg = new AggregationParams(payOut, filter, payOutQuery);
+        mapping.put(payOut, ElasticsearchAggregationResponseAttributes.docCount);
+
         // 继续子聚合
         // 计算每个查询卡号的出账总金额
         String payOutMoneySum = TacticsAnalysisField.TRANSACTION_MONEY + AGG_NAME_SPLIT + sum + AGG_NAME_SPLIT + TacticsAnalysisField.LOAN_FLAG_OUT_EN;
         AggregationParams payOutMoneySumAgg = new AggregationParams(payOutMoneySum, sum, TacticsAnalysisField.TRANSACTION_MONEY);
+        mapping.put(payOutMoneySum, ElasticsearchAggregationResponseAttributes.valueAsString);
         setSubAggregation(subPayOutAgg, payOutMoneySumAgg);
         setSubAggregation(root, subPayOutAgg);
 
@@ -85,12 +95,14 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
         String min = AggsType.min.name();
         String tradeEarliestTime = TacticsAnalysisField.TRADING_TIME + AGG_NAME_SPLIT + min;
         AggregationParams tradeEarliestTimeAgg = new AggregationParams(tradeEarliestTime, min, TacticsAnalysisField.TRADING_TIME);
+        mapping.put(tradeEarliestTime, ElasticsearchAggregationResponseAttributes.valueAsString);
         setSubAggregation(root, tradeEarliestTimeAgg);
 
         // 最晚交易时间
         String max = AggsType.max.name();
         String tradeLatestTime = TacticsAnalysisField.TRADING_TIME + AGG_NAME_SPLIT + max;
         AggregationParams tradeLatestTimeAgg = new AggregationParams(tradeLatestTime, max, TacticsAnalysisField.TRADING_TIME);
+        mapping.put(tradeLatestTime, ElasticsearchAggregationResponseAttributes.valueAsString);
         setSubAggregation(root, tradeLatestTimeAgg);
 
         // 管道聚合构建
@@ -104,6 +116,7 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
         if (null == request.getSortRequest() || (request.getSortRequest() != null && StringUtils.isBlank(request.getSortRequest().getProperty()))) {
             sortPath = tradeMoneySum;
         }
+        mapping.put(tradeNetScript, ElasticsearchAggregationResponseAttributes.valueAsString);
         setSubPipelineAggregation(request, root, tradeNetBucketsPath, tradeNetScript, sortPath, direction);
 
         // 添加聚合桶中聚合需要显示的字段
