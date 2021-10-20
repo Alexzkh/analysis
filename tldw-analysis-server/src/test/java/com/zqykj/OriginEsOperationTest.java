@@ -5,9 +5,12 @@ package com.zqykj;
 
 
 import com.zqykj.app.service.dao.TeacherInfoDao;
+import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.request.AssetTrendsRequest;
+import com.zqykj.common.request.PagingRequest;
 import com.zqykj.common.response.TimeGroupTradeAmountSum;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.AmountOperationSymbol;
@@ -73,6 +76,9 @@ public class OriginEsOperationTest {
 
     @Autowired
     private ApplicationContext context;
+
+    @Autowired
+    private IAssetTrendsTactics iAssetTrendsTactics;
 
     private static Map<String, ? extends Class<?>> aggregateNameForClass;
 
@@ -318,7 +324,7 @@ public class OriginEsOperationTest {
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
         TimeGroupTradeAmountSum tradeAmountByTime =
-                iTransactionStatistics.getTradeAmountByTime("100376eb69614df4a7cd63ca6884827b", request, TimeTypeRequest.h);
+                iTransactionStatistics.getTradeAmountByTime("c94546bb87bd4b32947b576c565a94a2", request, TimeTypeRequest.h);
 
         log.info(JacksonUtils.toJson(tradeAmountByTime));
 
@@ -379,4 +385,59 @@ public class OriginEsOperationTest {
     }
 
 
+
+    @Test
+    public void testAssetTrendsResultQuery() {
+
+        AssetTrendsRequest request = new AssetTrendsRequest();
+        request.setCardNums(Arrays.asList("60138216660000014",
+                "60138216660001414",
+                "60138216660002814",
+                "60138216660004214",
+                "60138216660005614",
+                "60138216660007014",
+                "60138216660008414",
+                "60138216660009814",
+                "60138216660011214",
+                "60138216660012614",
+                "60138216660014014",
+                "60138216660015414",
+                "60138216660016814",
+                "60138216660018214",
+                "60138216660019614",
+                "60138216660021014",
+                "60138216660022414",
+                "60138216660023814",
+                "60138216660025214",
+                "60138216660026614",
+                "60138216660028014",
+                "60138216660029414",
+                "60138216660030814",
+                "60138216660032214",
+                "60138216660033614",
+                "60138216660035014",
+                "60138216660036414",
+                "60138216660037814",
+                "60138216660039214",
+                "60138216660040614",
+                "60138216660042014",
+                "60138216660043414",
+                "60138216660044814",
+                "60138216660046214",
+                "60138216660047614"));
+        request.setDateRange(new DateRangeRequest("", ""));
+        request.setFund("0");
+        request.setOperator(AmountOperationSymbol.gte);
+        request.setPaging(new PagingRequest(0,25));
+        request.setDateType("q");
+
+//        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
+
+        iAssetTrendsTactics.accessAssetTrendsTacticsResult("c94546bb87bd4b32947b576c565a94a2",request);
+//        if (serverResponse.isSuccess()) {
+//
+//            Object data = serverResponse.getData();
+//
+//        }
+    }
 }

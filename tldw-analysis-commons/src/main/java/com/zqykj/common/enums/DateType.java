@@ -13,6 +13,11 @@ public enum DateType {
     YEAR,
 
     /**
+     * 季
+     */
+    QUARTER,
+
+    /**
      * 月
      **/
     MONTH,
@@ -25,5 +30,5 @@ public enum DateType {
     /**
      * 时
      */
-    HOUR
+    HOUR,
 }
