@@ -84,6 +84,10 @@ public class TacticsAnalysisPublicAggBuilderFactory implements AggregationReques
         // 添加聚合桶中聚合需要显示的字段
         addTopHits(root, mapping);
 
+        // 设置同级聚合(需要统计出当前查询卡号去重的数量)
+        AggregationParams total = getTotal(TacticsAnalysisField.QUERY_CARD);
+        mapping.put(total.getName(), ElasticsearchAggregationResponseAttributes.value);
+        root.setSiblingAggregation(total);
         root.setMapping(mapping);
         return root;
     }
@@ -126,6 +130,12 @@ public class TacticsAnalysisPublicAggBuilderFactory implements AggregationReques
         FieldSort fieldSort = new FieldSort(sortPath, direction.name());
         addSubAggregationParams(root, pagination, fieldSort, mapping);
         return root;
+    }
+
+    public <T> AggregationParams getTotal(T field) {
+        String cardinality = AggsType.cardinality.name();
+        String total = TacticsAnalysisField.QUERY_CARD + AGG_NAME_SPLIT + cardinality;
+        return new AggregationParams(total, cardinality, field.toString());
     }
 
     /**

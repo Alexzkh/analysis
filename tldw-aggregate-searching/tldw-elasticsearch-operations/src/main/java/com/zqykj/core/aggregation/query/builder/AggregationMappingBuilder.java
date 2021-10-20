@@ -278,6 +278,11 @@ public class AggregationMappingBuilder {
             addDateParametersMapping(target, parameters.getDateParams(), aggregationClass, field, field.getType());
         } else if (List.class.isAssignableFrom(field.getType())) {
 
+            // 携带此注解的参数,不予处理
+            if (null != field.getAnnotation(OptionalParam.class)) {
+                return;
+            }
+
             Optional<Class<?>> parameterType = ReflectionUtils.findParameterType(parameters.getClass(), field.getName());
             if (!parameterType.isPresent()) {
                 return;

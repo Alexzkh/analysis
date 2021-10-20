@@ -4,6 +4,7 @@ import com.zqykj.app.service.field.TacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.transform.NumericalConversion;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryResponse;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.enums.HistogramStatistic;
@@ -184,14 +185,21 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 构建交易统计分析聚合查询
         AggregationParams agg = aggregationRequestParamFactory.createTradeStatisticsAnalysisQueryAgg(queryRequest);
 
-        // 聚合结果属性 与 实体属性映射
+        // 数据总量聚合
 
+        // 聚合结果属性 与 实体属性映射
+        Map<String, String> entityMapping = convertFromMapping(agg.getMapping());
 
         List<List<Object>> result = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionFlow.class, caseId);
 
-
-
+        TradeStatisticalAnalysisQueryResponse response = new TradeStatisticalAnalysisQueryResponse();
         return ServerResponse.createBySuccess(null);
+    }
+
+
+    private Map<String, String> convertFromMapping(Map<String, String> mapping) {
+
+        return null;
     }
 
 }

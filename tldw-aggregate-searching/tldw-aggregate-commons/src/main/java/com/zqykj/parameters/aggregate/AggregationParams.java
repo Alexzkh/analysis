@@ -84,6 +84,10 @@ public class AggregationParams {
     // key: 聚合名称,  value: 根据聚合属性字段取出的值
     private Map<String, String> mapping;
 
+    // 同级聚合参数
+    @OptionalParam
+    private List<AggregationParams> siblingAggregation;
+
     public AggregationParams(String name, String type, String field) {
         this.name = name;
         this.type = type;
@@ -169,7 +173,6 @@ public class AggregationParams {
         this.subAggregation.add(aggregation);
     }
 
-
     public void setPerSubAggregation(AggregationParams aggregation, PipelineAggregationParams pipelineAggregationParams) {
         if (CollectionUtils.isEmpty(this.subAggregation)) {
             this.subAggregation = new ArrayList<>();
@@ -188,6 +191,14 @@ public class AggregationParams {
             this.pipelineAggregation = new ArrayList<>();
         }
         this.pipelineAggregation.add(aggregation);
+    }
+
+    public void setSiblingAggregation(AggregationParams sibling) {
+
+        if (CollectionUtils.isEmpty(this.siblingAggregation)) {
+            this.siblingAggregation = new ArrayList<>();
+        }
+        this.siblingAggregation.add(sibling);
     }
 
     /**

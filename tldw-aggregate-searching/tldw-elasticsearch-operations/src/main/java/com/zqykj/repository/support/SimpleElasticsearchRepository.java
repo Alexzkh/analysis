@@ -941,7 +941,22 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // 构建查询对象
         Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
         // 构建聚合对象
+        List<Object> siblingTargets = new ArrayList<>();
+
+        // 主聚合
         Object aggTarget = AggregationMappingBuilder.buildAggregation(agg);
+
+        // 兄弟聚合
+        if (!CollectionUtils.isEmpty(agg.getSiblingAggregation())) {
+
+            for (AggregationParams aggregationParams : agg.getSiblingAggregation()) {
+
+                Object siblingTarget = AggregationMappingBuilder.buildAggregation(aggregationParams);
+                if (null != siblingTarget) {
+                    siblingTargets.add(siblingTarget);
+                }
+            }
+        }
 
         // 构建搜索请求
         SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
@@ -971,6 +986,13 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // 聚合查询
         if (null != aggTarget) {
             sourceBuilder.aggregation((AggregationBuilder) aggTarget);
+            // 是否需要设置兄弟聚合
+            if (!CollectionUtils.isEmpty(siblingTargets)) {
+                for (Object siblingTarget : siblingTargets) {
+                    // 设置兄弟聚合对象
+                    sourceBuilder.aggregation((AggregationBuilder) siblingTarget);
+                }
+            }
         }
         // 普通查询
         if (null != queryTarget) {
@@ -980,9 +1002,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-
         List<List<Object>> result = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
-
         return result;
     }
 

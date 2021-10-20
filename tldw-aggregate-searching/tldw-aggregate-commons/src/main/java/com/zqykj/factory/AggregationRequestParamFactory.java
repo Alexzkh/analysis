@@ -21,4 +21,9 @@ public interface AggregationRequestParamFactory {
      * @return: com.zqykj.parameters.aggregate.AggregationParams
      **/
     <T> AggregationParams createAssetTrendsAnalysisQueryAgg(T request);
+
+    /**
+     * <h2> 获取去重后的总数据量 </h2>
+     */
+    <T> AggregationParams getTotal(T field);
 }

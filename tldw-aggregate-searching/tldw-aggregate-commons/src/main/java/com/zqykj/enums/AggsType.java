@@ -60,5 +60,11 @@ public enum AggsType {
     /**
      * top hits
      */
-    top_hits
+    top_hits,
+
+
+    /**
+     * 去重
+     */
+    cardinality
 }
