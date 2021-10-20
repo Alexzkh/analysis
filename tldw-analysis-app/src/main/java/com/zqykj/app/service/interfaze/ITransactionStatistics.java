@@ -59,14 +59,20 @@ public interface ITransactionStatistics {
     QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, TradeStatisticalAnalysisPreRequest request);
 
 
+    /**
+     * 获取交易统计分析结果(主要是直方图数据、折线图数据以及行列数据).
+     *
+     * @param caseId:       案件编号.
+     * @param queryRequest: 交易统计分析查询请求体.
+     * @return: com.zqykj.common.core.ServerResponse
+     **/
     ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest);
 
     /**
-     * @param caseId: 案件编号.
+     * @param caseId:                             案件编号.
      * @param transactionStatisticsDetailRequest: 交易统计详情页请求体
      * @return: com.zqykj.domain.Page
      **/
     Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) throws Exception;
-
 
 }

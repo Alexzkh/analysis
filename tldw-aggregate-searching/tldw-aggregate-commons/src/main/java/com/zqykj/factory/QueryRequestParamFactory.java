@@ -13,4 +13,6 @@ public interface QueryRequestParamFactory {
     <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T request, V other);
 
     <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequest(T request, V other);
+
+    <T, V> QuerySpecialParams buildCommonQuerySpecialParams(T request, V parameter);
 }
