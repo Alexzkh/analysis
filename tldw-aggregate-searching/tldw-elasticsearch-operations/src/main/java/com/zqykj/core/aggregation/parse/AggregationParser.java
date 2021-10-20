@@ -4,12 +4,16 @@
 package com.zqykj.core.aggregation.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -23,6 +27,13 @@ public class AggregationParser {
     private final static String AGGREGATIONS_KEY = "aggregations";
     private final static String AS_MAP_KEY = "asMap";
     private final static String AGG_NAME = "name";
+    private final static String SUB_AGGREGATION = "aggregations";
+    private final static String AGG_TYPE = "type";
+    private final static String SHOW_FIELD_AGG = "top_hits";
+    private final static String AGG_HITS = "hits";
+    private final static String AGG_SOURCE_STRING = "sourceAsString";
+    private final static String AGG_TERMS = "terms";
+    private final static String AGG_METHOD_PREFIX = "get";
 
     public static Map<String, Object> parseDateGroupAndSum(Aggregations aggregations) {
 
@@ -108,32 +119,186 @@ public class AggregationParser {
         return result;
     }
 
-    public static void standardParse(Aggregations aggregations, String name, String key) {
+    /**
+     * <h2> 解析多组聚合结果 </h2>
+     */
+    public static List<List<Object>> parseMulti(Aggregations aggregations, Map<String, String> map) {
 
-        ArrayList<Object> list = JacksonUtils.parse(JacksonUtils.toJson(aggregations.asList()), new TypeReference<ArrayList<Object>>() {
+        // 讲首字母大写然后拼接上 get
+
+        List<List<Object>> result = new ArrayList<>();
+        map.forEach((key, value) -> {
+
+            List<Object> parse = parse(aggregations, value, key);
+
+            result.add(parse);
         });
 
-        for (Object agg : list) {
+        // 将不同列的属性值放到一组list中
+        return convertFromResult(result);
+    }
 
+    private static List<List<Object>> convertFromResult(List<List<Object>> result) {
 
-            Map<String, Object> map = (LinkedHashMap<String, Object>) agg;
-            if (map.containsKey(BUCKET_KEY)) {
+        if (CollectionUtils.isEmpty(result)) {
+            return result;
+        }
 
-                List<Map<String, Object>> bucketObj = (List<Map<String, Object>>) map.get(BUCKET_KEY);
+        List<List<Object>> newResult = new ArrayList<>();
 
-                if (name.equals(map.get(AGG_NAME))) {
+        int size = result.get(0).size();
 
+        for (int i = 0; i < size; i++) {
 
-                } else {
+            List<Object> newOne = new ArrayList<>();
 
+            for (List<Object> oldOne : result) {
+
+                newOne.add(oldOne.get(i));
+            }
+            newResult.add(newOne);
+        }
+        return newResult;
+    }
+
+    /**
+     * <h2> 解析聚合结果 </h2>
+     */
+    public static List<Object> parse(Aggregations aggregations, String key, String aggregationName) {
+
+        // 讲首字母大写然后拼接上 get
+        key = applyFirstChartUpperCase(key);
+
+        ArrayList<Object> result = new ArrayList<>();
+        standardParse(result, aggregations, key, aggregationName);
+        return result;
+    }
+
+    public static void standardParse(List<Object> result, Aggregations aggregations, String key, String aggregationName) {
+
+        List<Aggregation> list = aggregations.asList();
+
+        for (Aggregation agg : list) {
+
+            parseAggregationClass(result, agg, key, aggregationName);
+        }
+    }
+
+    /**
+     * <h2> 解析聚合类 </h2>
+     */
+    private static void parseAggregationClass(List<Object> result, Aggregation aggregation, String aggMethodKey, String aggregationName) {
+
+        Class<? extends Aggregation> aClass = aggregation.getClass();
+
+        Method[] methods = aClass.getMethods();
+
+        if (methods.length == 0) {
+            return;
+        }
+
+        String type = aggregation.getType();
+
+        if (aggregation.getName().equals(aggregationName) && !type.endsWith(AGG_TERMS)) {
+
+            Optional<Method> optionalMethod = getAggregationMethod(aggMethodKey, methods);
+
+            if (optionalMethod.isPresent()) {
+
+                Object value = ReflectionUtils.invokeMethod(optionalMethod.get(), aggregation);
+
+                result.add(value);
+            }
+        } else if (type.endsWith(AGG_TERMS)) {
+            // 桶聚合
+            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+                    method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
+            methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, aggregation,
+                    aggMethodKey, aggregationName));
+        } else {
+            // 子聚合处理
+            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+                    method.getName().equals(applyFirstChartUpperCase(SUB_AGGREGATION))).findFirst();
+            methodOptional.ifPresent(method -> {
+
+                Object o = ReflectionUtils.invokeMethod(method, aggregation);
+                if (o == null) {
+                    return;
                 }
-                // 需要进一步找到桶类的聚合
-            } else {
+                if (o instanceof Aggregations) {
 
-                // 直接get key 返回对应的值
+                    Aggregations aggregations = (Aggregations) o;
+                    parseSubAggregations(aggregations, result, aggMethodKey, aggregationName);
+                }
+            });
+        }
+    }
+
+    /**
+     * <h2> 解析桶聚合 </h2>
+     */
+    private static void parseBucketAggregation(List<Object> result, Class<? extends Aggregation> clazz, Aggregation aggregation,
+                                               String aggMethodKey, String aggregationName) {
+
+        Optional<Method> methodOptional = com.zqykj.util.ReflectionUtils.findMethod(clazz, applyFirstChartUpperCase(BUCKET_KEY));
+
+        if (methodOptional.isPresent()) {
+
+            Object value = ReflectionUtils.invokeMethod(methodOptional.get(), aggregation);
+
+            if (null != value) {
+
+                List<? extends Terms.Bucket> buckets = (List<? extends Terms.Bucket>) value;
+
+                for (Terms.Bucket bucket : buckets) {
+
+                    Class<? extends Terms.Bucket> aClass = bucket.getClass();
+                    Method[] methods = aClass.getMethods();
+                    Aggregations aggregations = bucket.getAggregations();
+                    // 首先找这一层的相关属性, 找不到看看是否有子聚合(继续下钻处理)
+                    if (aggregation.getName().equals(aggregationName)) {
+
+                        Optional<Method> optionalMethod = getAggregationMethod(aggMethodKey, methods);
+
+                        if (optionalMethod.isPresent()) {
+
+                            Object o = ReflectionUtils.invokeMethod(optionalMethod.get(), bucket);
+                            result.add(o);
+                        } else {
+
+                            // 去子聚合里面去找
+                            if (null != aggregations) {
+                                parseSubAggregations(aggregations, result, aggMethodKey, aggregationName);
+                            }
+                        }
+                    } else {
+
+                        // 去子聚合里面去找
+                        if (null != aggregations) {
+                            parseSubAggregations(aggregations, result, aggMethodKey, aggregationName);
+                        }
+                    }
+                }
             }
         }
     }
 
+    private static Optional<Method> getAggregationMethod(String aggMethodKey, Method[] methods) {
+        return Arrays.stream(methods).filter(method -> method.getName().equals(aggMethodKey)).findFirst();
+    }
+
+    /**
+     * <h2> 解析子聚合 </h2>
+     */
+    private static void parseSubAggregations(Aggregations aggregations, List<Object> result, String aggMethodKey, String aggregationName) {
+
+        standardParse(result, aggregations, aggMethodKey, aggregationName);
+    }
+
+
+    private static String applyFirstChartUpperCase(String key) {
+
+        return AGG_METHOD_PREFIX + key.substring(0, 1).toUpperCase() + key.substring(1);
+    }
 
 }

@@ -167,11 +167,11 @@ public class AggregationMappingBuilder {
                     && !CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
                 log.error("Cannot use [bucketsPath] with [bucketsPaths] configuration option");
             }
-            if (StringUtils.isBlank(parameters.getBucketsPath())
-                    && CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
-                log.error("Invalid parameters, must be non-null and non-empty, " +
-                        "need [bucketsPath] or [bucketsPaths] configuration option.");
-            }
+//            if (StringUtils.isBlank(parameters.getBucketsPath())
+//                    && CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
+//                log.error("Invalid parameters, must be non-null and non-empty, " +
+//                        "need [bucketsPath] or [bucketsPaths] configuration option.");
+//            }
             if (StringUtils.isBlank(parameters.getScript())) {
 
                 if (CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {

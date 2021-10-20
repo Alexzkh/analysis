@@ -35,29 +35,29 @@ public class TradeStatisticalAnalysisBankFlow {
     private String queryCard;
 
     // 交易总次数
-    private int tradeNumber;
+    private int tradeTotalTimes;
 
     // 交易总金额
     private BigDecimal tradeTotalAmount;
 
     // 入账次数
-    private int creditsNumber;
+    private int creditsTimes;
 
     // 入账金额
     private BigDecimal creditsAmount;
 
     // 出账次数
-    private int billsNumber;
+    private int payOutTimes;
 
     // 出账金额
-    private BigDecimal billsAmount;
+    private BigDecimal payOutAmount;
 
     // 交易净和
     private BigDecimal tradeNet;
 
     // 最早交易时间
-    private String earliestTradeTime;
+    private String earliestTradingTime;
 
     // 最晚交易时间
-    private String latestTradeTime;
+    private String latestTradingTime;
 }
