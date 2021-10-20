@@ -158,7 +158,6 @@ public interface EntranceRepository extends CrudRepository {
     <T> Map histogramAggs(String field, String routing, Double intervel, Double min, Double max, Class<T> clazz);
 
 
-
     /**
      * A multi-bucket value source based aggregation that enables the user to define a set of ranges
      * - each representing a bucket. During the aggregation process,
@@ -166,17 +165,16 @@ public interface EntranceRepository extends CrudRepository {
      * each bucket range and "bucket" the relevant/matching document.
      * Note that this aggregation includes the from value and excludes the to value for each range.
      *
-     * @param query: the query parameter.
-     * @param field:       the field of aggrating ,the same as domain field name .
-     * @param routing:     the shard of routing.
-     * @param ranges:      range aggregation parameter.
-     * @param clazz:       the domain type .
+     * @param query:   the query parameter.
+     * @param field:   the field of aggrating ,the same as domain field name .
+     * @param routing: the shard of routing.
+     * @param ranges:  range aggregation parameter.
+     * @param clazz:   the domain type .
      * @return: java.util.Map
      **/
     <T> Map rangeAggs(QuerySpecialParams query, String field, String routing, List<Range> ranges, Class<T> clazz);
 
 
-
     /**
      * A multi-bucket value source based aggregation that enables the user to define a set of ranges
      * - each representing a bucket. During the aggregation process,
@@ -184,10 +182,10 @@ public interface EntranceRepository extends CrudRepository {
      * each bucket range and "bucket" the relevant/matching document.
      * Note that this aggregation includes the from value and excludes the to value for each range.
      *
-     * @param query: the query parameter.
-     * @param field:       the field of aggrating ,the same as domain field name .
-     * @param routing:     the shard of routing.
-     * @param clazz:       the domain type .
+     * @param query:   the query parameter.
+     * @param field:   the field of aggrating ,the same as domain field name .
+     * @param routing: the shard of routing.
+     * @param clazz:   the domain type .
      * @return: java.util.Map
      **/
     <T> Map statsAggs(QuerySpecialParams query, String field, String routing, Class<T> clazz);
@@ -228,5 +226,5 @@ public interface EntranceRepository extends CrudRepository {
      * @param clazz   实体类
      * @param routing 路由
      */
-    <T> Map<String, Object> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing);
+    <T> List<List<Object>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing);
 }

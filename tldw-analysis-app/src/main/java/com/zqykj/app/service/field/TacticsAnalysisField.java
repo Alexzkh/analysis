@@ -61,9 +61,12 @@ public interface TacticsAnalysisField {
     String QUERY_ACCOUNT = "query_account";
 
     String LOAN_FLAG_OUT = "出";
+    String LOAN_FLAG_OUT_EN = "pay_out";
 
     String LOAN_FLAG_IN = "进";
+    String LOAN_FLAG_IN_EN = "credits";
 
+    // 交易统计分析结果 聚合中需要展示的字段
     static String[] tradeStatisticalAggShowField() {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
