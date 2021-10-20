@@ -291,7 +291,6 @@ public class AggregationParser {
         }
     }
 
-//    private static void getResultBy
 
     private static Optional<Method> getAggregationMethod(String aggMethodKey, Method[] methods) {
         return Arrays.stream(methods).filter(method -> method.getName().equals(aggMethodKey)).findFirst();
