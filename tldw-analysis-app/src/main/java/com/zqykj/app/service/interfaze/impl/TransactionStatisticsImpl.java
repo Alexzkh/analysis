@@ -184,7 +184,11 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 构建交易统计分析聚合查询
         AggregationParams agg = aggregationRequestParamFactory.createTradeStatisticsAnalysisQueryAgg(queryRequest);
 
+        // 聚合结果属性 与 实体属性映射
+
+
         List<List<Object>> result = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionFlow.class, caseId);
+
 
 
         return ServerResponse.createBySuccess(null);

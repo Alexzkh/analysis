@@ -219,7 +219,7 @@ public interface EntranceRepository extends CrudRepository {
                                             String sumField, Class<T> clazz, String routing);
 
     /**
-     * <h2> 组合查询与聚合 </h2>
+     * <h2> 组合查询与聚合 (只返回聚合结果) </h2>
      *
      * @param query   查询参数
      * @param agg     聚合参数
