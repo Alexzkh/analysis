@@ -1,7 +1,9 @@
 package com.zqykj.app.service.transaction.service;
 
 import com.zqykj.app.service.task.SingleSheetExcelFileExportTask;
+import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.response.AggregationResult;
+import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.infrastructure.task.Task;
 import com.zqykj.infrastructure.task.TaskManagerService;
@@ -72,6 +74,50 @@ public class FileExportService {
                 return result;
             }
         };
+    }
+
+
+    /**
+     * todo 查询数据的接口待补充
+     * @param caseId:          案件编号.
+     * @param downloadRequest: 查询下载内容请求体.
+     * @return: com.zqykj.infrastructure.core.ServerResponse<java.lang.String>
+     **/
+    public ServerResponse<String> assetStatisticsDownload(String caseId, AssetTrendsRequest downloadRequest)
+            throws Exception {
+        ServerResponse<String> response = new ServerResponse<>();
+        List<AssetTrendsResponse> assetDetailInfos = new ArrayList<>();
+        SingleSheetExcelFileExportTask task = new SingleSheetExcelFileExportTask<AssetTrendsResponse>(
+                ExcelFileNameUtil.getExcelFileName("资产趋势"), "资产趋势", assetDetailInfos) {
+            @Override
+            protected String[] data2Array(AssetTrendsResponse data) {
+                String[] result = new String[5];
+
+                return result;
+            }
+
+            @Override
+            protected String[] getSheetHeaders() {
+                String timeDesc;
+                String time;
+                if ("y".equals(downloadRequest.getDateType())) {
+                    timeDesc = "年份";
+                    time = "年";
+                } else if ("q".equals(downloadRequest.getDateType())) {
+                    timeDesc = "季度";
+                    time = "季";
+                } else {
+                    timeDesc = "月份";
+                    time = "月";
+                }
+                String[] result = {timeDesc, "交易总额", "支出总额", "收入总额", "本" + time + "净额"};
+                return result;
+            }
+        };
+        taskManagerService.taskHandle(task);
+        String taskId = task.getTaskId();
+        response.setData(taskId);
+        return response;
     }
 
 

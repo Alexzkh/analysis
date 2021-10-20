@@ -12,7 +12,6 @@ import com.zqykj.common.response.*;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
-import com.zqykj.core.AbstractElasticsearchTemplate;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.factory.AggregationRequestParamFactory;
