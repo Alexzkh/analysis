@@ -97,6 +97,7 @@ public class TacticsAnalysisPublicAggBuilderFactory implements AggregationReques
         assetTrendsRequest = (AssetTrendsRequest) request;
         // 这里可以自定义聚合名称的拼接方式
         String dateAggregateName = "date_histogram_" + TacticsAnalysisField.TRADING_TIME;
+        mapping.put(dateAggregateName,ElasticsearchAggregationResponseAttributes.keyAsString);
         DateParams dateParams = new DateParams();
         DateSpecificFormat specificFormat = AggregateRequestFactory.convertFromTimeType(assetTrendsRequest.getDateType());
         dateParams.setFormat(specificFormat.getFormat());
@@ -125,6 +126,7 @@ public class TacticsAnalysisPublicAggBuilderFactory implements AggregationReques
         }
         FieldSort fieldSort = new FieldSort(sortPath, direction.name());
         addSubAggregationParams(root, pagination, fieldSort, mapping);
+        root.setMapping(mapping);
         return root;
     }
 

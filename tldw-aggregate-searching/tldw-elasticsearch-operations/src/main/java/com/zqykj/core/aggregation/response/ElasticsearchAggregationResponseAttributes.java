@@ -12,5 +12,6 @@ public interface ElasticsearchAggregationResponseAttributes {
     String value = "value";
     String docCount = "docCount";
     String hits = "hits";
+    String keyAsString ="keyAsString";
 
 }

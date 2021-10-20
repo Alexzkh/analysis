@@ -9,6 +9,9 @@ import com.zqykj.util.JacksonUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
+import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
@@ -34,6 +37,7 @@ public class AggregationParser {
     private final static String AGG_SOURCE_STRING = "sourceAsString";
     private final static String AGG_TERMS = "terms";
     private final static String AGG_METHOD_PREFIX = "get";
+    private final static String AGG_DATE_HISTOGRAM = "date_histogram";
 
     public static Map<String, Object> parseDateGroupAndSum(Aggregations aggregations) {
 
@@ -199,8 +203,17 @@ public class AggregationParser {
 
         String type = aggregation.getType();
 
-        if (aggregation.getName().equals(aggregationName) && !type.endsWith(AGG_TERMS)) {
+        if (type.endsWith(AGG_TERMS) || type.endsWith(AGG_DATE_HISTOGRAM)) {
 
+
+            // 桶聚合
+            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+                    method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
+            methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, aggregation,
+                    aggMethodKey, aggregationName));
+
+
+        } else if (aggregation.getName().equals(aggregationName) && !type.endsWith(AGG_TERMS)) {
             Optional<Method> optionalMethod = getAggregationMethod(aggMethodKey, methods);
 
             if (optionalMethod.isPresent()) {
@@ -209,12 +222,6 @@ public class AggregationParser {
 
                 result.add(value);
             }
-        } else if (type.endsWith(AGG_TERMS)) {
-            // 桶聚合
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
-                    method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
-            methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, aggregation,
-                    aggMethodKey, aggregationName));
         } else {
             // 子聚合处理
             Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
@@ -246,15 +253,16 @@ public class AggregationParser {
 
             Object value = ReflectionUtils.invokeMethod(methodOptional.get(), aggregation);
 
-            if (null != value) {
+            if (null != value  ) {
 
-                List<? extends Terms.Bucket> buckets = (List<? extends Terms.Bucket>) value;
+                List<? extends MultiBucketsAggregation.Bucket> buckets = (List<? extends MultiBucketsAggregation.Bucket>) value;
 
-                for (Terms.Bucket bucket : buckets) {
+                for (MultiBucketsAggregation.Bucket bucket : buckets) {
 
-                    Class<? extends Terms.Bucket> aClass = bucket.getClass();
+                    Class<? extends MultiBucketsAggregation.Bucket> aClass = bucket.getClass();
                     Method[] methods = aClass.getMethods();
                     Aggregations aggregations = bucket.getAggregations();
+
                     // 首先找这一层的相关属性, 找不到看看是否有子聚合(继续下钻处理)
                     if (aggregation.getName().equals(aggregationName)) {
 
@@ -271,8 +279,8 @@ public class AggregationParser {
                                 parseSubAggregations(aggregations, result, aggMethodKey, aggregationName);
                             }
                         }
-                    } else {
 
+                    } else {
                         // 去子聚合里面去找
                         if (null != aggregations) {
                             parseSubAggregations(aggregations, result, aggMethodKey, aggregationName);
@@ -282,6 +290,8 @@ public class AggregationParser {
             }
         }
     }
+
+//    private static void getResultBy
 
     private static Optional<Method> getAggregationMethod(String aggMethodKey, Method[] methods) {
         return Arrays.stream(methods).filter(method -> method.getName().equals(aggMethodKey)).findFirst();
