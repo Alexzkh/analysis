@@ -36,6 +36,7 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
 
     public <T> AggregationParams createTradeStatisticsAnalysisQueryAgg(T param) {
 
+        Map<String, String> mapping = new LinkedHashMap<>();
         TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) param;
         String terms = AggsType.terms.name();
         String cardGroupName = TacticsAnalysisField.QUERY_CARD + AGG_NAME_SPLIT + terms;
@@ -96,7 +97,7 @@ public class TradeStatisticsAnalysisAggBuilderFactory implements AggregationRequ
         Map<String, String> tradeNetBucketsPath = new LinkedHashMap<>();
         tradeNetBucketsPath.put("credits_amount", payIn + PIPELINE_AGG_PATH_FLAG + payInMoneySum);
         tradeNetBucketsPath.put("pay_out_amount", payOut + PIPELINE_AGG_PATH_FLAG + payOutMoneySum);
-        String tradeNetScript = BUCKET_SCRIPT_PARAM_PREFIX + "pay_in_total" + "-" + BUCKET_SCRIPT_PARAM_PREFIX + "pay_out_total";
+        String tradeNetScript = BUCKET_SCRIPT_PARAM_PREFIX + "credits_amount" + "-" + BUCKET_SCRIPT_PARAM_PREFIX + "pay_out_amount";
         // 默认按交易总金额降序排序(如果没有指定的话)
         String sortPath = null;
         Direction direction = Direction.DESC;
