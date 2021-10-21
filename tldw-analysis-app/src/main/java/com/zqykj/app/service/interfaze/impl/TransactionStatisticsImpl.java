@@ -1,10 +1,12 @@
 package com.zqykj.app.service.interfaze.impl;
 
-import com.zqykj.app.service.field.TacticsAnalysisField;
+import com.zqykj.app.service.factory.parse.FundTacticsAggResultParseFactory;
+import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.transform.NumericalConversion;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryResponse;
+import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
+import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryResponse;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.enums.HistogramStatistic;
@@ -20,6 +22,7 @@ import com.zqykj.factory.QueryRequestParamFactory;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
@@ -150,9 +153,9 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 构建查询参数
         QuerySpecialParams query = this.preQueryTransactionStatisticsAnalysis(caseId, request);
         // 构建  DateSpecificFormat对象
-        Map<String, Object> result = entranceRepository.dateGroupAndSum(query, TacticsAnalysisField.TRADING_TIME,
+        Map<String, Object> result = entranceRepository.dateGroupAndSum(query, FundTacticsAnalysisField.TRADING_TIME,
                 AggregateRequestFactory.convertFromTimeType(timeType.name()),
-                TacticsAnalysisField.TRANSACTION_MONEY, BankTransactionFlow.class, caseId);
+                FundTacticsAnalysisField.TRANSACTION_MONEY, BankTransactionFlow.class, caseId);
 
         TimeGroupTradeAmountSum groupTradeAmountSum = new TimeGroupTradeAmountSum();
 
@@ -185,21 +188,27 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 构建交易统计分析聚合查询
         AggregationParams agg = aggregationRequestParamFactory.createTradeStatisticsAnalysisQueryAgg(queryRequest);
 
-        // 数据总量聚合
-
-        // 聚合结果属性 与 实体属性映射
-        Map<String, String> entityMapping = convertFromMapping(agg.getMapping());
-
         List<List<Object>> result = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionFlow.class, caseId);
 
+        List<String> titles = new ArrayList<>(agg.getMapping().keySet());
+        // 实体属性映射
+        List<Map<String, Object>> entityMapping = FundTacticsAggResultParseFactory.convertEntityMapping(
+                FundTacticsAggResultParseFactory.getColValueMapList(result, titles),
+                agg.getEntityAggColMapping());
+
+        // 实体数据组装
+        List<TradeStatisticalAnalysisBankFlow> tradeStatisticalAnalysisResults = FundTacticsAggResultParseFactory.getTradeStatisticalAnalysisResult(entityMapping);
+
         TradeStatisticalAnalysisQueryResponse response = new TradeStatisticalAnalysisQueryResponse();
-        return ServerResponse.createBySuccess(null);
+
+        // 总数量
+        int total = tradeStatisticalAnalysisResults.get(0).getTotal();
+        // 每页显示条数
+        Integer pageSize = queryRequest.getPageRequest().getPageSize();
+        response.setContent(tradeStatisticalAnalysisResults);
+        response.setSize(pageSize);
+        response.setTotal(total);
+        response.setTotalPages(PageRequest.getTotalPages(total, pageSize));
+        return ServerResponse.createBySuccess(response);
     }
-
-
-    private Map<String, String> convertFromMapping(Map<String, String> mapping) {
-
-        return null;
-    }
-
 }

@@ -5,6 +5,7 @@ package com.zqykj.parameters.aggregate;
 
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
+import com.zqykj.parameters.annotation.NotResolve;
 import com.zqykj.parameters.annotation.OptionalParam;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.*;
@@ -77,15 +78,19 @@ public class AggregationParams {
      */
     private QuerySpecialParams querySpecialParams;
 
-
     // 聚合里面也可以带出相关的字段
     private FetchSource fetchSource;
 
-    // key: 聚合名称,  value: 根据聚合属性字段取出的值
+    // key: 聚合名称,  value: 聚合字段属性( 可以根据此属性取出对应聚合值)
+    @NotResolve
     private Map<String, String> mapping;
 
+    // key: 聚合名称, value: 实体映射属性
+    @NotResolve
+    private Map<String, String> entityAggColMapping;
+
     // 同级聚合参数
-    @OptionalParam
+    @NotResolve
     private List<AggregationParams> siblingAggregation;
 
     public AggregationParams(String name, String type, String field) {

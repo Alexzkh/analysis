@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.vo.tarde_statistics;
+package com.zqykj.app.service.vo.fund;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -60,4 +60,12 @@ public class TradeStatisticalAnalysisBankFlow {
 
     // 最晚交易时间
     private String latestTradingTime;
+
+    // 数据总量
+    private int total;
+
+    public enum EntityMapping {
+        customerName, customerIdentityCard, bank, queryAccount, queryCard, tradeTotalTimes, tradeTotalAmount,
+        creditsTimes, creditsAmount, payOutTimes, payOutAmount, tradeNet, earliestTradingTime, latestTradingTime, source, total
+    }
 }

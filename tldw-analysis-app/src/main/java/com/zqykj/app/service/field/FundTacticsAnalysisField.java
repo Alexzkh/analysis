@@ -5,9 +5,9 @@ package com.zqykj.app.service.field;
 
 
 /**
- * 战法分析查询涉及字段
+ * <h1> 资金战法分析查询涉及字段 </h1>
  */
-public interface TacticsAnalysisField {
+public interface FundTacticsAnalysisField {
 
     /**
      * 查询卡号

@@ -17,6 +17,7 @@ import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOf
 import com.zqykj.core.aggregation.util.aggregate.pipeline.ClassNameForBeanClassOfPipeline;
 import com.zqykj.parameters.annotation.DateIntervalParam;
 import com.zqykj.parameters.annotation.DateTimeZoneParam;
+import com.zqykj.parameters.annotation.NotResolve;
 import com.zqykj.parameters.annotation.OptionalParam;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -270,6 +271,9 @@ public class AggregationMappingBuilder {
     private static void buildingAggregationViaField(Object father, Object target, AggregationParams parameters, Class<?> aggregationClass,
                                                     Field field) throws ClassNotFoundException {
 
+        if (null != field.getAnnotation(NotResolve.class)) {
+            return;
+        }
         if (CommonAggregationParams.class.isAssignableFrom(field.getType())) {
 
             addGeneraParametersMapping(target, parameters.getCommonAggregationParams(), aggregationClass, field, field.getType());
@@ -279,7 +283,7 @@ public class AggregationMappingBuilder {
         } else if (List.class.isAssignableFrom(field.getType())) {
 
             // 携带此注解的参数,不予处理
-            if (null != field.getAnnotation(OptionalParam.class)) {
+            if (null != field.getAnnotation(NotResolve.class)) {
                 return;
             }
 

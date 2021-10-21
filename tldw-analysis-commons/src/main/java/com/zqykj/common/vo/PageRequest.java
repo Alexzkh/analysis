@@ -19,4 +19,9 @@ public class PageRequest {
 
     private Integer page = 0;
     private Integer pageSize = 25;
+
+    // 计算总页数
+    public int getTotalPages(int total, int pageSize) {
+        return total == 0 ? 0 : (int) Math.ceil((double) total / (double) pageSize);
+    }
 }

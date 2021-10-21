@@ -7,7 +7,7 @@ package com.zqykj;
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.request.PagingRequest;

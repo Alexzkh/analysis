@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.vo.tarde_statistics;
+package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.vo.PageRequest;

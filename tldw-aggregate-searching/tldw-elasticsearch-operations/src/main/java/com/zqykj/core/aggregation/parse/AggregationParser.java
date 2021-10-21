@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
@@ -18,6 +20,7 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <h1> 聚合结果解析器 </h1>
@@ -158,7 +161,24 @@ public class AggregationParser {
 
             for (List<Object> oldOne : result) {
 
-                newOne.add(oldOne.get(i));
+                if (oldOne.size() == size) {
+                    Object o = oldOne.get(i);
+                    if (o instanceof SearchHits) {
+                        List<Map<String, Object>> source = new ArrayList<>();
+                        SearchHits hits = (SearchHits) o;
+                        SearchHit[] searchHits = hits.getHits();
+                        for (SearchHit searchHit : searchHits) {
+                            source.add(searchHit.getSourceAsMap());
+                        }
+                        newOne.add(source);
+                    } else {
+                        newOne.add(oldOne.get(i));
+                    }
+                } else {
+                    // 填充的个数跟 size 一致 (因为有的跟terms 同级查询的,比如去重返回结果只有一个,而terms有3个,为了保证这里程序正确,
+                    // 需要继续填充剩下2个冗余的数据(跟第一个数据一致)
+                    newOne.add(oldOne.get(0));
+                }
             }
             newResult.add(newOne);
         }
@@ -253,7 +273,7 @@ public class AggregationParser {
 
             Object value = ReflectionUtils.invokeMethod(methodOptional.get(), aggregation);
 
-            if (null != value  ) {
+            if (null != value) {
 
                 List<? extends MultiBucketsAggregation.Bucket> buckets = (List<? extends MultiBucketsAggregation.Bucket>) value;
 
