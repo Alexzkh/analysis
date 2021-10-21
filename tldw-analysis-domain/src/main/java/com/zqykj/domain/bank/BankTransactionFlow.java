@@ -102,7 +102,7 @@ public class BankTransactionFlow {
 
     @MultiField(
             mainField = @Field(type = FieldType.Text, name = "transaction_opposite_account_open_bank", analyzer = "ik_max_word"),
-            otherFields = {@InnerField(suffix = "transaction_opposite_account_open_bank.opposite_bank_wildcard", type = FieldType.Wildcard)}
+            otherFields = {@InnerField(suffix = "opposite_bank_wildcard", type = FieldType.Wildcard)}
     )
     private String transactionOppositeAccountOpenBank;
 

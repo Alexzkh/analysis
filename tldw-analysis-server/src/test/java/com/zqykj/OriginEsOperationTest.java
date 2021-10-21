@@ -375,7 +375,7 @@ public class OriginEsOperationTest {
         request.setPageRequest(new com.zqykj.common.vo.PageRequest(0, 25));
         request.setKeyword("*平安*");
 
-        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
+        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("83bced7cbb9e442eb3f007bb04b88275", request);
 
         if (serverResponse.isSuccess()) {
 
