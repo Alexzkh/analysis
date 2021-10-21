@@ -21,6 +21,6 @@ public interface FundTacticsFuzzyQueryField {
     // 对方开户银行 transaction_opposite_account_open_bank.opposite_bank_wildcard
 
     String[] fuzzyFields = new String[]{"customer_name.customer_name_wildcard", "customer_identity_card.customer_identity_card_wildcard",
-            "bank.bank_wildcard", "note.note_wildcard", "query_card.query_card_wildcard," +
+            "bank.bank_wildcard", "note.note_wildcard", "query_card.query_card_wildcard" +
             "transaction_opposite_account_open_bank.opposite_bank_wildcard"};
 }
