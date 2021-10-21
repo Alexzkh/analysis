@@ -3,6 +3,8 @@ package com.zqykj.app.service.interfaze;
 import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.response.AssetTrendsResponse;
 
+import java.util.List;
+
 /**
  * @Description: 资产趋势战法接口定义.
  * @Author zhangkehou
@@ -16,7 +18,7 @@ public interface IAssetTrendsTactics {
      *
      * @param caseId:             案件编号.
      * @param assetTrendsRequest: 资产趋势请求头.
-     * @return: com.zqykj.common.response.AssetTrendsResponse
+     * @return: java.util.List
      **/
-    AssetTrendsResponse accessAssetTrendsTacticsResult(String caseId, AssetTrendsRequest assetTrendsRequest);
+    List<AssetTrendsResponse> accessAssetTrendsTacticsResult(String caseId, AssetTrendsRequest assetTrendsRequest);
 }
