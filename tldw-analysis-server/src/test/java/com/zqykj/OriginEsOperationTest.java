@@ -7,10 +7,12 @@ package com.zqykj;
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
+import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.request.PagingRequest;
+import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.common.response.TimeGroupTradeAmountSum;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.AmountOperationSymbol;
@@ -79,6 +81,9 @@ public class OriginEsOperationTest {
 
     @Autowired
     private IAssetTrendsTactics iAssetTrendsTactics;
+
+    @Autowired
+    private AggregateResultConversionAccessor aggregateResultConversionAccessor;
 
     private static Map<String, ? extends Class<?>> aggregateNameForClass;
 
@@ -385,7 +390,6 @@ public class OriginEsOperationTest {
     }
 
 
-
     @Test
     public void testAssetTrendsResultQuery() {
 
@@ -428,13 +432,14 @@ public class OriginEsOperationTest {
         request.setDateRange(new DateRangeRequest("", ""));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
-        request.setPaging(new PagingRequest(0,25));
+        request.setPaging(new PagingRequest(0, 25));
         request.setDateType("q");
 
 //        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
 
-        iAssetTrendsTactics.accessAssetTrendsTacticsResult("c94546bb87bd4b32947b576c565a94a2",request);
-//        if (serverResponse.isSuccess()) {
+        List<AssetTrendsResponse> resutl = iAssetTrendsTactics.accessAssetTrendsTacticsResult("c94546bb87bd4b32947b576c565a94a2", request);
+        System.out.println("********************");
+        //        if (serverResponse.isSuccess()) {
 //
 //            Object data = serverResponse.getData();
 //

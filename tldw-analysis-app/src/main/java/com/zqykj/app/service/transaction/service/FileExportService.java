@@ -1,5 +1,6 @@
 package com.zqykj.app.service.transaction.service;
 
+import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.task.SingleSheetExcelFileExportTask;
 import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.response.AggregationResult;
@@ -26,6 +27,9 @@ public class FileExportService {
 
     @Autowired
     private TaskManagerService taskManagerService;
+
+    @Autowired
+    private IAssetTrendsTactics iAssetTrendsTactics;
 
 
     //todo 参数中缺少查询数据请求体
@@ -78,7 +82,7 @@ public class FileExportService {
 
 
     /**
-     * todo 查询数据的接口待补充
+     *
      * @param caseId:          案件编号.
      * @param downloadRequest: 查询下载内容请求体.
      * @return: com.zqykj.infrastructure.core.ServerResponse<java.lang.String>
@@ -86,13 +90,17 @@ public class FileExportService {
     public ServerResponse<String> assetStatisticsDownload(String caseId, AssetTrendsRequest downloadRequest)
             throws Exception {
         ServerResponse<String> response = new ServerResponse<>();
-        List<AssetTrendsResponse> assetDetailInfos = new ArrayList<>();
+        List<AssetTrendsResponse> assetDetailInfos = iAssetTrendsTactics.accessAssetTrendsTacticsResult(caseId, downloadRequest);
         SingleSheetExcelFileExportTask task = new SingleSheetExcelFileExportTask<AssetTrendsResponse>(
                 ExcelFileNameUtil.getExcelFileName("资产趋势"), "资产趋势", assetDetailInfos) {
             @Override
             protected String[] data2Array(AssetTrendsResponse data) {
                 String[] result = new String[5];
-
+                result[0] = data.getDate();
+                result[1] = data.getTotalTransactionMoney().toString();
+                result[2] = data.getTotalExpenditure().toString();
+                result[3] = data.getTotolIncome().toString();
+                result[4] = data.getTransactionNet().toString();
                 return result;
             }
 

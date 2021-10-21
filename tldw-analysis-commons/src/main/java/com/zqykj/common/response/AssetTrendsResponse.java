@@ -1,8 +1,11 @@
 package com.zqykj.common.response;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 /**
  * @Description: 资产趋势返回响应体.
@@ -12,6 +15,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class AssetTrendsResponse {
 
     /**
@@ -32,20 +36,20 @@ public class AssetTrendsResponse {
     /**
      * 交易净额.
      **/
-    private double transactionNet;
+    private BigDecimal transactionNet;
 
     /**
      * 收入总额.
      */
-    private double totolIncome;
+    private BigDecimal totolIncome;
 
     /**
      * 支出总额.
      */
-    private double totalExpenditure;
+    private BigDecimal totalExpenditure;
 
     /**
      * 交易金额.
      */
-    private double totalTransactionMoney;
+    private BigDecimal totalTransactionMoney;
 }
