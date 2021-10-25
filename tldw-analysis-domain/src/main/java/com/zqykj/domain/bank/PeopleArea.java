@@ -1,8 +1,6 @@
 package com.zqykj.domain.bank;
 
-import com.zqykj.annotations.Document;
-import com.zqykj.annotations.Field;
-import com.zqykj.annotations.FieldType;
+import com.zqykj.annotations.*;
 import lombok.Data;
 
 /**
@@ -35,25 +33,37 @@ public class PeopleArea {
     /**
      * 省份.
      */
-    @Field(type = FieldType.Text, name = "province", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, name = "province", analyzer = "ik_max_word"),
+            otherFields = {@InnerField(suffix = "province_wildcard", type = FieldType.Wildcard)}
+    )
     private String province;
 
     /**
      * 市.
      */
-    @Field(type = FieldType.Text, name = "city", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, name = "city", analyzer = "ik_max_word"),
+            otherFields = {@InnerField(suffix = "city_wildcard", type = FieldType.Wildcard)}
+    )
     private String city;
 
     /**
      * 区、县.
      */
-    @Field(type = FieldType.Text, name = "area", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, name = "area", analyzer = "ik_max_word"),
+            otherFields = {@InnerField(suffix = "area_wildcard", type = FieldType.Wildcard)}
+    )
     private String area;
 
     /**
      * 开户人姓名.
      */
-    @Field(type = FieldType.Text, name = "accountHolderName", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, name = "account_holder_name", analyzer = "ik_max_word"),
+            otherFields = {@InnerField(suffix = "account_holder_name_wildcard", type = FieldType.Wildcard)}
+    )
     private String accountHolderName;
 
 }
