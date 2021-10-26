@@ -9,5 +9,10 @@ public enum TacticsTypeEnum {
     /**
      * 资产趋势
      */
-    ASSET_TRENDS;
+    ASSET_TRENDS,
+
+    /**
+     * 人员地域
+     */
+    PEOPLE_AREA;
 }
