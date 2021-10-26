@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
  * @Author zhangkehou
  * @Date 2021/10/14
  */
-@Service
+@Service(value = "managerService")
 public class TaskManagerService implements TaskManagerInterface {
     private static Logger logger = LoggerFactory.getLogger(TaskManagerService.class);
 
