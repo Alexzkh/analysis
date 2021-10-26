@@ -5,7 +5,9 @@ package com.zqykj.app.service.factory;
 
 import com.zqykj.app.service.field.TradeStatisticsAnalysisFuzzyQueryField;
 import com.zqykj.app.service.field.TacticsAnalysisField;
+import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.common.request.PeopleAreaRequest;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
@@ -19,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+
+
 /**
  * 交易统计分析查询参数构建工厂
  */
@@ -26,14 +30,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class TacticsAnalysisPublicQueryBuilderFactory implements QueryRequestParamFactory {
 
+
     public <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T requestParam, V other) {
 
         TradeStatisticalAnalysisPreRequest request = (TradeStatisticalAnalysisPreRequest) requestParam;
 
-        QuerySpecialParams querySpecialParams = this.buildCommonQuerySpecialParams(requestParam,other);
+        QuerySpecialParams querySpecialParams = this.buildCommonQuerySpecialParams(requestParam, other);
 
         // 构建组合查询(多个普通查询合并)
-        CombinationQueryParams combinationQueryParams =querySpecialParams.getCombiningQuery().get(0);
+        CombinationQueryParams combinationQueryParams = querySpecialParams.getCombiningQuery().get(0);
         // 指定交易金额
         combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.range, TacticsAnalysisField.TRANSACTION_MONEY, request.getFund(),
                 QueryOperator.of(request.getOperator().name())
@@ -77,7 +82,7 @@ public class TacticsAnalysisPublicQueryBuilderFactory implements QueryRequestPar
     }
 
     @Override
-    public <T,V> QuerySpecialParams buildCommonQuerySpecialParams(T requestParam, V parameter) {
+    public <T, V> QuerySpecialParams buildCommonQuerySpecialParams(T requestParam, V parameter) {
         TradeStatisticalAnalysisPreRequest request = (TradeStatisticalAnalysisPreRequest) requestParam;
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         String caseId = parameter.toString();
@@ -100,4 +105,24 @@ public class TacticsAnalysisPublicQueryBuilderFactory implements QueryRequestPar
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
         return querySpecialParams;
     }
+
+    @Override
+    public <T, V> QuerySpecialParams bulidPeopleAreaAnalysisRequest(T requestParam, V parameter) {
+        PeopleAreaRequest peopleAreaRequest = (PeopleAreaRequest) requestParam;
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        String caseId = parameter.toString();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        // ConditionType.must 类似于and 条件
+        combinationQueryParams.setType(ConditionType.must);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, TacticsAnalysisField.CASE_ID, caseId));
+        // 指定卡号
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term,
+                PeopleAreaConversion.REGION_NAME.get(peopleAreaRequest.getField()), peopleAreaRequest.getName()));
+        // 添加组合查询
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        return null;
+    }
+
+
 }

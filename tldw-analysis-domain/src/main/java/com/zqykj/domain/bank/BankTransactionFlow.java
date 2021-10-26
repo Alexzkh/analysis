@@ -115,7 +115,10 @@ public class BankTransactionFlow {
     /**
      * 交易对方卡号
      */
-    @Field(type = FieldType.Text, name = "transaction_opposite_card", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_card"),
+            otherFields = {@InnerField(suffix = "opposite_card_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionOppositeCard;
 
     /**

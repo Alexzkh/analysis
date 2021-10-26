@@ -4,7 +4,9 @@ import com.zqykj.common.enums.TacticsTypeEnum;
 import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.app.service.tools.SplicingStringTools;
+import com.zqykj.common.response.PeopleAreaReponse;
 import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -42,7 +44,22 @@ public class AggregateResultConversionAccessor {
                 });
                 return responses;
             };
+    /**
+     * 解析资产趋势返回的result.
+     */
+    private static final TriFunction<List<List<Object>>, String, AssetTrendsRequest, List<PeopleAreaReponse>> PEOPLE_AREA_CONVERSION =
+            (lists, caseId, assetTrendsRequest) -> {
+                List<PeopleAreaReponse> responses = new ArrayList<>();
 
+                lists.forEach(rowData -> {
+                    PeopleAreaReponse peopleAreaReponse = PeopleAreaReponse.builder()
+                            .region((String) rowData.get(0))
+                            .number((Integer) rowData.get(1))
+                            .build();
+                    responses.add(peopleAreaReponse);
+                });
+                return responses;
+            };
 
     /**
      * 静态映射表.
@@ -54,6 +71,11 @@ public class AggregateResultConversionAccessor {
          * 资产趋势的结果解析.
          * */
         functionMap.put(TacticsTypeEnum.ASSET_TRENDS, ASSET_TRENDS_CONVERSION);
+
+        /**
+         * 人员地域的结果解析.
+         * */
+        functionMap.put(TacticsTypeEnum.PEOPLE_AREA, PEOPLE_AREA_CONVERSION);
     }
 
 

@@ -4,7 +4,9 @@
 package com.zqykj.app.service.factory;
 
 import com.zqykj.app.service.field.TacticsAnalysisField;
+import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.common.request.PeopleAreaRequest;
 import org.apache.commons.lang3.StringUtils;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AssetTrendsRequest;
@@ -23,7 +25,6 @@ import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -40,6 +41,9 @@ public class TacticsAnalysisPublicAggBuilderFactory implements AggregationReques
     private static final String AGG_NAME_SPLIT = "_";
 
     private static final String DEFAULT_SORTING_FIELD = TacticsAnalysisField.TRANSACTION_MONEY + AGG_NAME_SPLIT + AggsType.sum.name();
+
+
+
 
     public <T> AggregationParams createTradeStatisticsAnalysisQueryAgg(T param) {
 
@@ -97,7 +101,7 @@ public class TacticsAnalysisPublicAggBuilderFactory implements AggregationReques
         assetTrendsRequest = (AssetTrendsRequest) request;
         // 这里可以自定义聚合名称的拼接方式
         String dateAggregateName = "date_histogram_" + TacticsAnalysisField.TRADING_TIME;
-        mapping.put(dateAggregateName,ElasticsearchAggregationResponseAttributes.keyAsString);
+        mapping.put(dateAggregateName, ElasticsearchAggregationResponseAttributes.keyAsString);
         DateParams dateParams = new DateParams();
         DateSpecificFormat specificFormat = AggregateRequestFactory.convertFromTimeType(assetTrendsRequest.getDateType());
         dateParams.setFormat(specificFormat.getFormat());
@@ -129,6 +133,45 @@ public class TacticsAnalysisPublicAggBuilderFactory implements AggregationReques
         root.setMapping(mapping);
         return root;
     }
+
+    @Override
+    public <T> AggregationParams createPeopleAreaQueryAgg(T request) {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        PeopleAreaRequest peopleAreaRequest = (PeopleAreaRequest) request;
+        String field = peopleAreaRequest.getField();
+        String terms = AggsType.terms.name();
+        String areaGroupName = field +"_"+ terms;
+        mapping.put(areaGroupName, ElasticsearchAggregationResponseAttributes.keyAsString);
+        AggregationParams root = new AggregationParams(areaGroupName, terms, PeopleAreaConversion.REGION_NAME.get(field));
+        root.setMapping(mapping);
+        setSubAggregations(root, peopleAreaRequest);
+        return root;
+    }
+
+    /**
+     * @param root:              根聚合参数
+     * @param peopleAreaRequest: 人员地域请求体
+     * @return: void
+     **/
+    public void setSubAggregations(AggregationParams root, PeopleAreaRequest peopleAreaRequest) {
+        // 计算地区个数
+        String count = AggsType.count.name();
+        String regionCount = peopleAreaRequest.getField() + AGG_NAME_SPLIT + count;
+        AggregationParams subRegionTotalAgg = new AggregationParams(regionCount, count,PeopleAreaConversion.REGION_NAME.get(peopleAreaRequest.getField()));
+        root.getMapping().put(regionCount, ElasticsearchAggregationResponseAttributes.value);
+        setSubAggregation(root, subRegionTotalAgg);
+
+        // 按照地区个数排序
+        Direction direction = peopleAreaRequest.getSorting().getOrder().isAscending() ? Direction.ASC : Direction.DESC;
+        Pagination pagination = new Pagination(peopleAreaRequest.getPaging().getPage(), peopleAreaRequest.getPaging().getPageSize());
+        FieldSort fieldSort = new FieldSort(regionCount, direction.name());
+        // 对交易统计分析结果排序
+        String bucketSort = AggsType.bucket_sort.name();
+        String sortAgg = TradeStatisticsAnalysisAggName.TRADE_RESULT_AGG_NAME + AGG_NAME_SPLIT + bucketSort;
+        PipelineAggregationParams regionNumberOrderAgg = new PipelineAggregationParams(sortAgg, bucketSort, Collections.singletonList(fieldSort), pagination);
+        root.setPerPipelineAggregation(regionNumberOrderAgg);
+    }
+
 
     /**
      * 将传入的子聚合加入到传入的父聚合中去.

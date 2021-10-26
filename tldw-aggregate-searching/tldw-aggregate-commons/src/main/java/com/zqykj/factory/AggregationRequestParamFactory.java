@@ -21,4 +21,7 @@ public interface AggregationRequestParamFactory {
      * @return: com.zqykj.parameters.aggregate.AggregationParams
      **/
     <T> AggregationParams createAssetTrendsAnalysisQueryAgg(T request);
+
+    <T> AggregationParams createPeopleAreaQueryAgg(T request);
+
 }

@@ -10,11 +10,9 @@ import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
-import com.zqykj.common.request.AssetTrendsRequest;
-import com.zqykj.common.request.PagingRequest;
+import com.zqykj.common.request.*;
 import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.common.response.TimeGroupTradeAmountSum;
-import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.TimeTypeRequest;
@@ -24,8 +22,13 @@ import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.aggregate.TeacherInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.domain.bank.PeopleArea;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
+import com.zqykj.factory.AggregationRequestParamFactory;
+import com.zqykj.factory.QueryRequestParamFactory;
+import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import com.zqykj.util.ReflectionUtils;
@@ -438,6 +441,36 @@ public class OriginEsOperationTest {
 //        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
 
         List<AssetTrendsResponse> resutl = iAssetTrendsTactics.accessAssetTrendsTacticsResult("c94546bb87bd4b32947b576c565a94a2", request);
+        System.out.println("********************");
+        //        if (serverResponse.isSuccess()) {
+//
+//            Object data = serverResponse.getData();
+//
+//        }
+    }
+
+    @Autowired
+    QueryRequestParamFactory queryRequestParamFactory;
+
+    @Autowired
+    AggregationRequestParamFactory aggregationRequestParamFactory;
+    @Test
+    public void testRegionQueryAndAggs() {
+
+        PeopleAreaRequest peopleAreaRequest = new PeopleAreaRequest();
+        peopleAreaRequest.setField("province");
+        peopleAreaRequest.setName("");
+
+        peopleAreaRequest.setPaging(new PagingRequest(0,10));
+        peopleAreaRequest.setSorting(new SortingRequest("String", SortingRequest.Direction.DESC));
+
+        QuerySpecialParams querySpecialParams = queryRequestParamFactory.
+                bulidPeopleAreaAnalysisRequest(peopleAreaRequest,"457eea4b3ebe46aabc604b9183a83920");
+
+        AggregationParams aggregationParams =aggregationRequestParamFactory.createPeopleAreaQueryAgg(peopleAreaRequest);
+
+        List<List<Object>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, "457eea4b3ebe46aabc604b9183a83920");
+        // 转换结果数据然后返回给前台
         System.out.println("********************");
         //        if (serverResponse.isSuccess()) {
 //
