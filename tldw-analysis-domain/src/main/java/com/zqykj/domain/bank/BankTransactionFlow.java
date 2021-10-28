@@ -97,13 +97,19 @@ public class BankTransactionFlow {
     /**
      * 交易对方姓名
      */
-    @Field(type = FieldType.Text, name = "transaction_opposite_name", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, name = "transaction_opposite_name", analyzer = "ik_max_word"),
+            otherFields = {@InnerField(suffix = "opposite_name_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionOppositeName;
 
     /**
      * 交易对方证件号码
      */
-    @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number")
+    @MultiField(
+            mainField =  @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
+            otherFields = {@InnerField(suffix = "opposite_certificate_number_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionOppositeCertificateNumber;
 
     /**
@@ -172,7 +178,10 @@ public class BankTransactionFlow {
     /**
      * 交易对方开户行
      */
-    @Field(type = FieldType.Text, name = "transaction_opposite_account_open_bank", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, name = "transaction_opposite_account_open_bank", analyzer = "ik_max_word"),
+            otherFields = {@InnerField(suffix = "opposite_bank_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionOppositeAccountOpenBank;
 
     /**

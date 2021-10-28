@@ -3,12 +3,13 @@
  */
 package com.zqykj.app.service.factory;
 
+import com.zqykj.app.service.field.PeopleAreaAnalysisFuzzyQueryField;
 import com.zqykj.app.service.field.TradeStatisticsAnalysisFuzzyQueryField;
 import com.zqykj.app.service.field.TacticsAnalysisField;
+import com.zqykj.app.service.strategy.PeopleAreaAnalysisFieldStrategy;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
-import com.zqykj.common.request.PeopleAreaRequest;
-import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
+import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.vo.PageRequest;
@@ -20,7 +21,6 @@ import com.zqykj.parameters.query.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-
 
 
 /**
@@ -117,11 +117,65 @@ public class TacticsAnalysisPublicQueryBuilderFactory implements QueryRequestPar
         // 指定caseId
         combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, TacticsAnalysisField.CASE_ID, caseId));
         // 指定卡号
-        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term,
-                PeopleAreaConversion.REGION_NAME.get(peopleAreaRequest.getField()), peopleAreaRequest.getName()));
+        if (StringUtils.isNotEmpty(peopleAreaRequest.getName())){
+            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term,
+                    PeopleAreaConversion.REGION_NAME.get(peopleAreaRequest.getField()), peopleAreaRequest.getName()));
+        }
+
         // 添加组合查询
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-        return null;
+        return querySpecialParams;
+    }
+
+    @Override
+    public <T, V> QuerySpecialParams bulidPeopleAreaDetailAnalysisRequest(T requestParam, V parameter) {
+        PeopleAreaDetailRequest peopleAreaDetailRequest = (PeopleAreaDetailRequest) requestParam;
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        String caseId = parameter.toString();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.must);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, TacticsAnalysisField.CASE_ID, caseId));
+        // 指定具体地区查询
+        if (StringUtils.isNotEmpty(peopleAreaDetailRequest.getRegionName())) {
+            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term,
+                    PeopleAreaAnalysisFieldStrategy.PEOPLE_AREA_MAP.get(peopleAreaDetailRequest.getField()), peopleAreaDetailRequest.getRegionName()));
+
+        }
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        String keyword = peopleAreaDetailRequest.getQueryRequest().getKeyword();
+
+        /**
+         * 构建模糊查询参数
+         * */
+        if (StringUtils.isNotBlank(keyword)) {
+
+            CombinationQueryParams fuzzyCombinationQueryParams = new CombinationQueryParams();
+            fuzzyCombinationQueryParams.setType(ConditionType.should);
+            for (String fuzzyField : PeopleAreaAnalysisFuzzyQueryField.fuzzyFields) {
+
+                fuzzyCombinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.wildcard, fuzzyField, keyword));
+            }
+            querySpecialParams.addCombiningQueryParams(fuzzyCombinationQueryParams);
+            querySpecialParams.setDefaultParam(new DefaultQueryParam());
+
+        }
+
+        PagingRequest pageRequest = peopleAreaDetailRequest.getQueryRequest().getPaging();
+        if (null != pageRequest) {
+            querySpecialParams.setPagination(new Pagination(pageRequest.getPage(), pageRequest.getPageSize()));
+        }
+        SortingRequest sortRequest = peopleAreaDetailRequest.getQueryRequest().getSorting();
+        /**
+         * 默认按照省份排序
+         * */
+        if (null != sortRequest) {
+            querySpecialParams.setSort(new FieldSort(PeopleAreaAnalysisFieldStrategy.PEOPLE_AREA_MAP.
+                    get(sortRequest.getProperty() == null ? "province":
+                            sortRequest.getProperty()),
+                    sortRequest.getOrder().name()));
+        }
+        return querySpecialParams;
     }
 
 
