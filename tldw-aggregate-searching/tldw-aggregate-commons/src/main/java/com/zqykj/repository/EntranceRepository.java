@@ -6,6 +6,8 @@ package com.zqykj.repository;
 import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.response.ParsedStats;
+import com.zqykj.domain.Page;
+import com.zqykj.domain.Pageable;
 import com.zqykj.domain.Range;
 import com.zqykj.enums.AggsType;
 import com.zqykj.enums.DateIntervalUnit;
@@ -227,4 +229,15 @@ public interface EntranceRepository extends CrudRepository {
      * @param routing 路由
      */
     <T> List<List<Object>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing);
+
+
+    /**
+     * <h2>组合查询（只返回查询结果）</h2>
+     *
+     * @param querySpecialParams: 查询参数
+     * @param clazz:              实体类
+     * @param routing:            路由
+     * @return: java.util.List<T>
+     **/
+    <T> Page<T> compoundQueryWithoutAgg(Pageable pageable,QuerySpecialParams querySpecialParams, Class<T> clazz, String routing);
 }

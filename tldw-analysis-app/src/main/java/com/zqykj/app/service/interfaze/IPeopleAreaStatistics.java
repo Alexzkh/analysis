@@ -1,7 +1,10 @@
 package com.zqykj.app.service.interfaze;
 
+import com.zqykj.common.request.PeopleAreaDetailRequest;
 import com.zqykj.common.request.PeopleAreaRequest;
 import com.zqykj.common.response.PeopleAreaReponse;
+import com.zqykj.domain.Page;
+import com.zqykj.domain.bank.PeopleArea;
 
 import java.util.List;
 
@@ -21,4 +24,12 @@ public interface IPeopleAreaStatistics {
      * @return: com.zqykj.common.response.PeopleAreaReponse
      **/
     List<PeopleAreaReponse> accessPeopleAreaStatisticsData(PeopleAreaRequest peopleAreaRequest, String caseId);
+
+
+    /**
+     * @param peopleAreaDetailRequest: 人员地域详情请求体
+     * @param caseId:
+     * @return: java.util.List<com.zqykj.domain.bank.PeopleArea>
+     **/
+    Page<PeopleArea> accessPeopleAreaStatisticsDetail(PeopleAreaDetailRequest peopleAreaDetailRequest, String caseId);
 }

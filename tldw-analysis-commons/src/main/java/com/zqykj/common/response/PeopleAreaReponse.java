@@ -24,5 +24,5 @@ public class PeopleAreaReponse {
     /**
      * 个数
      */
-    private Integer number;
+    private Long number;
 }
