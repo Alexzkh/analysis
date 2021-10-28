@@ -546,7 +546,7 @@ public class OriginEsOperationTest {
         querySpecialParams1.setDefaultParam(new DefaultQueryParam());
 
 
-        entranceRepository.compoundQueryWithoutAgg(querySpecialParams1,PeopleArea.class,"b690f6b8f960462e8bb4c0f609d04830");
+//        entranceRepository.compoundQueryWithoutAgg(querySpecialParams1,PeopleArea.class,"b690f6b8f960462e8bb4c0f609d04830");
 
 
 
