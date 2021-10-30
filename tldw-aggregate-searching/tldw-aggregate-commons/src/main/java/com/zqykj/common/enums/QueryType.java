@@ -33,7 +33,12 @@ public enum QueryType {
     /**
      * 通配符查询
      */
-    wildcard;
+    wildcard,
+
+    /**
+     * 多字段 单值匹配
+     */
+    multi_match;
 
     public static QueryType of(String type) {
 

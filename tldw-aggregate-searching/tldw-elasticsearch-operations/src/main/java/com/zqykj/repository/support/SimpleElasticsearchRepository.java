@@ -936,15 +936,16 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return result;
     }
 
-    public <T> List<List<Object>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
+    public <T> Map<String, List<List<Object>>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
 
         // 构建查询对象
         Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
-        // 构建聚合对象
-        List<Object> siblingTargets = new ArrayList<>();
 
-        // 主聚合
+        // 主聚合对象聚合
         Object aggTarget = AggregationMappingBuilder.buildAggregation(agg);
+
+        // 构建兄弟聚合对象
+        List<Object> siblingTargets = new ArrayList<>();
 
         // 兄弟聚合
         if (!CollectionUtils.isEmpty(agg.getSiblingAggregation())) {
@@ -976,11 +977,11 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 sourceBuilder.size(pagination.getSize());
             }
             // 设置排序参数
-            if (null != query.getSort()) {
-
-                FieldSort sort = query.getSort();
-                sourceBuilder.sort(sort.getFieldName(), SortOrder.valueOf(sort.getDirection()));
-            }
+//            if (null != query.getSort()) {
+//
+//                FieldSort sort = query.getSort();
+//                sourceBuilder.sort(sort.getFieldName(), SortOrder.valueOf(sort.getDirection()));
+//            }
         }
 
         // 聚合查询
@@ -998,11 +999,25 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (null != queryTarget) {
             sourceBuilder.query((QueryBuilder) queryTarget);
             // 聚合查询不需要 带出具体数据
-            sourceBuilder.size(0);
+            sourceBuilder.size(20);
         }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-        List<List<Object>> result = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
+        Map<String, List<List<Object>>> result = new HashMap<>();
+        // 第一层数据处理
+        List<List<Object>> main = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
+        result.put(agg.getName(), main);
+        // 同级数据处理
+        if (!CollectionUtils.isEmpty(agg.getSiblingAggregation())) {
+            for (AggregationParams aggregationParams : agg.getSiblingAggregation()) {
+                if (!CollectionUtils.isEmpty(aggregationParams.getMapping())) {
+                    List<List<Object>> siblingAggs = AggregationParser.parseMulti(response.getAggregations(), aggregationParams.getMapping());
+                    if (!CollectionUtils.isEmpty(siblingAggs)) {
+                        result.put(aggregationParams.getName(), siblingAggs);
+                    }
+                }
+            }
+        }
         return result;
     }
 

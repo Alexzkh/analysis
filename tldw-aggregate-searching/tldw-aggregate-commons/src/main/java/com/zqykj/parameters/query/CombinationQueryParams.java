@@ -33,6 +33,9 @@ public class CombinationQueryParams {
      */
     private List<CommonQueryParams> commonQueryParams;
 
+    // should 里 or 条件需要至少匹配几个
+    private DefaultQueryParam defaultQueryParam;
+
     public void addCommonQueryParams(CommonQueryParams commonQueryParams) {
 
         if (CollectionUtils.isEmpty(this.commonQueryParams)) {

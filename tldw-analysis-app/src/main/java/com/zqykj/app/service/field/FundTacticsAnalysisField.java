@@ -15,6 +15,11 @@ public interface FundTacticsAnalysisField {
     String QUERY_CARD = "query_card";
 
     /**
+     * 交易对方卡号
+     */
+    String TRANSACTION_OPPOSITE_CARD = "transaction_opposite_card";
+
+    /**
      * 客户身份证
      */
     String CUSTOMER_IDENTITY_CARD = "customer_identity_card";
@@ -51,6 +56,16 @@ public interface FundTacticsAnalysisField {
     String CUSTOMER_NAME = "customer_name";
 
     /**
+     * 对方开户名称
+     */
+    String TRANSACTION_OPPOSITE_NAME = "transaction_opposite_name";
+
+    /**
+     * 对方开户银行
+     */
+    String OPPOSITE_BANK = "transaction_opposite_account_open_bank";
+
+    /**
      * 开户银行
      */
     String BANK = "bank";
@@ -60,15 +75,31 @@ public interface FundTacticsAnalysisField {
      */
     String QUERY_ACCOUNT = "query_account";
 
+    /**
+     * 对方开户账号
+     */
+    String OPPOSITE_ACCOUNT = "transaction_opposite_account";
+
+    /**
+     * 交易对方开户证件号码
+     */
+    String OPPOSITE_IDENTITY_CARD = "transaction_opposite_certificate_number";
+
     String LOAN_FLAG_OUT = "出";
     String LOAN_FLAG_OUT_EN = "pay_out";
 
     String LOAN_FLAG_IN = "进";
     String LOAN_FLAG_IN_EN = "credits";
 
-    // 交易统计分析结果 聚合中需要展示的字段
-    static String[] tradeStatisticalAggShowField() {
+    // 交易统计分析结果本方需要展示的字段
+    static String[] tradeStatisticalAnalysisLocalShowField() {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
+    }
+
+    // 交易统计分析结果本方需要展示的字段
+    static String[] tradeStatisticalAnalysisOppositeShowField() {
+
+        return new String[]{TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD, OPPOSITE_BANK, OPPOSITE_ACCOUNT, TRANSACTION_OPPOSITE_CARD};
     }
 }

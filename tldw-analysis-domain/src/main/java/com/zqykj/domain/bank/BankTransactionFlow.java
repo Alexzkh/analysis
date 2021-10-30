@@ -64,10 +64,16 @@ public class BankTransactionFlow {
     )
     private String queryCard;
 
-    @Field(type = FieldType.Text, name = "transaction_opposite_name", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, name = "transaction_opposite_name", analyzer = "ik_max_word"),
+            otherFields = {@InnerField(suffix = "opposite_name_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionOppositeName;
 
-    @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number")
+    @MultiField(
+            mainField =  @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
+            otherFields = {@InnerField(suffix = "opposite_certificate_number_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionOppositeCertificateNumber;
 
     @Field(type = FieldType.Text, name = "transaction_opposite_account", analyzer = "ik_max_word")
@@ -75,7 +81,7 @@ public class BankTransactionFlow {
 
     @MultiField(
             mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_card"),
-            otherFields = {@InnerField(suffix = "transaction_opposite_card_wildcard", type = FieldType.Wildcard)}
+            otherFields = {@InnerField(suffix = "opposite_card_wildcard", type = FieldType.Wildcard)}
     )
     private String transactionOppositeCard;
 
@@ -157,10 +163,7 @@ public class BankTransactionFlow {
     @Field(type = FieldType.Keyword, name = "transaction_teller_number")
     private String transactionTellerNumber;
 
-    @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "note", analyzer = "ik_max_word"),
-            otherFields = {@InnerField(suffix = "note_wildcard", type = FieldType.Wildcard)}
-    )
+    @Field(type = FieldType.Text, name = "note", analyzer = "ik_max_word")
     private String note;
 
     @Field(type = FieldType.Keyword, name = "data_schema_id")

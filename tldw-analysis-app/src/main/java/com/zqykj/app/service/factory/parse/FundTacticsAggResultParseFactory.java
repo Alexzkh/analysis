@@ -5,11 +5,14 @@ package com.zqykj.app.service.factory.parse;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.vo.fund.Hits;
+import com.zqykj.app.service.vo.fund.Local;
+import com.zqykj.app.service.vo.fund.Opposite;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
 import com.zqykj.util.JacksonUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ReflectionUtils;
 
 import java.util.*;
 
@@ -35,13 +38,7 @@ public class FundTacticsAggResultParseFactory {
         for (List<Object> perLine : values) {
 
             Map<String, Object> map = new HashMap<>();
-//            if (perLine.size() == 1) {
-//
-//                // 数据总量的值
-//                map.put("total", perLine.get(0));
-//                colValueMapList.add(map);
-//                continue;
-//            }
+
             for (int i = 0; i < perLine.size(); i++) {
 
                 map.put(titles.get(i), perLine.get(i));
@@ -56,18 +53,18 @@ public class FundTacticsAggResultParseFactory {
 
         List<Map<String, Object>> dataInfoList = new ArrayList<>();
         for (Map<String, Object> map : dataMap) {
-//            if (map.size() == 1) {
-//                // 总量字段
-//                dataInfoList.add(map);
-//                continue;
-//            }
             Map<String, Object> result = new HashMap<>();
+
             entityAggColMapping.forEach((agg, colName) -> {
                 Object value = map.get(agg);
                 // 如果colName 是 source, 代表是聚合需要展示的字段, 需要特殊处理
-                if (StringUtils.equals(colName, TradeStatisticalAnalysisBankFlow.EntityMapping.source.name())) {
-                    applySource(result, value);
-                }else {
+                if (StringUtils.equals(colName, TradeStatisticalAnalysisBankFlow.EntityMapping.local_source.name())) {
+                    // 本方字段
+                    applyLocalSource(result, value);
+                } else if (StringUtils.equals(colName, TradeStatisticalAnalysisBankFlow.EntityMapping.opposite_source.name())) {
+                    // 对方字段
+                    applyOppositeSource(result, value);
+                } else {
                     result.put(colName, value);
                 }
             });
@@ -76,7 +73,7 @@ public class FundTacticsAggResultParseFactory {
         return dataInfoList;
     }
 
-    private static void applySource(Map<String, Object> map, Object value) {
+    private static void applyLocalSource(Map<String, Object> map, Object value) {
 
         if (value instanceof ArrayList) {
 
@@ -84,24 +81,42 @@ public class FundTacticsAggResultParseFactory {
             if (CollectionUtils.isEmpty(source)) {
                 return;
             }
+            // 取出聚合结果中需要展示的字段
+            Map<String, Object> sourceMap = source.get(0);
+
+            // 本方开户名称、本方开户证件号码、本方开户银行、本方账号、本方交易卡号
+            ReflectionUtils.doWithFields(TradeStatisticalAnalysisBankFlow.class, field -> {
+
+                Local local = field.getAnnotation(Local.class);
+                Hits hits = field.getAnnotation(Hits.class);
+                if (null != local && null != hits) {
+                    map.put(field.getName(), sourceMap.get(local.name()));
+                }
+            });
+        }
+    }
+
+    private static void applyOppositeSource(Map<String, Object> map, Object value) {
+
+        if (value instanceof ArrayList) {
+
+            List<Map<String, Object>> oppositeSource = (List<Map<String, Object>>) value;
+            if (CollectionUtils.isEmpty(oppositeSource)) {
+                return;
+            }
 
             //
-            Map<String, Object> sourceMap = source.get(0);
-            // 开户名称
-            map.put(TradeStatisticalAnalysisBankFlow.EntityMapping.customerName.name(),
-                    sourceMap.get(FundTacticsAnalysisField.CUSTOMER_NAME));
-            // 开户证件号码
-            map.put(TradeStatisticalAnalysisBankFlow.EntityMapping.customerIdentityCard.name(),
-                    sourceMap.get(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD));
-            // 开户银行
-            map.put(TradeStatisticalAnalysisBankFlow.EntityMapping.bank.name(),
-                    sourceMap.get(FundTacticsAnalysisField.BANK));
-            // 账号
-            map.put(TradeStatisticalAnalysisBankFlow.EntityMapping.queryAccount.name(),
-                    sourceMap.get(FundTacticsAnalysisField.QUERY_ACCOUNT));
-            // 交易卡号
-            map.put(TradeStatisticalAnalysisBankFlow.EntityMapping.queryCard.name(),
-                    sourceMap.get(FundTacticsAnalysisField.QUERY_CARD));
+            Map<String, Object> sourceMap = oppositeSource.get(0);
+
+            // 对方开户名称、对方开户证件号码、对方开户银行、对方账号、对方交易卡号
+            ReflectionUtils.doWithFields(TradeStatisticalAnalysisBankFlow.class, field -> {
+
+                Opposite opposite = field.getAnnotation(Opposite.class);
+                Hits hits = field.getAnnotation(Hits.class);
+                if (null != opposite && null != hits) {
+                    map.put(field.getName(), sourceMap.get(opposite.name()));
+                }
+            });
         }
     }
 }

@@ -54,6 +54,12 @@ public class AggregationParams {
     private int size = 1000;
 
     /**
+     * 需要包含的数据集
+     */
+    @OptionalParam
+    private Map<String, String[]> includeExclude;
+
+    /**
      * 通用参数
      */
     private CommonAggregationParams commonAggregationParams;
@@ -92,6 +98,15 @@ public class AggregationParams {
     // 同级聚合参数
     @NotResolve
     private List<AggregationParams> siblingAggregation;
+
+    public void addSiblingAggregation(AggregationParams sibling) {
+
+        if (CollectionUtils.isEmpty(this.siblingAggregation)) {
+
+            siblingAggregation = new ArrayList<>();
+        }
+        this.siblingAggregation.add(sibling);
+    }
 
     public AggregationParams(String name, String type, String field) {
         this.name = name;

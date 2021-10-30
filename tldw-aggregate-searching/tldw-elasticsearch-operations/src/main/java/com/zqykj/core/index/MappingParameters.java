@@ -16,8 +16,8 @@
 package com.zqykj.core.index;
 
 import com.zqykj.annotations.*;
-import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.core.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 

@@ -84,7 +84,7 @@ public class PageRequest extends AbstractPageRequest {
     }
 
     // 计算总页数
-    public static int getTotalPages(int total, int pageSize) {
+    public static int getTotalPages(long total, int pageSize) {
         return total == 0 ? 0 : (int) Math.ceil((double) total / (double) pageSize);
     }
 }

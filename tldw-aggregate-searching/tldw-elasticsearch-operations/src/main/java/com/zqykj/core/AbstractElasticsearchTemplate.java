@@ -333,16 +333,14 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     protected class ReadDocumentCallback<T> implements DocumentCallback<T> {
         private final EntityReader<? super T, Document> reader;
         private final Class<T> type;
-        private final String index;
 
-        public ReadDocumentCallback(EntityReader<? super T, Document> reader, Class<T> type, String index) {
+        public ReadDocumentCallback(EntityReader<? super T, Document> reader, Class<T> type) {
 
             Assert.notNull(reader, "reader is null");
             Assert.notNull(type, "type is null");
 
             this.reader = reader;
             this.type = type;
-            this.index = index;
         }
 
         @Nullable
@@ -372,11 +370,11 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         private final DocumentCallback<T> delegate;
         private final Class<T> type;
 
-        public ReadSearchDocumentResponseCallback(Class<T> type, String index) {
+        public ReadSearchDocumentResponseCallback(Class<T> type) {
 
             Assert.notNull(type, "type is null");
 
-            this.delegate = new ReadDocumentCallback<>(elasticsearchConverter, type, index);
+            this.delegate = new ReadDocumentCallback<>(elasticsearchConverter, type);
             this.type = type;
         }
 
@@ -395,11 +393,11 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         private final DocumentCallback<T> delegate;
         private final Class<T> type;
 
-        public ReadSearchScrollDocumentResponseCallback(Class<T> type, String index) {
+        public ReadSearchScrollDocumentResponseCallback(Class<T> type) {
 
             Assert.notNull(type, "type is null");
 
-            this.delegate = new ReadDocumentCallback<>(elasticsearchConverter, type, index);
+            this.delegate = new ReadDocumentCallback<>(elasticsearchConverter, type);
             this.type = type;
         }
 

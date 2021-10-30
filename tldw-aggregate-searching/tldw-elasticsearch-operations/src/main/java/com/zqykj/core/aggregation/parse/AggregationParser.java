@@ -153,8 +153,13 @@ public class AggregationParser {
 
         List<List<Object>> newResult = new ArrayList<>();
 
-        int size = result.get(0).size();
+        // 筛选出size最大的
+        int size = result.stream().max((Comparator.comparingInt(List::size))).orElse(new ArrayList<>()).size();
 
+        if (size == 0) {
+            return new ArrayList<>();
+        }
+        // 汇聚每一行的列值
         for (int i = 0; i < size; i++) {
 
             List<Object> newOne = new ArrayList<>();
@@ -182,6 +187,7 @@ public class AggregationParser {
             }
             newResult.add(newOne);
         }
+        //
         return newResult;
     }
 

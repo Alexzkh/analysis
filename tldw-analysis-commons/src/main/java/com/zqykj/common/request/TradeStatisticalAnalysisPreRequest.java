@@ -33,8 +33,7 @@ public class TradeStatisticalAnalysisPreRequest {
     /**
      * 卡号集合
      */
-    @NotNull
-    private List<String> cardNums;
+    private String[] cardNums;
 
     /**
      * 日期范围   (时间范围固定是:  00:00-23:59)

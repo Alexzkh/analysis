@@ -319,7 +319,7 @@ public class OriginEsOperationTest {
 
         // 732c350f-3a2b-46d0-b9cc-0bdcc52fca93
         TradeStatisticalAnalysisPreRequest request = new TradeStatisticalAnalysisPreRequest();
-        request.setCardNums(Arrays.asList("60138216660037818", "60138216660042019", "60138216660023809"));
+        request.setCardNums(new String[]{"60138216660037818", "60138216660042019", "60138216660023809"});
         request.setDateRange(new DateRangeRequest("2019-04-05", "2020-03-13"));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
@@ -334,7 +334,7 @@ public class OriginEsOperationTest {
     public void testTradeStatisticalResultQuery() {
 
         TradeStatisticalAnalysisQueryRequest request = new TradeStatisticalAnalysisQueryRequest();
-        request.setCardNums(Arrays.asList("60138216660000014",
+        request.setCardNums(new String[]{"60138216660000014",
                 "60138216660001414",
                 "60138216660002814",
                 "60138216660004214",
@@ -368,14 +368,15 @@ public class OriginEsOperationTest {
                 "60138216660043414",
                 "60138216660044814",
                 "60138216660046214",
-                "60138216660047614"));
+                "60138216660047614"});
         request.setDateRange(new DateRangeRequest("2020-01-01", "2021-10-14"));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
         request.setPageRequest(new com.zqykj.common.vo.PageRequest(0, 25));
+        request.setIdentityCard("371601198702200014");
         request.setKeyword("*平安*");
 
-        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("83bced7cbb9e442eb3f007bb04b88275", request);
+        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("f8b8891c38e74888981578b72ab6c5a6", request);
 
         if (serverResponse.isSuccess()) {
 
@@ -385,12 +386,11 @@ public class OriginEsOperationTest {
     }
 
 
-
     @Test
     public void testAssetTrendsResultQuery() {
 
         AssetTrendsRequest request = new AssetTrendsRequest();
-        request.setCardNums(Arrays.asList("60138216660000014",
+        request.setCardNums(new String[]{"60138216660000014",
                 "60138216660001414",
                 "60138216660002814",
                 "60138216660004214",
@@ -424,16 +424,16 @@ public class OriginEsOperationTest {
                 "60138216660043414",
                 "60138216660044814",
                 "60138216660046214",
-                "60138216660047614"));
+                "60138216660047614"});
         request.setDateRange(new DateRangeRequest("", ""));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
-        request.setPaging(new PagingRequest(0,25));
+        request.setPaging(new PagingRequest(0, 25));
         request.setDateType("q");
 
 //        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
 
-        iAssetTrendsTactics.accessAssetTrendsTacticsResult("c94546bb87bd4b32947b576c565a94a2",request);
+        iAssetTrendsTactics.accessAssetTrendsTacticsResult("012375a71dac47de8cde9f5319081b48", request);
 //        if (serverResponse.isSuccess()) {
 //
 //            Object data = serverResponse.getData();

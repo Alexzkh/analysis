@@ -39,9 +39,10 @@ public class AssetTrendsTacticsImpl implements IAssetTrendsTactics {
     public AssetTrendsResponse accessAssetTrendsTacticsResult(String caseId, AssetTrendsRequest assetTrendsRequest) {
         AssetTrendsResponse assetTrendsResponse = new AssetTrendsResponse();
         TradeStatisticalAnalysisPreRequest tradeStatisticalAnalysisPreRequest = assetTrendsRequest.convertFrom(assetTrendsRequest);
-        QuerySpecialParams query = queryRequestParamFactory.buildCommonQuerySpecialParams(tradeStatisticalAnalysisPreRequest,caseId);
+        QuerySpecialParams query = new QuerySpecialParams();
+        query.addCombiningQueryParams(queryRequestParamFactory.buildCommonQueryParams(tradeStatisticalAnalysisPreRequest, caseId));
         AggregationParams aggs = aggregationRequestParamFactory.createAssetTrendsAnalysisQueryAgg(assetTrendsRequest);
-        List<List<Object>> result = entranceRepository.compoundQueryAndAgg(query, aggs, BankTransactionFlow.class, caseId);
+        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(query, aggs, BankTransactionFlow.class, caseId);
         return assetTrendsResponse;
     }
 }

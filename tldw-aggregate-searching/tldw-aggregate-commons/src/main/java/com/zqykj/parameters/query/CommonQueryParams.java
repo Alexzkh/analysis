@@ -31,6 +31,11 @@ public class CommonQueryParams {
     private String field;
 
     /**
+     * 多字段处理
+     */
+    private String[] fields;
+
+    /**
      * 字段的值/模糊查询的值
      */
     private Object value;
@@ -45,10 +50,30 @@ public class CommonQueryParams {
      */
     private QueryOperator queryOperator;
 
-    // 内部依然可以是组合查询  (eg. 需要满足 满足a=1或b=2, 并且c=3)
+    // 内部依然可以是组合查询  (eg. a = 1 and (b = 1 or c = 2) 等等)
     private CombinationQueryParams compoundQueries;
 
+    // 嵌套组合查询
+    public CommonQueryParams(CombinationQueryParams compoundQueries) {
+
+        this.compoundQueries = compoundQueries;
+    }
+
+    public CommonQueryParams(QueryType type, Object value, String... fields) {
+
+        this.type = type;
+        this.value = value;
+        this.fields = fields;
+    }
+
     public CommonQueryParams(QueryType type, String field, Object value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
+    public CommonQueryParams(QueryType type, String field, String... value) {
 
         this.type = type;
         this.field = field;

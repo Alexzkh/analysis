@@ -3,6 +3,7 @@
  */
 package com.zqykj.factory;
 
+import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
 /**
@@ -14,5 +15,7 @@ public interface QueryRequestParamFactory {
 
     <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequest(T request, V other);
 
-    <T, V> QuerySpecialParams buildCommonQuerySpecialParams(T request, V parameter);
+    <T, V> CombinationQueryParams buildCommonQueryParams(T request, V parameter);
+
+    <T> CombinationQueryParams assemblePostFilter(T request);
 }

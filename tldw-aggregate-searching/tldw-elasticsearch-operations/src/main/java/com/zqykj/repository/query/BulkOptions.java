@@ -5,7 +5,7 @@ package com.zqykj.repository.query;
 
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.TimeValue;
 import org.springframework.lang.Nullable;
 
 /**

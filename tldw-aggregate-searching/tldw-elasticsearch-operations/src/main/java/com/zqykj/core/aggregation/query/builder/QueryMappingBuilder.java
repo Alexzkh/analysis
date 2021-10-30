@@ -13,9 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
+import javax.annotation.PostConstruct;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -25,6 +27,7 @@ import java.util.*;
  * <h1> es 的 dsl builder 构建 </h1>
  */
 @Slf4j
+@Component
 public class QueryMappingBuilder {
 
     private static Map<String, Class<?>> dslNameForClass = new ConcurrentReferenceHashMap<>(256);
@@ -34,8 +37,13 @@ public class QueryMappingBuilder {
     private static final String FROM_METHOD_NAME = "from";
     private static final String TO_METHOD_NAME = "to";
 
-    static {
+    @PostConstruct
+    public void init() {
         dslNameForClass.putAll(new QueryNameForBeanClass().getAggregateNameForClass());
+    }
+
+    public QueryMappingBuilder() {
+
     }
 
     public QueryMappingBuilder(ClassNameForBeanClass nameForBeanClass) {
@@ -73,27 +81,13 @@ public class QueryMappingBuilder {
 
         Object target = null;
         if (null != params.getCommonQuery()) {
+
             // 单个查询
             target = addCommonQueryMapping(params.getCommonQuery());
         } else if (!CollectionUtils.isEmpty(params.getCombiningQuery())) {
+
             // 组合查询
-
-            target = addCombinationQueryMapping(params.getCombiningQuery());
-        }
-
-        // 通用参数设置
-        DefaultQueryParam defaultParam = params.getDefaultParam();
-        if (null != defaultParam && null != target) {
-
-            Field[] declaredFields = ReflectionUtils.getDeclaredFields(defaultParam.getClass());
-            for (Field field : declaredFields) {
-
-                org.springframework.util.ReflectionUtils.makeAccessible(field);
-                Object value = org.springframework.util.ReflectionUtils.getField(field, defaultParam);
-                Optional<Method> methodOptional = ReflectionUtils.findMethod(target.getClass(), field.getName(), field.getType());
-                Object finalTarget = target;
-                methodOptional.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, finalTarget, value));
-            }
+            target = addCombinationQueryMapping(params.getCombiningQuery(), params.getDefaultParam());
         }
         return target;
     }
@@ -111,11 +105,14 @@ public class QueryMappingBuilder {
     /**
      * <h2> 添加组合查询的参数映射 </h2>
      */
-    private static Object addCombinationQueryMapping(List<CombinationQueryParams> combiningQuery) {
+    private static Object addCombinationQueryMapping(List<CombinationQueryParams> combiningQuery, DefaultQueryParam defaultQueryParam) {
 
         Class<?> queryTypeClass = getQueryTypeClass(QueryType.bool.toString());
         // 组合查询实例
         Object target = ReflectionUtils.getTargetInstanceViaReflection(queryTypeClass);
+
+        // bool query 一些默认可选参数设置
+        applyBoolQueryParamSet(target, defaultQueryParam);
 
         for (CombinationQueryParams params : combiningQuery) {
 
@@ -127,7 +124,6 @@ public class QueryMappingBuilder {
                 dealWithCombination(method, target, params.getCommonQueryParams());
             });
         }
-
         return target;
     }
 
@@ -146,16 +142,38 @@ public class QueryMappingBuilder {
         for (CommonQueryParams common : commonQueryParams) {
 
             // 如果还是 bool 查询(需要特殊处理)
-            Object perTarget;
+            Object perConditionTarget;
             if (null != common.getCompoundQueries()) {
 
                 // 仍然是bool 对象
-                perTarget = addCombinationQueryMapping(Collections.singletonList(common.getCompoundQueries()));
+                perConditionTarget = addCombinationQueryMapping(Collections.singletonList(common.getCompoundQueries()),
+                        common.getCompoundQueries().getDefaultQueryParam());
+
             } else {
                 // 单个对象
-                perTarget = addCommonQueryMapping(common);
+                perConditionTarget = addCommonQueryMapping(common);
             }
-            org.springframework.util.ReflectionUtils.invokeMethod(method, target, perTarget);
+            // 每一层bool 内的对象在此依次设置( eg. must 在这里依次设置里面每个条件, 其中的条件仍然可以是一个Bool对象)
+            // 由method 决定
+            org.springframework.util.ReflectionUtils.invokeMethod(method, target, perConditionTarget);
+        }
+    }
+
+    /**
+     * <h2> bool 查询的通用参数设置 </h2>
+     */
+    private static void applyBoolQueryParamSet(Object target, DefaultQueryParam defaultParam) {
+
+        if (null != defaultParam && null != target) {
+
+            Field[] declaredFields = ReflectionUtils.getDeclaredFields(defaultParam.getClass());
+            for (Field field : declaredFields) {
+
+                org.springframework.util.ReflectionUtils.makeAccessible(field);
+                Object value = org.springframework.util.ReflectionUtils.getField(field, defaultParam);
+                Optional<Method> methodOptional = ReflectionUtils.findMethod(target.getClass(), field.getName(), field.getType());
+                methodOptional.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, value));
+            }
         }
     }
 
@@ -171,11 +189,22 @@ public class QueryMappingBuilder {
 
     private static Object getQueryTypeInstance(Class<?> queryClass, CommonQueryParams common) {
 
-        Optional<Constructor<?>> constructor = ReflectionUtils.findConstructor(queryClass, common.getField(), common.getValue());
+        Optional<Constructor<?>> constructor;
+        if (null != common.getFields()) {
+            // 单字段处理
+            constructor = ReflectionUtils.findConstructor(queryClass, common.getValue(), common.getFields());
+        } else {
+            // 多字段处理
+            constructor = ReflectionUtils.findConstructor(queryClass, common.getField(), common.getValue());
+        }
         Object target;
         if (constructor.isPresent()) {
 
-            target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField(), common.getValue());
+            if (null != common.getFields()) {
+                target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getValue(), common.getFields());
+            } else {
+                target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField(), common.getValue());
+            }
         } else {
 
             target = buildSpecialAggregationConstructor(queryClass, common);

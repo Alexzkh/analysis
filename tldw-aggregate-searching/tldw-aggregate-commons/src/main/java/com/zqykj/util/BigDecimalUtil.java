@@ -13,11 +13,19 @@ public class BigDecimalUtil {
 
     }
 
-
     public static BigDecimal add(double v1, double v2) {
         BigDecimal b1 = new BigDecimal(Double.toString(v1));
         BigDecimal b2 = new BigDecimal(Double.toString(v2));
         return b1.add(b2);
+    }
+
+    public static long longValue(String date) {
+
+        return new BigDecimal(date).longValue();
+    }
+
+    public static BigDecimal add(BigDecimal v1, BigDecimal v2) {
+        return v1.add(v2).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 
     public static BigDecimal add(String v1, String v2) {

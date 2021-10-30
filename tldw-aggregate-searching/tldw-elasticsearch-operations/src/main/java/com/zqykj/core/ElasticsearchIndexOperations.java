@@ -16,12 +16,10 @@ import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.client.indices.rollover.RolloverRequest;
 import org.elasticsearch.client.indices.rollover.RolloverResponse;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.TimeValue;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StopWatch;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * <h2> ElasticSearch Index Operations</h2>
