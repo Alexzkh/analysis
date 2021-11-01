@@ -344,9 +344,19 @@ public class AggregationMappingBuilder {
             return;
         }
         for (AggregationParams subParameter : subParameters) {
-            Object subTarget = buildAggregationInstance(target, subParameter);
-            //
-            applySubAggregation(target, aggregationClass, subTarget);
+
+            // 如果子聚合是管道聚合的话
+            if (StringUtils.isBlank(subParameter.getName()) && !CollectionUtils.isEmpty(subParameter.getPipelineAggregation())) {
+
+                addPipelineAggregationMapping(target, subParameter.getPipelineAggregation(), aggregationClass);
+            } else {
+
+                // 普通子聚合
+                Object subTarget = buildAggregationInstance(target, subParameter);
+
+                // 设置子聚合
+                applySubAggregation(target, aggregationClass, subTarget);
+            }
         }
     }
 
@@ -357,7 +367,8 @@ public class AggregationMappingBuilder {
         }
         for (PipelineAggregationParams subParameter : subParameters) {
             Object subTarget = buildPipelineAggregationInstance(subParameter);
-            //
+
+            //设置子聚合
             applySubAggregation(target, aggregationClass, subTarget);
         }
     }

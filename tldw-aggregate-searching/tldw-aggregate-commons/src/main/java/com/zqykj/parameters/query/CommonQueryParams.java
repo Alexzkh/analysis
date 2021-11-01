@@ -80,6 +80,13 @@ public class CommonQueryParams {
         this.value = value;
     }
 
+    public CommonQueryParams(QueryType type, String field, List<String> value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
     public CommonQueryParams(QueryType type, String field, String value) {
 
         this.type = type;

@@ -9,7 +9,10 @@ import com.zqykj.app.service.vo.fund.Local;
 import com.zqykj.app.service.vo.fund.Opposite;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.common.enums.ConditionType;
+import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.util.ReflectionUtils;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AssetTrendsRequest;
@@ -27,16 +30,20 @@ import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
 @ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 @Service
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestParamFactory {
 
-    public static final int BUCKET_SORT_DEFAULT_SIZE = 1000;
+
+    private final FundTacticsAnalysisQueryBuilderFactory queryBuilderFactory;
 
     // 管道聚合 buckets_path 引用标识
     private static final String BUCKET_SCRIPT_PARAM_PREFIX = "params.";
@@ -58,9 +65,29 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
     public <T> AggregationParams buildTradeStatisticsAnalysisQueryCardAgg(T request) {
 
         TradeStatisticalAnalysisQueryRequest queryRequest = (TradeStatisticalAnalysisQueryRequest) request;
+
+        // 如果是全部查询条件,需要增加过滤条件
+        AggregationParams localFilter = null;
+        if (CollectionUtils.isEmpty(queryRequest.getCardNums()) || StringUtils.isBlank(queryRequest.getIdentityCard())) {
+
+            // 本方聚合的时候调单卡号的过滤条件
+            QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+            querySpecialParams.addCombiningQueryParams(queryBuilderFactory.assembleLocalFuzzy(queryRequest.getKeyword()));
+            localFilter = new AggregationParams("local_filter", AggsType.filter.name(), querySpecialParams);
+        }
         // 查询卡号分组
-        AggregationParams queryCardTerms = AggregationParamsBuilders.terms("local_card_terms",
-                FundTacticsAnalysisField.QUERY_CARD, null, queryRequest.getCardNums(), null);
+        AggregationParams queryCardTerms;
+        if (CollectionUtils.isEmpty(queryRequest.getCardNums())) {
+            queryCardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD);
+        } else {
+            String[] cardNums = queryRequest.getCardNums().toArray(new String[0]);
+            queryCardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD, cardNums);
+        }
+        if (null != localFilter) {
+
+            // 过滤出调单卡号之后再去group by
+            setSubAggregation(localFilter, queryCardTerms);
+        }
 
         // 下面聚合都在是该分组之下(属于子聚合)
         // 本方交易总次数
@@ -102,7 +129,7 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         localTradeNetPath.put("local_out_amount", "local_out_times>local_out_amount");
         String tradeNetScript = "params.local_credits_amount - params.local_out_amount";
         PipelineAggregationParams localTradeNet = AggregationParamsBuilders.pipelineBucketScript("local_trade_net", localTradeNetPath, tradeNetScript);
-        queryCardTerms.setPerPipelineAggregation(localTradeNet);
+        queryCardTerms.setPerSubAggregation(localTradeNet);
         // 本方排序
         if (null != queryRequest.getSortRequest()) {
             List<FieldSort> fieldSorts = new ArrayList<>();
@@ -125,19 +152,19 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
             }
             // 获取真实的聚合排序字段(开户名称、开户证件号码、开户银行、账号、交易卡号 不做排序,按照交易总金额排序处理)
             fieldSorts.add(new FieldSort(property, order));
-            PipelineAggregationParams localSort = AggregationParamsBuilders.sort("local_sort", fieldSorts, 0, BUCKET_SORT_DEFAULT_SIZE);
-            queryCardTerms.setPerPipelineAggregation(localSort);
+            PipelineAggregationParams localSort = AggregationParamsBuilders.sort("local_sort", fieldSorts, queryRequest.getGroupInitPage(), queryRequest.getGroupInitSize());
+            queryCardTerms.setPerSubAggregation(localSort);
         } else {
             // 默认排序
             FieldSort fieldSort = new FieldSort("local_trade_amount", "DESC");
-            PipelineAggregationParams localSort = AggregationParamsBuilders.sort("local_sort", Collections.singletonList(fieldSort), 0, BUCKET_SORT_DEFAULT_SIZE);
-            queryCardTerms.setPerPipelineAggregation(localSort);
+            PipelineAggregationParams localSort = AggregationParamsBuilders.sort("local_sort", Collections.singletonList(fieldSort), queryRequest.getGroupInitPage(), queryRequest.getGroupInitSize());
+            queryCardTerms.setPerSubAggregation(localSort);
         }
         // 本方聚合需要展示的字段
         FetchSource localFetchSource = new FetchSource(FundTacticsAnalysisField.tradeStatisticalAnalysisLocalShowField(), 0, 1);
         AggregationParams localHits = AggregationParamsBuilders.fieldSource("local_hits", localFetchSource);
         setSubAggregation(queryCardTerms, localHits);
-        return queryCardTerms;
+        return null == localFilter ? queryCardTerms : localFilter;
     }
 
     /**
@@ -146,9 +173,31 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
     public <T> AggregationParams buildTradeStatisticsAnalysisOppositeCardAgg(T request) {
 
         TradeStatisticalAnalysisQueryRequest queryRequest = (TradeStatisticalAnalysisQueryRequest) request;
+
+        // 如果是全部查询条件,需要增加过滤条件
+        AggregationParams oppositeFilter = null;
+        if (CollectionUtils.isEmpty(queryRequest.getCardNums()) || StringUtils.isBlank(queryRequest.getIdentityCard())) {
+
+            // 本方聚合的时候调单卡号的过滤条件
+            QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+            querySpecialParams.addCombiningQueryParams(queryBuilderFactory.assembleOppositeFuzzy(queryRequest.getKeyword()));
+            oppositeFilter = new AggregationParams("opposite_filter", AggsType.filter.name(), querySpecialParams);
+        }
+        AggregationParams oppositeCardTerms;
         // 查询卡号分组
-        AggregationParams oppositeCardTerms = AggregationParamsBuilders.terms("opposite_card_terms",
-                FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, null, queryRequest.getCardNums(), null);
+        if (CollectionUtils.isEmpty(queryRequest.getCardNums())) {
+
+            oppositeCardTerms = AggregationParamsBuilders.terms("opposite_card_terms", FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD);
+        } else {
+            String[] cardNums = queryRequest.getCardNums().toArray(new String[0]);
+            oppositeCardTerms = AggregationParamsBuilders.terms("opposite_card_terms", FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, cardNums);
+        }
+
+        // 过滤出调单卡号之后分组
+        if (null != oppositeFilter) {
+
+            setSubAggregation(oppositeFilter, oppositeCardTerms);
+        }
 
         // 下面聚合都在是该分组之下(属于子聚合)
         // 本方交易总次数
@@ -190,7 +239,7 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         oppositeTradeNetPath.put("opposite_out_amount", "opposite_out_times>opposite_out_amount");
         String oppositeTradeNetScript = "params.opposite_credits_amount - params.opposite_out_amount";
         PipelineAggregationParams oppositeTradeNet = AggregationParamsBuilders.pipelineBucketScript("opposite_trade_net", oppositeTradeNetPath, oppositeTradeNetScript);
-        oppositeCardTerms.setPerPipelineAggregation(oppositeTradeNet);
+        oppositeCardTerms.setPerSubAggregation(oppositeTradeNet);
         // 本方排序
         if (null != queryRequest.getSortRequest()) {
             List<FieldSort> fieldSorts = new ArrayList<>();
@@ -212,19 +261,19 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
                 order = queryRequest.getSortRequest().getOrder().name();
             }
             fieldSorts.add(new FieldSort(property, order));
-            PipelineAggregationParams oppositeSort = AggregationParamsBuilders.sort("opposite_sort", fieldSorts, 0, BUCKET_SORT_DEFAULT_SIZE);
-            oppositeCardTerms.setPerPipelineAggregation(oppositeSort);
+            PipelineAggregationParams oppositeSort = AggregationParamsBuilders.sort("opposite_sort", fieldSorts, queryRequest.getGroupInitPage(), queryRequest.getGroupInitSize());
+            oppositeCardTerms.setPerSubAggregation(oppositeSort);
         } else {
             // 默认排序
             FieldSort fieldSort = new FieldSort("opposite_trade_amount", "DESC");
-            PipelineAggregationParams oppositeSort = AggregationParamsBuilders.sort("opposite_sort", Collections.singletonList(fieldSort), 0, BUCKET_SORT_DEFAULT_SIZE);
-            oppositeCardTerms.setPerPipelineAggregation(oppositeSort);
+            PipelineAggregationParams oppositeSort = AggregationParamsBuilders.sort("opposite_sort", Collections.singletonList(fieldSort), queryRequest.getGroupInitPage(), queryRequest.getGroupInitSize());
+            oppositeCardTerms.setPerSubAggregation(oppositeSort);
         }
         // 本方聚合需要展示的字段
         FetchSource oppositeFetchSource = new FetchSource(FundTacticsAnalysisField.tradeStatisticalAnalysisOppositeShowField(), 0, 1);
         AggregationParams oppositeHits = AggregationParamsBuilders.fieldSource("opposite_hits", oppositeFetchSource);
         setSubAggregation(oppositeCardTerms, oppositeHits);
-        return oppositeCardTerms;
+        return null == oppositeFilter ? oppositeCardTerms : oppositeFilter;
     }
 
 
@@ -232,20 +281,22 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
 
         TradeStatisticalAnalysisQueryRequest queryRequest = (TradeStatisticalAnalysisQueryRequest) request;
 
-        AggregationParams root;
-        String[] cardNums = queryRequest.getCardNums();
-        if (null != cardNums && cardNums.length > 0) {
-
-            QuerySpecialParams filterQueryCardTotal = new QuerySpecialParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, cardNums));
-            root = new AggregationParams("filter_total", AggsType.filter.name(), filterQueryCardTotal);
-            //去重总量
-            AggregationParams total = new AggregationParams("total", AggsType.cardinality.name(), FundTacticsAnalysisField.QUERY_CARD);
-            setSubAggregation(root, total);
-        } else {
-
-            // 那总量计算的就是查询卡号去重之后
-            root = new AggregationParams("total", AggsType.cardinality.name(), FundTacticsAnalysisField.QUERY_CARD);
+        // 前置过滤条件
+        CombinationQueryParams combinationOne = new CombinationQueryParams();
+        combinationOne.setType(ConditionType.must);
+        // 本方查询卡号(有可能是查询全部,那么卡号不为空的时候才能选用此条件)
+        if (!CollectionUtils.isEmpty(queryRequest.getCardNums())) {
+            combinationOne.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, queryRequest.getCardNums()));
         }
+        // 本方需要的模糊匹配
+        combinationOne.addCommonQueryParams(new CommonQueryParams(queryBuilderFactory.assembleLocalFuzzy(queryRequest.getKeyword())));
+        QuerySpecialParams prefixFilter = new QuerySpecialParams();
+        prefixFilter.addCombiningQueryParams(combinationOne);
+
+        AggregationParams root = new AggregationParams("total", AggsType.filter.name(), prefixFilter);
+        AggregationParams total;
+        total = new AggregationParams("cardinality_total", AggsType.cardinality.name(), FundTacticsAnalysisField.QUERY_CARD);
+        setSubAggregation(root, total);
         return root;
     }
 
@@ -327,13 +378,13 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         String tradeNet = TradeStatisticsAnalysisAggName.TRADE_NET_AGG_NAME + AGG_NAME_SPLIT + bucketScript;
         PipelineAggregationParams tradeNetMoneyPipelineAgg = new PipelineAggregationParams(tradeNet, bucketScript, tradeNetBucketsPath, tradeNetScript);
         mapping.put(tradeNet, ElasticsearchAggregationResponseAttributes.valueAsString);
-        root.setPerPipelineAggregation(tradeNetMoneyPipelineAgg);
+        root.setPerSubAggregation(tradeNetMoneyPipelineAgg);
 
         // 对交易统计分析结果排序
         String bucketSort = AggsType.bucket_sort.name();
         String sortAgg = TradeStatisticsAnalysisAggName.TRADE_RESULT_AGG_NAME + AGG_NAME_SPLIT + bucketSort;
         PipelineAggregationParams tradeResultOrderAgg = new PipelineAggregationParams(sortAgg, bucketSort, Collections.singletonList(fieldSort), pagination);
-        root.setPerPipelineAggregation(tradeResultOrderAgg);
+        root.setPerSubAggregation(tradeResultOrderAgg);
     }
 
     /**

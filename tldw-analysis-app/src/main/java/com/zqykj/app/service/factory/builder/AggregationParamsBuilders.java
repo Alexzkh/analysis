@@ -58,6 +58,35 @@ public class AggregationParamsBuilders {
         return aggregationParams;
     }
 
+    public static AggregationParams terms(String aggName, String field) {
+
+        return new AggregationParams(aggName, AggsType.terms.name(), field);
+    }
+
+    public static AggregationParams terms(String aggName, String field, String script) {
+
+        AggregationParams aggregationParams = new AggregationParams(aggName, AggsType.terms.name(), field);
+        if (null != script) {
+
+            aggregationParams.setScript(script);
+        }
+        return aggregationParams;
+    }
+
+    public static AggregationParams terms(String aggName, String field, @Nullable String[] include) {
+
+        AggregationParams aggregationParams = new AggregationParams(aggName, AggsType.terms.name(), field);
+        // 设置include 、exclude、script 等
+        Map<String, String[]> includeExclude = new HashMap<>();
+        if (null != include && include.length > 0) {
+            includeExclude.put("includeValues", include);
+        }
+        if (!CollectionUtils.isEmpty(includeExclude)) {
+            aggregationParams.setIncludeExclude(includeExclude);
+        }
+        return aggregationParams;
+    }
+
     /**
      * <h2> count 求总量(没有去重) </h2>
      *

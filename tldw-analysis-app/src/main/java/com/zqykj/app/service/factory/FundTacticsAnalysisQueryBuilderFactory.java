@@ -20,6 +20,7 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.search.MultiMatchQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -113,7 +114,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         CombinationQueryParams secondCombinationOne = new CombinationQueryParams();
         secondCombinationOne.setType(ConditionType.must);
         // 本方查询卡号(有可能是查询全部,那么卡号不为空的时候才能选用此条件)
-        if (null != request.getCardNums() && request.getCardNums().length > 0) {
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
             secondCombinationOne.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
         }
         // 本方需要的模糊匹配
@@ -123,7 +124,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         CombinationQueryParams secondCombinationTwo = new CombinationQueryParams();
         secondCombinationTwo.setType(ConditionType.must);
         // 对方卡号
-        if (null != request.getCardNums() && request.getCardNums().length > 0) {
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
             secondCombinationTwo.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getCardNums()));
         }
         // 本方需要的模糊匹配
@@ -139,7 +140,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
     /**
      * <h2> 组装本方模糊查询 </h2>
      */
-    private CombinationQueryParams assembleLocalFuzzy(String keyword) {
+    public CombinationQueryParams assembleLocalFuzzy(String keyword) {
 
         CombinationQueryParams localFuzzy = new CombinationQueryParams();
         localFuzzy.setType(ConditionType.should);
@@ -153,7 +154,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
     /**
      * <h2> 组装对方模糊查询 </h2>
      */
-    private CombinationQueryParams assembleOppositeFuzzy(String keyword) {
+    public CombinationQueryParams assembleOppositeFuzzy(String keyword) {
 
         CombinationQueryParams oppositeFuzzy = new CombinationQueryParams();
         oppositeFuzzy.setType(ConditionType.should);

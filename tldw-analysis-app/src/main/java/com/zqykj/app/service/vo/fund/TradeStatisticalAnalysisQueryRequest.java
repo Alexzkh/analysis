@@ -38,6 +38,10 @@ public class TradeStatisticalAnalysisQueryRequest extends TradeStatisticalAnalys
     private SortRequest sortRequest;
 
 
+    private int groupInitPage = 0;
+
+    private int groupInitSize = 60000;
+
     public TradeStatisticalAnalysisPreRequest convertFrom(TradeStatisticalAnalysisQueryRequest from) {
 
         TradeStatisticalAnalysisPreRequest to = new TradeStatisticalAnalysisPreRequest();

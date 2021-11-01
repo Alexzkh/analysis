@@ -11,9 +11,7 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.*;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <h1> 聚合参数封装 </h1>
@@ -186,6 +184,10 @@ public class AggregationParams {
         this.querySpecialParams = query;
     }
 
+    public AggregationParams(PipelineAggregationParams pipelineAggregationParams) {
+        this.pipelineAggregation = Collections.singletonList(pipelineAggregationParams);
+    }
+
     public void setPerSubAggregation(AggregationParams aggregation) {
         if (CollectionUtils.isEmpty(this.subAggregation)) {
             this.subAggregation = new ArrayList<>();
@@ -193,24 +195,12 @@ public class AggregationParams {
         this.subAggregation.add(aggregation);
     }
 
-    public void setPerSubAggregation(AggregationParams aggregation, PipelineAggregationParams pipelineAggregationParams) {
+    public void setPerSubAggregation(PipelineAggregationParams aggregation) {
+
         if (CollectionUtils.isEmpty(this.subAggregation)) {
             this.subAggregation = new ArrayList<>();
         }
-        this.subAggregation.add(aggregation);
-
-        // 需要塞入这层子聚合的管道聚合
-        int index = this.subAggregation.indexOf(aggregation);
-        AggregationParams aggregationParams = this.subAggregation.get(index);
-        aggregationParams.setPerPipelineAggregation(pipelineAggregationParams);
-    }
-
-
-    public void setPerPipelineAggregation(PipelineAggregationParams aggregation) {
-        if (CollectionUtils.isEmpty(this.pipelineAggregation)) {
-            this.pipelineAggregation = new ArrayList<>();
-        }
-        this.pipelineAggregation.add(aggregation);
+        this.subAggregation.add(new AggregationParams(aggregation));
     }
 
     public void setSiblingAggregation(AggregationParams sibling) {
@@ -219,6 +209,14 @@ public class AggregationParams {
             this.siblingAggregation = new ArrayList<>();
         }
         this.siblingAggregation.add(sibling);
+    }
+
+    public void setSiblingAggregation(PipelineAggregationParams sibling) {
+
+        if (CollectionUtils.isEmpty(this.pipelineAggregation)) {
+            this.pipelineAggregation = new ArrayList<>();
+        }
+        this.pipelineAggregation.add(sibling);
     }
 
     /**
