@@ -42,6 +42,8 @@ public class TradeStatisticalAnalysisQueryRequest extends TradeStatisticalAnalys
 
     private int groupInitSize = 60000;
 
+    private String searchTag = "local";
+
     public TradeStatisticalAnalysisPreRequest convertFrom(TradeStatisticalAnalysisQueryRequest from) {
 
         TradeStatisticalAnalysisPreRequest to = new TradeStatisticalAnalysisPreRequest();
