@@ -976,14 +976,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 sourceBuilder.from(pagination.getFrom());
                 sourceBuilder.size(pagination.getSize());
             }
-            // 设置排序参数
-//            if (null != query.getSort()) {
-//
-//                FieldSort sort = query.getSort();
-//                sourceBuilder.sort(sort.getFieldName(), SortOrder.valueOf(sort.getDirection()));
-//            }
         }
-
         // 聚合查询
         if (null != aggTarget) {
             sourceBuilder.aggregation((AggregationBuilder) aggTarget);

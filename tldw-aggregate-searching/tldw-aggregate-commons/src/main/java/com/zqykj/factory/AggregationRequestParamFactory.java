@@ -12,13 +12,6 @@ import java.util.List;
  */
 public interface AggregationRequestParamFactory {
 
-    /**
-     * <h2> 交易统计分析结果查询 聚合参数构建 </h2>
-     *
-     * @param request 交易统计分析结果查询请求参数
-     **/
-    <T> List<AggregationParams> createTradeStatisticsAnalysisQueryAgg(T request);
-
     <T> AggregationParams buildTradeStatisticsAnalysisQueryCardAgg(T request);
 
     <T> AggregationParams buildTradeStatisticsAnalysisOppositeCardAgg(T request);

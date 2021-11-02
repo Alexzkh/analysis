@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.parse;
+package com.zqykj.app.service.factory.parse.fund.es;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -9,8 +9,11 @@ import com.zqykj.app.service.vo.fund.Hits;
 import com.zqykj.app.service.vo.fund.Local;
 import com.zqykj.app.service.vo.fund.Opposite;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
+import com.zqykj.factory.AggregationResultEntityParseFactory;
 import com.zqykj.util.JacksonUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -19,19 +22,19 @@ import java.util.*;
 /**
  * <h1> 战法聚合结果解析工厂 </h1>
  */
-public class FundTacticsAggResultParseFactory {
+@ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
+@Service
+public class FundTacticsAggResultParseFactory implements AggregationResultEntityParseFactory {
 
-    /**
-     * <h2> 获取交易统计分析结果 </h2>
-     */
-    public static List<TradeStatisticalAnalysisBankFlow> getTradeStatisticalAnalysisResult(List<Map<String, Object>> data) {
 
-        return JacksonUtils.parse(JacksonUtils.toJson(data), new TypeReference<List<TradeStatisticalAnalysisBankFlow>>() {
-        });
+    @Override
+    public List<Map<String, Object>> convertEntity(List<Map<String, Object>> aggColValue,
+                                                   Map<String, String> entityPropertyAggColMapping) {
+
+        return convertEntityMapping(aggColValue, entityPropertyAggColMapping);
     }
 
-
-    public static List<Map<String, Object>> getColValueMapList(List<List<Object>> values, List<String> titles) {
+    public List<Map<String, Object>> getColValueMapList(List<List<Object>> values, List<String> titles) {
 
         List<Map<String, Object>> colValueMapList = new ArrayList<>();
 
@@ -48,8 +51,7 @@ public class FundTacticsAggResultParseFactory {
         return colValueMapList;
     }
 
-
-    public static List<Map<String, Object>> convertEntityMapping(List<Map<String, Object>> dataMap, Map<String, String> entityAggColMapping) {
+    protected static List<Map<String, Object>> convertEntityMapping(List<Map<String, Object>> dataMap, Map<String, String> entityAggColMapping) {
 
         List<Map<String, Object>> dataInfoList = new ArrayList<>();
         for (Map<String, Object> map : dataMap) {

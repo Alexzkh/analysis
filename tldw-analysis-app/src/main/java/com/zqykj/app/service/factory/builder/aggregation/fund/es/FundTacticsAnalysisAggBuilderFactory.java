@@ -1,9 +1,10 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory;
+package com.zqykj.app.service.factory.builder.aggregation.fund.es;
 
-import com.zqykj.app.service.factory.builder.AggregationParamsBuilders;
+import com.zqykj.app.service.factory.builder.query.fund.es.FundTacticsAnalysisQueryBuilderFactory;
+import com.zqykj.app.service.factory.params.AggregationParamsBuilders;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.vo.fund.Local;
 import com.zqykj.app.service.vo.fund.Opposite;
@@ -52,12 +53,6 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
     private static final String AGG_NAME_SPLIT = "_";
     private static final String AGG_NAME_TOTAL = "total";
     private static final String DEFAULT_SORTING_FIELD = FundTacticsAnalysisField.TRANSACTION_MONEY + AGG_NAME_SPLIT + AggsType.sum.name();
-
-    @Deprecated
-    public <T> List<AggregationParams> createTradeStatisticsAnalysisQueryAgg(T request) {
-
-        return null;
-    }
 
     /**
      * <h2> 构建交易统计分析本方查询卡号分组聚合 </h2>

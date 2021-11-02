@@ -24,7 +24,7 @@ import java.util.*;
 public class AggregationParams {
 
     /**
-     * 聚合名称
+     * 聚合名称(eg. 对于mysql 来说可以是一个完整的聚合统计sql 的一个整体业务描述 eg. select count(1) from * , 可以叫做total_count)
      */
     private String name;
 

@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory;
+package com.zqykj.app.service.factory.builder.query.fund.es;
 
 import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
