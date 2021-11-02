@@ -8,11 +8,13 @@ import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.common.core.ServerResponse;
-import com.zqykj.common.request.AssetTrendsRequest;
-import com.zqykj.common.request.PagingRequest;
+import com.zqykj.common.enums.ConditionType;
+import com.zqykj.common.enums.QueryType;
+import com.zqykj.common.request.*;
+import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.common.response.TimeGroupTradeAmountSum;
-import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.TimeTypeRequest;
@@ -22,16 +24,28 @@ import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.aggregate.TeacherInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.domain.bank.PeopleArea;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
+import com.zqykj.factory.AggregationRequestParamFactory;
+import com.zqykj.factory.QueryRequestParamFactory;
+import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.query.CombinationQueryParams;
+import com.zqykj.parameters.query.CommonQueryParams;
+import com.zqykj.parameters.query.DefaultQueryParam;
+import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.*;
@@ -79,6 +93,9 @@ public class OriginEsOperationTest {
 
     @Autowired
     private IAssetTrendsTactics iAssetTrendsTactics;
+
+    @Autowired
+    private AggregateResultConversionAccessor aggregateResultConversionAccessor;
 
     private static Map<String, ? extends Class<?>> aggregateNameForClass;
 
@@ -334,49 +351,48 @@ public class OriginEsOperationTest {
     public void testTradeStatisticalResultQuery() {
 
         TradeStatisticalAnalysisQueryRequest request = new TradeStatisticalAnalysisQueryRequest();
-//        request.setCardNums(Arrays.asList("60138216660000014",
-//                "60138216660001414",
-//                "60138216660002814",
-//                "60138216660004214",
-//                "60138216660005614",
-//                "60138216660007014",
-//                "60138216660008414",
-//                "60138216660009814",
-//                "60138216660011214",
-//                "60138216660012614",
-//                "60138216660014014",
-//                "60138216660015414",
-//                "60138216660016814",
-//                "60138216660018214",
-//                "60138216660019614",
-//                "60138216660021014",
-//                "60138216660022414",
-//                "60138216660023814",
-//                "60138216660025214",
-//                "60138216660026614",
-//                "60138216660028014",
-//                "60138216660029414",
-//                "60138216660030814",
-//                "60138216660032214",
-//                "60138216660033614",
-//                "60138216660035014",
-//                "60138216660036414",
-//                "60138216660037814",
-//                "60138216660039214",
-//                "60138216660040614",
-//                "60138216660042014",
-//                "60138216660043414",
-//                "60138216660044814",
-//                "60138216660046214",
-//                "60138216660047614"));
+        request.setCardNums(Arrays.asList("60138216660000014",
+                "60138216660001414",
+                "60138216660002814",
+                "60138216660004214",
+                "60138216660005614",
+                "60138216660007014",
+                "60138216660008414",
+                "60138216660009814",
+                "60138216660011214",
+                "60138216660012614",
+                "60138216660014014",
+                "60138216660015414",
+                "60138216660016814",
+                "60138216660018214",
+                "60138216660019614",
+                "60138216660021014",
+                "60138216660022414",
+                "60138216660023814",
+                "60138216660025214",
+                "60138216660026614",
+                "60138216660028014",
+                "60138216660029414",
+                "60138216660030814",
+                "60138216660032214",
+                "60138216660033614",
+                "60138216660035014",
+                "60138216660036414",
+                "60138216660037814",
+                "60138216660039214",
+                "60138216660040614",
+                "60138216660042014",
+                "60138216660043414",
+                "60138216660044814",
+                "60138216660046214",
+                "60138216660047614"));
         request.setDateRange(new DateRangeRequest("2020-01-01", "2021-10-14"));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
         request.setPageRequest(new com.zqykj.common.vo.PageRequest(0, 25));
-//        request.setIdentityCard("371601198702200014");
         request.setKeyword("*平安*");
 
-        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("8227664922844198b3480ca09f3d128d", request);
+        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
 
         if (serverResponse.isSuccess()) {
 
@@ -433,11 +449,106 @@ public class OriginEsOperationTest {
 
 //        ServerResponse serverResponse = iTransactionStatistics.getTransactionStatisticsAnalysisResult("a6cbb9f86f254a92a2e1b147b5edba39", request);
 
-        iAssetTrendsTactics.accessAssetTrendsTacticsResult("012375a71dac47de8cde9f5319081b48", request);
-//        if (serverResponse.isSuccess()) {
+        List<AssetTrendsResponse> resutl = iAssetTrendsTactics.accessAssetTrendsTacticsResult("c94546bb87bd4b32947b576c565a94a2", request);
+        System.out.println("********************");
+        //        if (serverResponse.isSuccess()) {
 //
 //            Object data = serverResponse.getData();
 //
 //        }
+    }
+
+    @Autowired
+    QueryRequestParamFactory queryRequestParamFactory;
+
+    @Autowired
+    AggregationRequestParamFactory aggregationRequestParamFactory;
+
+    @Test
+    public void testRegionQueryAndAggs() {
+
+        PeopleAreaRequest peopleAreaRequest = new PeopleAreaRequest();
+        peopleAreaRequest.setField("province");
+        peopleAreaRequest.setName("");
+
+        peopleAreaRequest.setPaging(new PagingRequest(0, 10));
+        peopleAreaRequest.setSorting(new SortingRequest("String", SortingRequest.Direction.DESC));
+
+        QuerySpecialParams querySpecialParams = queryRequestParamFactory.
+                bulidPeopleAreaAnalysisRequest(peopleAreaRequest, "457eea4b3ebe46aabc604b9183a83920");
+
+        AggregationParams aggregationParams = aggregationRequestParamFactory.createPeopleAreaQueryAgg(peopleAreaRequest);
+
+        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, "457eea4b3ebe46aabc604b9183a83920");
+        // 转换结果数据然后返回给前台
+        System.out.println("********************");
+        //        if (serverResponse.isSuccess()) {
+//
+//            Object data = serverResponse.getData();
+//
+//        }
+    }
+
+
+    @Test
+    public void testRegionDetailsQueryAndAggs() {
+
+//        PeopleAreaRequest peopleAreaRequest = new PeopleAreaRequest();
+//        peopleAreaRequest.setField("province");
+//        peopleAreaRequest.setName("");
+//
+//
+//        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery().must(QueryBuilders.termsQuery("customer_name", "b690f6b8f960462e8bb4c0f609d04830"))
+//                .should(QueryBuilders.regexpQuery("account_card", "*马*"))
+//                .minimumShouldMatch(1);
+//
+//        peopleAreaRequest.setPaging(new PagingRequest(0,10));
+//        peopleAreaRequest.setSorting(new SortingRequest("String", SortingRequest.Direction.DESC));
+//
+//        QuerySpecialParams querySpecialParams = queryRequestParamFactory.
+//                bulidPeopleAreaAnalysisRequest(peopleAreaRequest,"457eea4b3ebe46aabc604b9183a83920");
+//
+//        AggregationParams aggregationParams =aggregationRequestParamFactory.createPeopleAreaQueryAgg(peopleAreaRequest);
+//
+//        List<List<Object>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, "457eea4b3ebe46aabc604b9183a83920");
+//        // 转换结果数据然后返回给前台
+//        System.out.println("********************");
+//        //        if (serverResponse.isSuccess()) {
+////
+////            Object data = serverResponse.getData();
+////
+////        }
+
+
+        QuerySpecialParams querySpecialParams1 = new QuerySpecialParams();
+
+        List<CombinationQueryParams> combiningQuery = new ArrayList<>();
+
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.must);
+        CommonQueryParams commonQueryParams1 = new CommonQueryParams();
+        commonQueryParams1.setType(QueryType.term);
+        commonQueryParams1.setField("case_id");
+        commonQueryParams1.setValue("b690f6b8f960462e8bb4c0f609d04830");
+        combinationQueryParams.addCommonQueryParams(commonQueryParams1);
+        combiningQuery.add(combinationQueryParams);
+
+        CombinationQueryParams combinationQueryParams1 = new CombinationQueryParams();
+        combinationQueryParams1.setType(ConditionType.should);
+        CommonQueryParams commonQueryParams111 = new CommonQueryParams();
+        commonQueryParams111.setType(QueryType.wildcard);
+        commonQueryParams111.setField("province.province_wildcard");
+        commonQueryParams111.setValue("*安*");
+        combinationQueryParams1.addCommonQueryParams(commonQueryParams111);
+        combiningQuery.add(combinationQueryParams1);
+
+        querySpecialParams1.setCombiningQuery(combiningQuery);
+
+        querySpecialParams1.setDefaultParam(new DefaultQueryParam());
+
+
+//        entranceRepository.compoundQueryWithoutAgg(querySpecialParams1,PeopleArea.class,"b690f6b8f960462e8bb4c0f609d04830");
+
+
     }
 }
