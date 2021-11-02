@@ -1,6 +1,6 @@
 package com.zqykj.app.service.strategy;
 
-import com.zqykj.app.service.field.TacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -20,16 +20,16 @@ public class PeopleAreaAnalysisFieldStrategy {
         /**
          *省
          * */
-        PEOPLE_AREA_MAP.put("province", TacticsAnalysisField.PROVINCE_FIELD);
+        PEOPLE_AREA_MAP.put("province", FundTacticsAnalysisField.PROVINCE_FIELD);
 
         /**
          *市
          * */
-        PEOPLE_AREA_MAP.put("city", TacticsAnalysisField.CITY_FIELD);
+        PEOPLE_AREA_MAP.put("city", FundTacticsAnalysisField.CITY_FIELD);
 
         /**
          *区、县
          * */
-        PEOPLE_AREA_MAP.put("area", TacticsAnalysisField.AREA_FIELD);
+        PEOPLE_AREA_MAP.put("area", FundTacticsAnalysisField.AREA_FIELD);
     }
 }

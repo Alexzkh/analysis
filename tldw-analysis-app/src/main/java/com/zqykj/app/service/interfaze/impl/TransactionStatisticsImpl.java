@@ -241,7 +241,10 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         Map<String, String> totalMap = new HashMap<>();
         totalMap.put("cardinality_total", "value");
         filterTotal.setMapping(totalMap);
+        filterTotal.setResultName("total");
         localQuery.addSiblingAggregation(filterTotal);
+        localQuery.setResultName("local");
+        oppositeQuery.setResultName("opposite");
 
         Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(query, localQuery, BankTransactionFlow.class, caseId);
 
@@ -249,7 +252,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         List<String> oppositeTitles = new ArrayList<>(oppositeQuery.getMapping().keySet());
         // 本方实体属性映射
         List<Map<String, Object>> localEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                aggregationResultEntityParseFactory.getColValueMapList(result.get(localQuery.getName()), localTitles),
+                aggregationResultEntityParseFactory.getColValueMapList(result.get(localQuery.getResultName()), localTitles),
                 localQuery.getEntityAggColMapping());
         // 本方实体数据组装
         List<TradeStatisticalAnalysisBankFlow> localResults = JacksonUtils.parse(JacksonUtils.toJson(localEntityMapping), new TypeReference<List<TradeStatisticalAnalysisBankFlow>>() {
@@ -270,12 +273,13 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
                 QuerySpecialParams queryNew = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequest(queryRequest, caseId);
                 oppositeQueryNew.setMapping(oppositeMapping);
                 oppositeQueryNew.setEntityAggColMapping(oppositeEntityAggColMapping);
+                oppositeQueryNew.setResultName("opposite");
                 Map<String, List<List<Object>>> oppositeResult = entranceRepository.compoundQueryAndAgg(queryNew, oppositeQueryNew, BankTransactionFlow.class, caseId);
-                oppositeList = oppositeResult.get(oppositeQueryNew.getName());
+                oppositeList = oppositeResult.get(oppositeQueryNew.getResultName());
             }
         } else {
 
-            oppositeList = result.get(oppositeQuery.getName());
+            oppositeList = result.get(oppositeQuery.getResultName());
         }
         // 对方实体属性映射
         List<Map<String, Object>> oppositeEntityMapping = aggregationResultEntityParseFactory.convertEntity(
