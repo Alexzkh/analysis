@@ -52,4 +52,9 @@ public class TradeStatisticalAnalysisPreRequest {
      * 交易金额
      */
     private String fund = "0";
+
+    /**
+     * 搜索类型 1: 全部   0: 卡号集合
+     */
+    private int searchType = 1;
 }

@@ -31,7 +31,7 @@ public interface QueryRequestParamFactory {
 
     <T, V> CombinationQueryParams buildCommonQueryParams(T request, V parameter);
 
-    <T> CombinationQueryParams assemblePostFilter(T request);
+    <T> CombinationQueryParams assemblePostFilter(T request,String tag);
 
     CombinationQueryParams assembleLocalFuzzy(String keyword);
 

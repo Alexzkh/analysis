@@ -64,26 +64,26 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
 
         // 如果是全部查询条件,需要增加过滤条件
         AggregationParams localFilter = null;
-        if (CollectionUtils.isEmpty(queryRequest.getCardNums()) || StringUtils.isBlank(queryRequest.getIdentityCard())) {
-
-            // 本方聚合的时候调单卡号的过滤条件
-            QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-            querySpecialParams.addCombiningQueryParams(queryBuilderFactory.assembleLocalFuzzy(queryRequest.getKeyword()));
-            localFilter = new AggregationParams("local_filter", AggsType.filter.name(), querySpecialParams);
-        }
+//        if (CollectionUtils.isEmpty(queryRequest.getCardNums()) || StringUtils.isBlank(queryRequest.getIdentityCard())) {
+//
+//            // 本方聚合的时候调单卡号的过滤条件
+//            QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+//            querySpecialParams.addCombiningQueryParams(queryBuilderFactory.assembleLocalFuzzy(queryRequest.getKeyword()));
+//            localFilter = new AggregationParams("local_filter", AggsType.filter.name(), querySpecialParams);
+//        }
         // 查询卡号分组
         AggregationParams queryCardTerms;
-        if (CollectionUtils.isEmpty(queryRequest.getCardNums())) {
+        if (queryRequest.getSearchType() == 1 || CollectionUtils.isEmpty(queryRequest.getCardNums())) {
             queryCardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD);
         } else {
             String[] cardNums = queryRequest.getCardNums().toArray(new String[0]);
             queryCardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD, cardNums);
         }
-        if (null != localFilter) {
-
-            // 过滤出调单卡号之后再去group by
-            setSubAggregation(localFilter, queryCardTerms);
-        }
+//        if (null != localFilter) {
+//
+//            // 过滤出调单卡号之后再去group by
+//            setSubAggregation(localFilter, queryCardTerms);
+//        }
 
         // 下面聚合都在是该分组之下(属于子聚合)
         // 本方交易总次数
@@ -172,16 +172,18 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
 
         // 如果是全部查询条件,需要增加过滤条件
         AggregationParams oppositeFilter = null;
-        if (CollectionUtils.isEmpty(queryRequest.getCardNums()) || StringUtils.isBlank(queryRequest.getIdentityCard())) {
-
-            // 本方聚合的时候调单卡号的过滤条件
-            QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-            querySpecialParams.addCombiningQueryParams(queryBuilderFactory.assembleOppositeFuzzy(queryRequest.getKeyword()));
-            oppositeFilter = new AggregationParams("opposite_filter", AggsType.filter.name(), querySpecialParams);
-        }
+//        if (queryRequest.getSearchType() == 1) {
+//            if (CollectionUtils.isEmpty(queryRequest.getCardNums()) || StringUtils.isBlank(queryRequest.getIdentityCard())) {
+//
+//                // 本方聚合的时候调单卡号的过滤条件
+//                QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+//                querySpecialParams.addCombiningQueryParams(queryBuilderFactory.assembleOppositeFuzzy(queryRequest.getKeyword()));
+//                oppositeFilter = new AggregationParams("opposite_filter", AggsType.filter.name(), querySpecialParams);
+//            }
+//        }
         AggregationParams oppositeCardTerms;
         // 查询卡号分组
-        if (CollectionUtils.isEmpty(queryRequest.getCardNums())) {
+        if (queryRequest.getSearchType() == 1 || CollectionUtils.isEmpty(queryRequest.getCardNums())) {
 
             oppositeCardTerms = AggregationParamsBuilders.terms("opposite_card_terms", FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD);
         } else {
@@ -190,10 +192,10 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         }
 
         // 过滤出调单卡号之后分组
-        if (null != oppositeFilter) {
-
-            setSubAggregation(oppositeFilter, oppositeCardTerms);
-        }
+//        if (null != oppositeFilter) {
+//
+//            setSubAggregation(oppositeFilter, oppositeCardTerms);
+//        }
 
         // 下面聚合都在是该分组之下(属于子聚合)
         // 本方交易总次数

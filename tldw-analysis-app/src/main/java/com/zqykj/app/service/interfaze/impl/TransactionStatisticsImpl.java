@@ -267,6 +267,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
             if (!CollectionUtils.isEmpty(mainCards)) {
 
                 // 重新设置查询卡号
+                queryRequest.setSearchTag("opposite");
                 queryRequest.setCardNums(mainCards);
                 AggregationParams oppositeQueryNew =
                         aggregationRequestParamFactory.buildTradeStatisticsAnalysisOppositeCardAgg(queryRequest);

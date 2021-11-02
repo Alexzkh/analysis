@@ -50,7 +50,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         CombinationQueryParams combinationQueryParams = this.buildCommonQueryParams(preRequest, other);
 
         // 组装结果筛选条件(包括模糊搜索条件等)
-        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(assemblePostFilter(requestParam)));
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(assemblePostFilter(requestParam, request.getSearchTag())));
         // 补充查询的分页 和 排序
         PageRequest pageRequest = request.getPageRequest();
         if (null != pageRequest) {
@@ -79,11 +79,14 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         // 指定caseId
         combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, FundTacticsAnalysisField.CASE_ID, caseId));
         // 指定本方开户证件号码 与 对方开户证件号码
-        if (StringUtils.isNotBlank(request.getIdentityCard())) {
-            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.multi_match, request.getIdentityCard(),
-                    FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
-                    FundTacticsAnalysisField.OPPOSITE_IDENTITY_CARD));
+        if (request.getSearchType() == 0) {
+            if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNums())) {
+                combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.multi_match, request.getIdentityCard(),
+                        FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
+                        FundTacticsAnalysisField.OPPOSITE_IDENTITY_CARD));
+            }
         }
+
         // 指定日期范围
         if (null != request.getDateRange() && StringUtils.isNotBlank(request.getDateRange().getStart())
                 & StringUtils.isNotBlank(request.getDateRange().getEnd())
@@ -102,7 +105,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
     /**
      * <h2> 组装后置过滤参数(复合查询条件) </h2>
      */
-    public <T> CombinationQueryParams assemblePostFilter(T param) {
+    public <T> CombinationQueryParams assemblePostFilter(T param, String tag) {
 
         TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) param;
         // 第一层嵌套
@@ -130,9 +133,14 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         secondCombinationTwo.addCommonQueryParams(new CommonQueryParams(assembleOppositeFuzzy(request.getKeyword())));
 
         // 第一层嵌套 设置 第二层嵌套
-        firstCombination.addCommonQueryParams(new CommonQueryParams(secondCombinationOne));
-        firstCombination.addCommonQueryParams(new CommonQueryParams(secondCombinationTwo));
-
+        if (tag.equals("local") && request.getSearchType() == 1) {
+            firstCombination.addCommonQueryParams(new CommonQueryParams(secondCombinationOne));
+        } else if (tag.equals("opposite") && request.getSearchType() == 1) {
+            firstCombination.addCommonQueryParams(new CommonQueryParams(secondCombinationTwo));
+        } else {
+            firstCombination.addCommonQueryParams(new CommonQueryParams(secondCombinationOne));
+            firstCombination.addCommonQueryParams(new CommonQueryParams(secondCombinationTwo));
+        }
         return firstCombination;
     }
 
