@@ -91,6 +91,21 @@ public interface FundTacticsAnalysisField {
     String LOAN_FLAG_IN = "进";
     String LOAN_FLAG_IN_EN = "credits";
 
+    /**
+     * 省份对应字段
+     */
+    String PROVINCE_FIELD = "province.province_wildcard";
+
+    /**
+     * 城市对应字段
+     */
+    String CITY_FIELD = "city.city_wildcard";
+
+    /**
+     * 区县对应字段
+     */
+    String AREA_FIELD = "area.area_wildcard";
+
     // 交易统计分析结果本方需要展示的字段
     static String[] tradeStatisticalAnalysisLocalShowField() {
 

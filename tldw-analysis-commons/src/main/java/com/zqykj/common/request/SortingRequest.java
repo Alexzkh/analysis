@@ -1,6 +1,8 @@
 package com.zqykj.common.request;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.Locale;
@@ -13,6 +15,8 @@ import java.util.Optional;
  */
 @Data
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class SortingRequest {
 
     private String property;

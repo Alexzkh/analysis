@@ -6,11 +6,13 @@ package com.zqykj.app.service.factory.builder.aggregation.fund.es;
 import com.zqykj.app.service.factory.builder.query.fund.es.FundTacticsAnalysisQueryBuilderFactory;
 import com.zqykj.app.service.factory.params.AggregationParamsBuilders;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.app.service.vo.fund.Local;
 import com.zqykj.app.service.vo.fund.Opposite;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.enums.ConditionType;
+import com.zqykj.common.request.PeopleAreaRequest;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.util.ReflectionUtils;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +53,6 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
     private static final String PIPELINE_AGG_PATH_FLAG = ">";
 
     private static final String AGG_NAME_SPLIT = "_";
-    private static final String AGG_NAME_TOTAL = "total";
     private static final String DEFAULT_SORTING_FIELD = FundTacticsAnalysisField.TRANSACTION_MONEY + AGG_NAME_SPLIT + AggsType.sum.name();
 
     /**
@@ -337,9 +338,42 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         return root;
     }
 
-    public <T> AggregationParams getTotal(T field) {
-        String cardinality = AggsType.cardinality.name();
-        return new AggregationParams(AGG_NAME_TOTAL, cardinality, field.toString());
+    @Override
+    public <T> AggregationParams createPeopleAreaQueryAgg(T request) {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        PeopleAreaRequest peopleAreaRequest = (PeopleAreaRequest) request;
+        String field = peopleAreaRequest.getField();
+        String terms = AggsType.terms.name();
+        String areaGroupName = field + "_" + terms;
+        mapping.put(areaGroupName, ElasticsearchAggregationResponseAttributes.keyAsString);
+        AggregationParams root = new AggregationParams(areaGroupName, terms, PeopleAreaConversion.REGION_NAME.get(field));
+        root.setMapping(mapping);
+        setSubAggregations(root, peopleAreaRequest);
+        return root;
+    }
+
+    /**
+     * @param root:              根聚合参数
+     * @param peopleAreaRequest: 人员地域请求体
+     * @return: void
+     **/
+    public void setSubAggregations(AggregationParams root, PeopleAreaRequest peopleAreaRequest) {
+        // 计算地区个数
+        String count = AggsType.count.name();
+        String regionCount = peopleAreaRequest.getField() + AGG_NAME_SPLIT + count;
+        AggregationParams subRegionTotalAgg = new AggregationParams(regionCount, count, PeopleAreaConversion.REGION_NAME.get(peopleAreaRequest.getField()));
+        root.getMapping().put(regionCount, ElasticsearchAggregationResponseAttributes.value);
+        setSubAggregation(root, subRegionTotalAgg);
+
+        // 按照地区个数排序
+        Direction direction = peopleAreaRequest.getSorting().getOrder().isAscending() ? Direction.ASC : Direction.DESC;
+        Pagination pagination = new Pagination(peopleAreaRequest.getPaging().getPage(), peopleAreaRequest.getPaging().getPageSize());
+        FieldSort fieldSort = new FieldSort(regionCount, direction.name());
+        // 对交易统计分析结果排序
+        String bucketSort = AggsType.bucket_sort.name();
+        String sortAgg = TradeStatisticsAnalysisAggName.TRADE_RESULT_AGG_NAME + AGG_NAME_SPLIT + bucketSort;
+        PipelineAggregationParams regionNumberOrderAgg = new PipelineAggregationParams(sortAgg, bucketSort, Collections.singletonList(fieldSort), pagination);
+        root.setPerSubAggregation(regionNumberOrderAgg);
     }
 
     /**

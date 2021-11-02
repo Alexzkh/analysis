@@ -5,9 +5,11 @@ package com.zqykj.common.request;
 
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
 @Setter
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class TradeStatisticalAnalysisPreRequest {
 
     /**
