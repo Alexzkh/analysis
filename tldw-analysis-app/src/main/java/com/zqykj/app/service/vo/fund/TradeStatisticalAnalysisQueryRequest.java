@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.vo.tarde_statistics;
+package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.vo.PageRequest;
@@ -37,6 +37,10 @@ public class TradeStatisticalAnalysisQueryRequest extends TradeStatisticalAnalys
      */
     private SortRequest sortRequest;
 
+
+    private int groupInitPage = 0;
+
+    private int groupInitSize = 60000;
 
     public TradeStatisticalAnalysisPreRequest convertFrom(TradeStatisticalAnalysisQueryRequest from) {
 

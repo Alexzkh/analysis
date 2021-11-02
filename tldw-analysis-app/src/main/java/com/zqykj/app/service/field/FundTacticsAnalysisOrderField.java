@@ -4,9 +4,9 @@
 package com.zqykj.app.service.field;
 
 /**
- * <h1> 交易统计分析排序字段 </h1>
+ * <h1> 资金战法排序字段 </h1>
  */
-public enum TradeStatisticsAnalysisOrderField {
+public enum FundTacticsAnalysisOrderField {
 
 
     //开户名称

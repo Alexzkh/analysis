@@ -17,6 +17,7 @@ import com.zqykj.core.aggregation.util.aggregate.metrics.ClassNameForBeanClassOf
 import com.zqykj.core.aggregation.util.aggregate.pipeline.ClassNameForBeanClassOfPipeline;
 import com.zqykj.parameters.annotation.DateIntervalParam;
 import com.zqykj.parameters.annotation.DateTimeZoneParam;
+import com.zqykj.parameters.annotation.NotResolve;
 import com.zqykj.parameters.annotation.OptionalParam;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -27,13 +28,17 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.PipelineAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
+import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
+import javax.annotation.PostConstruct;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -48,6 +53,7 @@ import java.util.stream.Collectors;
  * 注:  mongodb 等其他数据源的 aggregation instance building 自行补充
  */
 @Slf4j
+@Component
 public class AggregationMappingBuilder {
 
     private static final String CALENDAR_INTERVAL = "calendarInterval";
@@ -64,16 +70,22 @@ public class AggregationMappingBuilder {
 
     private static final Class<?> SUB_AGGREGATION_TYPE = AggregationBuilder.class;
     private static final Class<?> SUB_AGGREGATION_TYPE_PIPELINE = PipelineAggregationBuilder.class;
+    private static final Class<?> TERMS_INCLUDE_EXCLUDE_CLASS = IncludeExclude.class;
 
     // 日期直方图 设置时区方法参数类型
     private static final Class<?> DATE_ZONE_CLASS = ZoneId.class;
 
     private static Map<String, Class<?>> aggregateNameForClass = new ConcurrentReferenceHashMap<>(256);
 
-    static {
+    @PostConstruct
+    public void init() {
         aggregateNameForClass.putAll(new ClassNameForBeanClassOfBucket().getAggregateNameForClass());
         aggregateNameForClass.putAll(new ClassNameForBeanClassOfMetrics().getAggregateNameForClass());
         aggregateNameForClass.putAll(new ClassNameForBeanClassOfPipeline().getAggregateNameForClass());
+    }
+
+    public AggregationMappingBuilder() {
+
     }
 
     public AggregationMappingBuilder(ClassNameForBeanClass nameForBeanClass) {
@@ -270,6 +282,9 @@ public class AggregationMappingBuilder {
     private static void buildingAggregationViaField(Object father, Object target, AggregationParams parameters, Class<?> aggregationClass,
                                                     Field field) throws ClassNotFoundException {
 
+        if (null != field.getAnnotation(NotResolve.class)) {
+            return;
+        }
         if (CommonAggregationParams.class.isAssignableFrom(field.getType())) {
 
             addGeneraParametersMapping(target, parameters.getCommonAggregationParams(), aggregationClass, field, field.getType());
@@ -277,6 +292,11 @@ public class AggregationMappingBuilder {
 
             addDateParametersMapping(target, parameters.getDateParams(), aggregationClass, field, field.getType());
         } else if (List.class.isAssignableFrom(field.getType())) {
+
+            // 携带此注解的参数,不予处理
+            if (null != field.getAnnotation(NotResolve.class)) {
+                return;
+            }
 
             Optional<Class<?>> parameterType = ReflectionUtils.findParameterType(parameters.getClass(), field.getName());
             if (!parameterType.isPresent()) {
@@ -307,7 +327,14 @@ public class AggregationMappingBuilder {
                                                     Field field, Object parameters) {
 
         if (field.isAnnotationPresent(OptionalParam.class)) {
-            applyDefaultField(target, aggregationClass, field, parameters);
+
+            if (aggregationClass.isAssignableFrom(TermsAggregationBuilder.class) && field.getName().equals("includeExclude")) {
+
+                applyIncludeExclude(target, aggregationClass, field, parameters);
+            } else {
+                // 默认处理
+                applyDefaultField(target, aggregationClass, field, parameters);
+            }
         }
     }
 
@@ -317,9 +344,19 @@ public class AggregationMappingBuilder {
             return;
         }
         for (AggregationParams subParameter : subParameters) {
-            Object subTarget = buildAggregationInstance(target, subParameter);
-            //
-            applySubAggregation(target, aggregationClass, subTarget);
+
+            // 如果子聚合是管道聚合的话
+            if (StringUtils.isBlank(subParameter.getName()) && !CollectionUtils.isEmpty(subParameter.getPipelineAggregation())) {
+
+                addPipelineAggregationMapping(target, subParameter.getPipelineAggregation(), aggregationClass);
+            } else {
+
+                // 普通子聚合
+                Object subTarget = buildAggregationInstance(target, subParameter);
+
+                // 设置子聚合
+                applySubAggregation(target, aggregationClass, subTarget);
+            }
         }
     }
 
@@ -330,7 +367,8 @@ public class AggregationMappingBuilder {
         }
         for (PipelineAggregationParams subParameter : subParameters) {
             Object subTarget = buildPipelineAggregationInstance(subParameter);
-            //
+
+            //设置子聚合
             applySubAggregation(target, aggregationClass, subTarget);
         }
     }
@@ -459,6 +497,17 @@ public class AggregationMappingBuilder {
                 org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
             }
         });
+    }
+
+    private static void applyIncludeExclude(Object target, Class<?> aggregationClass, Field subField, Object parameters) {
+
+        Map<String, String[]> includeExcludeMap = ((AggregationParams) parameters).getIncludeExclude();
+        if (!CollectionUtils.isEmpty(includeExcludeMap)) {
+            IncludeExclude includeExclude = new IncludeExclude(includeExcludeMap.get("includeValues"), includeExcludeMap.get("excludeValues"));
+            Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), TERMS_INCLUDE_EXCLUDE_CLASS);
+            // 开始调用此聚合类的方法, 为target 赋值
+            optionalMethod.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, includeExclude));
+        }
     }
 
     private void applyScriptField(Object target, Class<?> aggregationClass, String name, Object scriptValue) {

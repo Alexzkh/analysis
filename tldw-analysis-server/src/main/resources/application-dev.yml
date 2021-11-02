@@ -8,7 +8,7 @@ elasticsearch:
   data:
     source:
       # es link
-      host: http://172.30.6.31:9208
+      host: http://172.30.6.31:9215
       # userName if elasticsearch open ssl
       username:
       # password if elasticsearch open ssl

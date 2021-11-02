@@ -7,9 +7,9 @@ package com.zqykj;
 import com.zqykj.app.service.dao.TeacherInfoDao;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
-import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.*;
@@ -463,6 +463,7 @@ public class OriginEsOperationTest {
 
     @Autowired
     AggregationRequestParamFactory aggregationRequestParamFactory;
+
     @Test
     public void testRegionQueryAndAggs() {
 
@@ -470,15 +471,15 @@ public class OriginEsOperationTest {
         peopleAreaRequest.setField("province");
         peopleAreaRequest.setName("");
 
-        peopleAreaRequest.setPaging(new PagingRequest(0,10));
+        peopleAreaRequest.setPaging(new PagingRequest(0, 10));
         peopleAreaRequest.setSorting(new SortingRequest("String", SortingRequest.Direction.DESC));
 
         QuerySpecialParams querySpecialParams = queryRequestParamFactory.
-                bulidPeopleAreaAnalysisRequest(peopleAreaRequest,"457eea4b3ebe46aabc604b9183a83920");
+                bulidPeopleAreaAnalysisRequest(peopleAreaRequest, "457eea4b3ebe46aabc604b9183a83920");
 
-        AggregationParams aggregationParams =aggregationRequestParamFactory.createPeopleAreaQueryAgg(peopleAreaRequest);
+        AggregationParams aggregationParams = aggregationRequestParamFactory.createPeopleAreaQueryAgg(peopleAreaRequest);
 
-        List<List<Object>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, "457eea4b3ebe46aabc604b9183a83920");
+        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, "457eea4b3ebe46aabc604b9183a83920");
         // 转换结果数据然后返回给前台
         System.out.println("********************");
         //        if (serverResponse.isSuccess()) {
@@ -547,8 +548,6 @@ public class OriginEsOperationTest {
 
 
 //        entranceRepository.compoundQueryWithoutAgg(querySpecialParams1,PeopleArea.class,"b690f6b8f960462e8bb4c0f609d04830");
-
-
 
 
     }

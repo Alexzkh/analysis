@@ -26,7 +26,7 @@ public class QuerySpecialParams {
     // 单个查询(不能和组合查询同时使用)
     private CommonQueryParams commonQuery;
 
-    // 组合查询
+    // 组合查询 (eg. 可以满足  a = 1 and b = 2 and (c = 4 or d = 5) 等复合查询)
     private List<CombinationQueryParams> combiningQuery;
 
     // 全局查询默认参数
@@ -37,6 +37,9 @@ public class QuerySpecialParams {
 
     // 排序
     private FieldSort sort;
+
+    // 对query 查询 的数据 再次过滤
+    private QuerySpecialParams postFilter;
 
     public QuerySpecialParams(CommonQueryParams common) {
         this.commonQuery = common;
@@ -52,6 +55,14 @@ public class QuerySpecialParams {
             this.combiningQuery = new ArrayList<>();
         }
         this.combiningQuery.add(combinationQueryParams);
+    }
+
+    public void addCombiningQueryParams(List<CombinationQueryParams> combinationQueryParams) {
+
+        if (CollectionUtils.isEmpty(this.combiningQuery)) {
+            this.combiningQuery = new ArrayList<>();
+        }
+        this.combiningQuery.addAll(combinationQueryParams);
     }
 
     /**

@@ -228,8 +228,7 @@ public interface EntranceRepository extends CrudRepository {
      * @param clazz   实体类
      * @param routing 路由
      */
-    <T> List<List<Object>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing);
-
+    <T> Map<String, List<List<Object>>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing);
 
     /**
      * <h2>组合查询（只返回查询结果）</h2>

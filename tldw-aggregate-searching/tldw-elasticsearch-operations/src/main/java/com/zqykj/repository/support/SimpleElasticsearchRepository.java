@@ -936,12 +936,28 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return result;
     }
 
-    public <T> List<List<Object>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
+    public <T> Map<String, List<List<Object>>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
 
         // 构建查询对象
         Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(query);
-        // 构建聚合对象
+
+        // 主聚合对象聚合
         Object aggTarget = AggregationMappingBuilder.buildAggregation(agg);
+
+        // 构建兄弟聚合对象
+        List<Object> siblingTargets = new ArrayList<>();
+
+        // 兄弟聚合
+        if (!CollectionUtils.isEmpty(agg.getSiblingAggregation())) {
+
+            for (AggregationParams aggregationParams : agg.getSiblingAggregation()) {
+
+                Object siblingTarget = AggregationMappingBuilder.buildAggregation(aggregationParams);
+                if (null != siblingTarget) {
+                    siblingTargets.add(siblingTarget);
+                }
+            }
+        }
 
         // 构建搜索请求
         SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
@@ -960,30 +976,78 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 sourceBuilder.from(pagination.getFrom());
                 sourceBuilder.size(pagination.getSize());
             }
-            // 设置排序参数
-            if (null != query.getSort()) {
-
-                FieldSort sort = query.getSort();
-                sourceBuilder.sort(sort.getFieldName(), SortOrder.valueOf(sort.getDirection()));
-            }
         }
-
         // 聚合查询
         if (null != aggTarget) {
             sourceBuilder.aggregation((AggregationBuilder) aggTarget);
+            // 是否需要设置兄弟聚合
+            if (!CollectionUtils.isEmpty(siblingTargets)) {
+                for (Object siblingTarget : siblingTargets) {
+                    // 设置兄弟聚合对象
+                    sourceBuilder.aggregation((AggregationBuilder) siblingTarget);
+                }
+            }
         }
         // 普通查询
         if (null != queryTarget) {
             sourceBuilder.query((QueryBuilder) queryTarget);
             // 聚合查询不需要 带出具体数据
-            sourceBuilder.size(0);
+            sourceBuilder.size(20);
         }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-
-        List<List<Object>> result = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
-
+        Map<String, List<List<Object>>> result = new HashMap<>();
+        // 第一层数据处理
+        List<List<Object>> main = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
+        result.put(agg.getName(), main);
+        // 同级数据处理
+        if (!CollectionUtils.isEmpty(agg.getSiblingAggregation())) {
+            for (AggregationParams aggregationParams : agg.getSiblingAggregation()) {
+                if (!CollectionUtils.isEmpty(aggregationParams.getMapping())) {
+                    List<List<Object>> siblingAggs = AggregationParser.parseMulti(response.getAggregations(), aggregationParams.getMapping());
+                    if (!CollectionUtils.isEmpty(siblingAggs)) {
+                        result.put(aggregationParams.getName(), siblingAggs);
+                    }
+                }
+            }
+        }
         return result;
+    }
+
+    @Override
+    public <T> Page<T> compoundQueryWithoutAgg(Pageable pageable,QuerySpecialParams querySpecialParams, Class<T> clazz, String routing) {
+        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
+        String indexName = entity.getIndexName();
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+
+        // 构建搜索请求
+        SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
+        // 构建查询对象
+        Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(querySpecialParams);
+        // 查询起始值
+        int from = querySpecialParams.getPagination().getFrom();
+        // 查询的size值
+        int size = querySpecialParams.getPagination().getSize();
+        // 升序or降序
+        String direction = querySpecialParams.getSort().getDirection();
+        // 排序字段
+        String property = querySpecialParams.getSort().getFieldName();
+        // 普通查询
+        if (null != queryTarget) {
+            sourceBuilder.query((QueryBuilder) queryTarget);
+            sourceBuilder.size(size);
+            sourceBuilder.from(from);
+            sourceBuilder.sort(property, direction.equals("DESC") ? SortOrder.DESC : SortOrder.ASC);
+        }
+        searchRequest.source(sourceBuilder);
+        if (StringUtils.isNotEmpty(routing)) {
+            searchRequest.routing(routing);
+        }
+        PageRequest pageRequest = PageRequest.of(from, size, Sort.by(direction, property));
+        SearchHits<T> searchHits = execute(operations -> operations.search(searchRequest, clazz, getIndexCoordinates(clazz)), clazz);
+        AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, pageRequest);
+        return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
+
     }
 
     @Override

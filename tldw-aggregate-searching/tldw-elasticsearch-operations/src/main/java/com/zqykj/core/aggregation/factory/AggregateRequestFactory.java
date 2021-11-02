@@ -46,12 +46,14 @@ public class AggregateRequestFactory {
 
         AggregationParams sub = new AggregationParams(sumAggregateName, "sum", sumField);
 
+        root.setPerSubAggregation(sub);
+
         Map<String, String> bucketsPathMap = new HashMap<>();
         bucketsPathMap.put("final_sum", sumAggregateName);
         PipelineAggregationParams pipelineAggregationParams =
                 new PipelineAggregationParams("sum_bucket_selector", "bucket_selector",
                         bucketsPathMap, "params.final_sum > 0");
-        root.setPerSubAggregation(sub, pipelineAggregationParams);
+        sub.setPerSubAggregation(pipelineAggregationParams);
         return root;
     }
 

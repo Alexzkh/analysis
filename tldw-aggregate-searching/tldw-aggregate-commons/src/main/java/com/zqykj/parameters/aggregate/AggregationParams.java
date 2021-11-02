@@ -5,14 +5,13 @@ package com.zqykj.parameters.aggregate;
 
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
+import com.zqykj.parameters.annotation.NotResolve;
 import com.zqykj.parameters.annotation.OptionalParam;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.*;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <h1> 聚合参数封装 </h1>
@@ -25,7 +24,7 @@ import java.util.Map;
 public class AggregationParams {
 
     /**
-     * 聚合名称
+     * 聚合名称(eg. 对于mysql 来说可以是一个完整的聚合统计sql 的一个整体业务描述 eg. select count(1) from * , 可以叫做total_count)
      */
     private String name;
 
@@ -53,6 +52,12 @@ public class AggregationParams {
     private int size = 1000;
 
     /**
+     * 需要包含的数据集
+     */
+    @OptionalParam
+    private Map<String, String[]> includeExclude;
+
+    /**
      * 通用参数
      */
     private CommonAggregationParams commonAggregationParams;
@@ -77,12 +82,29 @@ public class AggregationParams {
      */
     private QuerySpecialParams querySpecialParams;
 
-
     // 聚合里面也可以带出相关的字段
     private FetchSource fetchSource;
 
-    // key: 聚合名称,  value: 根据聚合属性字段取出的值
+    // key: 聚合名称,  value: 聚合字段属性( 可以根据此属性取出对应聚合值)
+    @NotResolve
     private Map<String, String> mapping;
+
+    // key: 聚合名称, value: 实体映射属性
+    @NotResolve
+    private Map<String, String> entityAggColMapping;
+
+    // 同级聚合参数
+    @NotResolve
+    private List<AggregationParams> siblingAggregation;
+
+    public void addSiblingAggregation(AggregationParams sibling) {
+
+        if (CollectionUtils.isEmpty(this.siblingAggregation)) {
+
+            siblingAggregation = new ArrayList<>();
+        }
+        this.siblingAggregation.add(sibling);
+    }
 
     public AggregationParams(String name, String type, String field) {
         this.name = name;
@@ -162,6 +184,10 @@ public class AggregationParams {
         this.querySpecialParams = query;
     }
 
+    public AggregationParams(PipelineAggregationParams pipelineAggregationParams) {
+        this.pipelineAggregation = Collections.singletonList(pipelineAggregationParams);
+    }
+
     public void setPerSubAggregation(AggregationParams aggregation) {
         if (CollectionUtils.isEmpty(this.subAggregation)) {
             this.subAggregation = new ArrayList<>();
@@ -169,25 +195,28 @@ public class AggregationParams {
         this.subAggregation.add(aggregation);
     }
 
+    public void setPerSubAggregation(PipelineAggregationParams aggregation) {
 
-    public void setPerSubAggregation(AggregationParams aggregation, PipelineAggregationParams pipelineAggregationParams) {
         if (CollectionUtils.isEmpty(this.subAggregation)) {
             this.subAggregation = new ArrayList<>();
         }
-        this.subAggregation.add(aggregation);
-
-        // 需要塞入这层子聚合的管道聚合
-        int index = this.subAggregation.indexOf(aggregation);
-        AggregationParams aggregationParams = this.subAggregation.get(index);
-        aggregationParams.setPerPipelineAggregation(pipelineAggregationParams);
+        this.subAggregation.add(new AggregationParams(aggregation));
     }
 
+    public void setSiblingAggregation(AggregationParams sibling) {
 
-    public void setPerPipelineAggregation(PipelineAggregationParams aggregation) {
+        if (CollectionUtils.isEmpty(this.siblingAggregation)) {
+            this.siblingAggregation = new ArrayList<>();
+        }
+        this.siblingAggregation.add(sibling);
+    }
+
+    public void setSiblingAggregation(PipelineAggregationParams sibling) {
+
         if (CollectionUtils.isEmpty(this.pipelineAggregation)) {
             this.pipelineAggregation = new ArrayList<>();
         }
-        this.pipelineAggregation.add(aggregation);
+        this.pipelineAggregation.add(sibling);
     }
 
     /**

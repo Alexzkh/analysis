@@ -283,10 +283,7 @@ public class BankTransactionFlow {
     /**
      * 备注
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "note", analyzer = "ik_max_word"),
-            otherFields = {@InnerField(suffix = "note_wildcard", type = FieldType.Wildcard)}
-    )
+    @Field(type = FieldType.Text, name = "note", analyzer = "ik_max_word")
     private String note;
 
     /**

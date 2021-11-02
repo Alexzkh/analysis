@@ -3,6 +3,7 @@
  */
 package com.zqykj.factory;
 
+import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
 /**
@@ -28,14 +29,13 @@ public interface QueryRequestParamFactory {
      **/
     <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequest(T request, V other);
 
-    /**
-     * 构建交易统计公共请求参数.
-     *
-     * @param request:   前置请求body.T->TradeStatisticalAnalysisPreRequest
-     * @param parameter: 案件编号
-     * @return: com.zqykj.parameters.query.QuerySpecialParams
-     **/
-    <T, V> QuerySpecialParams buildCommonQuerySpecialParams(T request, V parameter);
+    <T, V> CombinationQueryParams buildCommonQueryParams(T request, V parameter);
+
+    <T> CombinationQueryParams assemblePostFilter(T request);
+
+    CombinationQueryParams assembleLocalFuzzy(String keyword);
+
+    CombinationQueryParams assembleOppositeFuzzy(String keyword);
 
     /**
      * 构建人员地域分析查询参数.

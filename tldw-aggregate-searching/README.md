@@ -23,7 +23,7 @@
 ```
 <properties>
 ……
-<elasticsearch.version>7.9.3</elasticsearch.version>
+<elasticsearch.version>7.15.0</elasticsearch.version>
 ……
 </properties>
 ```

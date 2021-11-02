@@ -36,7 +36,6 @@ public class TradeStatisticalAnalysisPreRequest {
     /**
      * 卡号集合
      */
-    @NotNull
     private List<String> cardNums;
 
     /**

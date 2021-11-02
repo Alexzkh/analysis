@@ -82,4 +82,9 @@ public class PageRequest extends AbstractPageRequest {
     public String toString() {
         return String.format("Page request [number: %d, size %d, sort: %s]", getPageNumber(), getPageSize(), sort);
     }
+
+    // 计算总页数
+    public static int getTotalPages(long total, int pageSize) {
+        return total == 0 ? 0 : (int) Math.ceil((double) total / (double) pageSize);
+    }
 }

@@ -1,6 +1,6 @@
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.tarde_statistics.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.response.TimeGroupTradeAmountSum;
