@@ -10,6 +10,7 @@ import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.factory.AggregationRequestParamFactory;
 import com.zqykj.factory.QueryRequestParamFactory;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Description: 资产趋势战法实现类.
@@ -50,22 +52,25 @@ public class AssetTrendsTacticsImpl implements IAssetTrendsTactics {
          * elasticSearch特殊查询参数的构建.
          *
          * */
-        QuerySpecialParams query = queryRequestParamFactory.buildCommonQuerySpecialParams(tradeStatisticalAnalysisPreRequest, caseId);
-
+        CombinationQueryParams combinationQueryParams = queryRequestParamFactory.buildCommonQueryParams(tradeStatisticalAnalysisPreRequest, caseId);
+        QuerySpecialParams query = new QuerySpecialParams();
+        query.addCombiningQueryParams(combinationQueryParams);
         /**
          * elasticSearch聚合参数的构建.
          * */
         AggregationParams aggs = aggregationRequestParamFactory.createAssetTrendsAnalysisQueryAgg(assetTrendsRequest);
 
+        aggs.setResultName("AssetTrends");
+
         /**
          * elasticsearch返回的结果.
          * */
-        List<List<Object>> result = entranceRepository.compoundQueryAndAgg(query, aggs, BankTransactionFlow.class, caseId);
+        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(query, aggs, BankTransactionFlow.class, caseId);
 
         /**
          * 资产趋势结果解析,并将此结果返回给上层.
          * */
-        List<AssetTrendsResponse> responses = (List<AssetTrendsResponse>) aggregateResultConversionAccessor.access(result, caseId, assetTrendsRequest,TacticsTypeEnum.ASSET_TRENDS);
+        List<AssetTrendsResponse> responses = (List<AssetTrendsResponse>) aggregateResultConversionAccessor.access(result.get(aggs.getResultName()), caseId, assetTrendsRequest, TacticsTypeEnum.ASSET_TRENDS);
 
 
         return responses;

@@ -24,7 +24,7 @@ import java.util.*;
 public class AggregationParams {
 
     /**
-     * 聚合名称(eg. 对于mysql 来说可以是一个完整的聚合统计sql 的一个整体业务描述 eg. select count(1) from * , 可以叫做total_count)
+     * 聚合名称
      */
     private String name;
 
@@ -96,6 +96,11 @@ public class AggregationParams {
     // 同级聚合参数
     @NotResolve
     private List<AggregationParams> siblingAggregation;
+
+    /**
+     * <h2> 对应一个功能查询结果名称描述(eg. 一系列的聚合操作) </h2>
+     */
+    private String resultName;
 
     public void addSiblingAggregation(AggregationParams sibling) {
 

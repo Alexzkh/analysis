@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Description: 人员地域战法统计业务接口实现类.
@@ -56,16 +57,18 @@ public class PeopleAreaStatisticsImpl implements IPeopleAreaStatistics {
          * */
         AggregationParams aggregationParams = aggregationRequestParamFactory.createPeopleAreaQueryAgg(peopleAreaRequest);
 
+        aggregationParams.setResultName("peopleArea");
+
         /**
          * 根据查询请求和聚合请求体,查询elastisearch,并获取到结果
          * */
-        List<List<Object>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, caseId);
+        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, caseId);
 
 
         /**
          * 根据聚合模块返回的数据,进行封装返回给业务层
          * */
-        List<PeopleAreaReponse> responses = (List<PeopleAreaReponse>) peopleAreaResultConversionAccessor.access(result, TacticsTypeEnum.PEOPLE_AREA);
+        List<PeopleAreaReponse> responses = (List<PeopleAreaReponse>) peopleAreaResultConversionAccessor.access(result.get(aggregationParams.getResultName()), TacticsTypeEnum.PEOPLE_AREA);
 
         return responses;
     }

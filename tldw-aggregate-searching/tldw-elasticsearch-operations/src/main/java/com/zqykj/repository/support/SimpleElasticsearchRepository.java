@@ -999,14 +999,14 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         Map<String, List<List<Object>>> result = new HashMap<>();
         // 第一层数据处理
         List<List<Object>> main = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
-        result.put(agg.getName(), main);
+        result.put(agg.getResultName(), main);
         // 同级数据处理
         if (!CollectionUtils.isEmpty(agg.getSiblingAggregation())) {
             for (AggregationParams aggregationParams : agg.getSiblingAggregation()) {
                 if (!CollectionUtils.isEmpty(aggregationParams.getMapping())) {
                     List<List<Object>> siblingAggs = AggregationParser.parseMulti(response.getAggregations(), aggregationParams.getMapping());
                     if (!CollectionUtils.isEmpty(siblingAggs)) {
-                        result.put(aggregationParams.getName(), siblingAggs);
+                        result.put(aggregationParams.getResultName(), siblingAggs);
                     }
                 }
             }
@@ -1015,7 +1015,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
-    public <T> Page<T> compoundQueryWithoutAgg(Pageable pageable,QuerySpecialParams querySpecialParams, Class<T> clazz, String routing) {
+    public <T> Page<T> compoundQueryWithoutAgg(Pageable pageable, QuerySpecialParams querySpecialParams, Class<T> clazz, String routing) {
         ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
         String indexName = entity.getIndexName();
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
