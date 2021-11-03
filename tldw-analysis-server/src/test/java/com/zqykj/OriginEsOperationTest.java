@@ -23,6 +23,7 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.aggregate.TeacherInfo;
+import com.zqykj.domain.archive.PeopleInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.PeopleArea;
 import com.zqykj.domain.graph.EntityGraph;
@@ -550,5 +551,62 @@ public class OriginEsOperationTest {
 //        entranceRepository.compoundQueryWithoutAgg(querySpecialParams1,PeopleArea.class,"b690f6b8f960462e8bb4c0f609d04830");
 
 
+    }
+
+    @Test
+    public void testFindAllByPage() {
+
+        // ES 默认就是 分页参数是 from + size <= 10000, 如果超过10000 相当于深度分页,
+        // 需要修改集群的配置  (
+        //   PUT /bank_transaction_flow/_settings
+        //{
+        //  "index":{
+        //    "max_result_window": size
+        //  }
+        //}
+        // )
+        Page<BankTransactionFlow> bankTransactionFlows = entranceRepository.findAll(PageRequest.of(10000, 1),
+                "f9ed6f2b58bf4fbc87204d4bb2d57d45", BankTransactionFlow.class);
+
+        List<BankTransactionFlow> content = bankTransactionFlows.getContent();
+    }
+
+    @Test
+    public void testFindAll() {
+
+        // ES 默认就是 分页参数是 from + size <= 10000, 如果超过10000 相当于深度分页,
+        // 需要修改集群的配置  (
+        //   PUT /bank_transaction_flow/_settings
+        //{
+        //  "index":{
+        //    "max_result_window": size
+        //  }
+        //}
+        // )
+        Iterable<BankTransactionFlow> bankTransactionFlows = entranceRepository.findAll("f9ed6f2b58bf4fbc87204d4bb2d57d45", BankTransactionFlow.class);
+    }
+
+    @Test
+    public void testMapInsert() {
+
+        List<Map<String, ?>> maps = new ArrayList<>();
+
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("id", 1);
+        map.put("person_ssn_id", "3201131994103234");
+        map.put("person_name", "小马");
+        map.put("person_gender", "男");
+        map.put("person_nationality", "中国");
+        map.put("person_ethnicity", "汉族");
+        map.put("person_height", "173cm");
+        map.put("person_bloodtype", "B");
+        map.put("begin_time", new Date());
+        map.put("end_time", new Date());
+        map.put("dataSource_id", "1");
+
+        maps.add(map);
+
+        entranceRepository.saveAll(maps, PeopleInfo.class);
     }
 }

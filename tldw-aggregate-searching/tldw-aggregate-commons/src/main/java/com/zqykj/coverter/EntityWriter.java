@@ -11,4 +11,6 @@ public interface EntityWriter<T, S> {
 
 
     void write(T source, S sink);
+
+    void writeMap(T source, String index);
 }

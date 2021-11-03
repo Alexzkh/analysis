@@ -9,6 +9,7 @@ import com.zqykj.repository.query.*;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -62,6 +63,11 @@ public interface DocumentOperations {
      * @return the saved entities
      */
     <T> Iterable<T> save(Iterable<T> entities, String index, String routing);
+
+    /**
+     * <h2> 保存数据(一组map数据集合) </h2>
+     */
+    List<Map<String, ?>> save(List<Map<String, ?>> values, String index);
 
     /**
      * <h2> 批量索引操作 </h2>

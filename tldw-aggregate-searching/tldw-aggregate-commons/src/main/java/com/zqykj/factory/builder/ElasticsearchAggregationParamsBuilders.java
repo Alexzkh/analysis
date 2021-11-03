@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.params;
+package com.zqykj.factory.builder;
 
 import com.zqykj.enums.AggsType;
 import com.zqykj.parameters.FieldSort;
@@ -20,9 +20,9 @@ import java.util.Map;
 /**
  * <h1> AggregationParams 构建器 </h1>
  */
-public class AggregationParamsBuilders {
+public class ElasticsearchAggregationParamsBuilders {
 
-    private AggregationParamsBuilders() {
+    private ElasticsearchAggregationParamsBuilders() {
 
     }
 

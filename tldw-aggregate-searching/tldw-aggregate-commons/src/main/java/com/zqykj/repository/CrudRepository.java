@@ -9,6 +9,8 @@ import com.zqykj.domain.Routing;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -42,6 +44,14 @@ public interface CrudRepository extends Repository {
     <T> Iterable<T> saveAll(Iterable<T> entities, @Nullable String routing, @NonNull Class<T> entityClass);
 
     /**
+     * <h2> 保存/更新(需要指定Id) 给定一组数据集合</h2>
+     *
+     * @param values      一组map的数据集合
+     * @param entityClass 索引实体
+     */
+    <T> void saveAll(List<Map<String, ?>> values, @NonNull Class<T> entityClass);
+
+    /**
      * <h2> 根据 Id检索数据 </h2>
      *
      * @param id          数据id    must not be {@literal null}.
@@ -52,6 +62,8 @@ public interface CrudRepository extends Repository {
 
     /**
      * <h2> 检索所有数据 </h2>
+     * <p>
+     * 注意: 最多返回100MB的数据量(对于es来说) 100*1024*1024(堆buffer) 如果需要修改 eg. es 可以再RequestOptions中修改
      *
      * @param routing     路由参数
      * @param entityClass 实体类  must not be {@literal null}.
@@ -60,6 +72,7 @@ public interface CrudRepository extends Repository {
 
     /**
      * <h2> 根据路由(可选)  分页查询当前索引下的文档数据 </h2>
+     * 注意: eg. es的话默认是分页是有限制的, 默认from + size 需要 <= 10000, 如果需要修改, 可以对es的集群进行重新设置
      *
      * @param pageable    分页参数  must not be {@literal null}.
      * @param routing     路由参数
@@ -127,7 +140,5 @@ public interface CrudRepository extends Repository {
      * @param routing     路由参数
      * @param entityClass 实体类    must not be {@literal null}.
      */
-    <T> Page<T> findByCondition(Pageable pageable, @Nullable String routing,@NonNull Class<T> entityClass,String... values);
-
-
+    <T> Page<T> findByCondition(Pageable pageable, @Nullable String routing, @NonNull Class<T> entityClass, String... values);
 }

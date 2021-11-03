@@ -26,6 +26,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     protected ElasticsearchConverter elasticsearchConverter;
     protected RequestFactory requestFactory;
     static Integer INDEX_MAX_RESULT_WINDOW = 10_000;
+    static final String ID = "id";
 
     protected void initialize(ElasticsearchConverter elasticsearchConverter) {
 
@@ -126,6 +128,18 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         return entities;
     }
 
+    public List<Map<String, ?>> save(List<Map<String, ?>> values, String index) {
+
+        Assert.notNull(values, "entities must not be null");
+        Assert.notNull(index, "index must not be null");
+
+        List<IndexQuery> indexQueries = Streamable.of(values).stream().map(this::getIndexQuery).collect(Collectors.toList());
+        if (!indexQueries.isEmpty()) {
+            bulkIndex(indexQueries, index);
+        }
+        return values;
+    }
+
     @Override
     public void bulkIndex(List<IndexQuery> queries, Class<?> clazz) {
         bulkIndex(queries, getIndexCoordinatesFor(clazz));
@@ -194,6 +208,14 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         return indexQuery;
     }
 
+    private IndexQuery getIndexQuery(Map<String, ?> value) {
+        IndexQuery indexQuery = new IndexQuery();
+        String id = null != value.get(ID) ? value.get(ID).toString() : null;
+        indexQuery.setId(id);
+        indexQuery.setSourceMap(value);
+        return indexQuery;
+    }
+
     @Override
     public <T> List<T> multiGet(Query query, Class<T> clazz) {
         return multiGet(query, clazz, getIndexCoordinatesFor(clazz));
@@ -252,6 +274,9 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     private String getEntityId(Object bean) {
 
         ElasticsearchPersistentEntity<?> entity = getRequiredPersistentEntity(bean.getClass());
+        if (null == entity) {
+            return null;
+        }
         Object id = entity.getIdentifierAccessor(bean);
         if (id != null) {
             return Objects.toString(id, null);

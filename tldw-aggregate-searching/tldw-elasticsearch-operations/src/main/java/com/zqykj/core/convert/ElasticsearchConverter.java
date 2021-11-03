@@ -9,6 +9,9 @@ import com.zqykj.core.mapping.ElasticsearchPersistentProperty;
 import com.zqykj.coverter.EntityConverter;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
+
+import java.util.Map;
 
 /**
  * <h1> ElasticsearchConverter </h1>
@@ -41,5 +44,12 @@ public interface ElasticsearchConverter
             write(source, target);
         }
         return target;
+    }
+
+    default void mapMapObject(@Nullable Map<String, ?> source, String index) {
+
+        if (!CollectionUtils.isEmpty(source)) {
+            writeMap(source, index);
+        }
     }
 }

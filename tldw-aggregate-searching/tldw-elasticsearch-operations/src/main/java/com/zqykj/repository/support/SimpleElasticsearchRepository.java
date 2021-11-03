@@ -118,7 +118,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T> Page<T> findAll(Pageable pageable, String routing, @NonNull Class<T> entityClass) {
 
-        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withPageable(pageable).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withTrackScores(true).withPageable(pageable).build();
 
         SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
@@ -212,6 +212,13 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         executeAndRefresh(operations -> operations.save(entities, indexCoordinates, routing), entityClass);
 
         return entities;
+    }
+
+    public <T> void saveAll(List<Map<String, ?>> values, @NonNull Class<T> entityClass) {
+
+        Assert.notNull(values, "Cannot insert 'null' as a List.");
+        String indexCoordinates = getIndexCoordinates(entityClass);
+        executeAndRefresh(operations -> operations.save(values, indexCoordinates), entityClass);
     }
 
 
