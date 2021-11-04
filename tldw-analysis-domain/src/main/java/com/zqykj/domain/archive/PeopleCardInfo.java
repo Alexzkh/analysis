@@ -19,7 +19,7 @@ public class PeopleCardInfo {
      * 全局唯一id
      */
     @Id
-    private Long id;
+    private String id;
 
     /**
      * 身份证号
