@@ -8,7 +8,7 @@ import com.zqykj.app.service.vo.fund.Hits;
 import com.zqykj.app.service.vo.fund.Local;
 import com.zqykj.app.service.vo.fund.Opposite;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
-import com.zqykj.factory.AggregationResultEntityParseFactory;
+import com.zqykj.app.service.interfaze.factory.AggregationResultEntityParseFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;

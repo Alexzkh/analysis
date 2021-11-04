@@ -10,6 +10,7 @@ import com.zqykj.core.mapping.ElasticsearchPersistentProperty;
 import com.zqykj.core.query.FetchSourceFilter;
 import com.zqykj.domain.Sort;
 import com.zqykj.repository.query.*;
+import com.zqykj.util.JacksonUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -25,6 +26,7 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -247,7 +249,7 @@ public class RequestFactory {
             } else {
                 indexRequest = new IndexRequest(indexName);
             }
-            indexRequest.source(values);
+            indexRequest.source(values,Requests.INDEX_CONTENT_TYPE);
         } else {
             throw new ElasticsearchException("object or source is null, failed to [index: " + indexName + ']');
         }

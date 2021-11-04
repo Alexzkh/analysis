@@ -128,14 +128,16 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         return entities;
     }
 
-    public List<Map<String, ?>> save(List<Map<String, ?>> values, String index) {
+    @Override
+    public List<Map<String, ?>> save(List<Map<String, ?>> values, String indexName, String routing) {
 
-        Assert.notNull(values, "entities must not be null");
-        Assert.notNull(index, "index must not be null");
+        Assert.notNull(values, "values must not be null");
+        Assert.notNull(indexName, "indexName must not be null");
 
-        List<IndexQuery> indexQueries = Streamable.of(values).stream().map(this::getIndexQuery).collect(Collectors.toList());
+        List<IndexQuery> indexQueries = Streamable.of(values).stream().map(value -> getIndexQuery(value, routing)).collect(Collectors.toList());
+
         if (!indexQueries.isEmpty()) {
-            bulkIndex(indexQueries, index);
+            bulkIndex(indexQueries, indexName);
         }
         return values;
     }
@@ -189,6 +191,11 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     public abstract String doIndex(IndexQuery query, String index);
 
     private <T> IndexQuery getIndexQuery(T entity, String routing) {
+
+        if (entity instanceof Map) {
+            Map<String, ?> value = (Map<String, ?>) entity;
+            return getIndexQuery(value, routing);
+        }
         IndexQuery indexQuery = new IndexQuery();
         String id = getEntityId(entity);
 
@@ -208,11 +215,14 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         return indexQuery;
     }
 
-    private IndexQuery getIndexQuery(Map<String, ?> value) {
+    private IndexQuery getIndexQuery(Map<String, ?> value, String routing) {
         IndexQuery indexQuery = new IndexQuery();
         String id = null != value.get(ID) ? value.get(ID).toString() : null;
         indexQuery.setId(id);
         indexQuery.setSourceMap(value);
+        if (StringUtils.isNotBlank(routing)) {
+            indexQuery.setRouting(routing);
+        }
         return indexQuery;
     }
 

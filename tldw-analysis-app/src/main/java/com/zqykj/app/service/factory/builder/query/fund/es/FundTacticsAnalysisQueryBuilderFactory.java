@@ -14,7 +14,7 @@ import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
-import com.zqykj.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.query.*;

@@ -4,8 +4,12 @@
 package com.zqykj.core;
 
 import com.zqykj.core.document.Document;
+import com.zqykj.domain.Pageable;
 import com.zqykj.domain.Routing;
+import com.zqykj.parameters.Pagination;
 import com.zqykj.repository.query.*;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -67,7 +71,7 @@ public interface DocumentOperations {
     /**
      * <h2> 保存数据(一组map数据集合) </h2>
      */
-    List<Map<String, ?>> save(List<Map<String, ?>> values, String index);
+    List<Map<String, ?>> save(List<Map<String, ?>> values, String index, String routing);
 
     /**
      * <h2> 批量索引操作 </h2>
@@ -160,4 +164,7 @@ public interface DocumentOperations {
     <T> List<T> multiGet(Query query, Class<T> clazz);
 
     <T> List<T> multiGet(Query query, Class<T> clazz, String index);
+
+    SearchResponse conditionalQuery(QueryBuilder queryBuilder, @Nullable String routing, String index, Boolean isTrackTotalHits,
+                                    Pageable pageable);
 }

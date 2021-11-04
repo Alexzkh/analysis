@@ -1,11 +1,9 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.factory;
+package com.zqykj.app.service.interfaze.factory;
 
 import com.zqykj.parameters.aggregate.AggregationParams;
-
-import java.util.List;
 
 /**
  * <h1> 公共聚合请求参数构建工厂 </h1>

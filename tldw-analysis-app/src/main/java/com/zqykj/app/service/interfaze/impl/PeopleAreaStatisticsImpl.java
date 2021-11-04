@@ -1,7 +1,6 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import com.zqykj.app.service.interfaze.IPeopleAreaStatistics;
-import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.app.service.strategy.PeopleAreaResultConversionAccessor;
 import com.zqykj.common.enums.TacticsTypeEnum;
 import com.zqykj.common.request.PeopleAreaDetailRequest;
@@ -11,8 +10,8 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.PeopleArea;
-import com.zqykj.factory.AggregationRequestParamFactory;
-import com.zqykj.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.interfaze.factory.AggregationRequestParamFactory;
+import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;

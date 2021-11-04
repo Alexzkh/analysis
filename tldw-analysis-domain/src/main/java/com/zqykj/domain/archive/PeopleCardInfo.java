@@ -12,8 +12,8 @@ import java.util.Date;
  * <h1> 人员档案库 </h1>
  */
 @Data
-@Document(indexName = "people_info", shards = 3)
-public class PeopleInfo {
+@Document(indexName = "people_card_info", shards = 3)
+public class PeopleCardInfo {
 
     /**
      * 全局唯一id
@@ -32,6 +32,18 @@ public class PeopleInfo {
      */
     @Field(name = "person_name", type = FieldType.Keyword)
     private String person_name;
+
+    /**
+     * 银行卡号
+     */
+    @Field(name = "bank_card_no", type = FieldType.Keyword)
+    private String bank_card_no;
+
+    /**
+     * 账号开户行
+     */
+    @Field(name = "bank_card_bankname", type = FieldType.Keyword)
+    private String bank_card_bankname;
 
     /**
      * 性别
@@ -80,4 +92,10 @@ public class PeopleInfo {
      */
     @Field(name = "dataSource_id", type = FieldType.Keyword)
     private String dataSource_id;
+
+    /**
+     * 描述
+     */
+    @Field(name = "elpType", type = FieldType.Keyword)
+    private String elpType;
 }
