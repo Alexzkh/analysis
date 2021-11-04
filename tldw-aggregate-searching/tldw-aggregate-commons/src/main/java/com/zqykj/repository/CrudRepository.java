@@ -81,7 +81,7 @@ public interface CrudRepository extends Repository {
      * @param entityClass 实体类  must not be {@literal null}.
      * @param condition   条件查询
      */
-    <T> Iterable<T> findAll(@Nullable String routing, @NonNull Class<T> entityClass, @Nullable QuerySpecialParams condition);
+    <T> Iterable<T> findAll(@NonNull Class<T> entityClass, @Nullable String routing, @Nullable QuerySpecialParams condition);
 
     /**
      * <h2> 根据路由(可选)  分页查询当前索引下的文档数据 </h2>
