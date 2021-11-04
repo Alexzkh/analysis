@@ -113,7 +113,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return this.findAll(PageRequest.of(0, Math.max(1, itemCount)), routing, entityClass);
     }
 
-    public <T> Iterable<T> findAll(@Nullable String routing, @NonNull Class<T> entityClass, @Nullable QuerySpecialParams condition) {
+    public <T> Iterable<T> findAll(@NonNull Class<T> entityClass, @Nullable String routing, @Nullable QuerySpecialParams condition) {
 
         if (null != condition) {
 
