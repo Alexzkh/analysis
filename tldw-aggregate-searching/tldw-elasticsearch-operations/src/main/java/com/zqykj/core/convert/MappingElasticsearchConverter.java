@@ -146,6 +146,28 @@ public class MappingElasticsearchConverter implements ElasticsearchConverter, In
         writeEntity(entity, source, sink);
     }
 
+    public void writeMap(Object source, String index) {
+
+        if (source instanceof Map) {
+
+            Map<String, Object> map = (Map<String, Object>) source;
+
+            // 获取实体
+            Optional<? extends ElasticsearchPersistentEntity<?>> optional = mappingContext.getPersistentEntities().stream().filter(e -> mappingContext.getRequiredPersistentEntity(e.getType()).getIndexName().equals(index))
+                    .findFirst();
+            optional.ifPresent(entity -> {
+                for (ElasticsearchPersistentProperty property : entity) {
+
+                    if (property.hasPropertyConverter()) {
+
+                        Object value = propertyConverterWrite(property, map.get(property.getFieldName()));
+                        map.put(property.getFieldName(), value);
+                    }
+                }
+            });
+        }
+    }
+
     /**
      * <h2> 处理entity 对象数据,写入elasticsearch </h2>
      */

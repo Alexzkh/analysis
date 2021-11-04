@@ -26,6 +26,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     protected ElasticsearchConverter elasticsearchConverter;
     protected RequestFactory requestFactory;
     static Integer INDEX_MAX_RESULT_WINDOW = 10_000;
+    static final String ID = "id";
 
     protected void initialize(ElasticsearchConverter elasticsearchConverter) {
 
@@ -127,6 +129,20 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     }
 
     @Override
+    public List<Map<String, ?>> save(List<Map<String, ?>> values, String indexName, String routing) {
+
+        Assert.notNull(values, "values must not be null");
+        Assert.notNull(indexName, "indexName must not be null");
+
+        List<IndexQuery> indexQueries = Streamable.of(values).stream().map(value -> getIndexQuery(value, routing)).collect(Collectors.toList());
+
+        if (!indexQueries.isEmpty()) {
+            bulkIndex(indexQueries, indexName);
+        }
+        return values;
+    }
+
+    @Override
     public void bulkIndex(List<IndexQuery> queries, Class<?> clazz) {
         bulkIndex(queries, getIndexCoordinatesFor(clazz));
     }
@@ -175,6 +191,11 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     public abstract String doIndex(IndexQuery query, String index);
 
     private <T> IndexQuery getIndexQuery(T entity, String routing) {
+
+        if (entity instanceof Map) {
+            Map<String, ?> value = (Map<String, ?>) entity;
+            return getIndexQuery(value, routing);
+        }
         IndexQuery indexQuery = new IndexQuery();
         String id = getEntityId(entity);
 
@@ -188,6 +209,17 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
         if (null != getEntityVersion(entity)) {
             indexQuery.setVersion(getEntityVersion(entity));
         }
+        if (StringUtils.isNotBlank(routing)) {
+            indexQuery.setRouting(routing);
+        }
+        return indexQuery;
+    }
+
+    private IndexQuery getIndexQuery(Map<String, ?> value, String routing) {
+        IndexQuery indexQuery = new IndexQuery();
+        String id = null != value.get(ID) ? value.get(ID).toString() : null;
+        indexQuery.setId(id);
+        indexQuery.setSourceMap(value);
         if (StringUtils.isNotBlank(routing)) {
             indexQuery.setRouting(routing);
         }
@@ -252,6 +284,9 @@ public abstract class AbstractElasticsearchTemplate implements DocumentOperation
     private String getEntityId(Object bean) {
 
         ElasticsearchPersistentEntity<?> entity = getRequiredPersistentEntity(bean.getClass());
+        if (null == entity) {
+            return null;
+        }
         Object id = entity.getIdentifierAccessor(bean);
         if (id != null) {
             return Objects.toString(id, null);

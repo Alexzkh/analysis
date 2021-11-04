@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.factory;
+package com.zqykj.app.service.interfaze.factory;
 
 import java.util.Map;
 

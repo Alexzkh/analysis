@@ -7,7 +7,7 @@ import com.zqykj.app.service.vo.fund.Key;
 import com.zqykj.app.service.vo.fund.Local;
 import com.zqykj.app.service.vo.fund.Opposite;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
-import com.zqykj.factory.AggregationEntityMappingFactory;
+import com.zqykj.app.service.interfaze.factory.AggregationEntityMappingFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ReflectionUtils;

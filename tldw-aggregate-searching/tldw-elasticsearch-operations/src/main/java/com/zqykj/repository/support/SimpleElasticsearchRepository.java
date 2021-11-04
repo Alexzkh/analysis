@@ -14,7 +14,6 @@ import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
 import com.zqykj.core.aggregation.parse.AggregationParser;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
-import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
@@ -114,6 +113,20 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return this.findAll(PageRequest.of(0, Math.max(1, itemCount)), routing, entityClass);
     }
 
+    public <T> Iterable<T> findAll(@Nullable String routing, @NonNull Class<T> entityClass, @Nullable QuerySpecialParams condition) {
+
+        if (null != condition) {
+
+            int itemCount = (int) this.count(routing, entityClass, condition);
+            if (itemCount == 0) {
+                return new PageImpl<>(Collections.emptyList());
+            }
+            return this.findAll(PageRequest.of(0, Math.max(1, itemCount)), routing, entityClass);
+        }
+
+        return findAll(routing, entityClass);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> Page<T> findAll(Pageable pageable, String routing, @NonNull Class<T> entityClass) {
@@ -124,6 +137,20 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
         AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
         return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
+    }
+
+    public <T> Page<T> findAll(Pageable pageable, @Nullable String routing, @NonNull Class<T> entityClass, @Nullable QuerySpecialParams condition) {
+
+        if (null != condition) {
+
+            QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
+            NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder).withPageable(pageable).build();
+            SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
+
+            AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
+            return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
+        }
+        return findAll(pageable, routing, entityClass);
     }
 
     @Override
@@ -190,6 +217,22 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
+    public <T> long count(String routing, @NonNull Class<T> entityClass, QuerySpecialParams condition) {
+
+
+        if (null != condition) {
+
+            // 构建QueryBuilder
+            QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
+
+            Pagination pagination = condition.getPagination();
+            return operations.conditionalQuery(queryBuilder, routing, getIndexCoordinates(entityClass),
+                    true, Pageable.unpaged()).getHits().getTotalHits().value;
+        }
+        return count(routing, entityClass);
+    }
+
+    @Override
     public <T> T save(T entity, String routing, @NonNull Class<T> entityClass) {
 
         Assert.notNull(entity, "Cannot save 'null' entity.");
@@ -212,6 +255,13 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         executeAndRefresh(operations -> operations.save(entities, indexCoordinates, routing), entityClass);
 
         return entities;
+    }
+
+    public <T> void saveAll(List<Map<String, ?>> values, @Nullable String routing, @NonNull Class<T> entityClass) {
+
+        Assert.notNull(values, "Cannot insert 'null' as a List.");
+        String indexCoordinates = getIndexCoordinates(entityClass);
+        executeAndRefresh(operations -> operations.save(values, indexCoordinates, routing), entityClass);
     }
 
 
@@ -266,6 +316,26 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             operations.delete(query, entityClass, indexCoordinates);
             return null;
         }, entityClass);
+    }
+
+    public <T> void deleteAll(@Nullable String routing, @NonNull Class<T> entityClass, QuerySpecialParams condition) {
+
+        if (null != condition) {
+
+            QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
+
+            Query query = new NativeSearchQueryBuilder().withQuery(queryBuilder)
+                    .withRoute(routing)
+                    .build();
+
+            executeAndRefresh((OperationsCallback<Void>) operations -> {
+                operations.delete(query, entityClass, getIndexCoordinates(entityClass));
+                return null;
+            }, entityClass);
+            return;
+        } else {
+            deleteAll(routing, entityClass);
+        }
     }
 
     @Override
@@ -992,7 +1062,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (null != queryTarget) {
             sourceBuilder.query((QueryBuilder) queryTarget);
             // 聚合查询不需要 带出具体数据
-            sourceBuilder.size(20);
+            sourceBuilder.size(0);
         }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));

@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.params;
+package com.zqykj.builder;
 
 import com.zqykj.enums.AggsType;
 import com.zqykj.parameters.FieldSort;

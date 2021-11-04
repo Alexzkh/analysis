@@ -5,10 +5,7 @@ package com.zqykj.parameters.query;
 
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -21,6 +18,7 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class QuerySpecialParams {
 
     // 单个查询(不能和组合查询同时使用)
@@ -32,7 +30,7 @@ public class QuerySpecialParams {
     // 全局查询默认参数
     private DefaultQueryParam defaultParam;
 
-    // TODO 分页参数设置 可以放在最外面
+    // TODO 分页参数设置 可以放在最外面(如果有参数 com.zqykj.domain.Pageable 和它同时存在,优先取Pageable)
     private Pagination pagination;
 
     // 排序
@@ -47,6 +45,10 @@ public class QuerySpecialParams {
 
     public QuerySpecialParams(List<CombinationQueryParams> combiningQuery) {
         this.combiningQuery = combiningQuery;
+    }
+
+    public void addCommonQueryParams(CommonQueryParams commonQuery) {
+        this.commonQuery = commonQuery;
     }
 
     public void addCombiningQueryParams(CombinationQueryParams combinationQueryParams) {

@@ -5,6 +5,8 @@ package com.zqykj.repository.query;
 
 import org.springframework.lang.Nullable;
 
+import java.util.Map;
+
 /**
  * <h1> IndexQuery </h1>
  */
@@ -24,6 +26,17 @@ public class IndexQuery {
     private Long primaryTerm;
     @Nullable
     private String routing;
+    @Nullable
+    private Map<String, ?> sourceMap;
+
+    @Nullable
+    public Map<String, ?> getSourceMap() {
+        return sourceMap;
+    }
+
+    public void setSourceMap(@Nullable Map<String, ?> sourceMap) {
+        this.sourceMap = sourceMap;
+    }
 
     @Nullable
     public String getId() {

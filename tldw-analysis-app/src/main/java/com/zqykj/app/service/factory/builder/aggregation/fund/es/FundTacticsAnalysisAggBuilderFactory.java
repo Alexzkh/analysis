@@ -4,7 +4,7 @@
 package com.zqykj.app.service.factory.builder.aggregation.fund.es;
 
 import com.zqykj.app.service.factory.builder.query.fund.es.FundTacticsAnalysisQueryBuilderFactory;
-import com.zqykj.app.service.factory.params.AggregationParamsBuilders;
+import com.zqykj.builder.AggregationParamsBuilders;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.app.service.vo.fund.Local;
@@ -23,7 +23,7 @@ import com.zqykj.common.vo.Direction;
 import com.zqykj.core.aggregation.response.ElasticsearchAggregationResponseAttributes;
 import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
 import com.zqykj.enums.AggsType;
-import com.zqykj.factory.AggregationRequestParamFactory;
+import com.zqykj.app.service.interfaze.factory.AggregationRequestParamFactory;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;

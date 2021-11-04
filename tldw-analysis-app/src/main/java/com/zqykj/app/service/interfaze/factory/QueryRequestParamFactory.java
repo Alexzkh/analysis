@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.factory;
+package com.zqykj.app.service.interfaze.factory;
 
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;

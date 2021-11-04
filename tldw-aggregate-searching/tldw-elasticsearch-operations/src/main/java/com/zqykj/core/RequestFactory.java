@@ -10,6 +10,7 @@ import com.zqykj.core.mapping.ElasticsearchPersistentProperty;
 import com.zqykj.core.query.FetchSourceFilter;
 import com.zqykj.domain.Sort;
 import com.zqykj.repository.query.*;
+import com.zqykj.util.JacksonUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -25,6 +26,7 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -38,6 +40,7 @@ import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.*;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
@@ -52,6 +55,8 @@ public class RequestFactory {
 
     // the default max result window size of Elasticsearch
     static final Integer INDEX_MAX_RESULT_WINDOW = 10_000;
+
+    static final String ID = "id";
 
     private final ElasticsearchConverter elasticsearchConverter;
 
@@ -200,6 +205,12 @@ public class RequestFactory {
         } else if (query.getSource() != null) {
             indexRequest = new IndexRequest(indexName).id(query.getId()).source(query.getSource(),
                     Requests.INDEX_CONTENT_TYPE);
+        } else if (!CollectionUtils.isEmpty(query.getSourceMap())) {
+
+            // map 形式
+            Map<String, ?> sourceMap = query.getSourceMap();
+            elasticsearchConverter.mapMapObject(sourceMap, indexName);
+            indexRequest = indexMapRequest(sourceMap, indexName);
         } else {
             throw new ElasticsearchException(
                     "object or source is null, failed to index the document [id: " + query.getId() + ']');
@@ -223,6 +234,25 @@ public class RequestFactory {
             indexRequest.routing(query.getRouting());
         }
 
+        return indexRequest;
+    }
+
+    public IndexRequest indexMapRequest(Map<String, ?> values, String indexName) {
+
+        IndexRequest indexRequest;
+
+        if (!CollectionUtils.isEmpty(values)) {
+            String id = StringUtils.isEmpty(values.get(ID)) ? null : String.valueOf(values.get(ID));
+            // If we have a query id and a document id, do not ask ES to generate one.
+            if (id != null) {
+                indexRequest = new IndexRequest(indexName).id(id);
+            } else {
+                indexRequest = new IndexRequest(indexName);
+            }
+            indexRequest.source(values,Requests.INDEX_CONTENT_TYPE);
+        } else {
+            throw new ElasticsearchException("object or source is null, failed to [index: " + indexName + ']');
+        }
         return indexRequest;
     }
 

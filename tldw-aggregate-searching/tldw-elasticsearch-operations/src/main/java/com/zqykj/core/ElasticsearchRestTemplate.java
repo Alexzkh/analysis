@@ -8,6 +8,8 @@ import com.zqykj.core.convert.ElasticsearchConverter;
 import com.zqykj.core.document.DocumentAdapters;
 import com.zqykj.core.document.SearchDocumentResponse;
 import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
+import com.zqykj.domain.Pageable;
+import com.zqykj.parameters.Pagination;
 import com.zqykj.repository.query.*;
 import com.zqykj.support.SearchHitsUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,9 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -154,6 +158,29 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     }
 
     @Override
+    public SearchResponse conditionalQuery(QueryBuilder queryBuilder, @Nullable String routing, String index, Boolean isTrackTotalHits,
+                                           Pageable pageable) {
+
+        SearchRequest request = new SearchRequest(index);
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.query(queryBuilder);
+        if (StringUtils.isNotBlank(routing)) {
+            request.routing(routing);
+        }
+        // 算总量的时候可以用到
+        if (null != isTrackTotalHits) {
+            sourceBuilder.trackTotalHits(isTrackTotalHits);
+        }
+        // 设置分页参数
+        if (null != pageable && pageable.isPaged()) {
+            sourceBuilder.from(pageable.getPageNumber());
+            sourceBuilder.size(pageable.getPageSize());
+        }
+        request.source(sourceBuilder);
+        return execute(client -> client.search(request, RequestOptions.DEFAULT));
+    }
+
+    @Override
     public UpdateResponse update(UpdateQuery query, String index) {
         UpdateRequest request = requestFactory.updateRequest(query, index);
         UpdateResponse.Result result = UpdateResponse.Result
@@ -183,10 +210,8 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         Assert.notNull(query, "query must not be null");
         Assert.notNull(index, "index must not be null");
 
-        final Boolean trackTotalHits = query.getTrackTotalHits();
         query.setTrackTotalHits(true);
         SearchRequest searchRequest = requestFactory.searchRequest(query, clazz, index);
-        query.setTrackTotalHits(trackTotalHits);
 
         searchRequest.source().size(0);
 
