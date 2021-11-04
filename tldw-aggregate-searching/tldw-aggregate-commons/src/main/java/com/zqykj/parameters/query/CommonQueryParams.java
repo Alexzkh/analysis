@@ -7,6 +7,7 @@ import com.zqykj.common.enums.QueryType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -80,7 +81,42 @@ public class CommonQueryParams {
         this.value = value;
     }
 
-    public CommonQueryParams(QueryType type, String field, List<String> value) {
+    public CommonQueryParams(QueryType type, String field, int... value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
+    public CommonQueryParams(QueryType type, String field, long... value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
+    public CommonQueryParams(QueryType type, String field, float... value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
+    public CommonQueryParams(QueryType type, String field, double... value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
+    public CommonQueryParams(QueryType type, String field, Object... value) {
+
+        this.type = type;
+        this.field = field;
+        this.value = value;
+    }
+
+    public CommonQueryParams(QueryType type, String field, Iterable<?> value) {
 
         this.type = type;
         this.field = field;

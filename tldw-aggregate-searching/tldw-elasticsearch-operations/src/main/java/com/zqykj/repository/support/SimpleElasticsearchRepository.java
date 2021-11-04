@@ -121,7 +121,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             if (itemCount == 0) {
                 return new PageImpl<>(Collections.emptyList());
             }
-            return this.findAll(PageRequest.of(0, Math.max(1, itemCount)), routing, entityClass);
+            return this.findAll(PageRequest.of(0, Math.max(1, itemCount)), routing, entityClass, condition);
         }
 
         return findAll(routing, entityClass);
