@@ -19,4 +19,20 @@ public class QueryParamsBuilders {
 
         return new CommonQueryParams(QueryType.term, field, value);
     }
+
+    /**
+     * <h2> 类似于in查询 </h2>
+     */
+    public static CommonQueryParams terms(String field, Iterable<?> value) {
+
+        return new CommonQueryParams(QueryType.terms, field, value);
+    }
+
+    /**
+     * <h2> 类似于in查询 </h2>
+     */
+    public static CommonQueryParams terms(String field, String... value) {
+
+        return new CommonQueryParams(QueryType.terms, field, value);
+    }
 }

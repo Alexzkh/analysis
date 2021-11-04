@@ -346,11 +346,12 @@ public class OriginEsOperationTest {
         //  }
         //}
         // )
-        QuerySpecialParams params = new QuerySpecialParams(QueryParamsBuilders.term("case_id", "05e39cf6f3464d4c9b91dca359adbd97"));
-        Iterable<BankTransactionFlow> bankTransactionFlow2 = entranceRepository.findAll(
-                PageRequest.of(10000, 1),
-                "05e39cf6f3464d4c9b91dca359adbd97", BankTransactionFlow.class, params);
-        Iterable<BankTransactionFlow> all = entranceRepository.findAll(BankTransactionFlow.class, null, params);
+        List<String> cards = new ArrayList<>();
+        cards.add("60138216660037814");
+        cards.add("60138216660018214");
+        QuerySpecialParams params = new QuerySpecialParams(QueryParamsBuilders.terms("query_card", cards));
+        Iterable<BankTransactionFlow> bankTransactionFlow2 = entranceRepository.findAll(BankTransactionFlow.class,
+                "05e39cf6f3464d4c9b91dca359adbd97", params);
     }
 
     @Test
