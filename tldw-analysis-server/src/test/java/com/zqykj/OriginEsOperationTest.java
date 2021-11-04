@@ -397,7 +397,7 @@ public class OriginEsOperationTest {
                 .commonQuery(QueryParamsBuilders.term("case_id", "61e9e22a-a6b1-4838-8cea-df8995bc2d8g"))
                 .build();
 
-        // 条件查询获取全部数据
+        // 分页条件查询获取全部数据
         Page<BankTransactionFlow> page = entranceRepository.findAll(PageRequest.of(5, 1),
                 "61e9e22a-a6b1-4838-8cea-df8995bc2d8g", BankTransactionFlow.class, condition);
         System.out.println("实际获取数据量:  " + page.getContent().size());
