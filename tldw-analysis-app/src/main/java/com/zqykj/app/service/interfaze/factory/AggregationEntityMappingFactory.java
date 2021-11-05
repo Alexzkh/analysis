@@ -11,7 +11,9 @@ import java.util.Map;
 public interface AggregationEntityMappingFactory {
 
     /**
-     * <h2>  </h2>
+     * <h2> 实体属性 与 聚合属性映射(适用于需要区分本方和对方) </h2>
      */
-    void entityAggColMapping(Map<String, Map<String, String>> aggKeyMapping, Map<String, Map<String, String>> entityAggKeyMapping, Class<?> mappingEntity);
+    void entityAggMetricsMappingOfLocalOpposite(Map<String, Map<String, String>> aggKeyMapping, Map<String, Map<String, String>> entityAggKeyMapping, Class<?> mappingEntity);
+
+    void aggNameForMetricsMapping(Map<String, String> mapping, Class<?> mappingEntity);
 }

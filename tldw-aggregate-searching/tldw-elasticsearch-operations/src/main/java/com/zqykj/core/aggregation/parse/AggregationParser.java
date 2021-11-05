@@ -6,21 +6,18 @@ package com.zqykj.core.aggregation.parse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
-import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
-import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation.Bucket;
+
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * <h1> 聚合结果解析器 </h1>
@@ -129,7 +126,7 @@ public class AggregationParser {
     /**
      * <h2> 解析多组聚合结果 </h2>
      */
-    public static List<List<Object>> parseMulti(Aggregations aggregations, Map<String, String> map) {
+    public static List<List<Object>> parseMulti(Aggregations aggregations, Map<String, String> map, boolean isConvert) {
 
         // 讲首字母大写然后拼接上 get
 
@@ -142,7 +139,10 @@ public class AggregationParser {
         });
 
         // 将不同列的属性值放到一组list中
-        return convertFromResult(result);
+        if (isConvert) {
+            return convertFromResult(result);
+        }
+        return result;
     }
 
     private static List<List<Object>> convertFromResult(List<List<Object>> result) {
@@ -235,7 +235,7 @@ public class AggregationParser {
             // 桶聚合
             Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
                     method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
-            methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, aggregation,
+            methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, (MultiBucketsAggregation) aggregation,
                     aggMethodKey, aggregationName));
 
 
@@ -270,7 +270,7 @@ public class AggregationParser {
     /**
      * <h2> 解析桶聚合 </h2>
      */
-    private static void parseBucketAggregation(List<Object> result, Class<? extends Aggregation> clazz, Aggregation aggregation,
+    private static void parseBucketAggregation(List<Object> result, Class<? extends Aggregation> clazz, MultiBucketsAggregation aggregation,
                                                String aggMethodKey, String aggregationName) {
 
         Optional<Method> methodOptional = com.zqykj.util.ReflectionUtils.findMethod(clazz, applyFirstChartUpperCase(BUCKET_KEY));
@@ -280,15 +280,11 @@ public class AggregationParser {
             Object value = ReflectionUtils.invokeMethod(methodOptional.get(), aggregation);
 
             if (null != value) {
-
-                List<? extends MultiBucketsAggregation.Bucket> buckets = (List<? extends MultiBucketsAggregation.Bucket>) value;
-
-                for (MultiBucketsAggregation.Bucket bucket : buckets) {
-
-                    Class<? extends MultiBucketsAggregation.Bucket> aClass = bucket.getClass();
+                List<? extends Bucket> buckets = (List<? extends Bucket>) value;
+                for (Bucket bucket : buckets) {
+                    Class<? extends Bucket> aClass = bucket.getClass();
                     Method[] methods = aClass.getMethods();
                     Aggregations aggregations = bucket.getAggregations();
-
                     // 首先找这一层的相关属性, 找不到看看是否有子聚合(继续下钻处理)
                     if (aggregation.getName().equals(aggregationName)) {
 
@@ -305,7 +301,6 @@ public class AggregationParser {
                                 parseSubAggregations(aggregations, result, aggMethodKey, aggregationName);
                             }
                         }
-
                     } else {
                         // 去子聚合里面去找
                         if (null != aggregations) {
@@ -316,7 +311,6 @@ public class AggregationParser {
             }
         }
     }
-
 
     private static Optional<Method> getAggregationMethod(String aggMethodKey, Method[] methods) {
         return Arrays.stream(methods).filter(method -> method.getName().equals(aggMethodKey)).findFirst();

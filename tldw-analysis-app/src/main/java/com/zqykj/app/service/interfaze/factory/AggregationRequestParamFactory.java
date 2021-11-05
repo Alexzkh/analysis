@@ -16,6 +16,8 @@ public interface AggregationRequestParamFactory {
 
     <T> AggregationParams buildTradeStatisticsAnalysisTotalAgg(T request);
 
+    <T> AggregationParams buildTradeStatisticsAnalysisFundByTimeType(T request);
+
     /**
      * @param request: 构建资产趋势分析查询请求体.
      * @return: com.zqykj.parameters.aggregate.AggregationParams
@@ -23,5 +25,4 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams createAssetTrendsAnalysisQueryAgg(T request);
 
     <T> AggregationParams createPeopleAreaQueryAgg(T request);
-
 }

@@ -3,13 +3,11 @@
  */
 package com.zqykj.core.aggregation.query.builder;
 
-import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
 import com.zqykj.parameters.aggregate.FetchSource;
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.CommonAggregationParams;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.Pagination;
-import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.aggregate.bucket.ClassNameForBeanClassOfBucket;
@@ -519,12 +517,4 @@ public class AggregationMappingBuilder {
         });
     }
 
-    public static void main(String[] args) {
-
-        // DateHistogram 例子
-        AggregationParams dateGroupAndSum = AggregateRequestFactory.createDateGroupAndSum("trade_time",
-                new DateSpecificFormat("1h", "HH"), "trade_amount");
-        Object target = buildAggregation(dateGroupAndSum);
-        System.out.println(target);
-    }
 }

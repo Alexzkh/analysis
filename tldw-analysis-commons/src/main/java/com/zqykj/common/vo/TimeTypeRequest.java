@@ -3,6 +3,9 @@
  */
 package com.zqykj.common.vo;
 
+/**
+ * <h1> 时间类型 </h1>
+ */
 public enum TimeTypeRequest {
 
     // 时
@@ -16,4 +19,7 @@ public enum TimeTypeRequest {
 
     // 年
     y,
+
+    // 季度
+    q
 }

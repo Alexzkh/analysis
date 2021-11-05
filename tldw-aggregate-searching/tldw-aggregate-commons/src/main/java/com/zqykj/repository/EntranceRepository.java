@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.zqykj.parameters.aggregate.AggregationParams;
-import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.context.annotation.Primary;
 
@@ -210,15 +209,12 @@ public interface EntranceRepository extends CrudRepository {
     /**
      * <h2> 按日期间隔分组并根据某个字段进行汇总求和 </h2>
      *
-     * @param query          查询参数 (eg. 可以先筛选数据,在对数据进行聚合统计分析)
-     * @param dateField      日期聚合字段
-     * @param specificFormat 日期特有参数设置 eg. 按照固定时间分组、日期的格式化等
-     * @param sumField       求和字段
-     * @param clazz          实体类
-     * @param routing        路由
+     * @param query   查询参数 (eg. 可以先筛选数据,在对数据进行聚合统计分析)
+     * @param dateAgg 日期聚合参数
+     * @param clazz   实体类
+     * @param routing 路由
      */
-    <T> Map<String, Object> dateGroupAndSum(QuerySpecialParams query, String dateField, DateSpecificFormat specificFormat,
-                                            String sumField, Class<T> clazz, String routing);
+    <T> List<List<Object>> dateGroupAgg(QuerySpecialParams query, AggregationParams dateAgg, Class<T> clazz, String routing);
 
     /**
      * <h2> 组合查询与聚合 (只返回聚合结果) </h2>
@@ -238,5 +234,5 @@ public interface EntranceRepository extends CrudRepository {
      * @param routing:            路由
      * @return: java.util.List<T>
      **/
-    <T> Page<T> compoundQueryWithoutAgg(Pageable pageable,QuerySpecialParams querySpecialParams, Class<T> clazz, String routing);
+    <T> Page<T> compoundQueryWithoutAgg(Pageable pageable, QuerySpecialParams querySpecialParams, Class<T> clazz, String routing);
 }

@@ -1,7 +1,6 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.transform.NumericalConversion;
 import com.zqykj.app.service.vo.fund.*;
@@ -25,15 +24,16 @@ import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
-import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -82,8 +82,15 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         /**
          * 获取日期折现图聚合统计结果.
          * */
-        TimeGroupTradeAmountSum timeGroupTradeAmountSum = this.getTradeAmountByTime(caseId, tradeStatisticalAnalysisPreRequest, timeTypeRequest);
+        FundAnalysisDateRequest fundAnalysisDateRequest = new FundAnalysisDateRequest();
+        BeanUtils.copyProperties(tradeStatisticalAnalysisPreRequest, fundAnalysisDateRequest);
+        fundAnalysisDateRequest.setTimeType(timeTypeRequest);
+        TradeStatisticalAnalysisFundSumByDate tradeAmountByTime = this.getSummaryOfTradeAmountGroupedByTime(caseId, fundAnalysisDateRequest);
 
+        TimeGroupTradeAmountSum timeGroupTradeAmountSum = new TimeGroupTradeAmountSum();
+
+        timeGroupTradeAmountSum.setDates(tradeAmountByTime.getDates());
+        timeGroupTradeAmountSum.setTradeAmounts(tradeAmountByTime.getTradeAmounts());
 
         // todo 获取卡聚合统计列表
 
@@ -160,32 +167,57 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     }
 
     @Override
-    public TimeGroupTradeAmountSum getTradeAmountByTime(String caseId, TradeStatisticalAnalysisPreRequest request, TimeTypeRequest timeType) {
+    public TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundAnalysisDateRequest request) {
 
         // 构建查询参数
         QuerySpecialParams query = this.preQueryTransactionStatisticsAnalysis(caseId, request);
-        // 构建  DateSpecificFormat对象
-        Map<String, Object> result = entranceRepository.dateGroupAndSum(query, FundTacticsAnalysisField.TRADING_TIME,
-                AggregateRequestFactory.convertFromTimeType(timeType.name()),
-                FundTacticsAnalysisField.TRANSACTION_MONEY, BankTransactionFlow.class, caseId);
 
-        TimeGroupTradeAmountSum groupTradeAmountSum = new TimeGroupTradeAmountSum();
+        // 构建日期聚合参数
+        AggregationParams dateAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisFundByTimeType(request);
+
+        Map<String, String> mapping = new LinkedHashMap<>();
+
+        aggregationEntityMappingFactory.aggNameForMetricsMapping(mapping, TradeStatisticalAnalysisFundSumByDate.class);
+
+        dateAgg.setMapping(mapping);
+
+        dateAgg.setResultName("fundSumByDate");
+
+        // 构建  DateSpecificFormat对象
+        List<List<Object>> result = entranceRepository.dateGroupAgg(query, dateAgg, BankTransactionFlow.class, caseId);
+
+        TradeStatisticalAnalysisFundSumByDate groupTradeAmountSum = new TradeStatisticalAnalysisFundSumByDate();
+
+        List<Object> dates = result.get(0);
+        List<Object> tradeAmounts = result.get(1);
 
         if (!CollectionUtils.isEmpty(result)) {
+            if (TimeTypeRequest.h == request.getTimeType()) {
 
-            Map<String, Object> resultNew = new LinkedHashMap<>();
-            if (TimeTypeRequest.h == timeType) {
-                // 需要对key 排序
-                result.entrySet().stream()
-                        .sorted(Comparator.comparing(x -> Integer.parseInt(x.getKey())))
-                        .forEachOrdered(x -> resultNew.put(x.getKey(), x.getValue()));
-                groupTradeAmountSum.setDates(resultNew.keySet());
-                List<String> values = resultNew.values().stream().map(Object::toString).collect(Collectors.toList());
-                groupTradeAmountSum.setTradeAmounts(values);
+                Map<String, BigDecimal> map = new LinkedHashMap<>();
+
+                for (int i = 0; i < dates.size(); i++) {
+
+                    String date = dates.get(i).toString();
+                    String curTradeAmount = tradeAmounts.get(i).toString();
+                    if (map.containsKey(date)) {
+                        String OldTradeAmount = map.get(date).toString();
+                        map.put(date, BigDecimalUtil.add(OldTradeAmount, curTradeAmount));
+                    } else {
+                        map.put(date, BigDecimalUtil.value(curTradeAmount));
+                    }
+                }
+                LinkedHashSet<String> sortDates = map.keySet().stream().sorted(Comparator.comparing(Integer::valueOf)).collect(Collectors.toCollection(LinkedHashSet::new));
+                groupTradeAmountSum.setDates(sortDates);
+                List<BigDecimal> sortTradeAmounts = new ArrayList<>();
+                sortDates.forEach(e -> sortTradeAmounts.add(map.get(e)));
+                groupTradeAmountSum.setTradeAmounts(sortTradeAmounts);
             } else {
-                groupTradeAmountSum.setDates(result.keySet());
-                List<String> values = result.values().stream().map(Object::toString).collect(Collectors.toList());
-                groupTradeAmountSum.setTradeAmounts(values);
+                Set<String> dateSets = dates.stream().map(Object::toString).collect(Collectors.toCollection(LinkedHashSet::new));
+                groupTradeAmountSum.setDates(dateSets);
+                List<BigDecimal> funds = tradeAmounts.stream().map(x -> BigDecimalUtil.value(x.toString()))
+                        .collect(Collectors.toList());
+                groupTradeAmountSum.setTradeAmounts(funds);
             }
         }
 
@@ -226,7 +258,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         Map<String, Map<String, String>> aggKeyMapping = new LinkedHashMap<>();
         Map<String, Map<String, String>> entityAggKeyMapping = new LinkedHashMap<>();
         // 获取聚合Key 映射 , 聚合key 与 返回实体属性 映射
-        aggregationEntityMappingFactory.entityAggColMapping(aggKeyMapping, entityAggKeyMapping, TradeStatisticalAnalysisBankFlow.class);
+        aggregationEntityMappingFactory.entityAggMetricsMappingOfLocalOpposite(aggKeyMapping, entityAggKeyMapping, TradeStatisticalAnalysisBankFlow.class);
         Map<String, String> localMapping = aggKeyMapping.get("localMapping");
         Map<String, String> oppositeMapping = aggKeyMapping.get("oppositeMapping");
         Map<String, String> localEntityAggColMapping = entityAggKeyMapping.get("localEntityAggColMapping");
