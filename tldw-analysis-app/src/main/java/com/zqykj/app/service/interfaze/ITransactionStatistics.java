@@ -1,9 +1,10 @@
 package com.zqykj.app.service.interfaze;
 
+import com.zqykj.app.service.vo.fund.FundAnalysisDateRequest;
+import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisFundSumByDate;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
-import com.zqykj.common.response.TimeGroupTradeAmountSum;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
@@ -41,15 +42,8 @@ public interface ITransactionStatistics {
      **/
     HistogramStatisticResponse getHistogramStatistics(String caseId, TradeStatisticalAnalysisPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs);
 
-    /**
-     * 根据年、月、日、时聚合统计，获取折线图展示数据
-     *
-     * @param caseId:   案件编号.
-     * @param request:  前置查询条件请求体.
-     * @param timeType: 交易统计折现图根据日期
-     * @return: com.zqykj.common.response.TimeGroupTradeAmountSum
-     **/
-    TimeGroupTradeAmountSum getTradeAmountByTime(String caseId, TradeStatisticalAnalysisPreRequest request, TimeTypeRequest timeType);
+
+    TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundAnalysisDateRequest request);
 
     /**
      * @param caseId:  案件编号.

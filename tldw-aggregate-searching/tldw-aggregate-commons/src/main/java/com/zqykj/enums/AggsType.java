@@ -48,6 +48,11 @@ public enum AggsType {
     bucket_sort,
 
     /**
+     * 根据分组后的值筛选
+     */
+    bucket_selector,
+
+    /**
      * date histogram
      */
     date_histogram,

@@ -10,13 +10,11 @@ import com.zqykj.common.request.AggregateBuilder;
 import com.zqykj.common.request.DateHistogramBuilder;
 import com.zqykj.common.request.QueryParams;
 import com.zqykj.common.response.ParsedStats;
-import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
 import com.zqykj.core.aggregation.parse.AggregationParser;
 import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
-import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.domain.*;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
@@ -961,8 +959,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
-    public <T> Map<String, Object> dateGroupAndSum(QuerySpecialParams params, String dateField, DateSpecificFormat specificFormat,
-                                                   String sumField, Class<T> clazz, String routing) {
+    public <T> List<List<Object>> dateGroupAgg(QuerySpecialParams params, AggregationParams dateAgg, Class<T> clazz, String routing) {
 
         // 构建查询实例
         Object queryTarget = null;
@@ -975,11 +972,8 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             }
         }
 
-        // 构建聚合参数
-        AggregationParams root =
-                AggregateRequestFactory.createDateGroupAndSum(dateField, specificFormat, sumField);
         // 构建聚合实例
-        Object target = AggregationMappingBuilder.buildAggregation(root);
+        Object target = AggregationMappingBuilder.buildAggregation(dateAgg);
 
         if (null == target) {
             log.error("could not build this aggregation instance");
@@ -1000,10 +994,8 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
-        // TODO 需要将response 解析成map, 方便根据聚合名称取出想要的结果
-        Map<String, Object> result = AggregationParser.parseDateGroupAndSum(response.getAggregations());
-
-        return result;
+        List<List<Object>> results = AggregationParser.parseMulti(response.getAggregations(), dateAgg.getMapping(), false);
+        return results;
     }
 
     public <T> Map<String, List<List<Object>>> compoundQueryAndAgg(QuerySpecialParams query, AggregationParams agg, Class<T> clazz, String routing) {
@@ -1068,13 +1060,13 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         Map<String, List<List<Object>>> result = new HashMap<>();
         // 第一层数据处理
-        List<List<Object>> main = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping());
+        List<List<Object>> main = AggregationParser.parseMulti(response.getAggregations(), agg.getMapping(), true);
         result.put(agg.getResultName(), main);
         // 同级数据处理
         if (!CollectionUtils.isEmpty(agg.getSiblingAggregation())) {
             for (AggregationParams aggregationParams : agg.getSiblingAggregation()) {
                 if (!CollectionUtils.isEmpty(aggregationParams.getMapping())) {
-                    List<List<Object>> siblingAggs = AggregationParser.parseMulti(response.getAggregations(), aggregationParams.getMapping());
+                    List<List<Object>> siblingAggs = AggregationParser.parseMulti(response.getAggregations(), aggregationParams.getMapping(), true);
                     if (!CollectionUtils.isEmpty(siblingAggs)) {
                         result.put(aggregationParams.getResultName(), siblingAggs);
                     }

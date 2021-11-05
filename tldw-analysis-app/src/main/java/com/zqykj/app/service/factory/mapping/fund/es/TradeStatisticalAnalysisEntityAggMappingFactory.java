@@ -3,10 +3,7 @@
  */
 package com.zqykj.app.service.factory.mapping.fund.es;
 
-import com.zqykj.app.service.vo.fund.Key;
-import com.zqykj.app.service.vo.fund.Local;
-import com.zqykj.app.service.vo.fund.Opposite;
-import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
+import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.interfaze.factory.AggregationEntityMappingFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -23,9 +20,9 @@ import java.util.Map;
 public class TradeStatisticalAnalysisEntityAggMappingFactory implements AggregationEntityMappingFactory {
 
     @Override
-    public void entityAggColMapping(Map<String, Map<String, String>> aggKeyMapping,
-                                    Map<String, Map<String, String>> entityAggKeyMapping,
-                                    Class<?> mappingEntity) {
+    public void entityAggMetricsMappingOfLocalOpposite(Map<String, Map<String, String>> aggKeyMapping,
+                                                       Map<String, Map<String, String>> entityAggKeyMapping,
+                                                       Class<?> mappingEntity) {
 
         Map<String, String> localMapping = new LinkedHashMap<>();
         Map<String, String> localEntityAggColMapping = new LinkedHashMap<>();
@@ -59,5 +56,21 @@ public class TradeStatisticalAnalysisEntityAggMappingFactory implements Aggregat
         aggKeyMapping.put("oppositeMapping", oppositeMapping);
         entityAggKeyMapping.put("localEntityAggColMapping", localEntityAggColMapping);
         entityAggKeyMapping.put("oppositeEntityAggColMapping", oppositeEntityAggColMapping);
+    }
+
+    @Override
+    public void aggNameForMetricsMapping(Map<String, String> mapping, Class<?> mappingEntity) {
+
+        ReflectionUtils.doWithFields(mappingEntity, field -> {
+
+            Key key = field.getAnnotation(Key.class);
+
+            Agg agg = field.getAnnotation(Agg.class);
+
+            if (null != key && null != agg) {
+
+                mapping.put(agg.name(), key.name());
+            }
+        });
     }
 }

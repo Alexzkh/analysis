@@ -8,7 +8,9 @@ import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.field.PeopleAreaAnalysisFuzzyQueryField;
 import com.zqykj.app.service.strategy.PeopleAreaAnalysisFieldStrategy;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
+import com.zqykj.app.service.vo.fund.FundAnalysisDateRequest;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
@@ -23,6 +25,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.List;
+
 /**
  * 交易统计分析查询参数构建工厂
  */
@@ -33,8 +37,13 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
     public <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T requestParam, V other) {
 
         // 构建前置查询条件
+        FundAnalysisDateRequest request = (FundAnalysisDateRequest) requestParam;
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        querySpecialParams.addCombiningQueryParams(this.buildCommonQueryParams(requestParam, other));
+        CombinationQueryParams combinationQueryParams = this.buildCommonQueryParams(requestParam, other);
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(cardsFilter(request.getCardNums())));
+        }
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
         return querySpecialParams;
     }
 
@@ -102,6 +111,18 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return combinationQueryParams;
     }
 
+    private CombinationQueryParams cardsFilter(List<String> cardNums) {
+
+        CombinationQueryParams combination = new CombinationQueryParams();
+        combination.setType(ConditionType.should);
+
+        if (!CollectionUtils.isEmpty(cardNums)) {
+            combination.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, cardNums));
+            combination.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, cardNums));
+        }
+        return combination;
+    }
+
     /**
      * <h2> 组装后置过滤参数(复合查询条件) </h2>
      */
@@ -120,8 +141,9 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             secondCombinationOne.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
         }
         // 本方需要的模糊匹配
-        secondCombinationOne.addCommonQueryParams(new CommonQueryParams(assembleLocalFuzzy(request.getKeyword())));
-
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+            secondCombinationOne.addCommonQueryParams(new CommonQueryParams(assembleLocalFuzzy(request.getKeyword())));
+        }
         // 第二层嵌套第二个
         CombinationQueryParams secondCombinationTwo = new CombinationQueryParams();
         secondCombinationTwo.setType(ConditionType.must);
@@ -130,8 +152,9 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             secondCombinationTwo.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getCardNums()));
         }
         // 本方需要的模糊匹配
-        secondCombinationTwo.addCommonQueryParams(new CommonQueryParams(assembleOppositeFuzzy(request.getKeyword())));
-
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+            secondCombinationTwo.addCommonQueryParams(new CommonQueryParams(assembleOppositeFuzzy(request.getKeyword())));
+        }
         // 第一层嵌套 设置 第二层嵌套
         if (tag.equals("local") && request.getSearchType() == 1) {
             firstCombination.addCommonQueryParams(new CommonQueryParams(secondCombinationOne));

@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.common.response;
+package com.zqykj.app.service.vo.fund;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,22 +11,22 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
-/**
- * <h1> 时间类型分组 统计交易金额 </h1>
- */
 @Setter
 @Getter
 @NoArgsConstructor
-public class TimeGroupTradeAmountSum {
+public class TradeStatisticalAnalysisFundSumByDate {
 
     /**
-     * 时间
+     * 日期参数
      */
-
+    @Key(name = "keyAsString")
+    @Agg(name = "date_group")
     private Set<String> dates;
 
     /**
      * 交易金额汇总
      */
+    @Key(name = "valueAsString")
+    @Agg(name = "trade_amount_sum")
     private List<BigDecimal> tradeAmounts;
 }

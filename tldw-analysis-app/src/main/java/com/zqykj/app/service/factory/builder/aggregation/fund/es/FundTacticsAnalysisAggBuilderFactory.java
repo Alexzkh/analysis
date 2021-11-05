@@ -4,13 +4,10 @@
 package com.zqykj.app.service.factory.builder.aggregation.fund.es;
 
 import com.zqykj.app.service.factory.builder.query.fund.es.FundTacticsAnalysisQueryBuilderFactory;
+import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.builder.AggregationParamsBuilders;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
-import com.zqykj.app.service.vo.fund.Local;
-import com.zqykj.app.service.vo.fund.Opposite;
-import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisBankFlow;
-import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.request.PeopleAreaRequest;
 import com.zqykj.parameters.query.CombinationQueryParams;
@@ -21,7 +18,6 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.vo.Direction;
 import com.zqykj.core.aggregation.response.ElasticsearchAggregationResponseAttributes;
-import com.zqykj.core.aggregation.factory.AggregateRequestFactory;
 import com.zqykj.enums.AggsType;
 import com.zqykj.app.service.interfaze.factory.AggregationRequestParamFactory;
 import com.zqykj.parameters.FieldSort;
@@ -29,7 +25,6 @@ import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.FetchSource;
 import com.zqykj.parameters.aggregate.date.DateParams;
-import com.zqykj.parameters.aggregate.date.DateSpecificFormat;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
@@ -298,6 +293,42 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         return root;
     }
 
+    public <T> AggregationParams buildTradeStatisticsAnalysisFundByTimeType(T request) {
+
+        FundAnalysisDateRequest fundAnalysisDateRequest = (FundAnalysisDateRequest) request;
+
+        fundAnalysisDateRequest.setDateField(FundTacticsAnalysisField.TRADING_TIME);
+        fundAnalysisDateRequest.setMetricsField(FundTacticsAnalysisField.TRANSACTION_MONEY);
+        DateParams dateParams = new DateParams();
+        // 设置format
+        if (StringUtils.isNotBlank(fundAnalysisDateRequest.getFormat())) {
+            dateParams.setFormat(fundAnalysisDateRequest.getFormat());
+        } else {
+            dateParams.setFormat(FundAnalysisDateRequest.convertFromTimeType(fundAnalysisDateRequest.getTimeType().name()));
+        }
+        if (fundAnalysisDateRequest.getTimeValue() > 1) {
+            // 代表的是固定间隔 fixed
+            dateParams.addFixedInterval(fundAnalysisDateRequest.getTimeValue(), fundAnalysisDateRequest.getTimeType().name());
+        } else {
+            // 默认间隔是1
+            dateParams.addCalendarInterval(fundAnalysisDateRequest.getTimeType().name());
+        }
+        AggregationParams root = new AggregationParams("date_group", AggsType.date_histogram.name(), fundAnalysisDateRequest.getDateField(), dateParams);
+
+        AggregationParams sub = new AggregationParams("trade_amount_sum", AggsType.sum.name(), fundAnalysisDateRequest.getMetricsField());
+
+        root.setPerSubAggregation(sub);
+
+        Map<String, String> bucketsPathMap = new HashMap<>();
+        bucketsPathMap.put("final_sum", "trade_amount_sum");
+        PipelineAggregationParams pipelineAggregationParams =
+                new PipelineAggregationParams("sum_bucket_selector", AggsType.bucket_selector.name(),
+                        bucketsPathMap, "params.final_sum > 0");
+        root.setPerSubAggregation(pipelineAggregationParams);
+        return root;
+    }
+
+
     @Override
     public <T> AggregationParams createAssetTrendsAnalysisQueryAgg(T request) {
 
@@ -309,19 +340,11 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         String dateAggregateName = "date_histogram_" + FundTacticsAnalysisField.TRADING_TIME;
         mapping.put(dateAggregateName, ElasticsearchAggregationResponseAttributes.keyAsString);
         DateParams dateParams = new DateParams();
-        DateSpecificFormat specificFormat = AggregateRequestFactory.convertFromTimeType(assetTrendsRequest.getDateType());
-        dateParams.setFormat(specificFormat.getFormat());
+        String format = FundAnalysisDateRequest.convertFromTimeType(assetTrendsRequest.getDateType());
+        dateParams.setFormat(format);
         // default
         dateParams.setMinDocCount(1);
-        if (StringUtils.isNotBlank(specificFormat.getFixedInterval()) && StringUtils.isNotBlank(specificFormat.getCalendarInterval())) {
-
-            throw new IllegalArgumentException("Cannot use [fixedInterval] with [calendarInterval] configuration option.");
-        } else if (StringUtils.isNotBlank(specificFormat.getFixedInterval())) {
-            dateParams.setFixedInterval(specificFormat.getFixedInterval());
-        } else {
-
-            dateParams.setCalendarInterval(specificFormat.getCalendarInterval());
-        }
+        dateParams.addCalendarInterval(assetTrendsRequest.getDateType());
         AggregationParams root = new AggregationParams(dateAggregateName, "date_histogram", FundTacticsAnalysisField.TRADING_TIME, dateParams);
         Pagination pagination = new Pagination(assetTrendsRequest.getPaging().getPage(), assetTrendsRequest.getPaging().getPageSize());
 
