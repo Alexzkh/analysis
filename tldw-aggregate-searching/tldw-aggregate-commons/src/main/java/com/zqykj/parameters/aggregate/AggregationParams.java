@@ -46,6 +46,12 @@ public class AggregationParams {
     private String field;
 
     /**
+     * 聚合需要的字段,multiterms需要指定多字段.
+     */
+    @OptionalParam
+    private String[] fields;
+
+    /**
      * 聚合桶数量返回 限制 (若此聚合产生的结果是多个,可以使用此参数做相应限制)
      */
     @OptionalParam
@@ -109,6 +115,12 @@ public class AggregationParams {
             siblingAggregation = new ArrayList<>();
         }
         this.siblingAggregation.add(sibling);
+    }
+
+    public AggregationParams(String name, String type, String[] fields) {
+        this.name = name;
+        this.type = type;
+        this.fields = fields;
     }
 
     public AggregationParams(String name, String type, String field) {
