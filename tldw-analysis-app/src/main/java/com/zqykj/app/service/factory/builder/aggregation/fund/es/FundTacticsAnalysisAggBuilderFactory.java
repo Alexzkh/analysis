@@ -9,6 +9,7 @@ import com.zqykj.builder.AggregationParamsBuilders;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.common.enums.ConditionType;
+import com.zqykj.common.request.FundsSourceAndDestinationStatisticsRequest;
 import com.zqykj.common.request.PeopleAreaRequest;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.util.ReflectionUtils;
@@ -28,6 +29,8 @@ import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.apache.lucene.document.StringField;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -375,6 +378,50 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         root.setMapping(mapping);
         setSubAggregations(root, peopleAreaRequest);
         return root;
+    }
+
+    @Override
+    public <T> AggregationParams buildFundsSourceTopNAgg(T request) {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        FundsSourceAndDestinationStatisticsRequest topNRequest = (FundsSourceAndDestinationStatisticsRequest)request;
+        String name = AggsType.multiTerms.name();
+        String[] fields = new String[]{FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,FundTacticsAnalysisField.OPPOSITE_IDENTITY_CARD};
+        mapping.put(name,ElasticsearchAggregationResponseAttributes.keyAsString);
+        AggregationParams root = new AggregationParams(name ,AggsType.multiTerms.name(),fields);
+
+        Pagination pagination = new Pagination( topNRequest.getQueryRequest().getPaging().getPage(),  topNRequest.getQueryRequest().getPaging().getPageSize());
+        // 默认按交易总金额降序排序(如果没有指定的话)
+        String sortPath;
+        Direction direction = Direction.DESC;
+        if (null == topNRequest.getQueryRequest().getSorting() || (topNRequest.getQueryRequest().getSorting() != null && StringUtils.isBlank(topNRequest.getQueryRequest().getSorting().getProperty()))) {
+            sortPath = DEFAULT_SORTING_FIELD;
+        } else {
+            assert topNRequest.getQueryRequest().getSorting() != null;
+            sortPath = topNRequest.getQueryRequest().getSorting().getProperty();
+        }
+        FieldSort fieldSort = new FieldSort(sortPath, direction.name());
+        addSubAggregationParams(root, pagination, fieldSort, mapping);
+        setSubAggregations(root,mapping);
+        root.setMapping(mapping);
+        return root;
+    }
+
+    public void setSubAggregations(AggregationParams root,Map<String, String> mapping){
+
+        // 计算每个查询卡号的交易总金额
+        String sum = AggsType.sum.name();
+        String tradeMoneySum = FundTacticsAnalysisField.TRANSACTION_MONEY + AGG_NAME_SPLIT + sum;
+        AggregationParams subTradeMoneySumAgg = new AggregationParams(tradeMoneySum, sum, FundTacticsAnalysisField.TRANSACTION_MONEY);
+        mapping.put(tradeMoneySum, ElasticsearchAggregationResponseAttributes.valueAsString);
+        setSubAggregation(root, subTradeMoneySumAgg);
+
+        // 本方聚合需要展示的字段
+        FetchSource oppositeFetchSource = new FetchSource(FundTacticsAnalysisField.tradeStatisticalAnalysisOppositeShowField(), 0, 1);
+        AggregationParams oppositeHits = AggregationParamsBuilders.fieldSource("opposite_hits", oppositeFetchSource);
+        setSubAggregation(root, oppositeHits);
+
+
+
     }
 
     /**

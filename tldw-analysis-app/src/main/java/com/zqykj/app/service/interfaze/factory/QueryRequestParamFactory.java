@@ -29,12 +29,38 @@ public interface QueryRequestParamFactory {
      **/
     <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequest(T request, V other);
 
+    /**
+     * 构建公共查询请求体.
+     *
+     * @param request:   前置请求body.T->TradeStatisticalAnalysisPreRequest
+     * @param parameter: 案件编号
+     * @return: com.zqykj.parameters.query.CombinationQueryParams
+     **/
     <T, V> CombinationQueryParams buildCommonQueryParams(T request, V parameter);
 
-    <T> CombinationQueryParams assemblePostFilter(T request,String tag);
+    /**
+     * 组装后置过滤参数.
+     *
+     * @param request: 交易统计查询请求体 request-->TradeStatisticalAnalysisQueryRequest
+     * @param tag:     本方or对方
+     * @return: com.zqykj.parameters.query.CombinationQueryParams
+     **/
+    <T> CombinationQueryParams assemblePostFilter(T request, String tag);
 
+    /**
+     * 组装本方模糊查询请求参数.
+     *
+     * @param keyword: 模糊查询参数.
+     * @return: com.zqykj.parameters.query.CombinationQueryParams
+     **/
     CombinationQueryParams assembleLocalFuzzy(String keyword);
 
+    /**
+     * 组装对方模糊查询请求参数.
+     *
+     * @param keyword: 模糊查询参数.
+     * @return: com.zqykj.parameters.query.CombinationQueryParams
+     **/
     CombinationQueryParams assembleOppositeFuzzy(String keyword);
 
     /**
@@ -55,4 +81,13 @@ public interface QueryRequestParamFactory {
      * @return: com.zqykj.parameters.query.QuerySpecialParams
      **/
     <T, V> QuerySpecialParams bulidPeopleAreaDetailAnalysisRequest(T requestParam, V parameter);
+
+    /**
+     * 构建资金来源去向es前置查询参数.
+     *
+     * @param requestParam: 资金来源去向body. T -> FundsSourceAndDestinationStatistisRequest.
+     * @param parameter:    案件编号.
+     * @return: com.zqykj.parameters.query.QuerySpecialParams
+     **/
+    <T, V> QuerySpecialParams buildFundsSourceAndDestinationAnalysisResquest(T requestParam, V parameter);
 }

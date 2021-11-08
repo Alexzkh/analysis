@@ -15,10 +15,8 @@ import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.*;
 import com.zqykj.common.response.AssetTrendsResponse;
-import com.zqykj.common.response.TimeGroupTradeAmountSum;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
-import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.archive.PeopleCardInfo;
@@ -34,11 +32,6 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.index.MultiTerms;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -419,4 +412,6 @@ public class OriginEsOperationTest {
 
         System.out.println("删除后总数量: " + afterCount);
     }
+
+
 }

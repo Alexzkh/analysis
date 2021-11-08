@@ -3,6 +3,7 @@ package com.zqykj;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zqykj.app.service.interfaze.IFundsSourceAndDestinationStatistics;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.*;
@@ -113,6 +114,9 @@ public class AggregationTest {
      * "size": 0
      * }
      */
+
+    @Autowired
+    private IFundsSourceAndDestinationStatistics iFundsSourceAndDestinationStatistics;
     @Test
     public void multilayerAggsTest() throws JsonProcessingException {
         AggregateBuilder aggregateBuilder1 = AggregateBuilder.builder()
@@ -541,5 +545,25 @@ public class AggregationTest {
 
 
 
+    @Test
+    public void testFundsSourceAndDestination(){
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest =new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResult(request,"834da065584948318c359b8f5d5fe49d");
+
+
+
+    }
 
 }
