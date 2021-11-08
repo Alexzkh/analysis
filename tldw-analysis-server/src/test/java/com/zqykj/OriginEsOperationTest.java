@@ -34,6 +34,11 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.index.MultiTerms;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -154,22 +159,6 @@ public class OriginEsOperationTest {
         entranceRepository.saveAll(values, "61e9e22a-a6b1-4838-8cea-df8995bc2d8g", BankTransactionFlow.class);
         started.stop();
         log.info("save 10000 entity cost time = {} ms ", started.getTotalTimeMillis());
-    }
-
-    @Test
-    public void testDateHistogramService() {
-
-        // 732c350f-3a2b-46d0-b9cc-0bdcc52fca93
-        TradeStatisticalAnalysisPreRequest request = new TradeStatisticalAnalysisPreRequest();
-        request.setCardNums(Arrays.asList("60138216660037818", "60138216660042019", "60138216660023809"));
-        request.setDateRange(new DateRangeRequest("2019-04-05", "2020-03-13"));
-        request.setFund("0");
-        request.setOperator(AmountOperationSymbol.gte);
-        TimeGroupTradeAmountSum tradeAmountByTime =
-                iTransactionStatistics.getTradeAmountByTime("c94546bb87bd4b32947b576c565a94a2", request, TimeTypeRequest.h);
-
-        log.info(JacksonUtils.toJson(tradeAmountByTime));
-
     }
 
     @Test
@@ -386,6 +375,20 @@ public class OriginEsOperationTest {
         params.setCommonQuery(commonQueryParams);
         long count = entranceRepository.count("7013cc43232f4127b6c95da0bf26e925", BankTransactionFlow.class, params);
         System.out.println(count);
+    }
+
+    @Test
+    public void testFindAll() {
+
+        QuerySpecialParams params = new QuerySpecialParams();
+
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.must);
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term("person_name", "于*彬"));
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term("bank_card_no", "622849**89510105777-转存"));
+
+        params.addCombiningQueryParams(combinationQueryParams);
+        Iterable<PeopleCardInfo> all = entranceRepository.findAll(PeopleCardInfo.class, null, params);
     }
 
 

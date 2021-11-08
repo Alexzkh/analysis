@@ -194,7 +194,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         if (!CollectionUtils.isEmpty(result)) {
             if (TimeTypeRequest.h == request.getTimeType()) {
 
-                Map<String, BigDecimal> map = new LinkedHashMap<>();
+                Map<String, BigDecimal> map = new HashMap<>();
 
                 for (int i = 0; i < dates.size(); i++) {
 

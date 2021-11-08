@@ -8,6 +8,7 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.parameters.query.*;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.query.QueryNameForBeanClass;
+import com.zqykj.util.JacksonUtils;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchException;
@@ -69,7 +70,12 @@ public class QueryMappingBuilder {
             if (null != params.getCommonQuery() && !CollectionUtils.isEmpty(params.getCombiningQuery())) {
                 throw new IllegalArgumentException("Cannot use [commonQuery] with [combiningQuery] configuration option.");
             }
-            return buildingQueryViaField(params);
+            Object object = buildingQueryViaField(params);
+
+            if (log.isInfoEnabled()) {
+                log.info("query dsl = {}", object.toString());
+            }
+            return object;
         } catch (Exception e) {
             log.error("could not build dsl query, error msg = {}", e.getMessage());
             throw new ElasticsearchException("could not build dsl query", e);
