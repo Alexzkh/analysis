@@ -38,6 +38,11 @@ public enum AggsType {
     terms,
 
     /**
+     * group by多字段
+     * */
+    multiTerms,
+
+    /**
      * bucket_script
      */
     bucket_script,

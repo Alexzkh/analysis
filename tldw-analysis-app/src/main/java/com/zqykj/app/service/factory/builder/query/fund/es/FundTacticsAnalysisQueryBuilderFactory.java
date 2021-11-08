@@ -266,4 +266,24 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         }
         return querySpecialParams;
     }
+
+    @Override
+    public <T, V> QuerySpecialParams buildFundsSourceAndDestinationAnalysisResquest(T requestParam, V parameter) {
+
+        FundsSourceAndDestinationStatisticsRequest fundsSourceAndDestinationStatisticsRequest =
+                (FundsSourceAndDestinationStatisticsRequest) requestParam;
+        String caseId = parameter.toString();
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.must);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, FundTacticsAnalysisField.CASE_ID, caseId));
+
+        // 指定证件号码,添加证件号码过滤条件
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
+                fundsSourceAndDestinationStatisticsRequest.getIdentityCard()));
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        return querySpecialParams;
+    }
 }

@@ -165,10 +165,10 @@ public class OriginEsOperationTest {
         request.setDateRange(new DateRangeRequest("2019-04-05", "2020-03-13"));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
-        TimeGroupTradeAmountSum tradeAmountByTime =
-                iTransactionStatistics.getTradeAmountByTime("c94546bb87bd4b32947b576c565a94a2", request, TimeTypeRequest.h);
-
-        log.info(JacksonUtils.toJson(tradeAmountByTime));
+//        TimeGroupTradeAmountSum tradeAmountByTime =
+//                iTransactionStatistics.getTradeAmountByTime("c94546bb87bd4b32947b576c565a94a2", request, TimeTypeRequest.h);
+//
+//        log.info(JacksonUtils.toJson(tradeAmountByTime));
 
     }
 
@@ -416,4 +416,6 @@ public class OriginEsOperationTest {
 
         System.out.println("删除后总数量: " + afterCount);
     }
+
+
 }

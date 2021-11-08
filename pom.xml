@@ -34,6 +34,7 @@
         <compiler.source>1.8</compiler.source>
         <compiler.target>1.8</compiler.target>
         <spring-cloud.version>2020.0.1</spring-cloud.version>
+        <elasticsearch.version>7.15.0</elasticsearch.version>
     </properties>
 
 
@@ -53,6 +54,7 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+
             </dependency>
         </dependencies>
     </dependencyManagement>
