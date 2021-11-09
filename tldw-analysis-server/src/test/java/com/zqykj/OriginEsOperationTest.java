@@ -413,5 +413,22 @@ public class OriginEsOperationTest {
         System.out.println("删除后总数量: " + afterCount);
     }
 
+    @Test
+    public void saveAll() {
 
+        List<Map<String, ?>> maps = new ArrayList<>();
+
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("trading_time", new Date());
+        map.put("id", "772221");
+
+        System.out.println(map.get("trading_time"));
+
+        maps.add(map);
+
+        entranceRepository.saveAll(maps, "123123", BankTransactionFlow.class);
+
+        System.out.println(map.get("trading_time"));
+    }
 }

@@ -9,6 +9,8 @@ import com.zqykj.parameters.annotation.NotResolve;
 import com.zqykj.parameters.annotation.OptionalParam;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.*;
+import org.elasticsearch.search.aggregations.Aggregator;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -55,7 +57,13 @@ public class AggregationParams {
      * 聚合桶数量返回 限制 (若此聚合产生的结果是多个,可以使用此参数做相应限制)
      */
     @OptionalParam
-    private int size = 1000;
+    private int size = 10_000;
+
+    /**
+     * 子聚合结果的收集方式 (DEPTH_FIRST / BREADTH_FIRST)
+     */
+    @OptionalParam
+    private String collectMode;
 
     /**
      * 需要包含的数据集
@@ -106,6 +114,7 @@ public class AggregationParams {
     /**
      * <h2> 对应一个功能查询结果名称描述(eg. 一系列的聚合操作) </h2>
      */
+    @NotResolve
     private String resultName;
 
     public void addSiblingAggregation(AggregationParams sibling) {

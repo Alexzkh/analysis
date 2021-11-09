@@ -106,6 +106,11 @@ public interface FundTacticsAnalysisField {
      */
     String AREA_FIELD = "area.area_wildcard";
 
+    /**
+     * 交易金额 {@link com.zqykj.domain.bank.BankTransactionRecord}
+     */
+    String CHANGE_MONEY = "change_amount";
+
     // 交易统计分析结果本方需要展示的字段
     static String[] tradeStatisticalAnalysisLocalShowField() {
 

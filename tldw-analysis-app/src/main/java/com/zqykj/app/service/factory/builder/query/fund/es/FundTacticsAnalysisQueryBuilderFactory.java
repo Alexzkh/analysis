@@ -74,6 +74,35 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
+    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other) {
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) requestParam;
+        // 获取前置请求
+        TradeStatisticalAnalysisPreRequest preRequest = request.convertFrom(request);
+        CombinationQueryParams combinationQueryParams = this.buildCommonQueryParams(preRequest, other);
+
+        CombinationQueryParams cardNumsAndFuzzyQuery = new CombinationQueryParams();
+
+        cardNumsAndFuzzyQuery.setType(ConditionType.must);
+        // 本方查询卡号(有可能是查询全部,那么卡号不为空的时候才能选用此条件)
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+            cardNumsAndFuzzyQuery.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
+        }
+        // 本方需要的模糊匹配
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+            CombinationQueryParams localFuzzy = assembleLocalFuzzy(request.getKeyword());
+            localFuzzy.setDefaultQueryParam(new DefaultQueryParam());
+            cardNumsAndFuzzyQuery.addCommonQueryParams(new CommonQueryParams(localFuzzy));
+        }
+
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(cardNumsAndFuzzyQuery));
+
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+
+        return querySpecialParams;
+    }
+
     /**
      * <h2> 通用前置查询条件 </h2>
      */
@@ -95,7 +124,6 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
                         FundTacticsAnalysisField.OPPOSITE_IDENTITY_CARD));
             }
         }
-
         // 指定日期范围
         if (null != request.getDateRange() && StringUtils.isNotBlank(request.getDateRange().getStart())
                 & StringUtils.isNotBlank(request.getDateRange().getEnd())
@@ -103,8 +131,13 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.range, FundTacticsAnalysisField.TRADING_TIME, new DateRange(request.getDateRange().getStart(),
                     request.getDateRange().getEnd())));
         }
+        String tradeMoneyField = FundTacticsAnalysisField.TRANSACTION_MONEY;
+        //
+        if (request.getSearchType() == 0) {
+            tradeMoneyField = FundTacticsAnalysisField.CHANGE_MONEY;
+        }
         // 指定交易金额
-        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.range, FundTacticsAnalysisField.TRANSACTION_MONEY, request.getFund(),
+        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.range, tradeMoneyField, request.getFund(),
                 QueryOperator.of(request.getOperator().name())
         ));
         // 添加组合查询

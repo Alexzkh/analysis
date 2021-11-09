@@ -280,7 +280,9 @@ public class QueryMappingBuilder {
             methodOptional.ifPresent(method -> {
                 org.springframework.util.ReflectionUtils.makeAccessible(field);
                 Object value = org.springframework.util.ReflectionUtils.getField(field, dateRange);
-                org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
+                if (null != value) {
+                    org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
+                }
             });
         });
     }

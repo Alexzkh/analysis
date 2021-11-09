@@ -16,6 +16,7 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -215,11 +216,8 @@ public class TradeStatisticalAnalysisBankFlow {
         BigDecimal payOutAmount = new BigDecimal("0.00");
         // 交易净和
         BigDecimal tradeNet = new BigDecimal("0.00");
-        // 最早交易时间
         long minDate = 0L;
         long maxDate = 0L;
-        // 最晚交易时间
-
         for (TradeStatisticalAnalysisBankFlow analysisBankFlow : bankFlowList) {
             tradeTotalTimes += analysisBankFlow.getTradeTotalTimes();
             tradeTotalAmount = BigDecimalUtil.add(tradeTotalAmount, analysisBankFlow.getTradeTotalAmount());
@@ -228,16 +226,22 @@ public class TradeStatisticalAnalysisBankFlow {
             payOutTimes += analysisBankFlow.getPayOutTimes();
             payOutAmount = BigDecimalUtil.add(payOutAmount, analysisBankFlow.getPayOutAmount());
             tradeNet = BigDecimalUtil.add(tradeNet, analysisBankFlow.getTradeNet());
-            long nextDate = BigDecimalUtil.longValue(analysisBankFlow.getEarliestTradingTime());
-            if (minDate == 0L) {
-                minDate = nextDate;
+
+            long curMinDate = BigDecimalUtil.longValue(analysisBankFlow.getEarliestTradingTime());
+            long curMaxDate = BigDecimalUtil.longValue(analysisBankFlow.getLatestTradingTime());
+            if (minDate == 0L && maxDate == 0L) {
+
+                minDate = curMinDate;
+                maxDate = curMaxDate;
             } else {
-                if (minDate > BigDecimalUtil.longValue(analysisBankFlow.getEarliestTradingTime())) {
-                    minDate = nextDate;
+
+                if (curMinDate < minDate) {
+
+                    minDate = curMinDate;
                 }
-            }
-            if (nextDate > maxDate) {
-                maxDate = nextDate;
+                if (curMaxDate > maxDate) {
+                    maxDate = curMaxDate;
+                }
             }
         }
         TradeStatisticalAnalysisBankFlow analysisBankFlow = bankFlowList.get(0);
@@ -263,12 +267,19 @@ public class TradeStatisticalAnalysisBankFlow {
     }
 
     public static void calculationDate(TradeStatisticalAnalysisBankFlow bankFlow, long minDate, long maxDate) {
-        // 由于es 的时区问题(es 是0时区设置的),需要对最早和最晚日期分别加上 +8小时
+
         Instant minInstant = Instant.ofEpochMilli(minDate);
-        String minTime = LocalDateTime.ofInstant(minInstant, ZoneOffset.ofHours(8)).format(format);
+        String minTime = LocalDateTime.ofInstant(minInstant, ZoneOffset.ofHours(0)).format(format);
         Instant maxInstant = Instant.ofEpochMilli(maxDate);
-        String maxTime = LocalDateTime.ofInstant(maxInstant, ZoneOffset.ofHours(8)).format(format);
+        String maxTime = LocalDateTime.ofInstant(maxInstant, ZoneOffset.ofHours(0)).format(format);
         bankFlow.setEarliestTradingTime(minTime);
         bankFlow.setLatestTradingTime(maxTime);
+    }
+
+    public static void amountReservedTwo(TradeStatisticalAnalysisBankFlow bankFlow) {
+        bankFlow.setTradeTotalAmount(BigDecimalUtil.value(bankFlow.getTradeTotalAmount()));
+        bankFlow.setCreditsAmount(BigDecimalUtil.value(bankFlow.getCreditsAmount()));
+        bankFlow.setPayOutAmount(BigDecimalUtil.value(bankFlow.getPayOutAmount()));
+        bankFlow.setTradeNet(BigDecimalUtil.value(bankFlow.getTradeNet()));
     }
 }

@@ -18,12 +18,12 @@ import com.zqykj.app.service.interfaze.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.interfaze.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.interfaze.factory.AggregationResultEntityParseFactory;
 import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
+import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
@@ -61,7 +61,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     public static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @Value("${buckets.page.init_size}")
+    @Value("${buckets.page.initSize}")
     private int initGroupSize;
 
     private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
@@ -238,66 +238,71 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         }
         queryRequest.setGroupInitSize(initGroupSize);
         // 构建交易统计结果查询
-        QuerySpecialParams query = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequest(queryRequest, caseId);
+        QuerySpecialParams query;
         // 构建交易统计分析聚合查询
-        AggregationParams localQuery;
-        AggregationParams oppositeQuery;
-        AggregationParams filterTotal;
-        // 本方
-        localQuery = aggregationRequestParamFactory.buildTradeStatisticsAnalysisQueryCardAgg(queryRequest);
-
+        AggregationParams localAgg;
+        AggregationParams oppositeAgg;
+        Class<?> indexClass = BankTransactionRecord.class;
         if (!CollectionUtils.isEmpty(queryRequest.getCardNums())) {
-            // 对方
-            oppositeQuery = aggregationRequestParamFactory.buildTradeStatisticsAnalysisOppositeCardAgg(queryRequest);
-            // 设置同级查询(本方 与 对方)
-            localQuery.setSiblingAggregation(oppositeQuery);
-        } else {
 
-            oppositeQuery = new AggregationParams();
+            // 这里如果用户明确提供了一组调单卡号集合,此时需要查询表BankTransactionRecord(该表基于现实中交易存储数据,一条交易流水,A手机汇款/收款, B手机收款/汇款)
+            localAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisByMainCards(queryRequest);
+            query = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(queryRequest, caseId);
+        } else {
+            // 本方
+            indexClass = BankTransactionFlow.class;
+            localAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisQueryCardAgg(queryRequest);
+            query = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequest(queryRequest, caseId);
         }
+        oppositeAgg = new AggregationParams();
         Map<String, Map<String, String>> aggKeyMapping = new LinkedHashMap<>();
         Map<String, Map<String, String>> entityAggKeyMapping = new LinkedHashMap<>();
         // 获取聚合Key 映射 , 聚合key 与 返回实体属性 映射
         aggregationEntityMappingFactory.entityAggMetricsMappingOfLocalOpposite(aggKeyMapping, entityAggKeyMapping, TradeStatisticalAnalysisBankFlow.class);
         Map<String, String> localMapping = aggKeyMapping.get("localMapping");
-        Map<String, String> oppositeMapping = aggKeyMapping.get("oppositeMapping");
         Map<String, String> localEntityAggColMapping = entityAggKeyMapping.get("localEntityAggColMapping");
-        Map<String, String> oppositeEntityAggColMapping = entityAggKeyMapping.get("oppositeEntityAggColMapping");
-
-        localQuery.setMapping(localMapping);
-        oppositeQuery.setMapping(oppositeMapping);
-        localQuery.setEntityAggColMapping(localEntityAggColMapping);
-        oppositeQuery.setEntityAggColMapping(oppositeEntityAggColMapping);
+        localAgg.setMapping(localMapping);
+        localAgg.setEntityAggColMapping(localEntityAggColMapping);
+        localAgg.setResultName("local");
         // 计算总量
-        filterTotal = aggregationRequestParamFactory.buildTradeStatisticsAnalysisTotalAgg(queryRequest);
+        AggregationParams filterTotal = aggregationRequestParamFactory.buildTradeStatisticsAnalysisTotalAgg(queryRequest);
         Map<String, String> totalMap = new HashMap<>();
         totalMap.put("cardinality_total", "value");
         filterTotal.setMapping(totalMap);
         filterTotal.setResultName("total");
-        localQuery.addSiblingAggregation(filterTotal);
-        localQuery.setResultName("local");
-        oppositeQuery.setResultName("opposite");
+        localAgg.addSiblingAggregation(filterTotal);
 
-        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(query, localQuery, BankTransactionFlow.class, caseId);
+        if (!CollectionUtils.isEmpty(queryRequest.getCardNums())) {
 
-        List<String> localTitles = new ArrayList<>(localQuery.getMapping().keySet());
-        List<String> oppositeTitles = new ArrayList<>(oppositeQuery.getMapping().keySet());
+            localMapping.put("local_min_date", "valueAsString");
+            localMapping.put("local_max_date", "valueAsString");
+        }
+        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(query, localAgg, indexClass, caseId);
+
+        List<String> localTitles = new ArrayList<>(localAgg.getMapping().keySet());
         // 本方实体属性映射
         List<Map<String, Object>> localEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                aggregationResultEntityParseFactory.getColValueMapList(result.get(localQuery.getResultName()), localTitles),
-                localQuery.getEntityAggColMapping());
+                aggregationResultEntityParseFactory.getColValueMapList(result.get(localAgg.getResultName()), localTitles),
+                localAgg.getEntityAggColMapping());
         // 本方实体数据组装
         List<TradeStatisticalAnalysisBankFlow> localResults = JacksonUtils.parse(JacksonUtils.toJson(localEntityMapping), new TypeReference<List<TradeStatisticalAnalysisBankFlow>>() {
         });
-
+        // 第一个桶聚合返回的调单卡号集合
         List<String> mainCards = localResults.stream().map(TradeStatisticalAnalysisBankFlow::getTradeCard).collect(Collectors.toList());
-        List<List<Object>> oppositeList = new ArrayList<>();
-        if (CollectionUtils.isEmpty(queryRequest.getCardNums()) || StringUtils.isBlank(queryRequest.getIdentityCard())) {
+        // 最终数据返回
+        List<TradeStatisticalAnalysisBankFlow> finalResult = new ArrayList<>();
+        // 查询条件为全部的时候,需要计算 对方卡号存在 调单的情况
+        if (queryRequest.getSearchType() == 1 || CollectionUtils.isEmpty(queryRequest.getCardNums())) {
 
             // 全部查询条件的时候, 第二个桶的调单卡号集合 是基于第一个桶统计出的调单集合为基础
-
+            // 因为第二个桶统计的是调档再对方卡号中的情况, 相当于 对方卡号 在所有的本方查询卡号之内的情况
             if (!CollectionUtils.isEmpty(mainCards)) {
-
+                Map<String, String> oppositeMapping = aggKeyMapping.get("oppositeMapping");
+                Map<String, String> oppositeEntityAggColMapping = entityAggKeyMapping.get("oppositeEntityAggColMapping");
+                oppositeAgg.setMapping(oppositeMapping);
+                oppositeAgg.setEntityAggColMapping(oppositeEntityAggColMapping);
+                oppositeAgg.setResultName("opposite");
+                List<String> oppositeTitles = new ArrayList<>(oppositeAgg.getMapping().keySet());
                 // 重新设置查询卡号
                 queryRequest.setSearchTag("opposite");
                 queryRequest.setCardNums(mainCards);
@@ -307,42 +312,47 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
                 oppositeQueryNew.setMapping(oppositeMapping);
                 oppositeQueryNew.setEntityAggColMapping(oppositeEntityAggColMapping);
                 oppositeQueryNew.setResultName("opposite");
-                Map<String, List<List<Object>>> oppositeResult = entranceRepository.compoundQueryAndAgg(queryNew, oppositeQueryNew, BankTransactionFlow.class, caseId);
-                oppositeList = oppositeResult.get(oppositeQueryNew.getResultName());
+                Map<String, List<List<Object>>> oppositeResult = entranceRepository.compoundQueryAndAgg(queryNew, oppositeQueryNew, indexClass, caseId);
+                List<List<Object>> oppositeList = oppositeResult.get(oppositeQueryNew.getResultName());
+                // 对方实体属性映射
+                List<Map<String, Object>> oppositeEntityMapping = aggregationResultEntityParseFactory.convertEntity(
+                        aggregationResultEntityParseFactory.getColValueMapList(oppositeList, oppositeTitles),
+                        oppositeAgg.getEntityAggColMapping());
+
+                // 对方实体数据组装
+                List<TradeStatisticalAnalysisBankFlow> oppositeResults = JacksonUtils.parse(JacksonUtils.toJson(oppositeEntityMapping), new TypeReference<List<TradeStatisticalAnalysisBankFlow>>() {
+                });
+                if (!CollectionUtils.isEmpty(oppositeResults)) {
+                    // 如果分析的是全部,需要合并本方 与 对方实体 (并且内存进行分页和排序)
+                    localResults.addAll(oppositeResults);
+                }
+
+                // 根据交易卡号进行分组
+                Map<String, List<TradeStatisticalAnalysisBankFlow>> merge = localResults.stream()
+                        .collect(Collectors.groupingBy(TradeStatisticalAnalysisBankFlow::getTradeCard));
+                // 处理 mergeResult 的value 大于1的情况
+                List<TradeStatisticalAnalysisBankFlow> mergeResult = new ArrayList<>();
+                merge.forEach((key, value) -> {
+                    if (value.size() > 1) {
+                        // 需要合并几个实体的属性
+                        mergeResult.add(TradeStatisticalAnalysisBankFlow.mergeTradeStatisticalAnalysisBankFlow(value));
+                    } else {
+                        TradeStatisticalAnalysisBankFlow analysisBankFlow = value.get(0);
+                        TradeStatisticalAnalysisBankFlow.calculationDate(analysisBankFlow, BigDecimalUtil.longValue(analysisBankFlow.getEarliestTradingTime()),
+                                BigDecimalUtil.longValue(analysisBankFlow.getLatestTradingTime()));
+                        TradeStatisticalAnalysisBankFlow.amountReservedTwo(analysisBankFlow);
+                        mergeResult.addAll(value);
+                    }
+                });
+                // 内存排序、分页
+                finalResult = TradeStatisticalAnalysisBankFlow.sortingAndPageOnMemory(mergeResult, queryRequest.getSortRequest(), queryRequest.getPageRequest());
             }
         } else {
-
-            oppositeList = result.get(oppositeQuery.getResultName());
+            finalResult = localResults;
+            // 处理日期
+            // 金额自动保留2位
+            finalResult.forEach(TradeStatisticalAnalysisBankFlow::amountReservedTwo);
         }
-        // 对方实体属性映射
-        List<Map<String, Object>> oppositeEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                aggregationResultEntityParseFactory.getColValueMapList(oppositeList, oppositeTitles),
-                oppositeQuery.getEntityAggColMapping());
-
-        // 对方实体数据组装
-        List<TradeStatisticalAnalysisBankFlow> oppositeResults = JacksonUtils.parse(JacksonUtils.toJson(oppositeEntityMapping), new TypeReference<List<TradeStatisticalAnalysisBankFlow>>() {
-        });
-        // 合并本方 与 对方实体 (并且内存进行分页和排序)
-        // 如果分析的是全部,需要对
-        localResults.addAll(oppositeResults);
-        // 根据交易卡号进行分组
-        Map<String, List<TradeStatisticalAnalysisBankFlow>> merge = localResults.stream()
-                .collect(Collectors.groupingBy(TradeStatisticalAnalysisBankFlow::getTradeCard));
-        // 处理 mergeResult 的value 大于1的情况
-        List<TradeStatisticalAnalysisBankFlow> mergeResult = new ArrayList<>();
-        merge.forEach((key, value) -> {
-            if (value.size() > 1) {
-                // 需要合并几个实体的属性
-                mergeResult.add(TradeStatisticalAnalysisBankFlow.mergeTradeStatisticalAnalysisBankFlow(value));
-            } else {
-                TradeStatisticalAnalysisBankFlow analysisBankFlow = value.get(0);
-                TradeStatisticalAnalysisBankFlow.calculationDate(analysisBankFlow, BigDecimalUtil.longValue(analysisBankFlow.getEarliestTradingTime()),
-                        BigDecimalUtil.longValue(analysisBankFlow.getLatestTradingTime()));
-                mergeResult.addAll(value);
-            }
-        });
-        // 内存排序、分页
-        List<TradeStatisticalAnalysisBankFlow> finalResult = TradeStatisticalAnalysisBankFlow.sortingAndPageOnMemory(mergeResult, queryRequest.getSortRequest(), queryRequest.getPageRequest());
         TradeStatisticalAnalysisQueryResponse response = new TradeStatisticalAnalysisQueryResponse();
         // 总数量
         long total = (long) result.get("total").get(0).get(0);

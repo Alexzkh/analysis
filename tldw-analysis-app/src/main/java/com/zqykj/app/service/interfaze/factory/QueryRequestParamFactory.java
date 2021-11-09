@@ -29,6 +29,8 @@ public interface QueryRequestParamFactory {
      **/
     <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequest(T request, V other);
 
+    <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other);
+
     /**
      * 构建公共查询请求体.
      *

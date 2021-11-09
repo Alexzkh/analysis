@@ -21,9 +21,9 @@ public class DateRange {
 
     private Object to;
 
-    private String format = "yyyy-MM-dd";
+    private String format = "yyyy-MM-dd HH:mm:ss";
 
-//    private String timeZone = "+08:00";
+    private String timeZone;
 
     public DateRange(Object from, Object to) {
         this.from = from;
