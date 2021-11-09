@@ -50,7 +50,7 @@ public class DateParams {
     private Object missing;
 
     @DateTimeZoneParam
-    private String timeZone = "+08:00";
+    private String timeZone;
 
 
     public void addCalendarInterval(String timeType) {

@@ -16,6 +16,10 @@ public class PageRequest extends AbstractPageRequest {
 
     private Sort sort;
 
+    /**
+     * @param page zero-based page index, must not be negative.
+     * @param size the size of the page to be returned, must be greater than 0.
+     */
     public PageRequest(int page, int size, Sort sort) {
         super(page, size);
 

@@ -35,6 +35,11 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams buildTradeStatisticsAnalysisTotalAgg(T request);
 
     /**
+     * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合) 、全部查询不适用此方法 </h2>
+     */
+    <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request);
+
+    /**
      * 构建获取交易统计分析根据时间类型获取结果的聚合参数.
      *
      * @param request: 交易统计按时间类型统计请求体

@@ -985,7 +985,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             searchRequest.routing(routing);
         }
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.size(10);
+        sourceBuilder.size(0);
         // 聚合查询
         sourceBuilder.aggregation((AggregationBuilder) target);
         // 普通查询
@@ -1028,17 +1028,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 
-        // 设置默认参数
-        if (null != query) {
-
-            // 设置分页参数
-            if (null != query.getPagination()) {
-
-                Pagination pagination = query.getPagination();
-                sourceBuilder.from(pagination.getFrom());
-                sourceBuilder.size(pagination.getSize());
-            }
-        }
         // 聚合查询
         if (null != aggTarget) {
             sourceBuilder.aggregation((AggregationBuilder) aggTarget);

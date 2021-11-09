@@ -2,19 +2,10 @@ package com.zqykj.domain.bank;
 
 
 import com.zqykj.annotations.*;
-import com.zqykj.domain.graph.EntityGraph;
-import com.zqykj.domain.graph.LinkGraph;
 import lombok.Data;
 
 import java.util.Date;
-import java.util.List;
 
-/**
- * @ClassName Transactions
- * @Description 银行交易流水
- * @Author zhangkehou
- * @Date 2021/8/20 13:50
- */
 @Data
 @Document(indexName = "bank_transaction_record", shards = 3)
 public class BankTransactionRecord {
@@ -57,11 +48,6 @@ public class BankTransactionRecord {
     @Field(type = FieldType.Long, name = "resource_key_id")
     private String resourceKeyId;
 
-    /**
-     * 本方银行名称
-     * fields 多字段类型在 mapping 创建之后, 是可以继续更新的(另外Object 对象也可以添加新的属性, 字段还可以添加 ignore_above属性)
-     * 以上这种三种情况 , 不用着急reindex更新索引，直接更新Mapping也是可以的
-     */
 
     /**
      * 本方银行名称
@@ -120,7 +106,7 @@ public class BankTransactionRecord {
      * 交易对方证件号码
      */
     @MultiField(
-            mainField =  @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
             otherFields = {@InnerField(suffix = "opposite_certificate_number_wildcard", type = FieldType.Wildcard)}
     )
     private String transactionOppositeCertificateNumber;
@@ -182,7 +168,21 @@ public class BankTransactionRecord {
     @Field(type = FieldType.Keyword, name = "transaction_success_flag")
     private String transactionSuccessFlag;
 
+    /**
+     * 变动金额(代表交易记录中交易金额, 与字段 transactionMoney 不同的是,它不会区分正负号)
+     */
+    @Field(type = FieldType.Double, name = "change_amount")
+    private Double changeAmount;
 
+    /**
+     * 组合卡号 (查询卡号-对方卡号)
+     */
+    @Field(type = FieldType.Keyword, name = "merge_card")
+    private String mergeCard;
 
-
+    /**
+     * 组合证件号码 (本方证件号码-对方证件号码)
+     */
+    @Field(type = FieldType.Keyword, name = "merge_identity_card")
+    private String mergeIdentityCard;
 }
