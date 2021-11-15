@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
  * </h1>
  */
 @Slf4j
+@SuppressWarnings("all")
 public abstract class ClassNameForBeanClass {
 
 
