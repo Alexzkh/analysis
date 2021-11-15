@@ -334,10 +334,15 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 由于无法一次性获取全部调单卡号, 因此批量获取调单卡号集合 // TODO 暂定为每次5000-10000
         boolean flag = true;
         List<TradeStatisticalAnalysisResult> allResults = new ArrayList<>();
+        int page = request.getPageRequest().getPage();
+        int size = request.getPageRequest().getPageSize();
+        int from = 0;
         while (flag) {
 
             // TODO 当allResults 大于等于 一定量的时候,为了避免内存溢出(或者需要调正JVM的话),需要设置一个阈值
             // 循环获取调单卡号集合
+            request.getPageRequest().setPage(from);
+            request.getPageRequest().setPageSize(MAIN_CARD_SIZE);
             List<String> mainCards = fundTacticsAnalysis.getAllMainCardsViaPageable(request, caseId);
             if (mainCards.size() < MAIN_CARD_SIZE) {
                 flag = false;
@@ -348,7 +353,11 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
             Map<String, Object> map = statisticsAnalysisResultViaChosenMainCards(request, caseId);
             List<TradeStatisticalAnalysisResult> results = (List<TradeStatisticalAnalysisResult>) map.get("result");
             allResults.addAll(results);
+            from += MAIN_CARD_SIZE;
         }
+        // 重新设置page 和 size
+        request.getPageRequest().setPage(page);
+        request.getPageRequest().setPageSize(size);
         // 进行内存的合并与排序
         Map<String, List<TradeStatisticalAnalysisResult>> groupResult = allResults.stream().collect(Collectors.groupingBy(TradeStatisticalAnalysisResult::getTradeCard));
         // 最终合并的结果

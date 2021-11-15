@@ -36,6 +36,4 @@ public class FundTacticsPartGeneralRequest {
     private int groupInitPage = 0;
 
     private int groupInitSize = 60000;
-
-    private String searchTag = "local";
 }
