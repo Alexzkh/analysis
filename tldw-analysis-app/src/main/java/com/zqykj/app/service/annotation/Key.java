@@ -1,15 +1,16 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.vo.fund;
+package com.zqykj.app.service.annotation;
 
 import java.lang.annotation.*;
 
 /**
- * <h1> 用于标记日期字符串类型 </h1>
+ * <h1> 聚合结果中的属性 </h1>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 @Documented
-public @interface DateString {
+public @interface Key {
+    String name() default "";
 }

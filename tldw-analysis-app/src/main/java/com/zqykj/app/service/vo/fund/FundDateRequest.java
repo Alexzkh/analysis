@@ -3,7 +3,6 @@
  */
 package com.zqykj.app.service.vo.fund;
 
-import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.vo.TimeTypeRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,7 +16,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FundAnalysisDateRequest extends TradeStatisticalAnalysisPreRequest {
+public class FundDateRequest extends FundTacticsPartGeneralPreRequest {
 
     /**
      * 时间类型

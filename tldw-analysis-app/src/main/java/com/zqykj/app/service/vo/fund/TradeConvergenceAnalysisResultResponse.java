@@ -11,16 +11,15 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * <h1> 交易统计分析查询返回 </h1>
+ * <h1> 交易汇聚分析结果返回 </h1>
  */
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TradeStatisticalAnalysisQueryResponse {
+public class TradeConvergenceAnalysisResultResponse {
 
-    // 交易统计分析查询内容
-    private List<TradeStatisticalAnalysisBankFlow> content;
+    private List<TradeConvergenceAnalysisResult> content;
 
     // 每页显示条数
     private int size;

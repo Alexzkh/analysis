@@ -1,16 +1,14 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.vo.fund;
+package com.zqykj.app.service.annotation;
 
 import java.lang.annotation.*;
 
-/**
- * <h1> 聚合结果中的属性 </h1>
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 @Documented
-public @interface Key {
+public @interface Agg {
+
     String name() default "";
 }

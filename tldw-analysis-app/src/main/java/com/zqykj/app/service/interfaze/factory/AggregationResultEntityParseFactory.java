@@ -11,7 +11,5 @@ import java.util.Map;
  */
 public interface AggregationResultEntityParseFactory {
 
-    List<Map<String, Object>> convertEntity(List<Map<String, Object>> aggColValue, Map<String, String> entityPropertyAggColMapping);
-
-    List<Map<String, Object>> getColValueMapList(List<List<Object>> values, List<String> titles);
+    List<Map<String, Object>> convertEntity(List<List<Object>> values, List<String> titles, Class<?> entity);
 }

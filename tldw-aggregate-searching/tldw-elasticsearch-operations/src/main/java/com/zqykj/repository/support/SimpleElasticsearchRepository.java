@@ -1045,6 +1045,8 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             // 聚合查询不需要 带出具体数据
             sourceBuilder.size(0);
         }
+        // 返回数据中需要哪些字段、不需要哪些字段
+        sourceBuilder.fetchSource(query.getIncludeFields(), query.getExcludeFields());
         searchRequest.source(sourceBuilder);
         SearchResponse response = operations.execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
         Map<String, List<List<Object>>> result = new HashMap<>();

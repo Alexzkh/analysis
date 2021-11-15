@@ -72,8 +72,8 @@ public class QueryMappingBuilder {
             }
             Object object = buildingQueryViaField(params);
 
-            if (log.isInfoEnabled()) {
-                log.info("query dsl = {}", object.toString());
+            if (log.isDebugEnabled()) {
+                log.debug("query dsl = {}", object.toString());
             }
             return object;
         } catch (Exception e) {

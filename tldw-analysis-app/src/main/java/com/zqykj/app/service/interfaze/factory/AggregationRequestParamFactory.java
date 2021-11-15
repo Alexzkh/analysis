@@ -11,22 +11,6 @@ import com.zqykj.parameters.aggregate.AggregationParams;
 public interface AggregationRequestParamFactory {
 
     /**
-     * 构建获取交易统计分析针对调单卡号在本方的聚合参数.
-     *
-     * @param request:
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildTradeStatisticsAnalysisQueryCardAgg(T request);
-
-    /**
-     * 构建获取交易统计分析针对调单卡号在对方的聚合参数.
-     *
-     * @param request: 交易统计查询请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildTradeStatisticsAnalysisOppositeCardAgg(T request);
-
-    /**
      * 构建获取交易统计分析总数的聚合参数.
      *
      * @param request: 交易统计查询请求体
@@ -70,4 +54,24 @@ public interface AggregationRequestParamFactory {
      * @return: com.zqykj.parameters.aggregate.AggregationParams
      **/
     <T> AggregationParams buildFundsSourceTopNAgg(T request);
+
+    /**
+     * <h2>  构建交易汇聚分析结果聚合请求(基于选中一组调单卡号集合为查询条件) </h2>
+     */
+    <T> AggregationParams buildTradeConvergenceAnalysisResultMainCardsAgg(T request);
+
+    /**
+     * <h2> 获取交易汇聚分析结果查询总数据量 </h2>
+     */
+    <T> AggregationParams buildTradeConvergenceAnalysisResultTotalAgg(T request);
+
+    /**
+     * <h2> 批量获取调单卡号集合 </h2>
+     * <p>
+     * 基于表 {@link com.zqykj.domain.bank.BankTransactionFlow} 查询
+     *
+     * @param from 偏移量
+     * @param size 条数
+     */
+    AggregationParams buildGetCardNumsInBatchesAgg(int from, int size);
 }

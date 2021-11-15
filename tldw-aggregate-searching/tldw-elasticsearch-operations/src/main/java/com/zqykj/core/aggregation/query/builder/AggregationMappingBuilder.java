@@ -101,8 +101,8 @@ public class AggregationMappingBuilder {
         }
         Object aggregationInstance = AggregationMappingBuilder.buildAggregationInstance(null, parameters);
 
-        if (log.isInfoEnabled()) {
-            log.info("aggregation = {} ", aggregationInstance.toString());
+        if (log.isDebugEnabled()) {
+            log.debug("aggregation = {} ", aggregationInstance.toString());
         }
         return aggregationInstance;
     }
@@ -284,23 +284,19 @@ public class AggregationMappingBuilder {
         // 管道聚合排序
         if (BucketSortPipelineAggregationBuilder.class.isAssignableFrom(aggregationClass)) {
 
+            List<FieldSortBuilder> fieldSortBuilders = null;
             if (!CollectionUtils.isEmpty(parameters.getFieldSort())) {
-                List<FieldSortBuilder> fieldSortBuilders = parameters.getFieldSort().stream().map(
+                fieldSortBuilders = parameters.getFieldSort().stream().map(
                         fieldSort -> {
                             FieldSortBuilder fieldSortBuilder = new FieldSortBuilder(fieldSort.getFieldName());
                             fieldSortBuilder.order(SortOrder.fromString(fieldSort.getDirection()));
                             return fieldSortBuilder;
                         }
                 ).collect(Collectors.toList());
-                constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), fieldSortBuilders);
-                if (constructor.isPresent()) {
-                    target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName(), fieldSortBuilders);
-                }
-            } else {
-                constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName());
-                if (constructor.isPresent()) {
-                    target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName());
-                }
+            }
+            constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), fieldSortBuilders);
+            if (constructor.isPresent()) {
+                target = ReflectionUtils.getTargetInstanceViaReflection(aggregationClass, parameters.getName(), fieldSortBuilders);
             }
             if (null != parameters.getPagination()) {
                 // 设置 from, size

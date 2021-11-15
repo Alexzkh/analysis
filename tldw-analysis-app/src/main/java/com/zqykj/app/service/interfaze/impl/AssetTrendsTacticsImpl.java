@@ -4,6 +4,7 @@ import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.common.enums.TacticsTypeEnum;
 import com.zqykj.common.request.AssetTrendsRequest;
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
 import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.domain.bank.BankTransactionFlow;
@@ -15,6 +16,7 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -46,13 +48,16 @@ public class AssetTrendsTacticsImpl implements IAssetTrendsTactics {
          * 资产趋势查询请求参数转换
          *
          * */
-        TradeStatisticalAnalysisPreRequest tradeStatisticalAnalysisPreRequest = assetTrendsRequest.convertFrom(assetTrendsRequest);
+        TradeStatisticalAnalysisPreRequest fundTacticsPartGeneralPreRequest = assetTrendsRequest.convertFrom(assetTrendsRequest);
+
+        FundTacticsPartGeneralPreRequest tacticsPartGeneralPreRequest = new FundTacticsPartGeneralPreRequest();
+        BeanUtils.copyProperties(fundTacticsPartGeneralPreRequest, tacticsPartGeneralPreRequest);
 
         /**
          * elasticSearch特殊查询参数的构建.
          *
          * */
-        CombinationQueryParams combinationQueryParams = queryRequestParamFactory.buildCommonQueryParams(tradeStatisticalAnalysisPreRequest, caseId);
+        CombinationQueryParams combinationQueryParams = queryRequestParamFactory.buildCommonQueryParamsViaBankTransactionFlow(tacticsPartGeneralPreRequest, caseId);
         QuerySpecialParams query = new QuerySpecialParams();
         query.addCombiningQueryParams(combinationQueryParams);
         /**

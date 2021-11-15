@@ -3,13 +3,19 @@
  */
 package com.zqykj.app.service.factory.mapping.fund.es;
 
-import com.zqykj.app.service.vo.fund.*;
+import com.zqykj.app.service.annotation.Agg;
+import com.zqykj.app.service.annotation.Key;
+import com.zqykj.app.service.annotation.Local;
+import com.zqykj.app.service.annotation.Opposite;
 import com.zqykj.app.service.interfaze.factory.AggregationEntityMappingFactory;
+import com.zqykj.util.ReflectionUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,49 +25,78 @@ import java.util.Map;
 @Service
 public class TradeStatisticalAnalysisEntityAggMappingFactory implements AggregationEntityMappingFactory {
 
+    public static final String LOCAL_SOURCE = "local_source";
+    public static final String OPPOSITE_SOURCE = "opposite_source";
+    public static final String LOCAL_HITS = "local_hits";
+    public static final String OPPOSITE_HITS = "opposite_hits";
+    public static final String HITS = "hits";
+
+    @Deprecated
     @Override
-    public void entityAggMetricsMappingOfLocalOpposite(Map<String, Map<String, String>> aggKeyMapping,
-                                                       Map<String, Map<String, String>> entityAggKeyMapping,
-                                                       Class<?> mappingEntity) {
+    public void buildTradeStatisticsAnalysisResultAggMapping(Map<String, Map<String, String>> localOppositeAggMapping,
+                                                             Map<String, Map<String, String>> localOppositeEntityMapping,
+                                                             Class<?> entity) {
 
-        Map<String, String> localMapping = new LinkedHashMap<>();
-        Map<String, String> localEntityAggColMapping = new LinkedHashMap<>();
-        Map<String, String> oppositeEntityAggColMapping = new LinkedHashMap<>();
-        Map<String, String> oppositeMapping = new LinkedHashMap<>();
-        ReflectionUtils.doWithFields(mappingEntity, field -> {
+        Map<String, String> localAggMapping = new LinkedHashMap<>();
+        Map<String, String> localEntityMapping = new LinkedHashMap<>();
+        Map<String, String> oppositeEntityMapping = new LinkedHashMap<>();
+        Map<String, String> oppositeAggMapping = new LinkedHashMap<>();
+        List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
 
+        for (Field field : fields) {
             Local local = field.getAnnotation(Local.class);
             Key key = field.getAnnotation(Key.class);
             if (null != local && null != key) {
-                if (key.name().equals("hits")) {
-                    localMapping.put("local_hits", key.name());
-                    localEntityAggColMapping.put("local_hits", TradeStatisticalAnalysisBankFlow.EntityMapping.local_source.name());
+                if (key.name().equals(HITS)) {
+                    localAggMapping.put(LOCAL_HITS, key.name());
+                    localEntityMapping.put(LOCAL_HITS, LOCAL_SOURCE);
                 } else {
-                    localMapping.put(local.name(), key.name());
-                    localEntityAggColMapping.put(local.name(), field.getName());
+                    localAggMapping.put(local.name(), key.name());
+                    localEntityMapping.put(local.name(), field.getName());
                 }
             }
             Opposite opposite = field.getAnnotation(Opposite.class);
             if (null != opposite && null != key) {
-                if (key.name().equals("hits")) {
-                    oppositeMapping.put("opposite_hits", key.name());
-                    oppositeEntityAggColMapping.put("opposite_hits", TradeStatisticalAnalysisBankFlow.EntityMapping.opposite_source.name());
+                if (key.name().equals(HITS)) {
+                    oppositeAggMapping.put(OPPOSITE_HITS, key.name());
+                    oppositeEntityMapping.put(OPPOSITE_HITS, OPPOSITE_SOURCE);
                 } else {
-                    oppositeMapping.put(opposite.name(), key.name());
-                    oppositeEntityAggColMapping.put(opposite.name(), field.getName());
+                    oppositeAggMapping.put(opposite.name(), key.name());
+                    oppositeEntityMapping.put(opposite.name(), field.getName());
                 }
             }
-        });
-        aggKeyMapping.put("localMapping", localMapping);
-        aggKeyMapping.put("oppositeMapping", oppositeMapping);
-        entityAggKeyMapping.put("localEntityAggColMapping", localEntityAggColMapping);
-        entityAggKeyMapping.put("oppositeEntityAggColMapping", oppositeEntityAggColMapping);
+        }
+        localOppositeAggMapping.put("localMapping", localAggMapping);
+        localOppositeAggMapping.put("oppositeMapping", oppositeAggMapping);
+        localOppositeEntityMapping.put("localEntityAggColMapping", localEntityMapping);
+        localOppositeEntityMapping.put("oppositeEntityAggColMapping", oppositeEntityMapping);
     }
 
     @Override
-    public void aggNameForMetricsMapping(Map<String, String> mapping, Class<?> mappingEntity) {
+    public void buildTradeAnalysisResultAggMapping(Map<String, String> localAggMapping, Map<String, String> localEntityMapping, Class<?> entity) {
 
-        ReflectionUtils.doWithFields(mappingEntity, field -> {
+        List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
+        for (Field field : fields) {
+            Local local = field.getAnnotation(Local.class);
+            Key key = field.getAnnotation(Key.class);
+            if (null != local && null != key) {
+                if (key.name().equals(HITS)) {
+                    localAggMapping.put(LOCAL_HITS, key.name());
+                    localEntityMapping.put(LOCAL_HITS, LOCAL_SOURCE);
+                } else {
+                    localAggMapping.put(local.name(), key.name());
+                    localEntityMapping.put(field.getName(), local.name());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void buildTradeStatisticsFundTimeAggMapping(Map<String, String> mapping, Class<?> entity) {
+
+        List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
+
+        for (Field field : fields) {
 
             Key key = field.getAnnotation(Key.class);
 
@@ -71,6 +106,22 @@ public class TradeStatisticalAnalysisEntityAggMappingFactory implements Aggregat
 
                 mapping.put(agg.name(), key.name());
             }
-        });
+        }
     }
+
+    public Map<String, String> buildFundTacticsAnalysisResultTotalAggMapping() {
+
+        Map<String, String> aggMapping = new HashMap<>();
+        aggMapping.put("total", "value");
+        return aggMapping;
+    }
+
+    public Map<String, String> buildGetCardNumsInBatchesAggMapping() {
+
+        Map<String, String> aggMapping = new HashMap<>();
+        aggMapping.put("groupQueryCard", "KeyAsString");
+        return aggMapping;
+    }
+
+
 }
