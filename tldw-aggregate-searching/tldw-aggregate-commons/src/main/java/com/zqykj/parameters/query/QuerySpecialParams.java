@@ -39,6 +39,12 @@ public class QuerySpecialParams {
     // 对query 查询 的数据 再次过滤
     private QuerySpecialParams postFilter;
 
+    // 查询返回的数据, 需要带出哪些字段
+    private String[] includeFields;
+
+    // 查询返回的数据,不需要带出哪些字段
+    private String[] excludeFields;
+
     public QuerySpecialParams(CommonQueryParams common) {
         this.commonQuery = common;
     }

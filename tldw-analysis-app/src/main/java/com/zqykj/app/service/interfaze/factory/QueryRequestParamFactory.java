@@ -20,15 +20,6 @@ public interface QueryRequestParamFactory {
      **/
     <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T request, V other);
 
-    /**
-     * 构建交易统计分析查询参数.
-     *
-     * @param request: 交易统计分析请求body.T->TradeStatisticalAnalysisQueryRequest
-     * @param other:   案件编号
-     * @return: com.zqykj.parameters.query.QuerySpecialParams
-     **/
-    <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequest(T request, V other);
-
     <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other);
 
     /**
@@ -38,16 +29,9 @@ public interface QueryRequestParamFactory {
      * @param parameter: 案件编号
      * @return: com.zqykj.parameters.query.CombinationQueryParams
      **/
-    <T, V> CombinationQueryParams buildCommonQueryParams(T request, V parameter);
+    <T, V> CombinationQueryParams buildCommonQueryParamsViaBankTransactionFlow(T request, V parameter);
 
-    /**
-     * 组装后置过滤参数.
-     *
-     * @param request: 交易统计查询请求体 request-->TradeStatisticalAnalysisQueryRequest
-     * @param tag:     本方or对方
-     * @return: com.zqykj.parameters.query.CombinationQueryParams
-     **/
-    <T> CombinationQueryParams assemblePostFilter(T request, String tag);
+    <T, V> CombinationQueryParams buildCommonQueryParamsViaBankTransactionRecord(T request, V parameter);
 
     /**
      * 组装本方模糊查询请求参数.
@@ -92,4 +76,17 @@ public interface QueryRequestParamFactory {
      * @return: com.zqykj.parameters.query.QuerySpecialParams
      **/
     <T, V> QuerySpecialParams buildFundsSourceAndDestinationAnalysisResquest(T requestParam, V parameter);
+
+
+    /**
+     * <h2> 构建交易汇聚分析结果查询请求(基于选中一组调单卡号集合为查询条件) </h2>
+     */
+    <T, V> QuerySpecialParams buildTradeConvergenceAnalysisResultMainCardsRequest(T request, V other);
+
+    /**
+     * <h2> 构建最基本查询参数请求 </h2>
+     * <p>
+     * 案件域
+     */
+    <T, V> QuerySpecialParams buildBasicParamQueryViaCase(T request, V other);
 }

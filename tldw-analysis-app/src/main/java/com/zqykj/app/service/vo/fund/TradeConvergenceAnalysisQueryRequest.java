@@ -8,16 +8,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.BeanUtils;
 
-
 /**
- * <h1> 交易统计分析查询请求 </h1>
+ * <h1> 战法交易汇聚查询请求 </h1>
  */
 @Setter
 @Getter
 @NoArgsConstructor
-public class TradeStatisticalAnalysisQueryRequest extends FundTacticsPartGeneralPreRequest {
+public class TradeConvergenceAnalysisQueryRequest extends FundTacticsPartGeneralPreRequest {
 
-    public FundTacticsPartGeneralPreRequest convertFrom(TradeStatisticalAnalysisQueryRequest from) {
+    public FundTacticsPartGeneralPreRequest convertFrom(TradeConvergenceAnalysisQueryRequest from) {
 
         FundTacticsPartGeneralPreRequest to = new FundTacticsPartGeneralPreRequest();
 

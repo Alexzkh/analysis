@@ -112,6 +112,17 @@ public class AggregationParamsBuilders {
     }
 
     /**
+     * <h2> 去重 </h2>
+     *
+     * @param aggName 聚合名称
+     * @param field   聚合字段
+     */
+    public static AggregationParams cardinality(String aggName, String field) {
+
+        return new AggregationParams(aggName, AggsType.cardinality.name(), field);
+    }
+
+    /**
      * <h2> sum 求和 </h2>
      *
      * @param aggName 聚合名称
@@ -121,6 +132,17 @@ public class AggregationParamsBuilders {
     public static AggregationParams sum(String aggName, String field, @Nullable String script) {
 
         return defaultAggregationParams(aggName, AggsType.sum.name(), field, script);
+    }
+
+    /**
+     * <h2> sum 求和 </h2>
+     *
+     * @param aggName 聚合名称
+     * @param field   聚合字段
+     */
+    public static AggregationParams sum(String aggName, String field) {
+
+        return new AggregationParams(aggName, AggsType.sum.name(), field);
     }
 
     /**
@@ -197,6 +219,18 @@ public class AggregationParamsBuilders {
     public static PipelineAggregationParams sort(String aggName, List<FieldSort> fieldSortList, int from, int size) {
 
         return new PipelineAggregationParams(aggName, AggsType.bucket_sort.name(), fieldSortList, new Pagination(from, size));
+    }
+
+    /**
+     * <h2> 聚合排序 </h2>
+     *
+     * @param aggName 聚合名称
+     * @param from    起始值
+     * @param size    偏移量
+     */
+    public static PipelineAggregationParams sort(String aggName, int from, int size) {
+
+        return new PipelineAggregationParams(aggName, AggsType.bucket_sort.name(), new Pagination(from, size));
     }
 
 

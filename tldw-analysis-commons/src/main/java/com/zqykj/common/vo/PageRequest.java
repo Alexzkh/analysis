@@ -26,6 +26,6 @@ public class PageRequest {
     }
 
     public static int getOffset(int page, int pageSize) {
-        return page > 0 ? (page - 1) * pageSize : 0;
+        return page * pageSize;
     }
 }

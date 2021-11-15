@@ -1,16 +1,15 @@
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.fund.FundAnalysisDateRequest;
+import com.zqykj.app.service.vo.fund.FundDateRequest;
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisFundSumByDate;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
-import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.common.response.HistogramStatisticResponse;
 import com.zqykj.common.response.TransactionStatisticsResponse;
-import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.parameters.query.QuerySpecialParams;
@@ -40,17 +39,17 @@ public interface ITransactionStatistics {
      * @param transactionStatisticsAggs: 交易统计聚合统计请求体.
      * @return: com.zqykj.common.response.HistogramStatisticResponse
      **/
-    HistogramStatisticResponse getHistogramStatistics(String caseId, TradeStatisticalAnalysisPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs);
+    HistogramStatisticResponse getHistogramStatistics(String caseId, FundTacticsPartGeneralPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs);
 
 
-    TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundAnalysisDateRequest request);
+    TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundDateRequest request);
 
     /**
      * @param caseId:  案件编号.
      * @param request: 前置查询条件请求体.
      * @return: com.zqykj.parameters.query.QuerySpecialParams
      **/
-    QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, TradeStatisticalAnalysisPreRequest request);
+    QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, FundTacticsPartGeneralPreRequest request);
 
 
     /**

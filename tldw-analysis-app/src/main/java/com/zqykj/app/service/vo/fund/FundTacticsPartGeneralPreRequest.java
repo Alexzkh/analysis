@@ -1,11 +1,10 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.common.request;
+package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,8 +17,7 @@ import java.util.List;
 @Setter
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
-public class TradeStatisticalAnalysisPreRequest{
+public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequest {
 
     /**
      * 分析对象描述

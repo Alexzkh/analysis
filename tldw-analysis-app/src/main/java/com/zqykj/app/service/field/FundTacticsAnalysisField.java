@@ -15,6 +15,16 @@ public interface FundTacticsAnalysisField {
     String QUERY_CARD = "query_card";
 
     /**
+     * 合并卡号(查询卡号 - 对方卡号)
+     */
+    String MERGE_CARD = "merge_card";
+
+    /**
+     * 合并账号(本方账号 - 对方账号)
+     */
+    String MERGE_IDENTITY_CARD = "merge_identity_card";
+
+    /**
      * 交易对方卡号
      */
     String TRANSACTION_OPPOSITE_CARD = "transaction_opposite_card";
@@ -121,5 +131,12 @@ public interface FundTacticsAnalysisField {
     static String[] tradeStatisticalAnalysisOppositeShowField() {
 
         return new String[]{TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD, OPPOSITE_BANK, OPPOSITE_ACCOUNT, TRANSACTION_OPPOSITE_CARD};
+    }
+
+    // 交易汇聚分析需要展示的字段
+    static String[] tradeConvergencecAnalysisShowField() {
+
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD, TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD,
+                OPPOSITE_BANK, TRANSACTION_OPPOSITE_CARD};
     }
 }

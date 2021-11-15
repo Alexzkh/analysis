@@ -309,4 +309,16 @@ public class BankTransactionFlow {
      */
     @Field(name = "completion_flag", type = FieldType.Keyword)
     private String completionFlag;
+
+    /**
+     * 组合卡号 (查询卡号-对方卡号)
+     */
+    @Field(type = FieldType.Keyword, name = "merge_card")
+    private String mergeCard;
+
+    /**
+     * 组合证件号码 (本方证件号码-对方证件号码)
+     */
+    @Field(type = FieldType.Keyword, name = "merge_identity_card")
+    private String mergeIdentityCard;
 }
