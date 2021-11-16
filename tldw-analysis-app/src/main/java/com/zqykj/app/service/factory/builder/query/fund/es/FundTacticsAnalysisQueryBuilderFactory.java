@@ -16,8 +16,6 @@ import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.common.vo.PageRequest;
-import com.zqykj.common.vo.SortRequest;
 import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
@@ -30,7 +28,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.List;
 
 /**
- * 交易统计分析查询参数构建工厂
+ * <h1> 公共查询请求参数构建工厂 </h1>
  */
 @ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 @Service

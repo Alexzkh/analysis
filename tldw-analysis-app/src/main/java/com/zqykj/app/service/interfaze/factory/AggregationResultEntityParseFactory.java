@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <h1> 将聚合结果返回的结果,根据 映射定义, 反序列化成实体 </h1>
+ * <h1> 将聚合返回的结果 与 实体属性 做映射 并反序列化成实体 </h1>
  */
 public interface AggregationResultEntityParseFactory {
 
