@@ -17,7 +17,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 /**
- * <h1> 战法聚合结果解析工厂 </h1>
+ * <h1> 资金战法聚合结果解析工厂 </h1>
  */
 @ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 @Service

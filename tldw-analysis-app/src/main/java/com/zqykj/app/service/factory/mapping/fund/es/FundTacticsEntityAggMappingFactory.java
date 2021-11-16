@@ -18,12 +18,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * <h1> 交易统计分析聚合实体映射关系构建 </h1>
- */
 @ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 @Service
-public class TradeStatisticalAnalysisEntityAggMappingFactory implements AggregationEntityMappingFactory {
+public class FundTacticsEntityAggMappingFactory implements AggregationEntityMappingFactory {
 
     public static final String LOCAL_SOURCE = "local_source";
     public static final String OPPOSITE_SOURCE = "opposite_source";
