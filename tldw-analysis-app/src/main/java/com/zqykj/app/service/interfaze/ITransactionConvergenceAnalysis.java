@@ -14,5 +14,5 @@ import java.util.concurrent.ExecutionException;
  */
 public interface ITransactionConvergenceAnalysis {
 
-    ServerResponse<TradeConvergenceAnalysisResultResponse> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId);
+    ServerResponse<TradeConvergenceAnalysisResultResponse> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException;
 }

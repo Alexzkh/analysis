@@ -453,7 +453,7 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         // 排序
         fundTacticsPartUniversalAggSort(convergenceRequest, cardTerms, TradeConvergenceAnalysisResult.class);
         // 聚合展示字段
-        fundTacticsPartUniversalAggShowFields(cardTerms, FundTacticsAnalysisField.tradeConvergencecAnalysisShowField(), "local_hits", new FieldSort("query_card", "DESC"));
+        fundTacticsPartUniversalAggShowFields(cardTerms, FundTacticsAnalysisField.tradeConvergencecAnalysisShowField(), "local_hits", null);
         return cardTerms;
     }
 
