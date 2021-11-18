@@ -384,7 +384,6 @@ public class AggregationMappingBuilder {
 
             // 处理排序
             if (FieldSort.class.isAssignableFrom(subField.getType())) {
-
                 addFetchSort(aggregationClass, target, subField, fetchSource.getSort());
             }
             Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), subField.getType());
@@ -400,6 +399,9 @@ public class AggregationMappingBuilder {
 
     private static void addFetchSort(Class<?> aggregationClass, Object target, Field field, FieldSort sort) {
 
+        if (null == sort) {
+            return;
+        }
         Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, field.getName(), String.class, SortOrder.class);
         optionalMethod.ifPresent(method -> {
             org.springframework.util.ReflectionUtils.invokeMethod(method, target, sort.getField(), SortOrder.fromString(sort.getDirection()));

@@ -6,6 +6,8 @@ package com.zqykj.app.service.factory;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
+import java.util.List;
+
 /**
  * <h1> 公共查询请求参数构建工厂 </h1>
  */
@@ -89,4 +91,9 @@ public interface QueryRequestParamFactory {
      * 案件域
      */
     <T, V> QuerySpecialParams buildBasicParamQueryViaCase(T request, V other);
+
+    /**
+     * <h2> 给定一组卡号集合, 筛选出调单的 </h2>
+     */
+    <T, V> QuerySpecialParams filterMainCards(T request, V other, List<String> cards);
 }
