@@ -17,8 +17,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class FieldSort {
 
-    // 对一个桶聚合中子聚合结果进行排序
-    private String fieldName;
+    // 排序字段
+    private String field;
 
     // 排序方向  ASC,DESC
     private String direction;

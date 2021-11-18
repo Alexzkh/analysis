@@ -16,16 +16,17 @@ import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
-import com.zqykj.app.service.interfaze.factory.AggregationEntityMappingFactory;
-import com.zqykj.app.service.interfaze.factory.AggregationRequestParamFactory;
-import com.zqykj.app.service.interfaze.factory.AggregationResultEntityParseFactory;
-import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
+import com.zqykj.app.service.factory.AggregationRequestParamFactory;
+import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
+import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
@@ -36,7 +37,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -292,7 +292,10 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         if (null != totalAgg) {
             tradeStatisticsAgg.addSiblingAggregation(totalAgg);
         }
-        //
+        // 获取交易统计查询结果总量
+        Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
+
+        // 获取交易统计查询结果
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, tradeStatisticsAgg, BankTransactionRecord.class, caseId);
 
         // 聚合返回结果
@@ -313,7 +316,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
         Map<String, Object> map = new HashMap<>();
 
-        List<List<Object>> total = results.get(CARDINALITY_TOTAL);
+        List<List<Object>> total = totalResults.get(CARDINALITY_TOTAL);
 
         if (CollectionUtils.isEmpty(total)) {
             map.put("total", 0);
@@ -331,55 +334,8 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
      */
     private Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, String caseId) {
 
-        // 由于无法一次性获取全部调单卡号, 因此批量获取调单卡号集合 // TODO 暂定为每次5000-10000
-        boolean flag = true;
-        List<TradeStatisticalAnalysisResult> allResults = new ArrayList<>();
-        int page = request.getPageRequest().getPage();
-        int size = request.getPageRequest().getPageSize();
-        int from = 0;
-        while (flag) {
-
-            // TODO 当allResults 大于等于 一定量的时候,为了避免内存溢出(或者需要调正JVM的话),需要设置一个阈值
-            // 循环获取调单卡号集合
-            request.getPageRequest().setPage(from);
-            request.getPageRequest().setPageSize(MAIN_CARD_SIZE);
-            List<String> mainCards = fundTacticsAnalysis.getAllMainCardsViaPageable(request, caseId);
-            if (mainCards.size() < MAIN_CARD_SIZE) {
-                flag = false;
-            }
-            // 调用 statisticsAnalysisResultViaChosenMainCards 方法获取结果
-            // 设置调单卡号集合
-            request.setCardNums(mainCards);
-            Map<String, Object> map = statisticsAnalysisResultViaChosenMainCards(request, caseId);
-            List<TradeStatisticalAnalysisResult> results = (List<TradeStatisticalAnalysisResult>) map.get("result");
-            allResults.addAll(results);
-            from += MAIN_CARD_SIZE;
-        }
-        // 重新设置page 和 size
-        request.getPageRequest().setPage(page);
-        request.getPageRequest().setPageSize(size);
-        // 进行内存的合并与排序
-        Map<String, List<TradeStatisticalAnalysisResult>> groupResult = allResults.stream().collect(Collectors.groupingBy(TradeStatisticalAnalysisResult::getTradeCard));
-        // 最终合并的结果
-        List<TradeStatisticalAnalysisResult> mergeResult = new ArrayList<>(groupResult.size());
-        groupResult.forEach((key, value) -> {
-
-            if (value.size() > 1) {
-                //
-                mergeResult.add(TradeStatisticalAnalysisResult.mergeTradeStatisticalAnalysisBankFlow(value));
-            } else {
-                TradeStatisticalAnalysisResult tradeStatisticalAnalysisResult = value.get(0);
-                // 保留2位小数
-                TradeStatisticalAnalysisResult.amountReservedTwo(tradeStatisticalAnalysisResult);
-                mergeResult.add(tradeStatisticalAnalysisResult);
-            }
-        });
-        // 排序与分页
-        List<TradeStatisticalAnalysisResult> results = TradeStatisticalAnalysisResult.tradeStatisticalAnalysisResultSortAndPage(mergeResult, request.getPageRequest(), request.getSortRequest());
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("result", results);
-        resultMap.put("total", Long.parseLong(String.valueOf(mergeResult.size())));
-        return resultMap;
+        // 筛选的是表  BankTransactionRecord 属性 reverseMark = 1(即全部调单卡号的)
+        return statisticsAnalysisResultViaChosenMainCards(request, caseId);
     }
 
     /**

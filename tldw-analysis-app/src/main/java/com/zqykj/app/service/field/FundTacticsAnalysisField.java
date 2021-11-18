@@ -49,6 +49,10 @@ public interface FundTacticsAnalysisField {
      */
     String CASE_KEY_ID_HASH = "case_key_id";
 
+    /**
+     * 翻转标记  1: 代表原始记录  2:  代表的是把对方的 放到本方, 本方放到对方
+     */
+    String REVERSE_MARK = "reverse_mark";
 
     /**
      * 案件id

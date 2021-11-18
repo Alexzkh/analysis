@@ -16,7 +16,7 @@ import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.query.*;
@@ -117,6 +117,10 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
         // ConditionType.must 类似于and 条件
         combinationQueryParams.setType(ConditionType.filter);
+        // 全部查询的话, 需要过滤出表 BankTransactionRecord 中 reverseMark = 1 所有调单记录
+        if (request.getSearchType() == 1) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.REVERSE_MARK, 1));
+        }
         // 指定caseId
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 指定调单卡号集合
