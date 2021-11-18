@@ -1,11 +1,10 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import com.zqykj.app.service.interfaze.IFundsSourceAndDestinationStatistics;
-import com.zqykj.app.service.interfaze.factory.AggregationRequestParamFactory;
-import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.factory.AggregationRequestParamFactory;
+import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.common.request.FundsSourceAndDestinationStatisticsRequest;
 import com.zqykj.common.response.FundsSourceAndDestinationStatisticsResponse;
-import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;

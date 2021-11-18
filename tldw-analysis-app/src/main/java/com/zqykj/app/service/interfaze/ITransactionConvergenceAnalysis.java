@@ -7,6 +7,8 @@ import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.infrastructure.core.ServerResponse;
 
+import java.util.concurrent.ExecutionException;
+
 /**
  * <h1> 战法交易汇聚分析 业务层 </h1>
  */

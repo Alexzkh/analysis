@@ -7,7 +7,7 @@ import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Local;
 import com.zqykj.app.service.annotation.Opposite;
-import com.zqykj.app.service.interfaze.factory.AggregationEntityMappingFactory;
+import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.util.ReflectionUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -109,7 +109,7 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
     public Map<String, String> buildFundTacticsAnalysisResultTotalAggMapping() {
 
         Map<String, String> aggMapping = new HashMap<>();
-        aggMapping.put("total", "value");
+        aggMapping.put("cardinality_total", "value");
         return aggMapping;
     }
 
@@ -117,6 +117,13 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
 
         Map<String, String> aggMapping = new HashMap<>();
         aggMapping.put("groupQueryCard", "KeyAsString");
+        return aggMapping;
+    }
+
+    public Map<String, String> buildGetCardNumsTotalAggMapping() {
+
+        Map<String, String> aggMapping = new HashMap<>();
+        aggMapping.put("distinctQueryCard", "value");
         return aggMapping;
     }
 
