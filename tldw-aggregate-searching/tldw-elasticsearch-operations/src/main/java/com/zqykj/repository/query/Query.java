@@ -47,7 +47,11 @@ public interface Query {
      */
     void addFields(String... fields);
 
+    void addExcludeFields(String... fields);
+
     List<String> getFields();
+
+    List<String> getExcludeFields();
 
     /**
      * Add source filter to be added as part of search request

@@ -95,5 +95,5 @@ public interface QueryRequestParamFactory {
     /**
      * <h2> 给定一组卡号集合, 筛选出调单的 </h2>
      */
-    <T, V> QuerySpecialParams filterMainCards(T request, V other, List<String> cards);
+    QuerySpecialParams filterMainCards(String caseId, List<String> cards);
 }

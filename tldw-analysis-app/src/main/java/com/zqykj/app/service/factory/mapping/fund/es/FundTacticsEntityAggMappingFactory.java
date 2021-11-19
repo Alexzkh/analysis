@@ -127,5 +127,11 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
         return aggMapping;
     }
 
+    public Map<String, String> buildGetGroupByAggMapping() {
+        Map<String, String> aggMapping = new HashMap<>();
+        aggMapping.put("groupBy", "keyAsString");
+        return aggMapping;
+    }
+
 
 }

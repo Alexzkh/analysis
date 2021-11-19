@@ -45,4 +45,9 @@ public interface AggregationEntityMappingFactory {
      * <h2> 构建获取调单卡号总量 聚合名称 - 聚合属性映射 </h2>
      */
     Map<String, String> buildGetCardNumsTotalAggMapping();
+
+    /**
+     * <h2> 构建groupBy 聚合名称 - 聚合属性映射  </h2>
+     */
+    Map<String, String> buildGetGroupByAggMapping();
 }
