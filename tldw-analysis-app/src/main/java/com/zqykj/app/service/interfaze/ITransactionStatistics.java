@@ -14,6 +14,8 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
+import java.util.concurrent.ExecutionException;
+
 
 /**
  * @Description: 交易统计
@@ -59,7 +61,7 @@ public interface ITransactionStatistics {
      * @param queryRequest: 交易统计分析查询请求体.
      * @return: com.zqykj.common.core.ServerResponse
      **/
-    ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest);
+    ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws ExecutionException, InterruptedException;
 
     /**
      * @param caseId:                             案件编号.

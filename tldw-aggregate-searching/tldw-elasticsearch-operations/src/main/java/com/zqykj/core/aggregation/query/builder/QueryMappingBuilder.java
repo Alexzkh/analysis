@@ -145,6 +145,9 @@ public class QueryMappingBuilder {
      */
     protected static void dealWithCombination(Method method, Object target, List<CommonQueryParams> commonQueryParams) {
 
+        if (CollectionUtils.isEmpty(commonQueryParams)) {
+            return;
+        }
         for (CommonQueryParams common : commonQueryParams) {
 
             // 如果还是 bool 查询(需要特殊处理)

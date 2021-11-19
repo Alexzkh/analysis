@@ -320,7 +320,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return basicQuery;
     }
 
-    public <T, V> QuerySpecialParams filterMainCards(T request, V other, List<String> cards) {
+    public QuerySpecialParams filterMainCards(String caseId, List<String> cards) {
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
 
@@ -329,7 +329,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         combination.setType(ConditionType.filter);
 
         // 设置案件id
-        combination.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, other.toString()));
+        combination.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 设置查询卡号
         combination.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
         querySpecialParams.addCombiningQueryParams(combination);
