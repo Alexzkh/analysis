@@ -5,13 +5,16 @@ package com.zqykj.app.service.factory.builder.aggregation.fund.es;
 
 import com.zqykj.app.service.annotation.Local;
 import com.zqykj.app.service.factory.builder.query.fund.es.FundTacticsAnalysisQueryBuilderFactory;
+import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.builder.AggregationParamsBuilders;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
+import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.request.FundsSourceAndDestinationStatisticsRequest;
 import com.zqykj.common.request.PeopleAreaRequest;
+import com.zqykj.app.service.vo.fund.SingleCardPortraitRequest;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.util.ReflectionUtils;
@@ -505,4 +508,57 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         // 交易结果 根据某个指标值排序
         String TRADE_RESULT_AGG_NAME = "trade_result_order";
     }
+
+    /**
+     * 构建单卡画像最早交易时间聚合查询参数
+     */
+    @Override
+    public <T> AggregationParams buildSingleCardPortraitEarliestTimeAgg(T request) {
+        return AggregationParamsBuilders.min(SingleCardPortraitAnalysisField.AggResultName.EARLIEST_TRADING_TIME, SingleCardPortraitAnalysisField.TRADING_TIME, null);
+    }
+
+    /**
+     * 构建单卡画像最晚交易时间聚合查询参数
+     */
+    @Override
+    public <T> AggregationParams buildSingleCardPortraitLatestTimeAgg(T request) {
+        return AggregationParamsBuilders.max(SingleCardPortraitAnalysisField.AggResultName.LATEST_TRADING_TIME, SingleCardPortraitAnalysisField.TRADING_TIME, null);
+    }
+
+    /**
+     * 构建单卡画像查询卡号分桶聚合查询参数
+     */
+    @Override
+    public <T> AggregationParams buildSingleCardPortraitAgg(T request) {
+        SingleCardPortraitRequest singleCardPortraitRequest = (SingleCardPortraitRequest) request;
+        String queryCard = singleCardPortraitRequest.getQueryCard();
+        // 查询卡号分桶参数
+        AggregationParams localCardTermsAggregationParams = AggregationParamsBuilders.terms(SingleCardPortraitAnalysisField.AggResultName.LOCAL_CARD_TERMS, SingleCardPortraitAnalysisField.QUERY_CARD, queryCard);
+        // 当前查询卡号进账交易金额查询参数（统计结果是正数）
+        QuerySpecialParams localInTransactionMoneyQuerySpecialParams = new QuerySpecialParams();
+        CommonQueryParams localInTransactionTermCommonQueryParams = QueryParamsBuilders.term(SingleCardPortraitAnalysisField.LOAN_FLAG, SingleCardPortraitAnalysisField.Value.LOAN_FLAG_IN);
+        localInTransactionMoneyQuerySpecialParams.addCommonQueryParams(localInTransactionTermCommonQueryParams);
+        AggregationParams localInTransactionMoneySum = AggregationParamsBuilders.filter(SingleCardPortraitAnalysisField.AggResultName.LOCAL_IN_TRANSACTION_MONEY_SUM, localInTransactionMoneyQuerySpecialParams, null);
+        AggregationParams localTransactionMoneySum1 = AggregationParamsBuilders.sum(SingleCardPortraitAnalysisField.AggResultName.LOCAL_IN_TRANSACTION_MONEY, SingleCardPortraitAnalysisField.TRANSACTION_MONEY);
+        localInTransactionMoneySum.setPerSubAggregation(localTransactionMoneySum1);
+        localCardTermsAggregationParams.setPerSubAggregation(localInTransactionMoneySum);
+        // 当前查询卡号出账交易金额查询参数（统计结果为负数）
+        QuerySpecialParams localOutTransactionMoneyQuerySpecialParams = new QuerySpecialParams();
+        CommonQueryParams localOutTransactionTermCommonQueryParams = QueryParamsBuilders.term(SingleCardPortraitAnalysisField.LOAN_FLAG, SingleCardPortraitAnalysisField.Value.LOAN_FLAG_OUT);
+        localOutTransactionMoneyQuerySpecialParams.addCommonQueryParams(localOutTransactionTermCommonQueryParams);
+        AggregationParams localOutTransactionMoneySum = AggregationParamsBuilders.filter(SingleCardPortraitAnalysisField.AggResultName.LOCAL_OUT_TRANSACTION_MONEY_SUM, localOutTransactionMoneyQuerySpecialParams, null);
+        AggregationParams localTransactionMoneySum2 = AggregationParamsBuilders.sum(SingleCardPortraitAnalysisField.AggResultName.LOCAL_OUT_TRANSACTION_MONEY, SingleCardPortraitAnalysisField.TRANSACTION_MONEY);
+        localOutTransactionMoneySum.setPerSubAggregation(localTransactionMoneySum2);
+        localCardTermsAggregationParams.setPerSubAggregation(localOutTransactionMoneySum);
+        // 当前查询卡号交易净额（进账交易金额 - 出账交易金额（结果需转换成正数值））
+        AggregationParams localTotalTransactionMoneySum = AggregationParamsBuilders.sum(SingleCardPortraitAnalysisField.AggResultName.LOCAL_TOTAL_TRANSACTION_MONEY_SUM, SingleCardPortraitAnalysisField.TRANSACTION_MONEY);
+        localCardTermsAggregationParams.setPerSubAggregation(localTotalTransactionMoneySum);
+        // 构建作为本方卡号top_hits
+        FetchSource localFetchSource = new FetchSource(SingleCardPortraitAnalysisField.Value.LOCAL_INCLUDES_TOP_HITS,0, 1);
+        AggregationParams localTopHits = AggregationParamsBuilders.fieldSource(SingleCardPortraitAnalysisField.AggResultName.LOCAL_HITS,localFetchSource );
+        localCardTermsAggregationParams.setPerSubAggregation(localTopHits);
+
+        return localCardTermsAggregationParams;
+    }
+
 }

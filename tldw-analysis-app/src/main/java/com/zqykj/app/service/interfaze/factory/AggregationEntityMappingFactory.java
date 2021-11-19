@@ -40,4 +40,14 @@ public interface AggregationEntityMappingFactory {
      * <h2> 构建批量获取调单卡号集合 聚合名称 - 聚合属性映射 </h2>
      */
     Map<String, String> buildGetCardNumsInBatchesAggMapping();
+
+    /**
+     * 构建单卡画像分析结果,聚合和实体属性映射
+     *
+     * @param aggKeyMapping       聚合名称-聚合属性Map
+     * @param entityAggKeyMapping 实体属性-聚合名称Map
+     * @param mappingEntity       实体类
+     */
+    void buildSingleCardPortraitResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
 }

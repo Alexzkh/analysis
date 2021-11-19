@@ -89,4 +89,9 @@ public interface QueryRequestParamFactory {
      * 案件域
      */
     <T, V> QuerySpecialParams buildBasicParamQueryViaCase(T request, V other);
+
+    /**
+     * 构建单卡画像查询参数
+     */
+    <T> QuerySpecialParams buildSingleCardPortraitQueryParams(T request);
 }

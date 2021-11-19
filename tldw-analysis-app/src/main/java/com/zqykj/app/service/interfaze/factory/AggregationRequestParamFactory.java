@@ -74,4 +74,32 @@ public interface AggregationRequestParamFactory {
      * @param size 条数
      */
     AggregationParams buildGetCardNumsInBatchesAgg(int from, int size);
+
+    /**
+     * 构建单卡画像最早交易时间聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildSingleCardPortraitEarliestTimeAgg(T request);
+
+    /**
+     * 构建单卡画像最晚交易时间聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildSingleCardPortraitLatestTimeAgg(T request);
+
+    /**
+     * 构建单卡画像本方卡号分桶聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildSingleCardPortraitAgg(T request);
+
 }

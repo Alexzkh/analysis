@@ -7,6 +7,7 @@ import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Local;
 import com.zqykj.app.service.annotation.Opposite;
+import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.interfaze.factory.AggregationEntityMappingFactory;
 import com.zqykj.util.ReflectionUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -120,5 +121,11 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
         return aggMapping;
     }
 
-
+    @Override
+    public void buildSingleCardPortraitResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity) {
+        // 查询卡号分桶后的聚合结果map(聚合名称:聚合值属性名称)
+        aggKeyMapping.put(SingleCardPortraitAnalysisField.AggResultName.LOCAL_IN_TRANSACTION_MONEY, SingleCardPortraitAnalysisField.AggResultField.VALUE);
+        aggKeyMapping.put(SingleCardPortraitAnalysisField.AggResultName.LOCAL_OUT_TRANSACTION_MONEY, SingleCardPortraitAnalysisField.AggResultField.VALUE);
+        aggKeyMapping.put(SingleCardPortraitAnalysisField.AggResultName.LOCAL_HITS, SingleCardPortraitAnalysisField.AggResultField.HITS);
+    }
 }
