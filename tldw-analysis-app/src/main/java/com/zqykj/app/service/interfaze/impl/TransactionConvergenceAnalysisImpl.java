@@ -119,6 +119,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         convergenceAgg.setEntityAggColMapping(entityMapping);
         convergenceAgg.setResultName("chosen_main_cards");
 
+        Map<String, Object> map = new HashMap<>();
         // 设置同级聚合(计算总数据量) 注: es 计算的去重后数量 是一个近似值
         // 判断是否需要计算总量
         if (isComputeTotal) {
@@ -128,6 +129,11 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             }
         }
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(convergenceQuery, convergenceAgg, BankTransactionRecord.class, caseId);
+        if (CollectionUtils.isEmpty(results)) {
+            map.put("total", 0);
+            map.put("result", new ArrayList<>());
+            return map;
+        }
         // 聚合返回结果
         List<List<Object>> returnResults = results.get(convergenceAgg.getResultName());
         // 一组实体属性集合 与 聚合名称顺序是一一对应的( 所以聚合返回的结果每一列值的属性 与 实体属性也是对应的, 处理聚合展示字段需要特殊处理)
@@ -140,13 +146,16 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 将金额保留2位小数
         tradeConvergenceAnalysisResults.forEach(TradeConvergenceAnalysisResult::amountReservedTwo);
 
-        Map<String, Object> map = new HashMap<>();
-
         if (CollectionUtils.isEmpty(results)) {
             map.put("total", 0);
         } else {
             List<List<Object>> total = results.get(CARDINALITY_TOTAL);
-            map.put("total", total.get(0).get(0));
+            if (CollectionUtils.isEmpty(total)) {
+
+                map.put("total", 0);
+            } else {
+                map.put("total", total.get(0).get(0));
+            }
         }
         map.put("result", tradeConvergenceAnalysisResults);
         return map;
@@ -270,6 +279,9 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             }
             // 过滤出的调单卡号集合
             Map<String, String> filterMainCards = fundTacticsAnalysis.asyncFilterMainCards(caseId, cards);
+            if (CollectionUtils.isEmpty(filterMainCards)) {
+                return null;
+            }
             // 返回最终的调单数据
             List<TradeConvergenceAnalysisResult> finalCards = convergenceResults.stream().filter(e -> filterMainCards.containsKey(e.getTradeCard()))
                     .skip(skip).limit(limit).collect(Collectors.toList());
@@ -312,6 +324,9 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
                                                                                    String caseId) {
 
         Map<String, Object> map = convergenceAnalysisResultViaChosenMainCards(request, position, next, caseId, false);
+        if (CollectionUtils.isEmpty(map)) {
+            return null;
+        }
         Object result = map.get("result");
         List<TradeConvergenceAnalysisResult> convergenceResults = (List<TradeConvergenceAnalysisResult>) result;
         if (CollectionUtils.isEmpty(convergenceResults)) {

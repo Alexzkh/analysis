@@ -291,6 +291,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         tradeStatisticsAgg.setResultName("chosen_main_cards");
 
         // 设置同级聚合(计算总数据量)
+        Map<String, Object> resultMap = new HashMap<>();
         Map<String, List<List<Object>>> totalResults = null;
         if (isComputeTotal) {
             AggregationParams totalAgg = total(request);
@@ -299,7 +300,11 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         }
         // 获取交易统计查询结果
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, tradeStatisticsAgg, BankTransactionRecord.class, caseId);
-
+        if (CollectionUtils.isEmpty(results)) {
+            resultMap.put("total", 0);
+            resultMap.put("result", new ArrayList<>());
+            return resultMap;
+        }
         // 聚合返回结果
         List<List<Object>> returnResults = results.get(tradeStatisticsAgg.getResultName());
 
@@ -316,16 +321,18 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 将金额保留2位小数
         tradeStatisticalAnalysisResults.forEach(TradeStatisticalAnalysisResult::amountReservedTwo);
 
-        Map<String, Object> map = new HashMap<>();
-
         if (CollectionUtils.isEmpty(totalResults)) {
-            map.put("total", 0);
+            resultMap.put("total", 0);
         } else {
             List<List<Object>> total = totalResults.get(CARDINALITY_TOTAL);
-            map.put("total", total.get(0).get(0));
+            if (CollectionUtils.isEmpty(total)) {
+                resultMap.put("total", 0);
+            } else {
+                resultMap.put("total", total.get(0).get(0));
+            }
         }
-        map.put("result", tradeStatisticalAnalysisResults);
-        return map;
+        resultMap.put("result", tradeStatisticalAnalysisResults);
+        return resultMap;
     }
 
     /**
@@ -488,6 +495,9 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
                                                                                    String caseId) {
 
         Map<String, Object> map = statisticsAnalysisResultViaChosenMainCards(request, position, next, caseId, false);
+        if (CollectionUtils.isEmpty(map)) {
+            return null;
+        }
         Object result = map.get("result");
         List<TradeStatisticalAnalysisResult> statisticalResults = (List<TradeStatisticalAnalysisResult>) result;
         if (CollectionUtils.isEmpty(statisticalResults)) {
