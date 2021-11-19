@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.interfaze.factory;
+package com.zqykj.app.service.factory;
 
 import java.util.Map;
 
@@ -40,6 +40,11 @@ public interface AggregationEntityMappingFactory {
      * <h2> 构建批量获取调单卡号集合 聚合名称 - 聚合属性映射 </h2>
      */
     Map<String, String> buildGetCardNumsInBatchesAggMapping();
+
+    /**
+     * <h2> 构建获取调单卡号总量 聚合名称 - 聚合属性映射 </h2>
+     */
+    Map<String, String> buildGetCardNumsTotalAggMapping();
 
     /**
      * 构建单卡画像分析结果,聚合和实体属性映射

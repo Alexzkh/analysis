@@ -7,7 +7,7 @@ package com.zqykj.app.service.factory.parse.fund.es;
 import com.zqykj.app.service.annotation.Hits;
 import com.zqykj.app.service.annotation.Local;
 import com.zqykj.app.service.annotation.Opposite;
-import com.zqykj.app.service.interfaze.factory.AggregationResultEntityParseFactory;
+import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.util.ReflectionUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;

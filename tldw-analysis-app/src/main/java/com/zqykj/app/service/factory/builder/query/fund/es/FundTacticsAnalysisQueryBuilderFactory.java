@@ -14,7 +14,7 @@ import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.domain.Sort;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
@@ -316,6 +316,23 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         basicQuery.addCombiningQueryParams(combination);
 
         return basicQuery;
+    }
+
+    public <T, V> QuerySpecialParams filterMainCards(T request, V other, List<String> cards) {
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+
+        CombinationQueryParams combination = new CombinationQueryParams();
+
+        combination.setType(ConditionType.filter);
+
+        // 设置案件id
+        combination.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, other.toString()));
+        // 设置查询卡号
+        combination.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
+        querySpecialParams.addCombiningQueryParams(combination);
+        querySpecialParams.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
+        return querySpecialParams;
     }
 
     @Override

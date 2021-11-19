@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.interfaze.factory;
+package com.zqykj.app.service.factory;
 
 import com.zqykj.parameters.aggregate.AggregationParams;
 
@@ -74,6 +74,11 @@ public interface AggregationRequestParamFactory {
      * @param size 条数
      */
     AggregationParams buildGetCardNumsInBatchesAgg(int from, int size);
+
+    /**
+     * <h2> 获取调单卡号总量 </h2>
+     */
+    <T> AggregationParams getCardNumsTotal(T request);
 
     /**
      * 构建单卡画像最早交易时间聚合查询参数

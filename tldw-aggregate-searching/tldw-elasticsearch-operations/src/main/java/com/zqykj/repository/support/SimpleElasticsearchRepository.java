@@ -1084,7 +1084,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         // 升序or降序
         String direction = querySpecialParams.getSort().getDirection();
         // 排序字段
-        String property = querySpecialParams.getSort().getFieldName();
+        String property = querySpecialParams.getSort().getField();
         // 普通查询
         if (null != queryTarget) {
             sourceBuilder.query((QueryBuilder) queryTarget);

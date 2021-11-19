@@ -145,6 +145,17 @@ public class BankTransactionRecord {
     @Field(type = FieldType.Double, name = "transaction_money")
     private Double transactionMoney;
 
+    /**
+     * 交易余额
+     */
+    @Field(type = FieldType.Double, name = "transaction_balance")
+    private Double transactionBalance;
+
+    /**
+     * 交易对方余额
+     */
+    @Field(type = FieldType.Double, name = "transaction_opposite_balance")
+    private Double transactionOppositeBalance;
 
     /**
      * 交易时间
@@ -185,4 +196,10 @@ public class BankTransactionRecord {
      */
     @Field(type = FieldType.Keyword, name = "merge_identity_card")
     private String mergeIdentityCard;
+
+    /**
+     * 翻转标记  1: 代表原始记录  2:  代表的是把对方的 放到本方, 本方放到对方
+     */
+    @Field(type = FieldType.Integer, name = "reverse_mark")
+    private Integer reverseMark;
 }

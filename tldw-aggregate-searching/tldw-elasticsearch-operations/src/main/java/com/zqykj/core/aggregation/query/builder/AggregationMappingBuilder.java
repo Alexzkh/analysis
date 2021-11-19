@@ -3,6 +3,7 @@
  */
 package com.zqykj.core.aggregation.query.builder;
 
+import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.aggregate.FetchSource;
 import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.CommonAggregationParams;
@@ -29,6 +30,7 @@ import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuil
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.TopHitsAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -288,7 +290,7 @@ public class AggregationMappingBuilder {
             if (!CollectionUtils.isEmpty(parameters.getFieldSort())) {
                 fieldSortBuilders = parameters.getFieldSort().stream().map(
                         fieldSort -> {
-                            FieldSortBuilder fieldSortBuilder = new FieldSortBuilder(fieldSort.getFieldName());
+                            FieldSortBuilder fieldSortBuilder = new FieldSortBuilder(fieldSort.getField());
                             fieldSortBuilder.order(SortOrder.fromString(fieldSort.getDirection()));
                             return fieldSortBuilder;
                         }
@@ -380,6 +382,10 @@ public class AggregationMappingBuilder {
         // 设置from,size
         org.springframework.util.ReflectionUtils.doWithFields(field.getType(), subField -> {
 
+            // 处理排序
+            if (FieldSort.class.isAssignableFrom(subField.getType())) {
+                addFetchSort(aggregationClass, target, subField, fetchSource.getSort());
+            }
             Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), subField.getType());
 
             optionalMethod.ifPresent(method -> {
@@ -388,6 +394,17 @@ public class AggregationMappingBuilder {
                 Object value = org.springframework.util.ReflectionUtils.getField(subField, fetchSource);
                 org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
             });
+        });
+    }
+
+    private static void addFetchSort(Class<?> aggregationClass, Object target, Field field, FieldSort sort) {
+
+        if (null == sort) {
+            return;
+        }
+        Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, field.getName(), String.class, SortOrder.class);
+        optionalMethod.ifPresent(method -> {
+            org.springframework.util.ReflectionUtils.invokeMethod(method, target, sort.getField(), SortOrder.fromString(sort.getDirection()));
         });
     }
 

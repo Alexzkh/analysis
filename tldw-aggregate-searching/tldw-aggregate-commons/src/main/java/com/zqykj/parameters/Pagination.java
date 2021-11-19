@@ -17,6 +17,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Pagination {
 
-    private Integer from = 0;
+    private int from = 0;
     private Integer size;
 }
