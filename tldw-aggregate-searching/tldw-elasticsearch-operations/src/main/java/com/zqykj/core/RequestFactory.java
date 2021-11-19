@@ -495,14 +495,6 @@ public class RequestFactory {
             sourceBuilder.fetchSource(query.getFields().toArray(new String[0]), null);
         }
 
-        if (!query.getExcludeFields().isEmpty()) {
-            sourceBuilder.fetchSource(null, query.getExcludeFields().toArray(new String[0]));
-        }
-
-        if (!query.getExcludeFields().isEmpty() && !query.getFields().isEmpty()) {
-            sourceBuilder.fetchSource(query.getFields().toArray(new String[0]), query.getExcludeFields().toArray(new String[0]));
-        }
-
         if (query.getIndicesOptions() != null) {
             request.indicesOptions(query.getIndicesOptions());
         }

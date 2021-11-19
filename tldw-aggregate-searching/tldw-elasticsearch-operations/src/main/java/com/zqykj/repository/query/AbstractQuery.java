@@ -27,7 +27,6 @@ public class AbstractQuery implements Query {
     @Nullable
     protected Sort sort;
     protected List<String> fields = new ArrayList<>();
-    protected List<String> excludeFields = new ArrayList<>();
     @Nullable
     protected SourceFilter sourceFilter;
     protected float minScore;
@@ -78,18 +77,8 @@ public class AbstractQuery implements Query {
     }
 
     @Override
-    public void addExcludeFields(String... fields) {
-        addAll(this.excludeFields, fields);
-    }
-
-    @Override
     public List<String> getFields() {
         return fields;
-    }
-
-    @Override
-    public List<String> getExcludeFields() {
-        return excludeFields;
     }
 
     @Override

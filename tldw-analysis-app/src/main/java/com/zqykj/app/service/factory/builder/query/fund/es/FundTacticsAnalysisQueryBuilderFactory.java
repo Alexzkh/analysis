@@ -6,20 +6,18 @@ package com.zqykj.app.service.factory.builder.query.fund.es;
 import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.field.PeopleAreaAnalysisFuzzyQueryField;
+import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.strategy.PeopleAreaAnalysisFieldStrategy;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
-import com.zqykj.app.service.vo.fund.FundDateRequest;
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
-import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
-import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
+import com.zqykj.domain.Sort;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
-import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -320,7 +318,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return basicQuery;
     }
 
-    public QuerySpecialParams filterMainCards(String caseId, List<String> cards) {
+    public <T, V> QuerySpecialParams filterMainCards(T request, V other, List<String> cards) {
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
 
@@ -329,11 +327,35 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         combination.setType(ConditionType.filter);
 
         // 设置案件id
-        combination.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        combination.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, other.toString()));
         // 设置查询卡号
         combination.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
         querySpecialParams.addCombiningQueryParams(combination);
         querySpecialParams.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
+        return querySpecialParams;
+    }
+
+    @Override
+    public <T> QuerySpecialParams buildSingleCardPortraitQueryParams(T request) {
+        // 请求参数转换成单卡画像请求体类型
+        SingleCardPortraitRequest singleCardPortraitRequest = (SingleCardPortraitRequest) request;
+        // 案件id
+        String caseId = singleCardPortraitRequest.getCaseId();
+        // 查询卡号（调单卡号）
+        String queryCard = singleCardPortraitRequest.getQueryCard();
+
+        // 使用自定义封装的ES构建器构建查询参数
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        // 精准词条匹配caseId
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(SingleCardPortraitAnalysisField.CASE_ID, caseId));
+        // 多条件匹配queryCard（本方卡号和对方卡号）
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.multiMatch(queryCard, SingleCardPortraitAnalysisField.QUERY_CARD));
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        querySpecialParams.setPagination(new Pagination(0, 1));
+        querySpecialParams.setSort(new FieldSort(SingleCardPortraitAnalysisField.TRADING_TIME, Sort.Direction.DESC.name()));
+
         return querySpecialParams;
     }
 }

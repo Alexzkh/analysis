@@ -27,38 +27,24 @@ public class NativeSearchQueryBuilder {
 
     @Nullable
     private QueryBuilder queryBuilder;
-    @Nullable
-    private QueryBuilder filterBuilder;
+    @Nullable private QueryBuilder filterBuilder;
     private final List<ScriptField> scriptFields = new ArrayList<>();
     private final List<SortBuilder<?>> sortBuilders = new ArrayList<>();
     private final List<AbstractAggregationBuilder<?>> aggregationBuilders = new ArrayList<>();
-    @Nullable
-    private HighlightBuilder highlightBuilder;
-    @Nullable
-    private HighlightBuilder.Field[] highlightFields;
+    @Nullable private HighlightBuilder highlightBuilder;
+    @Nullable private HighlightBuilder.Field[] highlightFields;
     private Pageable pageable = Pageable.unpaged();
-    @Nullable
-    private String[] fields;
-    @Nullable
-    private String[] excludeFields;
-    @Nullable
-    private SourceFilter sourceFilter;
-    @Nullable
-    private CollapseBuilder collapseBuilder;
-    @Nullable
-    private List<IndexBoost> indicesBoost;
+    @Nullable private String[] fields;
+    @Nullable private SourceFilter sourceFilter;
+    @Nullable private CollapseBuilder collapseBuilder;
+    @Nullable private List<IndexBoost> indicesBoost;
     private float minScore;
     private boolean trackScores;
-    @Nullable
-    private Collection<String> ids;
-    @Nullable
-    private String route;
-    @Nullable
-    private SearchType searchType;
-    @Nullable
-    private IndicesOptions indicesOptions;
-    @Nullable
-    private String preference;
+    @Nullable private Collection<String> ids;
+    @Nullable private String route;
+    @Nullable private SearchType searchType;
+    @Nullable private IndicesOptions indicesOptions;
+    @Nullable private String preference;
 
     public NativeSearchQueryBuilder withQuery(QueryBuilder queryBuilder) {
         this.queryBuilder = queryBuilder;
@@ -115,11 +101,6 @@ public class NativeSearchQueryBuilder {
         return this;
     }
 
-    public NativeSearchQueryBuilder withExcludeFields(String... excludeFields) {
-        this.excludeFields = excludeFields;
-        return this;
-    }
-
     public NativeSearchQueryBuilder withSourceFilter(SourceFilter sourceFilter) {
         this.sourceFilter = sourceFilter;
         return this;
@@ -149,7 +130,6 @@ public class NativeSearchQueryBuilder {
         this.route = route;
         return this;
     }
-
     public NativeSearchQueryBuilder withSearchType(SearchType searchType) {
         this.searchType = searchType;
         return this;
@@ -175,10 +155,6 @@ public class NativeSearchQueryBuilder {
 
         if (fields != null) {
             nativeSearchQuery.addFields(fields);
-        }
-
-        if (excludeFields != null) {
-            nativeSearchQuery.addExcludeFields(excludeFields);
         }
 
         if (sourceFilter != null) {

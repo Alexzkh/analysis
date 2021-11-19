@@ -1,7 +1,6 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.transform.NumericalConversion;
@@ -27,26 +26,29 @@ import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
+import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @Description: 交易统计实现类
+ * @Author zhangkehou
+ * @Date 2021/9/28
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -70,11 +72,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     private static final String CARDINALITY_TOTAL = "cardinality_total";
 
-    @Value("${global.chunkSize}")
-    private int globalChunkSize;
-
-    @Value("${chunkSize}")
-    private int chunkSize;
+    private static final int MAIN_CARD_SIZE = 5000;
 
 
     @Override
@@ -235,26 +233,25 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         return groupTradeAmountSum;
     }
 
-    public ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest request) throws ExecutionException, InterruptedException {
+    public ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest request) {
 
         TradeStatisticalAnalysisResultResponse resultResponse = new TradeStatisticalAnalysisResultResponse();
-        Map<String, Object> map;
+
+        List<TradeStatisticalAnalysisResult> results;
+        long total;
         if (request.getSearchType() == 0 && !CollectionUtils.isEmpty(request.getCardNums())) {
 
-            com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
-            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
-            int size = pageRequest.getPageSize();
-            map = statisticsAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
+            Map<String, Object> map = statisticsAnalysisResultViaChosenMainCards(request, caseId);
+
+            results = (List<TradeStatisticalAnalysisResult>) map.get("result");
+            total = (long) map.get("total");
         } else {
-            // TODO  全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
-            // 全部条件
-            if (request.getPageRequest().getPage() > 30) {
-                return ServerResponse.createBySuccess("分页上限为30页", new TradeConvergenceAnalysisResultResponse());
-            }
-            map = statisticsAnalysisResultViaAllMainCards(request, caseId);
+
+            // TODO 全部条件
+            Map<String, Object> map = statisticsAnalysisResultViaAllMainCards(request, caseId);
+            results = (List<TradeStatisticalAnalysisResult>) map.get("result");
+            total = (long) map.get("total");
         }
-        List<TradeStatisticalAnalysisResult> results = (List<TradeStatisticalAnalysisResult>) map.get("result");
-        long total = (long) map.get("total");
         Integer pageSize = request.getPageRequest().getPageSize();
         // 结果集
         resultResponse.setContent(results);
@@ -271,7 +268,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
      * <h2> 选择个体 / 选择部分调单卡号集合 </h2>
      */
     @SuppressWarnings("all")
-    private Map<String, Object> statisticsAnalysisResultViaChosenMainCards(TradeStatisticalAnalysisQueryRequest request, int from, int size, String caseId, boolean isComputeTotal) {
+    private Map<String, Object> statisticsAnalysisResultViaChosenMainCards(TradeStatisticalAnalysisQueryRequest request, String caseId) {
 
         // 设置分组桶的大小
         request.setGroupInitSize(initGroupSize);
@@ -280,7 +277,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         QuerySpecialParams tradeStatisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
 
         // 构建 交易统计分析聚合查询请求
-        AggregationParams tradeStatisticsAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisByMainCards(request, from, size);
+        AggregationParams tradeStatisticsAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisByMainCards(request);
 
         // 构建 mapping (聚合名称 -> 聚合属性)  , (实体属性 -> 聚合名称)
         Map<String, String> aggMapping = new LinkedHashMap<>();
@@ -291,20 +288,16 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         tradeStatisticsAgg.setResultName("chosen_main_cards");
 
         // 设置同级聚合(计算总数据量)
-        Map<String, Object> resultMap = new HashMap<>();
-        Map<String, List<List<Object>>> totalResults = null;
-        if (isComputeTotal) {
-            AggregationParams totalAgg = total(request);
-            // 获取交易统计查询结果总量
-            totalResults = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
+        AggregationParams totalAgg = total(request);
+        if (null != totalAgg) {
+            tradeStatisticsAgg.addSiblingAggregation(totalAgg);
         }
+        // 获取交易统计查询结果总量
+        Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
+
         // 获取交易统计查询结果
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, tradeStatisticsAgg, BankTransactionRecord.class, caseId);
-        if (CollectionUtils.isEmpty(results)) {
-            resultMap.put("total", 0);
-            resultMap.put("result", new ArrayList<>());
-            return resultMap;
-        }
+
         // 聚合返回结果
         List<List<Object>> returnResults = results.get(tradeStatisticsAgg.getResultName());
 
@@ -321,18 +314,28 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 将金额保留2位小数
         tradeStatisticalAnalysisResults.forEach(TradeStatisticalAnalysisResult::amountReservedTwo);
 
-        if (CollectionUtils.isEmpty(totalResults)) {
-            resultMap.put("total", 0);
+        Map<String, Object> map = new HashMap<>();
+
+        List<List<Object>> total = totalResults.get(CARDINALITY_TOTAL);
+
+        if (CollectionUtils.isEmpty(total)) {
+            map.put("total", 0);
         } else {
-            List<List<Object>> total = totalResults.get(CARDINALITY_TOTAL);
-            if (CollectionUtils.isEmpty(total)) {
-                resultMap.put("total", 0);
-            } else {
-                resultMap.put("total", total.get(0).get(0));
-            }
+            map.put("total", total.get(0).get(0));
         }
-        resultMap.put("result", tradeStatisticalAnalysisResults);
-        return resultMap;
+        map.put("result", tradeStatisticalAnalysisResults);
+        return map;
+    }
+
+    /**
+     * <h2> 按照本方查询卡号(即是全部调单卡号进行分析) </h2>
+     * <p>
+     * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
+     */
+    private Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, String caseId) {
+
+        // 筛选的是表  BankTransactionRecord 属性 reverseMark = 1(即全部调单卡号的)
+        return statisticsAnalysisResultViaChosenMainCards(request, caseId);
     }
 
     /**
@@ -347,162 +350,5 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         totalAgg.setMapping(aggregationEntityMappingFactory.buildFundTacticsAnalysisResultTotalAggMapping());
         totalAgg.setResultName(CARDINALITY_TOTAL);
         return totalAgg;
-    }
-
-    /**
-     * <h2> 按照本方查询卡号(即是全部调单卡号进行分析) </h2>
-     * <p>
-     * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
-     */
-    protected Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
-
-        // 前台分页
-        Map<String, Object> resultMap = new HashMap<>();
-        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
-        int page = pageRequest.getPage();
-        int pageSize = pageRequest.getPageSize();
-        // 异步执行 全部查询任务
-        // 获取全部查询的总量
-        AggregationParams totalAgg = total(request);
-        // 构建 交易统计分析查询请求
-        QuerySpecialParams statisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
-        Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(statisticsQuery, totalAgg, BankTransactionRecord.class, caseId);
-        long total = 0;
-        if (!CollectionUtils.isEmpty(totalResults)) {
-            List<List<Object>> list = totalResults.get(CARDINALITY_TOTAL);
-            if (!CollectionUtils.isEmpty(list)) {
-                total = (long) list.get(0).get(0);
-            }
-        } else {
-            resultMap.put("total", 0);
-            resultMap.put("result", new ArrayList<>());
-            return resultMap;
-        }
-        // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
-        long computeTotal = total + total / 10;
-        // 异步任务查询起始位置
-        int position = 0;
-        // 异步任务查询总量
-        int size = Integer.parseInt(String.valueOf(computeTotal));
-        // 异步任务查询批处理阈值
-        int chunkSize = globalChunkSize;
-        ThreadPoolTaskExecutor executor = ThreadPoolConfig.getExecutor();
-        // 需要返回的数量
-        int skip = com.zqykj.common.vo.PageRequest.getOffset(page, pageSize);
-        int limit = pageSize;
-        List<TradeStatisticalAnalysisResult> statisticalAnalysisResults = new ArrayList<>();
-        StopWatch stopWatch = StopWatch.createStarted();
-        while (position < size) {
-            int next = Math.min(position + chunkSize, size);
-            Future<List<TradeStatisticalAnalysisResult>> future = executor.submit(new StatisticalFutureTask(position,
-                    chunkSize, skip, limit, caseId, request));
-            List<TradeStatisticalAnalysisResult> results = future.get();
-            statisticalAnalysisResults.addAll(results);
-            if (statisticalAnalysisResults.size() == pageSize) {
-                break;
-            } else {
-                if (statisticalAnalysisResults.size() > 0) {
-                    skip = 0;
-                    limit = pageSize - statisticalAnalysisResults.size();
-                }
-                position = next;
-            }
-        }
-        stopWatch.stop();
-        log.info("async compute statistical analysis results cost time = {} ms", stopWatch.getTime(TimeUnit.MILLISECONDS));
-        resultMap.put("total", total);
-        resultMap.put("result", statisticalAnalysisResults);
-        return resultMap;
-    }
-
-    /**
-     * <h2> 交易统计分析异步任务查询类(针对全部查询) </h2>
-     */
-    class StatisticalFutureTask implements Callable<List<TradeStatisticalAnalysisResult>> {
-
-        private int position;
-
-        private int next;
-
-        private String caseId;
-
-        private int skip;
-
-        private int limit;
-
-        private TradeStatisticalAnalysisQueryRequest request;
-
-        public StatisticalFutureTask(int position, int next, int skip, int limit,
-                                     String caseId, TradeStatisticalAnalysisQueryRequest request) {
-            this.position = position;
-            this.next = next;
-            this.skip = skip;
-            this.limit = limit;
-            this.caseId = caseId;
-            this.request = request;
-        }
-
-        @Override
-        public List<TradeStatisticalAnalysisResult> call() throws ExecutionException, InterruptedException {
-
-            StopWatch stopWatch = StopWatch.createStarted();
-            List<TradeStatisticalAnalysisResult> statisticalResults = asyncQueryStatisticalResult(position, next, request, caseId);
-            List<String> cards = statisticalResults.stream().map(TradeStatisticalAnalysisResult::getTradeCard).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(cards)) {
-                return null;
-            }
-            // 过滤出的调单卡号集合
-            Map<String, String> filterMainCards = fundTacticsAnalysis.asyncFilterMainCards(caseId, cards);
-            // 返回最终的调单数据
-            List<TradeStatisticalAnalysisResult> finalCards = statisticalResults.stream().filter(e -> filterMainCards.containsKey(e.getTradeCard()))
-                    .skip(skip).limit(limit).collect(Collectors.toList());
-            log.info("Current Thread  = {} ,filter mainCards  cost time = {} ms", Thread.currentThread().getName(), stopWatch.getTime(TimeUnit.MILLISECONDS));
-            return finalCards;
-        }
-    }
-
-    /**
-     * <h2> 异步任务查询交易统计分析结果(获取交易卡号集合) </h2>
-     */
-    private List<TradeStatisticalAnalysisResult> asyncQueryStatisticalResult(int from, int size, TradeStatisticalAnalysisQueryRequest request,
-                                                                             String caseId) throws ExecutionException, InterruptedException {
-        int position = from;
-        List<TradeStatisticalAnalysisResult> cards = new ArrayList<>(size);
-        List<CompletableFuture<List<TradeStatisticalAnalysisResult>>> futures = new ArrayList<>();
-        while (position < size) {
-            int next = Math.min(position + chunkSize, size);
-            int finalPosition = position;
-            CompletableFuture<List<TradeStatisticalAnalysisResult>> future = CompletableFuture.supplyAsync(() ->
-                    getCardsViaQueryStatisticalResult(request, finalPosition, chunkSize, caseId), ThreadPoolConfig.getExecutor());
-            position = next;
-            futures.add(future);
-        }
-        for (CompletableFuture<List<TradeStatisticalAnalysisResult>> future : futures) {
-            List<TradeStatisticalAnalysisResult> card = future.get();
-            if (!CollectionUtils.isEmpty(card)) {
-                cards.addAll(card);
-            }
-        }
-        return cards;
-    }
-
-    /**
-     * <h2> 获取交易卡号集合(可能存在调单的、或者非调单的) 通过查询交易统计分析结果 </h2>
-     * <p>
-     * 查询的表是 {@link BankTransactionRecord}
-     */
-    private List<TradeStatisticalAnalysisResult> getCardsViaQueryStatisticalResult(TradeStatisticalAnalysisQueryRequest request, int position, int next,
-                                                                                   String caseId) {
-
-        Map<String, Object> map = statisticsAnalysisResultViaChosenMainCards(request, position, next, caseId, false);
-        if (CollectionUtils.isEmpty(map)) {
-            return null;
-        }
-        Object result = map.get("result");
-        List<TradeStatisticalAnalysisResult> statisticalResults = (List<TradeStatisticalAnalysisResult>) result;
-        if (CollectionUtils.isEmpty(statisticalResults)) {
-            return null;
-        }
-        return statisticalResults;
     }
 }

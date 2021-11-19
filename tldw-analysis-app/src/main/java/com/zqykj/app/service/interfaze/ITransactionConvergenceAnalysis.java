@@ -5,7 +5,7 @@ package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
-import com.zqykj.common.core.ServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 import java.util.concurrent.ExecutionException;
 
