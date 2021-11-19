@@ -277,8 +277,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         request.setGroupInitSize(initGroupSize);
 
         // 构建 交易统计分析查询请求
-        QuerySpecialParams tradeStatisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
-
+        QuerySpecialParams tradeStatisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
         // 构建 交易统计分析聚合查询请求
         AggregationParams tradeStatisticsAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisByMainCards(request, from, size);
 
@@ -296,7 +295,8 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         if (isComputeTotal) {
             AggregationParams totalAgg = total(request);
             // 获取交易统计查询结果总量
-            totalResults = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
+            QuerySpecialParams totalQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+            totalResults = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionFlow.class, caseId);
         }
         // 获取交易统计查询结果
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(tradeStatisticsQuery, tradeStatisticsAgg, BankTransactionRecord.class, caseId);
@@ -365,8 +365,8 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);
         // 构建 交易统计分析查询请求
-        QuerySpecialParams statisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
-        Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(statisticsQuery, totalAgg, BankTransactionRecord.class, caseId);
+        QuerySpecialParams statisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+        Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(statisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
         long total = 0;
         if (!CollectionUtils.isEmpty(totalResults)) {
             List<List<Object>> list = totalResults.get(CARDINALITY_TOTAL);

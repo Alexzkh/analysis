@@ -26,7 +26,8 @@ import java.util.*;
 public class AggregationParams {
 
     /**
-     * 聚合名称
+     * 聚合名称(当定义管道聚合的时候,无须定义此名称)
+     * eg. 需要AggregationParams params = new AggregationParams() , 然后 调用此方法 params.toPipeline(PipelineAggregationParams params) 即可;
      */
     private String name;
 
@@ -87,7 +88,7 @@ public class AggregationParams {
     private List<AggregationParams> subAggregation;
 
     /**
-     * 管道聚合
+     * 一组管道子聚合
      */
     private List<PipelineAggregationParams> pipelineAggregation;
 
@@ -124,6 +125,16 @@ public class AggregationParams {
             siblingAggregation = new ArrayList<>();
         }
         this.siblingAggregation.add(sibling);
+    }
+
+    // 将 AggregationParams 变成管道聚合
+    public void toPipeline(PipelineAggregationParams params) {
+
+        if (CollectionUtils.isEmpty(this.pipelineAggregation)) {
+
+            pipelineAggregation = new ArrayList<>();
+        }
+        this.pipelineAggregation.add(params);
     }
 
     public AggregationParams(String name, String type, String[] fields) {

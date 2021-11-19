@@ -22,7 +22,7 @@ public interface QueryRequestParamFactory {
      **/
     <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T request, V other);
 
-    <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other);
+    <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other, Class<?> queryTable);
 
     /**
      * 构建公共查询请求体.

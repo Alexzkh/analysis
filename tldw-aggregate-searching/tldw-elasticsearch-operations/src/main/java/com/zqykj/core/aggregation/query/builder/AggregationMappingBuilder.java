@@ -30,7 +30,6 @@ import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuil
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.TopHitsAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -44,6 +43,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -109,6 +109,22 @@ public class AggregationMappingBuilder {
         return aggregationInstance;
     }
 
+    public static List<Object> buildPipelineAggregations(List<PipelineAggregationParams> parameters) {
+        if (CollectionUtils.isEmpty(parameters)) {
+            return null;
+        }
+        List<Object> pipelineAggregationInstances = new ArrayList<>();
+        for (PipelineAggregationParams pipelineAggregationParams : parameters) {
+
+            Object pipelineAggregationInstance = buildPipelineAggregationInstance(pipelineAggregationParams);
+            if (log.isDebugEnabled()) {
+                log.debug("aggregation = {} ", pipelineAggregationInstance.toString());
+            }
+            pipelineAggregationInstances.add(pipelineAggregationInstance);
+        }
+        return pipelineAggregationInstances;
+    }
+
     /**
      * <h2> 构建AggregationBuilder 聚合 </h2>
      *
@@ -118,6 +134,15 @@ public class AggregationMappingBuilder {
     private static Object buildAggregationInstance(@Nullable Object father, AggregationParams parameters) {
 
         try {
+            // 处理管道聚合(有可能第一个是管道聚合)
+            if (StringUtils.isBlank(parameters.getName()) || !CollectionUtils.isEmpty(parameters.getPipelineAggregation())) {
+
+                List<Object> objects = buildPipelineAggregations(parameters.getPipelineAggregation());
+                if (CollectionUtils.isEmpty(objects)) {
+                    return null;
+                }
+                return objects.get(0);
+            }
             // TODO 聚合类型需要翻译 成对应数据源有的聚合类型
             parameters.setType(parameters.aggregationTypeConvert(parameters.getType()));
 
@@ -194,15 +219,6 @@ public class AggregationMappingBuilder {
                 // AggregationBuilder 类型子聚合处理
                 addSubAggregationMapping(target, parameters.getSubAggregation(), aggregationClass);
             }
-            // TODO 将被移除
-//            else if (PipelineAggregationParams.class.isAssignableFrom(parameterType.get())) {
-//
-//                // PipelineAggregationBuilder 类型聚合处理
-//                if (null == father) {
-//                    father = target;
-//                }
-//                addPipelineAggregationMapping(father, parameters.getPipelineAggregation(), aggregationClass);
-//            }
         } else if (FetchSource.class.isAssignableFrom(field.getType())) {
             // 处理聚合查询需要展示的字段
             addFetchField(target, parameters.getFetchSource(), aggregationClass, field);
@@ -344,7 +360,7 @@ public class AggregationMappingBuilder {
         for (AggregationParams subParameter : subParameters) {
 
             // 如果子聚合是管道聚合的话
-            if (StringUtils.isBlank(subParameter.getName()) && !CollectionUtils.isEmpty(subParameter.getPipelineAggregation())) {
+            if (StringUtils.isBlank(subParameter.getName()) || !CollectionUtils.isEmpty(subParameter.getPipelineAggregation())) {
 
                 addPipelineAggregationMapping(target, subParameter.getPipelineAggregation(), aggregationClass);
             } else {

@@ -17,6 +17,7 @@ import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
+import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -48,13 +49,19 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
-    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other) {
+    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other,
+                                                                                           Class<?> queryTable) {
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) requestParam;
         // 获取前置请求
         FundTacticsPartGeneralPreRequest preRequest = request.convertFrom(request);
-        CombinationQueryParams combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionRecord(preRequest, other);
+        CombinationQueryParams combinationQueryParams;
+        if (BankTransactionFlow.class.isAssignableFrom(queryTable)) {
+            combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionFlow(preRequest, other);
+        } else {
+            combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionRecord(preRequest, other);
+        }
 
         CombinationQueryParams cardNumsAndFuzzyQuery = new CombinationQueryParams();
 

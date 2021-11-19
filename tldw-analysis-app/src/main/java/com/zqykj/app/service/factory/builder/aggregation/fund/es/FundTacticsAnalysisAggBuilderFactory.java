@@ -175,7 +175,7 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         }
         QuerySpecialParams prefixFilter = new QuerySpecialParams();
         prefixFilter.addCombiningQueryParams(combinationOne);
-        AggregationParams root = new AggregationParams("cardinality_total", AggsType.filter.name(), prefixFilter);
+        AggregationParams root = new AggregationParams("total", AggsType.filter.name(), prefixFilter);
         AggregationParams total;
         total = new AggregationParams("cardinality_total", AggsType.cardinality.name(), FundTacticsAnalysisField.QUERY_CARD);
         setSubAggregation(root, total);
