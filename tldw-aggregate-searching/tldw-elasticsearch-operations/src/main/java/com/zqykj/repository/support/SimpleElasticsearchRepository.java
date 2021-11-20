@@ -143,7 +143,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (null != condition) {
 
             QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
-            NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder).withPageable(pageable).build();
+            NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder)
+                    .withFields(condition.getIncludeFields()).withExcludeFields(condition.getExcludeFields())
+                    .withPageable(pageable).build();
             SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
             AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
@@ -1146,7 +1148,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Nullable
     public <R, T> R execute(OperationsCallback<R> callback, Class<T> entityClass) {
-        createIndexAndMapping(entityClass);
+//        createIndexAndMapping(entityClass);
         return callback.doWithOperations(operations);
     }
 

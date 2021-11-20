@@ -8,7 +8,6 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.parameters.query.*;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.query.QueryNameForBeanClass;
-import com.zqykj.util.JacksonUtils;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchException;
@@ -145,6 +144,9 @@ public class QueryMappingBuilder {
      */
     protected static void dealWithCombination(Method method, Object target, List<CommonQueryParams> commonQueryParams) {
 
+        if (CollectionUtils.isEmpty(commonQueryParams)) {
+            return;
+        }
         for (CommonQueryParams common : commonQueryParams) {
 
             // 如果还是 bool 查询(需要特殊处理)

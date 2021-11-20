@@ -196,10 +196,7 @@ public class AggregationMappingBuilder {
         if (null != field.getAnnotation(NotResolve.class)) {
             return;
         }
-        if (CommonAggregationParams.class.isAssignableFrom(field.getType())) {
-
-            addGeneraParametersMapping(target, parameters.getCommonAggregationParams(), aggregationClass, field, field.getType());
-        } else if (DateParams.class.isAssignableFrom(field.getType())) {
+        if (DateParams.class.isAssignableFrom(field.getType())) {
 
             addDateParametersMapping(target, parameters.getDateParams(), aggregationClass, field, field.getType());
         } else if (List.class.isAssignableFrom(field.getType())) {
@@ -424,21 +421,6 @@ public class AggregationMappingBuilder {
         });
     }
 
-    private static void addGeneraParametersMapping(Object target, CommonAggregationParams parameters,
-                                                   Class<?> aggregationClass, Field field, Class<?> fieldClass) {
-
-        if (null == parameters) {
-            return;
-        }
-        // 处理GeneraParameters 中的每一个字段
-        org.springframework.util.ReflectionUtils.doWithFields(fieldClass, subField -> {
-
-            // 根据field name 默认处理 (AggregationParameters 定义的field name 都是匹配 aggregationClass 的方法名称)
-            // 后面如果mongodb 方法名称根据当前es 的不一致, 中间加一层转换即可
-            applyDefaultField(target, aggregationClass, subField, parameters);
-        });
-    }
-
     private static void addDateParametersMapping(Object target, DateParams parameters,
                                                  Class<?> aggregationClass, Field field, Class<?> fieldClass) {
 
@@ -539,7 +521,9 @@ public class AggregationMappingBuilder {
 
         Map<String, String[]> includeExcludeMap = ((AggregationParams) parameters).getIncludeExclude();
         if (!CollectionUtils.isEmpty(includeExcludeMap)) {
-            IncludeExclude includeExclude = new IncludeExclude(includeExcludeMap.get("includeValues"), includeExcludeMap.get("excludeValues"));
+            String[] includeValues = includeExcludeMap.get("includeValues");
+            String[] excludeValues = includeExcludeMap.get("excludeValues");
+            IncludeExclude includeExclude = new IncludeExclude(includeValues, excludeValues);
             Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), TERMS_INCLUDE_EXCLUDE_CLASS);
             // 开始调用此聚合类的方法, 为target 赋值
             optionalMethod.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, includeExclude));
@@ -552,6 +536,22 @@ public class AggregationMappingBuilder {
         optionalMethod.ifPresent(method -> {
             Object intervalObject = ReflectionUtils.getTargetInstanceViaReflection(SCRIPT_TYPE, scriptValue);
             org.springframework.util.ReflectionUtils.invokeMethod(optionalMethod.get(), target, intervalObject);
+        });
+    }
+
+    @Deprecated
+    private static void addGeneraParametersMapping(Object target, CommonAggregationParams parameters,
+                                                   Class<?> aggregationClass, Field field, Class<?> fieldClass) {
+
+        if (null == parameters) {
+            return;
+        }
+        // 处理GeneraParameters 中的每一个字段
+        org.springframework.util.ReflectionUtils.doWithFields(fieldClass, subField -> {
+
+            // 根据field name 默认处理 (AggregationParameters 定义的field name 都是匹配 aggregationClass 的方法名称)
+            // 后面如果mongodb 方法名称根据当前es 的不一致, 中间加一层转换即可
+            applyDefaultField(target, aggregationClass, subField, parameters);
         });
     }
 

@@ -91,11 +91,10 @@ public interface QueryRequestParamFactory {
      * 案件域
      */
     <T, V> QuerySpecialParams buildBasicParamQueryViaCase(T request, V other);
-
     /**
      * <h2> 给定一组卡号集合, 筛选出调单的 </h2>
      */
-    <T, V> QuerySpecialParams filterMainCards(T request, V other, List<String> cards);
+    QuerySpecialParams filterMainCards(String caseId, List<String> cards);
 
     /**
      * 构建单卡画像查询参数
