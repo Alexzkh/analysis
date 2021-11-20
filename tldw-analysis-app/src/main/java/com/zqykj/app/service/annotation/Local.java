@@ -10,9 +10,12 @@ import java.lang.annotation.*;
 @Documented
 public @interface Local {
 
+    // 聚合名称
     String name() default "";
 
+    // 实体特殊属性判断 eg. date
     String type() default "default";
 
+    // 排序字段名称
     String sortName() default "";
 }

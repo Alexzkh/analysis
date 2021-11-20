@@ -3,9 +3,10 @@
  */
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResultResponse;
+import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
-import com.zqykj.infrastructure.core.ServerResponse;
+import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
+import com.zqykj.common.core.ServerResponse;
 
 import java.util.concurrent.ExecutionException;
 
@@ -14,5 +15,5 @@ import java.util.concurrent.ExecutionException;
  */
 public interface ITransactionConvergenceAnalysis {
 
-    ServerResponse<TradeConvergenceAnalysisResultResponse> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException;
+    ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException;
 }

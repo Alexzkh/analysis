@@ -21,7 +21,7 @@ public interface AggregationRequestParamFactory {
     /**
      * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合) 、全部查询不适用此方法 </h2>
      */
-    <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request);
+    <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request, int from, int size);
 
     /**
      * 构建获取交易统计分析根据时间类型获取结果的聚合参数.
@@ -58,7 +58,7 @@ public interface AggregationRequestParamFactory {
     /**
      * <h2>  构建交易汇聚分析结果聚合请求(基于选中一组调单卡号集合为查询条件) </h2>
      */
-    <T> AggregationParams buildTradeConvergenceAnalysisResultMainCardsAgg(T request);
+    <T> AggregationParams buildTradeConvergenceAnalysisResultMainCardsAgg(T request, int from, int size);
 
     /**
      * <h2> 获取交易汇聚分析结果查询总数据量 </h2>
@@ -79,6 +79,11 @@ public interface AggregationRequestParamFactory {
      * <h2> 获取调单卡号总量 </h2>
      */
     <T> AggregationParams getCardNumsTotal(T request);
+
+    /**
+     * <h2> 按指定字段groupBy </h2>
+     */
+    AggregationParams groupByField(String field, int size);
 
     /**
      * 构建单卡画像最早交易时间聚合查询参数

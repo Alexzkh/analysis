@@ -47,6 +47,11 @@ public interface AggregationEntityMappingFactory {
     Map<String, String> buildGetCardNumsTotalAggMapping();
 
     /**
+     * <h2> 构建groupBy 聚合名称 - 聚合属性映射  </h2>
+     */
+    Map<String, String> buildGetGroupByAggMapping();
+
+    /**
      * 构建单卡画像分析结果,聚合和实体属性映射
      *
      * @param aggKeyMapping       聚合名称-聚合属性Map

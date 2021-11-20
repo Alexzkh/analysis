@@ -4,6 +4,7 @@
 package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.app.service.annotation.Hits;
+import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Local;
 import com.zqykj.app.service.annotation.Opposite;
 import com.zqykj.common.vo.Direction;
@@ -26,7 +27,38 @@ import java.util.stream.Collectors;
 @Setter
 @Getter
 @NoArgsConstructor
-public class TradeConvergenceAnalysisResult extends TradeStatisticalAnalysisResult {
+public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
+
+    // 开户名称
+    @Local(name = "customer_name")
+    @Opposite(name = "transaction_opposite_name")
+    @Key(name = "hits")
+    @Hits
+    private String customerName;
+
+    // 开户证件号码
+    @Local(name = "customer_identity_card")
+    @Opposite(name = "transaction_opposite_certificate_number")
+    @Hits
+    private String customerIdentityCard;
+
+    // 开户银行
+    @Local(name = "bank")
+    @Opposite(name = "transaction_opposite_account_open_bank")
+    @Hits
+    private String bank;
+
+    // 账号
+    @Local(name = "query_account")
+    @Opposite(name = "transaction_opposite_account")
+    @Hits
+    private String queryAccount;
+
+    // 交易卡号
+    @Local(name = "query_card")
+    @Opposite(name = "transaction_opposite_card")
+    @Hits
+    private String tradeCard;
 
     // 对方开户名称
     @Local(name = "transaction_opposite_name")

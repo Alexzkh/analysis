@@ -15,6 +15,7 @@ import com.zqykj.core.aggregation.query.builder.AggregationMappingBuilder;
 import com.zqykj.core.aggregation.query.builder.QueryMappingBuilder;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.domain.*;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
@@ -142,7 +143,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (null != condition) {
 
             QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
-            NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder).withPageable(pageable).build();
+            NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder)
+                    .withFields(condition.getIncludeFields()).withExcludeFields(condition.getExcludeFields())
+                    .withPageable(pageable).build();
             SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
             AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
@@ -1014,9 +1017,19 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
             for (AggregationParams aggregationParams : agg.getSiblingAggregation()) {
 
-                Object siblingTarget = AggregationMappingBuilder.buildAggregation(aggregationParams);
-                if (null != siblingTarget) {
-                    siblingTargets.add(siblingTarget);
+                if (StringUtils.isBlank(aggregationParams.getName()) || !CollectionUtils.isEmpty(aggregationParams.getPipelineAggregation())) {
+                    // 处理同级管道聚合
+                    List<PipelineAggregationParams> pipelineAggregations = aggregationParams.getPipelineAggregation();
+                    if (!CollectionUtils.isEmpty(pipelineAggregations)) {
+                        List<Object> objects = AggregationMappingBuilder.buildPipelineAggregations(pipelineAggregations);
+                        siblingTargets.addAll(objects);
+                    }
+                } else {
+                    // 处理普通同级聚合
+                    Object siblingTarget = AggregationMappingBuilder.buildAggregation(aggregationParams);
+                    if (null != siblingTarget) {
+                        siblingTargets.add(siblingTarget);
+                    }
                 }
             }
         }
@@ -1030,12 +1043,20 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
         // 聚合查询
         if (null != aggTarget) {
-            sourceBuilder.aggregation((AggregationBuilder) aggTarget);
+            if (aggTarget instanceof AggregationBuilder) {
+                sourceBuilder.aggregation((AggregationBuilder) aggTarget);
+            } else {
+                sourceBuilder.aggregation((PipelineAggregationBuilder) aggTarget);
+            }
             // 是否需要设置兄弟聚合
             if (!CollectionUtils.isEmpty(siblingTargets)) {
                 for (Object siblingTarget : siblingTargets) {
                     // 设置兄弟聚合对象
-                    sourceBuilder.aggregation((AggregationBuilder) siblingTarget);
+                    if (siblingTarget instanceof AggregationBuilder) {
+                        sourceBuilder.aggregation((AggregationBuilder) siblingTarget);
+                    } else {
+                        sourceBuilder.aggregation((PipelineAggregationBuilder) siblingTarget);
+                    }
                 }
             }
         }
@@ -1127,7 +1148,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
     @Nullable
     public <R, T> R execute(OperationsCallback<R> callback, Class<T> entityClass) {
-        createIndexAndMapping(entityClass);
+//        createIndexAndMapping(entityClass);
         return callback.doWithOperations(operations);
     }
 

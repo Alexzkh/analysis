@@ -128,6 +128,12 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
         return aggMapping;
     }
 
+    public Map<String, String> buildGetGroupByAggMapping() {
+        Map<String, String> aggMapping = new HashMap<>();
+        aggMapping.put("groupBy", "keyAsString");
+        return aggMapping;
+    }
+
     @Override
     public void buildSingleCardPortraitResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity) {
         // 查询卡号分桶后的聚合结果map(聚合名称:聚合值属性名称)
