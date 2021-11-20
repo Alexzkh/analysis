@@ -3,6 +3,7 @@
  */
 package com.zqykj.core.aggregation.parse;
 
+import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -19,6 +20,7 @@ import java.util.*;
 /**
  * <h1> 聚合结果解析器 </h1>
  */
+@Slf4j
 public class AggregationParser {
 
     private final static String BUCKET_KEY = "buckets";
@@ -37,8 +39,12 @@ public class AggregationParser {
         List<List<Object>> result = new ArrayList<>();
         map.forEach((key, value) -> {
 
-            List<Object> parse = parse(aggregations, value, key);
+            List<Object> parse = parse(aggregations, key, value);
+            // 不处理空结果
+            if (CollectionUtils.isEmpty(parse)) {
 
+                log.info("聚合名称 = {} , 取值属性 = {}, 取值结果个数 = {}", key, value, 0);
+            }
             result.add(parse);
         });
 
@@ -98,7 +104,7 @@ public class AggregationParser {
     /**
      * <h2> 解析聚合结果 </h2>
      */
-    public static List<Object> parse(Aggregations aggregations, String key, String aggregationName) {
+    public static List<Object> parse(Aggregations aggregations, String aggregationName, String key) {
 
         // 讲首字母大写然后拼接上 get
         key = applyFirstChartUpperCase(key);

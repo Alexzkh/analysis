@@ -1,9 +1,6 @@
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.fund.FundDateRequest;
-import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
-import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisFundSumByDate;
-import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
+import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
@@ -61,7 +58,7 @@ public interface ITransactionStatistics {
      * @param queryRequest: 交易统计分析查询请求体.
      * @return: com.zqykj.common.core.ServerResponse
      **/
-    ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws ExecutionException, InterruptedException;
+    ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws ExecutionException, InterruptedException;
 
     /**
      * @param caseId:                             案件编号.

@@ -11,7 +11,7 @@ import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResultResponse;
+import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisResult;
@@ -64,9 +64,9 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
     private static final String CARDINALITY_TOTAL = "cardinality_total";
 
     @Override
-    public ServerResponse<TradeConvergenceAnalysisResultResponse> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
+    public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
 
-        TradeConvergenceAnalysisResultResponse resultResponse = new TradeConvergenceAnalysisResultResponse();
+        FundAnalysisResultResponse<TradeConvergenceAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
         if (request.getSearchType() == 0 && !CollectionUtils.isEmpty(request.getCardNums())) {
 
@@ -78,7 +78,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             // TODO 全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
             // 全部条件
             if (request.getPageRequest().getPage() > 30) {
-                return ServerResponse.createBySuccess("分页上限为30页", new TradeConvergenceAnalysisResultResponse());
+                return ServerResponse.createBySuccess("分页上限为30页", FundAnalysisResultResponse.empty());
             }
             map = convergenceAnalysisResultViaAllMainCards(request, caseId);
         }
@@ -273,7 +273,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
 
             StopWatch stopWatch = StopWatch.createStarted();
             List<TradeConvergenceAnalysisResult> convergenceResults = asyncQueryConvergenceResult(position, next, request, caseId);
-            List<String> cards = convergenceResults.stream().map(TradeStatisticalAnalysisResult::getTradeCard).collect(Collectors.toList());
+            List<String> cards = convergenceResults.stream().map(TradeConvergenceAnalysisResult::getTradeCard).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(cards)) {
                 return null;
             }

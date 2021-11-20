@@ -10,5 +10,6 @@ import java.lang.annotation.*;
 @Documented
 public @interface Agg {
 
+    // 聚合名称
     String name() default "";
 }

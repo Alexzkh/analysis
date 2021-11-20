@@ -235,9 +235,9 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         return groupTradeAmountSum;
     }
 
-    public ServerResponse getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest request) throws ExecutionException, InterruptedException {
+    public ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest request) throws ExecutionException, InterruptedException {
 
-        TradeStatisticalAnalysisResultResponse resultResponse = new TradeStatisticalAnalysisResultResponse();
+        FundAnalysisResultResponse<TradeStatisticalAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
         if (request.getSearchType() == 0 && !CollectionUtils.isEmpty(request.getCardNums())) {
 
@@ -249,7 +249,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
             // TODO  全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
             // 全部条件
             if (request.getPageRequest().getPage() > 30) {
-                return ServerResponse.createBySuccess("分页上限为30页", new TradeConvergenceAnalysisResultResponse());
+                return ServerResponse.createBySuccess("分页上限为30页", FundAnalysisResultResponse.empty());
             }
             map = statisticsAnalysisResultViaAllMainCards(request, caseId);
         }

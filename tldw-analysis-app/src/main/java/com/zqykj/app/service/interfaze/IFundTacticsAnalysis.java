@@ -32,4 +32,6 @@ public interface IFundTacticsAnalysis {
      * 能够筛选出一组对象集合
      */
     Map<String, String> asyncFilterMainCards(String caseId, List<String> cards) throws ExecutionException, InterruptedException;
+
+
 }
