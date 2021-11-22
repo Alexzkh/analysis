@@ -1,15 +1,13 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.parse.fund.es;
+package com.zqykj.app.service.factory.parse.fund;
 
-
-import com.zqykj.app.service.annotation.Hits;
+import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Local;
 import com.zqykj.app.service.annotation.Opposite;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.util.ReflectionUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -19,12 +17,8 @@ import java.util.*;
 /**
  * <h1> 资金战法聚合结果解析工厂 </h1>
  */
-@ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 @Service
 public class FundTacticsAggResultParseFactory implements AggregationResultEntityParseFactory {
-
-    public static final String LOCAL_HITS = "local_hits";
-    public static final String OPPOSITE_HITS = "opposite_hits";
 
     public List<Map<String, Object>> convertEntity(List<List<Object>> values, List<String> titles, Class<?> entity) {
 
@@ -46,12 +40,18 @@ public class FundTacticsAggResultParseFactory implements AggregationResultEntity
 
             for (int i = 0; i < perLine.size(); i++) {
 
-                if (titles.get(i).equals(LOCAL_HITS) || titles.get(i).equals(OPPOSITE_HITS)) {
+                Object value = perLine.get(i);
+
+                if (null == value) {
+                    continue;
+                }
+                if (value instanceof List) {
 
                     // 需要处理hits(展示的字段)
-                    applyLocalSource(map, perLine.get(i), entity);
+                    applySource(map, perLine.get(i), entity);
+                } else {
+                    map.put(titles.get(i), perLine.get(i));
                 }
-                map.put(titles.get(i), perLine.get(i));
             }
             colValueMapList.add(map);
         });
@@ -74,11 +74,10 @@ public class FundTacticsAggResultParseFactory implements AggregationResultEntity
             List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
             for (Field field : fields) {
                 Local local = field.getAnnotation(Local.class);
-                Hits hits = field.getAnnotation(Hits.class);
-                if (null != local && null != hits) {
-                    Object fieldName = sourceMap.get(local.name());
-                    if (null != fieldName) {
-                        map.put(field.getName(), fieldName);
+                if (null != local && local.showField()) {
+                    Object fieldValue = sourceMap.get(local.name());
+                    if (null != fieldValue) {
+                        map.put(field.getName(), fieldValue);
                     }
                 }
             }
@@ -102,11 +101,10 @@ public class FundTacticsAggResultParseFactory implements AggregationResultEntity
 
             for (Field field : fields) {
                 Opposite opposite = field.getAnnotation(Opposite.class);
-                Hits hits = field.getAnnotation(Hits.class);
-                if (null != opposite && null != hits) {
-                    Object fieldName = sourceMap.get(opposite.name());
-                    if (null != fieldName) {
-                        map.put(field.getName(), fieldName);
+                if (null != opposite && opposite.showField()) {
+                    Object fieldValue = sourceMap.get(opposite.name());
+                    if (null != fieldValue) {
+                        map.put(field.getName(), fieldValue);
                     }
                 }
             }
@@ -130,19 +128,24 @@ public class FundTacticsAggResultParseFactory implements AggregationResultEntity
 
             for (Field field : fields) {
                 Local local = field.getAnnotation(Local.class);
-                Hits localHits = field.getAnnotation(Hits.class);
-                if (null != local && null != localHits) {
-                    Object fieldName = sourceMap.get(local.name());
-                    if (null != fieldName) {
-                        map.put(field.getName(), fieldName);
+                if (null != local && local.showField()) {
+                    Object fieldValue = sourceMap.get(local.name());
+                    if (null != fieldValue) {
+                        map.put(field.getName(), fieldValue);
                     }
                 }
                 Opposite opposite = field.getAnnotation(Opposite.class);
-                Hits oppositeHits = field.getAnnotation(Hits.class);
-                if (null != opposite && null != oppositeHits) {
-                    Object fieldName = sourceMap.get(opposite.name());
-                    if (null != fieldName) {
-                        map.put(field.getName(), fieldName);
+                if (null != opposite && opposite.showField()) {
+                    Object fieldValue = sourceMap.get(opposite.name());
+                    if (null != fieldValue) {
+                        map.put(field.getName(), fieldValue);
+                    }
+                }
+                Agg agg = field.getAnnotation(Agg.class);
+                if (null != agg && agg.showField()) {
+                    Object fieldValue = sourceMap.get(agg.name());
+                    if (null != fieldValue) {
+                        map.put(field.getName(), fieldValue);
                     }
                 }
             }

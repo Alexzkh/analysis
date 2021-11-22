@@ -1,8 +1,5 @@
 package com.zqykj.app.service.vo.fund;
 
-import com.zqykj.app.service.annotation.Agg;
-import com.zqykj.app.service.annotation.Hits;
-import com.zqykj.app.service.annotation.Key;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,36 +23,26 @@ public class SingleCardPortraitResponse implements Serializable {
     /**
      * 调单账号（查询账号）
      */
-    @Hits
-    @Key(name = "hits")
     private String queryAccount;
 
     /**
      * 调单卡号（查询卡号）
      */
-    @Hits
-    @Key(name = "hits")
     private String queryCard;
 
     /**
      * 客户名称
      */
-    @Hits
-    @Key(name = "hits")
     private String customerName;
 
     /**
      * 客户身份证号码
      */
-    @Hits
-    @Key(name = "hits")
     private String customerIdentityCard;
 
     /**
      * 开户银行
      */
-    @Hits
-    @Key(name = "hits")
     private String bank;
 
     /**
@@ -66,15 +53,11 @@ public class SingleCardPortraitResponse implements Serializable {
     /**
      * 入账金额
      */
-    @Agg(name = "localInTransactionMoney")
-    @Key(name = "valueAsString")
     private Double entriesAmount;
 
     /**
      * 出账金额
      */
-    @Agg(name = "localOutTransactionMoney")
-    @Key(name = "valueAsString")
     private Double outGoingAmount;
 
     /**
@@ -85,20 +68,16 @@ public class SingleCardPortraitResponse implements Serializable {
     /**
      * 最早交易时间
      */
-    @Key(name = "valueAsString")
     private String earliestTradingTime;
 
     /**
      * 最晚交易时间
      */
-    @Key(name = "valueAsString")
     private String latestTradingTime;
 
     /**
      * 账户余额
      */
-    @Hits
-    @Key(name = "hits")
     private Double transactionBalance;
 
 }

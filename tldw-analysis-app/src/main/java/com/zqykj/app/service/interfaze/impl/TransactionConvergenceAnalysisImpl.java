@@ -14,7 +14,6 @@ import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
-import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisResult;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionRecord;
@@ -223,7 +222,9 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             Future<List<TradeConvergenceAnalysisResult>> future = executor.submit(new ConvergenceFutureTask(position,
                     chunkSize, skip, limit, caseId, request));
             List<TradeConvergenceAnalysisResult> results = future.get();
-            convergenceAnalysisResults.addAll(results);
+            if (!CollectionUtils.isEmpty(results)) {
+                convergenceAnalysisResults.addAll(results);
+            }
             if (convergenceAnalysisResults.size() == pageSize) {
                 break;
             } else {
