@@ -3,7 +3,9 @@
  */
 package com.zqykj.app.service.interfaze;
 
+import com.zqykj.app.service.vo.fund.AdjustIndividualRequest;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
+import com.zqykj.common.core.ServerResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -33,5 +35,13 @@ public interface IFundTacticsAnalysis {
      */
     Map<String, String> asyncFilterMainCards(String caseId, List<String> cards) throws ExecutionException, InterruptedException;
 
+    /**
+     * <h2> 获取调单个体分析结果 </h2>
+     */
+    ServerResponse getAdjustIndividual(AdjustIndividualRequest request);
 
+    /**
+     * <h2> 获取调单卡号集合(选个个体账号展示下面的调单卡号) </h2>
+     */
+    ServerResponse getAdjustCardsViaIndividual(AdjustIndividualRequest request);
 }

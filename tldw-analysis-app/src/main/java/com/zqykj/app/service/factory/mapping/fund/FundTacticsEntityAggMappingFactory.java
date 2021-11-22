@@ -110,30 +110,16 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
         }
     }
 
-    public Map<String, String> buildFundTacticsAnalysisResultTotalAggMapping() {
+    public Map<String, String> buildDistinctTotalAggMapping(String field) {
 
         Map<String, String> aggMapping = new HashMap<>();
-        aggMapping.put("cardinality_total", "value");
+        aggMapping.put("distinct_" + field, "value");
         return aggMapping;
     }
 
-    public Map<String, String> buildGetCardNumsInBatchesAggMapping() {
-
+    public Map<String, String> buildGroupByAggMapping(String field) {
         Map<String, String> aggMapping = new HashMap<>();
-        aggMapping.put("groupQueryCard", "KeyAsString");
-        return aggMapping;
-    }
-
-    public Map<String, String> buildGetCardNumsTotalAggMapping() {
-
-        Map<String, String> aggMapping = new HashMap<>();
-        aggMapping.put("distinctQueryCard", "value");
-        return aggMapping;
-    }
-
-    public Map<String, String> buildGetGroupByAggMapping() {
-        Map<String, String> aggMapping = new HashMap<>();
-        aggMapping.put("groupBy", "keyAsString");
+        aggMapping.put("groupBy_" + field, "keyAsString");
         return aggMapping;
     }
 

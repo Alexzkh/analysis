@@ -363,4 +363,35 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
 
         return querySpecialParams;
     }
+
+    public <T> QuerySpecialParams buildAdjustIndividualQuery(T request) {
+
+        AdjustIndividualRequest adjustIndividualRequest = (AdjustIndividualRequest) request;
+        // 案件Id
+        String caseId = adjustIndividualRequest.getCaseId();
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, caseId));
+        // 指定开户证件号码
+        if (StringUtils.isNotBlank(adjustIndividualRequest.getCustomerIdentityCard())) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
+                    adjustIndividualRequest.getCustomerIdentityCard()));
+        }
+        // 模糊查询
+        if (!StringUtils.isBlank(adjustIndividualRequest.getKeyword())) {
+
+            CombinationQueryParams fuzzyQuery = new CombinationQueryParams();
+            fuzzyQuery.setType(ConditionType.should);
+            fuzzyQuery.addCommonQueryParams(QueryParamsBuilders.fuzzy(adjustIndividualRequest.getKeyword(),
+                    FundTacticsAnalysisField.CUSTOMER_NAME));
+            fuzzyQuery.addCommonQueryParams(QueryParamsBuilders.fuzzy(adjustIndividualRequest.getKeyword(),
+                    FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD));
+            // 增加模糊查询
+            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(fuzzyQuery));
+        }
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        return querySpecialParams;
+    }
 }

@@ -37,24 +37,14 @@ public interface AggregationEntityMappingFactory {
     void buildTradeAnalysisResultMappingOpposite(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
 
     /**
-     * <h2> 构建资金战法计算去重总数据量 聚合名称 - 聚合属性映射 </h2>
+     * <h2> 构建去重总数据量 聚合名称 - 聚合属性映射 </h2>
      */
-    Map<String, String> buildFundTacticsAnalysisResultTotalAggMapping();
-
-    /**
-     * <h2> 构建批量获取调单卡号集合 聚合名称 - 聚合属性映射 </h2>
-     */
-    Map<String, String> buildGetCardNumsInBatchesAggMapping();
-
-    /**
-     * <h2> 构建获取调单卡号总量 聚合名称 - 聚合属性映射 </h2>
-     */
-    Map<String, String> buildGetCardNumsTotalAggMapping();
+    Map<String, String> buildDistinctTotalAggMapping(String field);
 
     /**
      * <h2> 构建groupBy 聚合名称 - 聚合属性映射  </h2>
      */
-    Map<String, String> buildGetGroupByAggMapping();
+    Map<String, String> buildGroupByAggMapping(String field);
 
     /**
      * 构建单卡画像分析结果,聚合和实体属性映射
@@ -64,5 +54,4 @@ public interface AggregationEntityMappingFactory {
      * @param mappingEntity       实体类
      */
     void buildSingleCardPortraitResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
-
 }

@@ -76,11 +76,6 @@ public interface AggregationRequestParamFactory {
     AggregationParams buildGetCardNumsInBatchesAgg(int from, int size);
 
     /**
-     * <h2> 获取调单卡号总量 </h2>
-     */
-    <T> AggregationParams getCardNumsTotal(T request);
-
-    /**
      * <h2> 按指定字段groupBy </h2>
      */
     AggregationParams groupByField(String field, int size);
@@ -112,4 +107,20 @@ public interface AggregationRequestParamFactory {
      */
     <T> AggregationParams buildSingleCardPortraitAgg(T request);
 
+    /**
+     * <h2> 构建选择个体聚合 </h2>
+     */
+    <T> AggregationParams buildAdjustIndividualAgg(T request);
+
+    /**
+     * <h2> 构建调单卡号聚合 </h2>
+     */
+    <T> AggregationParams buildAdjustCardsAgg(T request);
+
+    /**
+     * <h2> 构建去重请求 根据去重字段 </h2>
+     *
+     * @param distinctField 去重字段
+     */
+    AggregationParams buildDistinctViaField(String distinctField);
 }
