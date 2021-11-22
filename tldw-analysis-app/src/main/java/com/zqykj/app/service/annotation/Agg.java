@@ -13,9 +13,6 @@ public @interface Agg {
     // 聚合名称
     String name() default "";
 
-    // 排序字段名称
-    String sortName() default "";
-
     // 聚合中展示字段标记
     boolean showField() default false;
 }

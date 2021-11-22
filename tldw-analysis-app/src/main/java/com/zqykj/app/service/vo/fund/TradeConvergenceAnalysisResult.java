@@ -5,7 +5,6 @@ package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
-import com.zqykj.app.service.annotation.Local;
 import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;

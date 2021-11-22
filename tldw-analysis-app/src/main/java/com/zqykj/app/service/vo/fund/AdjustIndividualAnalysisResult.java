@@ -5,6 +5,7 @@ package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
+import com.zqykj.app.service.annotation.Sort;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -43,7 +44,8 @@ public class AdjustIndividualAnalysisResult extends FundPartAnalysisResult {
     /**
      * 调单账号数量
      */
-    @Agg(name = "local_adjust_account_count", sortName = "local_adjust_account_count._count")
+    @Agg(name = "local_adjust_account_count")
     @Key(name = "docCount")
+    @Sort(name = "local_adjust_account_count._count")
     private int adjustAccountCount;
 }

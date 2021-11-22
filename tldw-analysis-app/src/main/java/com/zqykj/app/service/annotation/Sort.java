@@ -6,16 +6,18 @@ package com.zqykj.app.service.annotation;
 import java.lang.annotation.*;
 
 /**
- * <h1> 资金交易战法另外一方标识 </h1>
+ * <h1> 聚合排序注解 </h1>
+ * <p>
+ * 只对数值类型排序
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.TYPE})
 @Documented
-public @interface Opposite {
+public @interface Sort {
 
-    // 聚合名称
+    // 排序名称
     String name() default "";
 
-    // 聚合中展示字段标记
-    boolean showField() default false;
+    // DESC / ASC
+    String direction() default "DESC";
 }
