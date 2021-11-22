@@ -47,13 +47,6 @@ public interface AggregationRequestParamFactory {
      **/
     <T> AggregationParams createPeopleAreaQueryAgg(T request);
 
-    /**
-     * 构建资金来源去向中来源的topN
-     *
-     * @param request: 资金来源去向查询请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildFundsSourceTopNAgg(T request);
 
     /**
      * <h2>  构建交易汇聚分析结果聚合请求(基于选中一组调单卡号集合为查询条件) </h2>

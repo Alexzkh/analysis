@@ -4,7 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zqykj.app.service.interfaze.IFundsSourceAndDestinationStatistics;
+import com.zqykj.app.service.strategy.analysis.impl.FundSourceAndDestinationFactory;
+import com.zqykj.app.service.strategy.analysis.impl.TransactionAmountStrategyImpl;
 import com.zqykj.common.constant.Constants;
+import com.zqykj.common.enums.FundsResultType;
+import com.zqykj.common.enums.FundsSourceAndDestinationStatisticsType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.*;
 import com.zqykj.common.response.AggregationResult;
@@ -117,6 +121,7 @@ public class AggregationTest {
 
     @Autowired
     private IFundsSourceAndDestinationStatistics iFundsSourceAndDestinationStatistics;
+
     @Test
     public void multilayerAggsTest() throws JsonProcessingException {
         AggregateBuilder aggregateBuilder1 = AggregateBuilder.builder()
@@ -395,7 +400,7 @@ public class AggregationTest {
         stopWatch.stop();
 
 //        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
-        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()) ;
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" + stopWatch.getTotalTimeSeconds());
         System.out.println(stopWatch.prettyPrint());
     }
 
@@ -458,7 +463,7 @@ public class AggregationTest {
         stopWatch.stop();
 
 //        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
-        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()) ;
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" + stopWatch.getTotalTimeSeconds());
         System.out.println(stopWatch.prettyPrint());
     }
 
@@ -537,33 +542,225 @@ public class AggregationTest {
         stopWatch.stop();
 
 
-
 //        Map map1 = entranceRepository.rangeAggs("transactionMoney","",list,BankTransactionFlow.class);
-        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" +stopWatch.getTotalTimeSeconds()+"s") ;
+        System.out.println("stopWatch.prettyPrint()~~~~~~~~~~~~~~~~~:" + stopWatch.getTotalTimeSeconds() + "s");
         System.out.println(stopWatch.prettyPrint());
     }
 
 
-
     @Test
-    public void testFundsSourceAndDestination(){
+    public void testFundsSourceAndDestination() {
 
 
         // caseID :834da065584948318c359b8f5d5fe49d
         FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
         request.setIdentityCard("322125198702200000");
-
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
         QueryRequest queryRequest = new QueryRequest();
-        PagingRequest pagingRequest =new PagingRequest();
+        PagingRequest pagingRequest = new PagingRequest();
         pagingRequest.setPage(0);
         pagingRequest.setPageSize(10);
         queryRequest.setPaging(pagingRequest);
         request.setQueryRequest(queryRequest);
 
-        iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResult(request,"834da065584948318c359b8f5d5fe49d");
-
+//        iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResult(request, "abe45225e276423a96ce68c43d9e91f3");
 
 
     }
 
+    @Test
+    public void testFundsSourceAndDestinationResultList() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+//       iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResultList(request, "abe45225e276423a96ce68c43d9e91f3");
+
+
+    }
+
+    @Autowired
+    TransactionAmountStrategyImpl transactionAmountStrategyImpl;
+
+    @Test
+    public void testAccessFundSourceAndDestinationTopN_交易金额() throws Exception {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT);
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationTopN(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+
+
+    }
+
+
+    @Autowired
+    private FundSourceAndDestinationFactory fundSourceAndDestinationFactory;
+
+    @Test
+    public void testAccessFundSourceAndDestinationTopN_交易净和() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationTopN(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    @Test
+    public void testAccessFundSourceAndDestinationTrend_交易金额() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT);
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationTrend(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    @Test
+    public void testAccessFundSourceAndDestinationTrend_交易净和() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationTrend(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    @Test
+    public void testAccessFundSourceAndDestinationListResult_交易金额() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT);
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationList(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testAccessFundSourceAndDestinationListResult_交易净和() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setIdentityCard("322125198702200000");
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
+        request.setFundsResultType(FundsResultType.SOURCE);
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationList(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Test
+    public void testaccessFundSourceAndDestinationCardList_交易净和() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundSourceAndDestinationCardResultRequest request = new FundSourceAndDestinationCardResultRequest();
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
+        request.setFundsResultType(FundsResultType.SOURCE);
+        request.setCustomerIdentityCard("452632198702200766");
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationCardList(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

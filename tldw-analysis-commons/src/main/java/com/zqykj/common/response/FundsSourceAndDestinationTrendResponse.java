@@ -1,11 +1,10 @@
 package com.zqykj.common.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.zqykj.common.vo.FundsSourceAndDestinationLineChart;
+import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * @Description: 资金来源去向趋势统一返回体
@@ -16,18 +15,17 @@ import java.math.BigDecimal;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class FundsSourceAndDestinationTrendResponse {
 
 
     /**
-     * 交易时间
+     * 资金来源去向趋势折线图来源的数据数据结果集
      */
-    private String time;
+    List<FundsSourceAndDestinationLineChart> sourceLineCharts;
 
     /**
-     * 交易金额
+     * 资金来源去向趋势折线图去向的数据结果集
      */
-    private BigDecimal transactionMoney;
-
-
+    List<FundsSourceAndDestinationLineChart> destinationLineCharts;
 }
