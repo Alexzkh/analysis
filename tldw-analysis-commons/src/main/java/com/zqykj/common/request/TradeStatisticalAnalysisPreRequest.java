@@ -9,9 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -21,7 +19,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TradeStatisticalAnalysisPreRequest {
+public class TradeStatisticalAnalysisPreRequest{
 
     /**
      * 分析对象描述
@@ -39,7 +37,7 @@ public class TradeStatisticalAnalysisPreRequest {
     private List<String> cardNums;
 
     /**
-     * 日期范围   (时间范围固定是:  00:00-23:59)
+     * 日期范围   (时间范围固定是:  00:00:00-23:59:59)
      */
     private DateRangeRequest dateRange;
 

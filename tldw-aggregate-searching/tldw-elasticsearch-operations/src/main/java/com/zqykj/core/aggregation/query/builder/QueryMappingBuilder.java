@@ -69,7 +69,12 @@ public class QueryMappingBuilder {
             if (null != params.getCommonQuery() && !CollectionUtils.isEmpty(params.getCombiningQuery())) {
                 throw new IllegalArgumentException("Cannot use [commonQuery] with [combiningQuery] configuration option.");
             }
-            return buildingQueryViaField(params);
+            Object object = buildingQueryViaField(params);
+
+            if (log.isDebugEnabled()) {
+                log.debug("query dsl = {}", object.toString());
+            }
+            return object;
         } catch (Exception e) {
             log.error("could not build dsl query, error msg = {}", e.getMessage());
             throw new ElasticsearchException("could not build dsl query", e);
@@ -139,6 +144,9 @@ public class QueryMappingBuilder {
      */
     protected static void dealWithCombination(Method method, Object target, List<CommonQueryParams> commonQueryParams) {
 
+        if (CollectionUtils.isEmpty(commonQueryParams)) {
+            return;
+        }
         for (CommonQueryParams common : commonQueryParams) {
 
             // 如果还是 bool 查询(需要特殊处理)
@@ -274,7 +282,9 @@ public class QueryMappingBuilder {
             methodOptional.ifPresent(method -> {
                 org.springframework.util.ReflectionUtils.makeAccessible(field);
                 Object value = org.springframework.util.ReflectionUtils.getField(field, dateRange);
-                org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
+                if (null != value) {
+                    org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
+                }
             });
         });
     }

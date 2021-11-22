@@ -30,6 +30,11 @@ public class BigDecimalUtil {
         return bigDecimal.setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 
+    public static BigDecimal value(BigDecimal value) {
+
+        return value.setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+
     public static BigDecimal add(BigDecimal v1, BigDecimal v2) {
         BigDecimal add = v1.add(v2);
         return add.setScale(2, BigDecimal.ROUND_HALF_UP);

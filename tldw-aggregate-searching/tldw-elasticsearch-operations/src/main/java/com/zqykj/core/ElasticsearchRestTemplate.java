@@ -9,7 +9,6 @@ import com.zqykj.core.document.DocumentAdapters;
 import com.zqykj.core.document.SearchDocumentResponse;
 import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
 import com.zqykj.domain.Pageable;
-import com.zqykj.parameters.Pagination;
 import com.zqykj.repository.query.*;
 import com.zqykj.support.SearchHitsUtil;
 import lombok.extern.slf4j.Slf4j;

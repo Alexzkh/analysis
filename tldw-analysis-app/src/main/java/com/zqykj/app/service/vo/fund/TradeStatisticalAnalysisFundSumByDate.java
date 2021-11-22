@@ -3,6 +3,8 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.zqykj.app.service.annotation.Agg;
+import com.zqykj.app.service.annotation.Key;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

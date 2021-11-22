@@ -6,7 +6,6 @@ import com.zqykj.app.service.vo.fund.FundSourceAndDestinationResultList;
 import com.zqykj.common.request.FundSourceAndDestinationCardResultRequest;
 import com.zqykj.common.request.FundsSourceAndDestinationStatisticsRequest;
 import com.zqykj.common.response.FundsSourceAndDestinationPieChartStatisticsResponse;
-import com.zqykj.common.response.FundsSourceAndDestinationStatisticsResponse;
 import com.zqykj.common.response.FundsSourceAndDestinationTrendResponse;
 
 import java.util.List;
@@ -63,16 +62,5 @@ public interface IFundsSourceAndDestinationStatistics {
      * @return: java.util.List<com.zqykj.app.service.vo.fund.FundSourceAndDestinationResultCardList>
      **/
     List<FundSourceAndDestinationResultCardList> accessFundSourceAndDestinationCardList(FundSourceAndDestinationCardResultRequest fundSourceAndDestinationCardResultRequest, String caseId) throws Exception;
-
-    /**
-     * 资金来源去向战法统计业务接口.
-     *
-     * @param fundsSourceAndDestinationStatisticsRequest: 资金来源去向请求体.
-     * @param caseId:                                     案件编号
-     * @return: com.zqykj.common.response.FundsSourceAndDestinationStatisticsResponse
-     **/
-    @Deprecated
-    FundsSourceAndDestinationStatisticsResponse accessFundsSourceAndDestinationStatisticsResult(FundsSourceAndDestinationStatisticsRequest fundsSourceAndDestinationStatisticsRequest, String caseId);
-
 
 }

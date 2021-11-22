@@ -3,6 +3,7 @@
  */
 package com.zqykj.parameters.aggregate;
 
+import com.zqykj.parameters.FieldSort;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +24,7 @@ public class FetchSource {
     @Nullable
     private String[] includes;
 
-    // 排序的字段
+    // 排除的字段
     @Nullable
     private String[] excludes;
 
@@ -31,11 +32,22 @@ public class FetchSource {
 
     private int from = 0;
 
+    // 排序
+    private FieldSort sort;
+
     public FetchSource(@Nullable String[] includes, int from, int size) {
 
         this.includes = includes;
         this.from = from;
         this.size = size;
+    }
+
+    public FetchSource(@Nullable String[] includes, int from, int size, FieldSort sort) {
+
+        this.includes = includes;
+        this.from = from;
+        this.size = size;
+        this.sort = sort;
     }
 
     public FetchSource(@Nullable String[] includes) {

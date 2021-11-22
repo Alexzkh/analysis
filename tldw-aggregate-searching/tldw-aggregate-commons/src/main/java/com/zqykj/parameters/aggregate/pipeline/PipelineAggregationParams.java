@@ -81,6 +81,12 @@ public class PipelineAggregationParams {
         this.pagination = pagination;
     }
 
+    public PipelineAggregationParams(String name, String type, Pagination pagination) {
+        this.name = name;
+        this.type = type;
+        this.pagination = pagination;
+    }
+
     public PipelineAggregationParams(Map<String, String> bucketsPathMap, String script) {
         this.bucketsPathMap = bucketsPathMap;
         this.script = script;

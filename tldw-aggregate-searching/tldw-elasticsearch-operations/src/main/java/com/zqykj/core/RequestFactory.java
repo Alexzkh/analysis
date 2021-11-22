@@ -206,11 +206,10 @@ public class RequestFactory {
             indexRequest = new IndexRequest(indexName).id(query.getId()).source(query.getSource(),
                     Requests.INDEX_CONTENT_TYPE);
         } else if (!CollectionUtils.isEmpty(query.getSourceMap())) {
-
-            // map 形式
-            Map<String, ?> sourceMap = query.getSourceMap();
-            elasticsearchConverter.mapMapObject(sourceMap, indexName);
-            indexRequest = indexMapRequest(sourceMap, indexName);
+            // map 形式a
+            Map<String, ?> newSourceMap = new HashMap<>(query.getSourceMap());
+            elasticsearchConverter.mapMapObject(newSourceMap, indexName);
+            indexRequest = indexMapRequest(newSourceMap, indexName);
         } else {
             throw new ElasticsearchException(
                     "object or source is null, failed to index the document [id: " + query.getId() + ']');
@@ -249,7 +248,7 @@ public class RequestFactory {
             } else {
                 indexRequest = new IndexRequest(indexName);
             }
-            indexRequest.source(values,Requests.INDEX_CONTENT_TYPE);
+            indexRequest.source(values, Requests.INDEX_CONTENT_TYPE);
         } else {
             throw new ElasticsearchException("object or source is null, failed to [index: " + indexName + ']');
         }
@@ -494,6 +493,14 @@ public class RequestFactory {
 
         if (!query.getFields().isEmpty()) {
             sourceBuilder.fetchSource(query.getFields().toArray(new String[0]), null);
+        }
+
+        if (!query.getExcludeFields().isEmpty()) {
+            sourceBuilder.fetchSource(null, query.getExcludeFields().toArray(new String[0]));
+        }
+
+        if (!query.getExcludeFields().isEmpty() && !query.getFields().isEmpty()) {
+            sourceBuilder.fetchSource(query.getFields().toArray(new String[0]), query.getExcludeFields().toArray(new String[0]));
         }
 
         if (query.getIndicesOptions() != null) {

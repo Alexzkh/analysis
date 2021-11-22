@@ -7,8 +7,8 @@ package com.zqykj;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
-import com.zqykj.app.service.interfaze.factory.AggregationRequestParamFactory;
-import com.zqykj.app.service.interfaze.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.factory.AggregationRequestParamFactory;
+import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.common.enums.ConditionType;
@@ -152,22 +152,6 @@ public class OriginEsOperationTest {
         entranceRepository.saveAll(values, "61e9e22a-a6b1-4838-8cea-df8995bc2d8g", BankTransactionFlow.class);
         started.stop();
         log.info("save 10000 entity cost time = {} ms ", started.getTotalTimeMillis());
-    }
-
-    @Test
-    public void testDateHistogramService() {
-
-        // 732c350f-3a2b-46d0-b9cc-0bdcc52fca93
-        TradeStatisticalAnalysisPreRequest request = new TradeStatisticalAnalysisPreRequest();
-        request.setCardNums(Arrays.asList("60138216660037818", "60138216660042019", "60138216660023809"));
-        request.setDateRange(new DateRangeRequest("2019-04-05", "2020-03-13"));
-        request.setFund("0");
-        request.setOperator(AmountOperationSymbol.gte);
-//        TimeGroupTradeAmountSum tradeAmountByTime =
-//                iTransactionStatistics.getTradeAmountByTime("c94546bb87bd4b32947b576c565a94a2", request, TimeTypeRequest.h);
-//
-//        log.info(JacksonUtils.toJson(tradeAmountByTime));
-
     }
 
     @Test
@@ -386,6 +370,20 @@ public class OriginEsOperationTest {
         System.out.println(count);
     }
 
+    @Test
+    public void testFindAll() {
+
+        QuerySpecialParams params = new QuerySpecialParams();
+
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.must);
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term("person_name", "于*彬"));
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term("bank_card_no", "622849**89510105777-转存"));
+
+        params.addCombiningQueryParams(combinationQueryParams);
+        Iterable<PeopleCardInfo> all = entranceRepository.findAll(PeopleCardInfo.class, null, params);
+    }
+
 
     @Test
     public void deleteAllByCondition() {
@@ -415,5 +413,22 @@ public class OriginEsOperationTest {
         System.out.println("删除后总数量: " + afterCount);
     }
 
+    @Test
+    public void saveAll() {
 
+        List<Map<String, ?>> maps = new ArrayList<>();
+
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("trading_time", new Date());
+        map.put("id", "772221");
+
+        System.out.println(map.get("trading_time"));
+
+        maps.add(map);
+
+        entranceRepository.saveAll(maps, "123123", BankTransactionFlow.class);
+
+        System.out.println(map.get("trading_time"));
+    }
 }

@@ -11,6 +11,7 @@ import org.springframework.util.Assert;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.Date;
@@ -48,7 +49,8 @@ final public class ElasticsearchDateConverter {
     public static ElasticsearchDateConverter of(String pattern) {
         Assert.notNull(pattern, "pattern must not be null");
 
-        return converters.computeIfAbsent(pattern, p -> new ElasticsearchDateConverter(DateFormatter.forPattern(p)));
+        return converters.computeIfAbsent(pattern, p -> new ElasticsearchDateConverter(DateFormatter.forPattern(p)
+                .withZone(ZoneId.of("Asia/Shanghai"))));
     }
 
     private ElasticsearchDateConverter(DateFormatter dateFormatter) {

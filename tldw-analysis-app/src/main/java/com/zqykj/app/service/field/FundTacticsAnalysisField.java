@@ -15,6 +15,16 @@ public interface FundTacticsAnalysisField {
     String QUERY_CARD = "query_card";
 
     /**
+     * 合并卡号(查询卡号 - 对方卡号)
+     */
+    String MERGE_CARD = "merge_card";
+
+    /**
+     * 合并账号(本方账号 - 对方账号)
+     */
+    String MERGE_IDENTITY_CARD = "merge_identity_card";
+
+    /**
      * 交易对方卡号
      */
     String TRANSACTION_OPPOSITE_CARD = "transaction_opposite_card";
@@ -45,6 +55,10 @@ public interface FundTacticsAnalysisField {
      */
     String CASE_KEY_ID_HASH = "case_key_id";
 
+    /**
+     * 翻转标记  1: 代表原始记录  2:  代表的是把对方的 放到本方, 本方放到对方
+     */
+    String REVERSE_MARK = "reverse_mark";
 
     /**
      * 案件id
@@ -99,7 +113,6 @@ public interface FundTacticsAnalysisField {
     String LOAN_FLAG_IN = "进";
     String LOAN_FLAG_IN_EN = "credits";
 
-    String MERGE_IDENTITY_CARD = "merge_identity_card";
 
     String FLOW_ID = "flow_id";
 
@@ -117,6 +130,11 @@ public interface FundTacticsAnalysisField {
      * 区县对应字段
      */
     String AREA_FIELD = "area.area_wildcard";
+
+    /**
+     * 交易金额 {@link com.zqykj.domain.bank.BankTransactionRecord}
+     */
+    String CHANGE_MONEY = "change_amount";
 
     /**
      * 去向的 桶过滤脚本
@@ -180,6 +198,13 @@ public interface FundTacticsAnalysisField {
     static String[] tradeStatisticalAnalysisOppositeShowField() {
 
         return new String[]{TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD, OPPOSITE_BANK, OPPOSITE_ACCOUNT, TRANSACTION_OPPOSITE_CARD};
+    }
+
+    // 交易汇聚分析需要展示的字段
+    static String[] tradeConvergencecAnalysisShowField() {
+
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD, TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD,
+                OPPOSITE_BANK, TRANSACTION_OPPOSITE_CARD};
     }
 
     // 交易统计分析结果本方需要展示的字段

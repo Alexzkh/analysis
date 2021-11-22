@@ -3,9 +3,7 @@
  */
 package com.zqykj.core.aggregation.parse;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.zqykj.util.BigDecimalUtil;
-import com.zqykj.util.JacksonUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -22,119 +20,33 @@ import java.util.*;
 /**
  * <h1> 聚合结果解析器 </h1>
  */
+@Slf4j
 public class AggregationParser {
 
     private final static String BUCKET_KEY = "buckets";
-    private final static String KEY_AS_STRING = "keyAsString";
-    private final static String VALUE_AS_STRING = "valueAsString";
-    private final static String AGGREGATIONS_KEY = "aggregations";
-    private final static String AS_MAP_KEY = "asMap";
-    private final static String AGG_NAME = "name";
     private final static String SUB_AGGREGATION = "aggregations";
-    private final static String AGG_TYPE = "type";
-    private final static String SHOW_FIELD_AGG = "top_hits";
-    private final static String AGG_HITS = "hits";
-    private final static String AGG_SOURCE_STRING = "sourceAsString";
     private final static String AGG_TERMS = "terms";
     private final static String AGG_METHOD_PREFIX = "get";
     private final static String AGG_DATE_HISTOGRAM = "date_histogram";
-
-    public static Map<String, Object> parseDateGroupAndSum(Aggregations aggregations) {
-
-
-        String json = JacksonUtils.toJson(aggregations);
-        // 首先如果是buckets 的话, 需要逐个处理
-        Map<String, Object> parse = JacksonUtils.parse(json, new TypeReference<Map<String, Object>>() {
-        });
-
-        Map<String, Object> result = new LinkedHashMap<>();
-
-        parse.forEach((key, value) -> {
-
-            System.out.println(key);
-            System.out.println(value);
-
-            if (value instanceof LinkedHashMap) {
-
-                Collection<Object> collection = ((LinkedHashMap) value).values();
-
-                collection.forEach(value1 -> {
-
-                    if (value1 instanceof LinkedHashMap) {
-
-                        LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) value1;
-
-                        map.forEach((key2, value2) -> {
-
-                            if (BUCKET_KEY.equals(key2)) {
-
-                                // buckets
-                                if (value2 instanceof ArrayList) {
-
-                                    ArrayList<Object> buckets = (ArrayList<Object>) value2;
-
-                                    buckets.forEach(bucket -> {
-
-                                        if (bucket instanceof LinkedHashMap) {
-
-                                            LinkedHashMap<String, Object> bucketMap = (LinkedHashMap<String, Object>) bucket;
-                                            String keyAsString = null;
-                                            String valueAsString = null;
-                                            for (Map.Entry<String, Object> entry : bucketMap.entrySet()) {
-                                                String key3 = entry.getKey();
-                                                Object value3 = entry.getValue();
-                                                if (KEY_AS_STRING.equals(key3)) {
-                                                    keyAsString = value3.toString();
-                                                } else if (AGGREGATIONS_KEY.equals(key3)) {
-
-                                                    // 子聚合, 这里的话可以递归处理子聚合
-                                                    LinkedHashMap<String, Object> asMap = ((LinkedHashMap) value3);
-                                                    LinkedHashMap<String, Object> aggregationsMap = (LinkedHashMap<String, Object>) asMap.get(AS_MAP_KEY);
-
-                                                    Collection<Object> values = aggregationsMap.values();
-                                                    for (Object value4 : values) {
-                                                        if (value4 instanceof LinkedHashMap) {
-
-                                                            LinkedHashMap<String, Object> map1 = (LinkedHashMap) value4;
-                                                            valueAsString = map1.get(VALUE_AS_STRING).toString();
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            if (result.containsKey(keyAsString)) {
-
-                                                String oldValue = result.get(keyAsString).toString();
-                                                result.put(keyAsString, BigDecimalUtil.add(oldValue, valueAsString));
-                                            } else {
-                                                result.put(keyAsString, valueAsString);
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-        });
-//        result.entrySet().stream()
-//                .sorted(Map.Entry.comparingByKey())
-//                .forEachOrdered(x -> result.put(x.getKey(), x.getValue()));
-        return result;
-    }
 
     /**
      * <h2> 解析多组聚合结果 </h2>
      */
     public static List<List<Object>> parseMulti(Aggregations aggregations, Map<String, String> map, boolean isConvert) {
 
-        // 讲首字母大写然后拼接上 get
+        // 将首字母大写然后拼接上 get
 
         List<List<Object>> result = new ArrayList<>();
         map.forEach((key, value) -> {
 
-            List<Object> parse = parse(aggregations, value, key);
+            List<Object> parse = parse(aggregations, key, value);
+            // 不处理空结果
+            if (CollectionUtils.isEmpty(parse)) {
 
+                if (log.isDebugEnabled()) {
+                    log.debug("聚合名称 = {} , 取值属性 = {}, 取值结果个数 = {}", key, value, 0);
+                }
+            }
             result.add(parse);
         });
 
@@ -182,10 +94,12 @@ public class AggregationParser {
                 } else {
                     // 填充的个数跟 size 一致 (因为有的跟terms 同级查询的,比如去重返回结果只有一个,而terms有3个,为了保证这里程序正确,
                     // 需要继续填充剩下2个冗余的数据(跟第一个数据一致)
-//                    if (oldOne.size() == 0){
-//                        continue;
-//                    }
-                    newOne.add(oldOne.get(0));
+                    // 若newOne 为空,自动补充一个
+                    if (CollectionUtils.isEmpty(oldOne)) {
+                        newOne.add(null);
+                    } else {
+                        newOne.add(oldOne.get(0));
+                    }
                 }
             }
             newResult.add(newOne);
@@ -197,7 +111,7 @@ public class AggregationParser {
     /**
      * <h2> 解析聚合结果 </h2>
      */
-    public static List<Object> parse(Aggregations aggregations, String key, String aggregationName) {
+    public static List<Object> parse(Aggregations aggregations, String aggregationName, String key) {
 
         // 讲首字母大写然后拼接上 get
         key = applyFirstChartUpperCase(key);
@@ -332,5 +246,4 @@ public class AggregationParser {
 
         return AGG_METHOD_PREFIX + key.substring(0, 1).toUpperCase() + key.substring(1);
     }
-
 }

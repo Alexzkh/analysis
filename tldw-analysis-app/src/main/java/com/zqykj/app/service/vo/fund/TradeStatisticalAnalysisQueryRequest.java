@@ -3,10 +3,6 @@
  */
 package com.zqykj.app.service.vo.fund;
 
-import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
-import com.zqykj.common.vo.PageRequest;
-import com.zqykj.common.vo.SortRequest;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,34 +15,11 @@ import org.springframework.beans.BeanUtils;
 @Setter
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
-public class TradeStatisticalAnalysisQueryRequest extends TradeStatisticalAnalysisPreRequest {
+public class TradeStatisticalAnalysisQueryRequest extends FundTacticsPartGeneralPreRequest {
 
-    /**
-     * 模糊查询
-     */
-    private String keyword;
+    public FundTacticsPartGeneralPreRequest convertFrom(TradeStatisticalAnalysisQueryRequest from) {
 
-    /**
-     * 分页
-     */
-    private PageRequest pageRequest;
-
-    /**
-     * 排序
-     */
-    private SortRequest sortRequest;
-
-
-    private int groupInitPage = 0;
-
-    private int groupInitSize = 60000;
-
-    private String searchTag = "local";
-
-    public TradeStatisticalAnalysisPreRequest convertFrom(TradeStatisticalAnalysisQueryRequest from) {
-
-        TradeStatisticalAnalysisPreRequest to = new TradeStatisticalAnalysisPreRequest();
+        FundTacticsPartGeneralPreRequest to = new FundTacticsPartGeneralPreRequest();
 
         BeanUtils.copyProperties(from, to);
 

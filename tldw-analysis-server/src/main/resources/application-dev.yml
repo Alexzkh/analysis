@@ -45,8 +45,7 @@ enable:
 
 buckets:
   page:
-    init_size: 60_000
-
+    initSize: 100_000
 
 ## **********************************************************
 ##   Plugins Settings (插件其他相关配置 详见tldw-analysis-plugins/README.md 参考文档)

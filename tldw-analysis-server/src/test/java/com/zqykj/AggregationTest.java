@@ -563,7 +563,7 @@ public class AggregationTest {
         queryRequest.setPaging(pagingRequest);
         request.setQueryRequest(queryRequest);
 
-        iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResult(request, "abe45225e276423a96ce68c43d9e91f3");
+//        iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResult(request, "abe45225e276423a96ce68c43d9e91f3");
 
 
     }
@@ -584,7 +584,7 @@ public class AggregationTest {
         queryRequest.setPaging(pagingRequest);
         request.setQueryRequest(queryRequest);
 
-        iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResultList(request, "abe45225e276423a96ce68c43d9e91f3");
+//       iFundsSourceAndDestinationStatistics.accessFundsSourceAndDestinationStatisticsResultList(request, "abe45225e276423a96ce68c43d9e91f3");
 
 
     }
