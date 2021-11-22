@@ -35,6 +35,12 @@ public interface FundTacticsAnalysisField {
     String TRANSACTION_MONEY = "transaction_money";
 
     /**
+     * 交易金额（交易记录表中,不区分正负的金额）
+     */
+    String CHANGE_AMOUNT = "change_amount";
+
+
+    /**
      * 案件id hash
      */
     String CASE_KEY_ID_HASH = "case_key_id";
@@ -85,11 +91,17 @@ public interface FundTacticsAnalysisField {
      */
     String OPPOSITE_IDENTITY_CARD = "transaction_opposite_certificate_number";
 
+    String OPPOSITE_IDENTITY_CARD_WILDCARD = "transaction_opposite_card.opposite_card_wildcard";
+
     String LOAN_FLAG_OUT = "出";
     String LOAN_FLAG_OUT_EN = "pay_out";
 
     String LOAN_FLAG_IN = "进";
     String LOAN_FLAG_IN_EN = "credits";
+
+    String MERGE_IDENTITY_CARD = "merge_identity_card";
+
+    String FLOW_ID = "flow_id";
 
     /**
      * 省份对应字段
@@ -106,6 +118,58 @@ public interface FundTacticsAnalysisField {
      */
     String AREA_FIELD = "area.area_wildcard";
 
+    /**
+     * 去向的 桶过滤脚本
+     */
+    String SELECTOR_SCRIPT_DESTINATION = "params.final_sum < 0";
+
+    /**
+     * 来源的 桶过滤脚本
+     */
+    String SELECTOR_SCRIPT_SOURCE = "params.final_sum >=0";
+
+    /**
+     * 来源的 桶过滤脚本
+     */
+    String SELECTOR_SCRIPT_LINE_CHART = "params.final_sum >= 0";
+
+    /**
+     * 管道聚合,selector名称
+     */
+    String PIPLINE_SELECTOR_BUCKET_NAME = "sum_bucket_selector";
+
+    /**
+     * 管道聚合,selector名称
+     */
+    String PIPLINE_SUM_BUCKET = "sum_bucket";
+
+    /**
+     * 管道聚合,selector名称
+     */
+    String PIPLINE_TRANSACTION_NET_NUMBER = "transaction_net_amount";
+
+
+    /**
+     * 管道聚合结果的名称
+     */
+    String SUB_AGG_SUM_NAME = "final_sum";
+
+    /**
+     * 统计交易净额
+     */
+    String TRANSACTION_MONEY_SUM = "transaction_money_sum";
+
+    /**
+     * 折现图过滤条件
+     */
+    String LINE_CHART_SELECTOR = "opposite_out_times>opposite_out_amount";
+
+    /**
+     * 资金来源去向桶名称
+     */
+    String MULTI_IDENTITY_TERMS = "multi_identity_terms";
+
+
     // 交易统计分析结果本方需要展示的字段
     static String[] tradeStatisticalAnalysisLocalShowField() {
 
@@ -116,5 +180,11 @@ public interface FundTacticsAnalysisField {
     static String[] tradeStatisticalAnalysisOppositeShowField() {
 
         return new String[]{TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD, OPPOSITE_BANK, OPPOSITE_ACCOUNT, TRANSACTION_OPPOSITE_CARD};
+    }
+
+    // 交易统计分析结果本方需要展示的字段
+    static String[] fundSourceAndDestinationAnalysisOppositeShowField() {
+
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD};
     }
 }

@@ -182,6 +182,9 @@ public class AggregationParser {
                 } else {
                     // 填充的个数跟 size 一致 (因为有的跟terms 同级查询的,比如去重返回结果只有一个,而terms有3个,为了保证这里程序正确,
                     // 需要继续填充剩下2个冗余的数据(跟第一个数据一致)
+//                    if (oldOne.size() == 0){
+//                        continue;
+//                    }
                     newOne.add(oldOne.get(0));
                 }
             }
