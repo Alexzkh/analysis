@@ -43,7 +43,9 @@ public class AggregationParser {
             // 不处理空结果
             if (CollectionUtils.isEmpty(parse)) {
 
-                log.info("聚合名称 = {} , 取值属性 = {}, 取值结果个数 = {}", key, value, 0);
+                if (log.isDebugEnabled()) {
+                    log.debug("聚合名称 = {} , 取值属性 = {}, 取值结果个数 = {}", key, value, 0);
+                }
             }
             result.add(parse);
         });
@@ -92,7 +94,12 @@ public class AggregationParser {
                 } else {
                     // 填充的个数跟 size 一致 (因为有的跟terms 同级查询的,比如去重返回结果只有一个,而terms有3个,为了保证这里程序正确,
                     // 需要继续填充剩下2个冗余的数据(跟第一个数据一致)
-                    newOne.add(oldOne.get(0));
+                    // 若newOne 为空,自动补充一个
+                    if (CollectionUtils.isEmpty(oldOne)) {
+                        newOne.add(null);
+                    } else {
+                        newOne.add(oldOne.get(0));
+                    }
                 }
             }
             newResult.add(newOne);
@@ -239,5 +246,4 @@ public class AggregationParser {
 
         return AGG_METHOD_PREFIX + key.substring(0, 1).toUpperCase() + key.substring(1);
     }
-
 }

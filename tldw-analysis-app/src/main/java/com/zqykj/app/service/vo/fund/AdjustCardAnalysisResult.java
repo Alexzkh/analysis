@@ -3,12 +3,12 @@
  */
 package com.zqykj.app.service.vo.fund;
 
-import com.zqykj.app.service.annotation.Hits;
+import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
-import com.zqykj.app.service.annotation.Local;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  * <h1> 调单卡号分析结果 </h1>
@@ -16,28 +16,30 @@ import lombok.Setter;
 @Setter
 @Getter
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Agg(name = "local_hits")
+@Key
 public class AdjustCardAnalysisResult extends FundPartAnalysisResult {
 
     /**
      * 调单卡号
      */
-    @Local(name = "query_card")
-    @Hits
-    @Key(name = "hits")
+    @Agg(name = "query_card", showField = true)
+    @Key(name = "query_card")
     private String adjustCard;
 
     // 开户银行
-    @Local(name = "bank")
-    @Hits
+    @Agg(name = "bank", showField = true)
+    @Key(name = "bank")
     private String bank;
 
     // 开户名称
-    @Local(name = "customer_name")
-    @Hits
+    @Agg(name = "customer_name", showField = true)
+    @Key(name = "customer_name")
     private String customerName;
 
     // 开户证件号码
-    @Local(name = "customer_identity_card")
-    @Hits
+    @Agg(name = "customer_identity_card", showField = true)
+    @Key(name = "customer_identity_card")
     private String customerIdentityCard;
 }

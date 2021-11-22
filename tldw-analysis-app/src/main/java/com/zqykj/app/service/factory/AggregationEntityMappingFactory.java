@@ -15,21 +15,26 @@ import java.util.Map;
  */
 public interface AggregationEntityMappingFactory {
 
-    /**
-     * <h2> 构建交易统计分析结果 聚合与实体属性映射 </h2>
-     */
-    @Deprecated
-    void buildTradeStatisticsAnalysisResultAggMapping(Map<String, Map<String, String>> aggKeyMapping, Map<String, Map<String, String>> entityAggKeyMapping, Class<?> mappingEntity);
 
     /**
-     * <h2> 构建交易统计分析按时间汇总交易金额聚合与实体属性映射 </h2>
+     * <h2> 构建资金交易分析 结果 聚合映射 </h2>
      */
-    void buildTradeStatisticsFundTimeAggMapping(Map<String, String> mapping, Class<?> mappingEntity);
+    void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Class<?> mappingEntity);
 
     /**
-     * <h2> 构建交易汇聚分析 / 交易统计分析 结果 聚合与实体属性映射 </h2>
+     * <h2> 构建资金交易分析 结果 聚合与实体属性映射 </h2>
      */
     void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * <h2> 构建资金交易分析 结果(本方) 聚合与实体属性映射 </h2>
+     */
+    void buildTradeAnalysisResultMappingLocal(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * <h2> 构建资金交易分析 结果(对方) 聚合与实体属性映射 </h2>
+     */
+    void buildTradeAnalysisResultMappingOpposite(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
 
     /**
      * <h2> 构建资金战法计算去重总数据量 聚合名称 - 聚合属性映射 </h2>

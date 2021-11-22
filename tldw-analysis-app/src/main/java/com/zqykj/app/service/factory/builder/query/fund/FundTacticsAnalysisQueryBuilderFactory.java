@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.builder.query.fund.es;
+package com.zqykj.app.service.factory.builder.query.fund;
 
 import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
@@ -21,7 +21,6 @@ import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.query.*;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -30,7 +29,6 @@ import java.util.List;
 /**
  * <h1> 公共查询请求参数构建工厂 </h1>
  */
-@ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 @Service
 public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParamFactory {
 
