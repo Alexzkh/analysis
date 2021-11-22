@@ -3,27 +3,30 @@
  */
 package com.zqykj.app.service.interfaze.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
+import com.zqykj.app.service.factory.parse.fund.FundTacticsAggResultParseFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
-import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
+import com.zqykj.app.service.vo.fund.*;
+import com.zqykj.common.core.ServerResponse;
+import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
+import com.zqykj.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -40,8 +43,13 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
 
     private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
 
+    private final FundTacticsAggResultParseFactory parseFactory;
+
     @Value("${chunkSize}")
     private int chunkSize;
+
+    @Value("${buckets.page.initSize}")
+    private int initGroupSize;
 
     /**
      * <h2> 批量获取调单卡号集合 </h2>
@@ -52,10 +60,9 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
         QuerySpecialParams query = queryRequestParamFactory.buildBasicParamQueryViaCase(request, caseId);
 
         // 构建查询卡号去重聚合查询
-        AggregationParams groupQueryCard =
-                aggregationRequestParamFactory.buildGetCardNumsInBatchesAgg(from, size);
+        AggregationParams groupQueryCard = aggregationRequestParamFactory.buildGetCardNumsInBatchesAgg(from, size);
         // 聚合名称-属性映射(为了聚合对应聚合名称下的聚合值)
-        Map<String, String> mapping = aggregationEntityMappingFactory.buildGetCardNumsInBatchesAggMapping();
+        Map<String, String> mapping = aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD);
         groupQueryCard.setMapping(mapping);
         // 定义该聚合的功能名称
         groupQueryCard.setResultName("groupQueryCard");
@@ -71,9 +78,9 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
         // 构建查询参数
         QuerySpecialParams query = queryRequestParamFactory.buildBasicParamQueryViaCase(request, caseId);
 
-        AggregationParams distinctQueryCard = aggregationRequestParamFactory.getCardNumsTotal(request);
+        AggregationParams distinctQueryCard = aggregationRequestParamFactory.buildDistinctViaField(FundTacticsAnalysisField.QUERY_CARD);
 
-        Map<String, String> mapping = aggregationEntityMappingFactory.buildGetCardNumsTotalAggMapping();
+        Map<String, String> mapping = aggregationEntityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.QUERY_CARD);
 
         distinctQueryCard.setMapping(mapping);
         // 定义该聚合的功能名称
@@ -123,7 +130,7 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
         QuerySpecialParams query = queryRequestParamFactory.filterMainCards(caseId, cards);
         // 筛选出调单卡号的聚合请求
         AggregationParams agg = aggregationRequestParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, cards.size());
-        Map<String, String> mapping = aggregationEntityMappingFactory.buildGetGroupByAggMapping();
+        Map<String, String> mapping = aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD);
         agg.setMapping(mapping);
         agg.setResultName("groupByQueryCards");
         Map<String, List<List<Object>>> groupByMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionFlow.class, caseId);
@@ -136,5 +143,92 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
             return null;
         }
         return results.stream().collect(Collectors.toMap(e -> e.get(0).toString(), e -> e.get(0).toString(), (v1, v2) -> v1));
+    }
+
+    /**
+     * <h2> 获取调单个体分析结果 </h2>
+     */
+    public ServerResponse getAdjustIndividual(AdjustIndividualRequest request) {
+
+        // 设置分组最大返回数量
+        request.setGroupInitSize(initGroupSize);
+        // 构建选择个体查询参数
+        QuerySpecialParams query = queryRequestParamFactory.buildAdjustIndividualQuery(request);
+        // 构建选择个体聚合参数
+        AggregationParams agg = aggregationRequestParamFactory.buildAdjustIndividualAgg(request);
+        // 构建选择个体总量参数
+        AggregationParams totalAgg = aggregationRequestParamFactory.buildDistinctViaField(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD);
+        totalAgg.setMapping(aggregationEntityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD));
+        totalAgg.setResultName("cardinality_total");
+        // 添加同级聚合
+        agg.addSiblingAggregation(totalAgg);
+
+        // 构建聚合名称属性映射(获取聚合值)
+        Map<String, String> aggNameKeyMapping = new LinkedHashMap<>();
+        // 构建聚合名称到实体属性之间的映射
+        Map<String, String> aggNameEntityMapping = new LinkedHashMap<>();
+        aggregationEntityMappingFactory.buildTradeAnalysisResultAggMapping(aggNameKeyMapping, aggNameEntityMapping, AdjustIndividualAnalysisResult.class);
+
+        // 设置此聚合代表性功能名称
+        agg.setResultName("selectIndividuals");
+
+        // 获取聚合结果
+        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, request.getCaseId());
+        List<List<Object>> results = resultMap.get(agg.getResultName());
+        // 实体属性名称
+        List<String> titles = new ArrayList<>(aggNameEntityMapping.keySet());
+        // 实体属性与聚合值映射
+        List<Map<String, Object>> entityMapping = parseFactory.convertEntity(results, titles, AdjustIndividualAnalysisResult.class);
+        // 反序列化
+        List<AdjustIndividualAnalysisResult> adjustIndividualResults = JacksonUtils.parse(JacksonUtils.toJson(entityMapping), new TypeReference<List<AdjustIndividualAnalysisResult>>() {
+        });
+        // 获取总量
+        List<List<Object>> totalResults = resultMap.get(totalAgg.getResultName());
+        long total;
+        if (CollectionUtils.isEmpty(totalResults)) {
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
+        }
+        total = (long) totalResults.get(0).get(0);
+        FundAnalysisResultResponse<AdjustIndividualAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
+        // 结果集
+        resultResponse.setContent(adjustIndividualResults);
+        // 每页显示条数
+        resultResponse.setSize(request.getPageRequest().getPageSize());
+        // 总数据量
+        resultResponse.setTotal(total);
+        // 总页数
+        resultResponse.setTotalPages(PageRequest.getTotalPages(total, request.getPageRequest().getPageSize()));
+        return ServerResponse.createBySuccess(resultResponse);
+    }
+
+    public ServerResponse getAdjustCardsViaIndividual(AdjustIndividualRequest request) {
+
+        // 设置分组最大返回数量
+        request.setGroupInitSize(initGroupSize);
+        // 构建调单卡号查询
+        QuerySpecialParams query = queryRequestParamFactory.buildAdjustIndividualQuery(request);
+        // 构建调单卡号聚合
+        AggregationParams agg = aggregationRequestParamFactory.buildAdjustCardsAgg(request);
+
+        // 构建聚合名称属性映射(获取聚合值)
+        Map<String, String> aggNameKeyMapping = new LinkedHashMap<>();
+        // 构建聚合名称到实体属性之间的映射
+        Map<String, String> aggNameEntityMapping = new LinkedHashMap<>();
+        aggregationEntityMappingFactory.buildTradeAnalysisResultAggMapping(aggNameKeyMapping, aggNameEntityMapping, AdjustCardAnalysisResult.class);
+
+        // 设置此聚合代表性功能名称
+        agg.setResultName("adjustCards");
+
+        // 获取聚合结果
+        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, request.getCaseId());
+        List<List<Object>> results = resultMap.get(agg.getResultName());
+        // 实体属性名称
+        List<String> titles = new ArrayList<>(aggNameEntityMapping.keySet());
+        // 实体属性与聚合值映射
+        List<Map<String, Object>> entityMapping = parseFactory.convertEntity(results, titles, AdjustCardAnalysisResult.class);
+        // 反序列化
+        List<AdjustCardAnalysisResult> adjustCardsResults = JacksonUtils.parse(JacksonUtils.toJson(entityMapping), new TypeReference<List<AdjustCardAnalysisResult>>() {
+        });
+        return ServerResponse.createBySuccess(adjustCardsResults);
     }
 }

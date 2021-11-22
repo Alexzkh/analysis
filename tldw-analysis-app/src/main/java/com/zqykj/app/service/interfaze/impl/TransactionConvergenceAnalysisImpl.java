@@ -5,6 +5,7 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
+import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionConvergenceAnalysis;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
@@ -169,7 +170,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             return null;
         }
         AggregationParams totalAgg = aggregationRequestParamFactory.buildTradeConvergenceAnalysisResultTotalAgg(request);
-        totalAgg.setMapping(aggregationEntityMappingFactory.buildFundTacticsAnalysisResultTotalAggMapping());
+        totalAgg.setMapping(aggregationEntityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.MERGE_CARD));
         totalAgg.setResultName(CARDINALITY_TOTAL);
         return totalAgg;
     }

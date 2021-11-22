@@ -92,5 +92,8 @@ public interface QueryRequestParamFactory {
      */
     <T> QuerySpecialParams buildSingleCardPortraitQueryParams(T request);
 
-
+    /**
+     * 构建选择个人查询参数
+     */
+    <T> QuerySpecialParams buildAdjustIndividualQuery(T request);
 }

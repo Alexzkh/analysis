@@ -69,4 +69,12 @@ public class QueryParamsBuilders {
 
         return new CommonQueryParams(QueryType.multi_match, field, value);
     }
+
+    /**
+     * <h2> 模糊查询 </h2>
+     */
+    public static CommonQueryParams fuzzy(String field, String value) {
+
+        return new CommonQueryParams(QueryType.wildcard, field, value);
+    }
 }
