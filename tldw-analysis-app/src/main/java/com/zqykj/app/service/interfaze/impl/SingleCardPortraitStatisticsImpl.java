@@ -82,37 +82,41 @@ public class SingleCardPortraitStatisticsImpl implements ISingleCardPortraitStat
 
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(singleCardPortraitQuery, queryCardTermsAgg, BankTransactionRecord.class, routing);
         if (CollectionUtils.isEmpty(resultMap)) {
-            return ServerResponse.createByErrorMessage("查询结果为空！");
+            return ServerResponse.createByErrorMessage("单卡画像查询结果为空！");
         }
 
         // 解析指定结构的返回数据
         SingleCardPortraitResponse singleCardPortraitResponseFinal = new SingleCardPortraitResponse();
         resultMap.forEach((resultName, aggValueList) -> {
-            if (SingleCardPortraitAnalysisField.ResultName.QUERY_CARD_TERMS.equals(resultName)) {
-                // 当前卡号相关基础信息
-                List<Object> objectList = (List<Object>) aggValueList.get(0).get(2);
-                Object targetObject = objectList.get(0);
-                ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
-                SingleCardPortraitResponse singleCardPortraitResponse;
-                try {
-                    singleCardPortraitResponse = objectMapper.readValue(JacksonUtils.toJson(targetObject), SingleCardPortraitResponse.class);
-                    String[] ignoreProperties = {"earliestTradingTime", "latestTradingTime"};
-                    BeanUtils.copyProperties(singleCardPortraitResponse, singleCardPortraitResponseFinal, ignoreProperties);
-                } catch (IOException e) {
-                    log.error("反序列化单卡画像查询结果失败：", e);
+            if (!CollectionUtils.isEmpty(aggValueList)) {
+                if (SingleCardPortraitAnalysisField.ResultName.QUERY_CARD_TERMS.equals(resultName)) {
+                    // 当前卡号相关基础信息
+                    List<Object> objectList = (List<Object>) aggValueList.get(0).get(2);
+                    Object targetObject = objectList.get(0);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+                    SingleCardPortraitResponse singleCardPortraitResponse;
+                    try {
+                        singleCardPortraitResponse = objectMapper.readValue(JacksonUtils.toJson(targetObject), SingleCardPortraitResponse.class);
+                        String[] ignoreProperties = {"earliestTradingTime", "latestTradingTime"};
+                        BeanUtils.copyProperties(singleCardPortraitResponse, singleCardPortraitResponseFinal, ignoreProperties);
+                    } catch (IOException e) {
+                        log.error("反序列化单卡画像查询结果失败：", e);
+                    }
+                    singleCardPortraitResponseFinal.setEntriesAmount((Double) aggValueList.get(0).get(0));
+                    // 查询 bank_transaction_record 表，出账交易金额为负数,取绝对值
+                    singleCardPortraitResponseFinal.setOutGoingAmount(!ObjectUtils.isEmpty(aggValueList.get(0).get(1)) && (Double) aggValueList.get(0).get(1) < 0
+                            ? -(Double) aggValueList.get(0).get(1) : 0.00);
+                    singleCardPortraitResponseFinal.setTransactionTotalAmount((Double) aggValueList.get(0).get(0) - (Double) aggValueList.get(0).get(1));
                 }
-                singleCardPortraitResponseFinal.setEntriesAmount((Double) aggValueList.get(0).get(0));
-                // 查询 bank_transaction_record 表，出账交易金额为负数,取绝对值
-                singleCardPortraitResponseFinal.setOutGoingAmount(!ObjectUtils.isEmpty(aggValueList.get(0).get(1)) && (Double) aggValueList.get(0).get(1) < 0
-                        ? -(Double) aggValueList.get(0).get(1) : 0.00);
-                singleCardPortraitResponseFinal.setTransactionTotalAmount((Double) aggValueList.get(0).get(0) - (Double) aggValueList.get(0).get(1));
-            }
-            if (SingleCardPortraitAnalysisField.ResultName.EARLIEST_TRADING_TIME.equals(resultName)) {
-                singleCardPortraitResponseFinal.setEarliestTradingTime((String) aggValueList.get(0).get(0));
-            }
-            if (SingleCardPortraitAnalysisField.ResultName.LATEST_TRADING_TIME.equals(resultName)) {
-                singleCardPortraitResponseFinal.setLatestTradingTime((String) aggValueList.get(0).get(0));
+                if (SingleCardPortraitAnalysisField.ResultName.EARLIEST_TRADING_TIME.equals(resultName)) {
+                    String tradingTimeString = (String) aggValueList.get(0).get(0);
+                    singleCardPortraitResponseFinal.setEarliestTradingTime("Infinity".equals(tradingTimeString) || "-Infinity".equals(tradingTimeString) ? null : tradingTimeString);
+                }
+                if (SingleCardPortraitAnalysisField.ResultName.LATEST_TRADING_TIME.equals(resultName)) {
+                    String tradingTimeString = (String) aggValueList.get(0).get(0);
+                    singleCardPortraitResponseFinal.setLatestTradingTime("Infinity".equals(tradingTimeString) || "-Infinity".equals(tradingTimeString) ? null : tradingTimeString);
+                }
             }
         });
         log.info("单卡画像返回结果：{}", JacksonUtils.toJson(singleCardPortraitResponseFinal));
