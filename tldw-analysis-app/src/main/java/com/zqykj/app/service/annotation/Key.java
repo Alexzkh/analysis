@@ -9,8 +9,8 @@ import java.lang.annotation.*;
  * <h1> 聚合结果中的属性 </h1>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE})
 @Documented
 public @interface Key {
-    String name() default "";
+    String name() default "hits";
 }

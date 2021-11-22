@@ -188,7 +188,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
         Map<String, String> mapping = new LinkedHashMap<>();
 
-        aggregationEntityMappingFactory.buildTradeStatisticsFundTimeAggMapping(mapping, TradeStatisticalAnalysisFundSumByDate.class);
+        aggregationEntityMappingFactory.buildTradeAnalysisResultAggMapping(mapping, TradeStatisticalAnalysisFundSumByDate.class);
 
         dateAgg.setMapping(mapping);
 
@@ -397,7 +397,9 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
             Future<List<TradeStatisticalAnalysisResult>> future = executor.submit(new StatisticalFutureTask(position,
                     chunkSize, skip, limit, caseId, request));
             List<TradeStatisticalAnalysisResult> results = future.get();
-            statisticalAnalysisResults.addAll(results);
+            if (!CollectionUtils.isEmpty(results)) {
+                statisticalAnalysisResults.addAll(results);
+            }
             if (statisticalAnalysisResults.size() == pageSize) {
                 break;
             } else {

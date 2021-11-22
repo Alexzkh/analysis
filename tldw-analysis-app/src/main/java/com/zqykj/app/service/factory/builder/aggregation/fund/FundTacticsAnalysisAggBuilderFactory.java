@@ -1,10 +1,10 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.builder.aggregation.fund.es;
+package com.zqykj.app.service.factory.builder.aggregation.fund;
 
 import com.zqykj.app.service.annotation.Local;
-import com.zqykj.app.service.factory.builder.query.fund.es.FundTacticsAnalysisQueryBuilderFactory;
+import com.zqykj.app.service.factory.builder.query.fund.FundTacticsAnalysisQueryBuilderFactory;
 import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.builder.AggregationParamsBuilders;
@@ -35,14 +35,12 @@ import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
-@ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestParamFactory {

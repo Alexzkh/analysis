@@ -3,15 +3,15 @@
  */
 package com.zqykj.app.service.vo.fund;
 
-import com.zqykj.app.service.annotation.Hits;
+import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Local;
-import com.zqykj.app.service.annotation.Opposite;
 import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.*;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -27,61 +27,57 @@ import java.util.stream.Collectors;
 @Setter
 @Getter
 @NoArgsConstructor
+// 对于es 来说聚合需要带出字段名称,需要再类上加上 @Agg 注解指定聚合名称, @Key(name="hits")是固定的
+// 其他数据源正常 eg. mysql 可以直接带出field (field 的名称  就等于 我们定义的聚合名称)
+// eg. customerName 定义了  @Agg(name = "customer_name", showField = true)
+@Agg(name = "local_hits")
+@Key
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
 
     // 开户名称
-    @Local(name = "customer_name")
-    @Opposite(name = "transaction_opposite_name")
-    @Key(name = "hits")
-    @Hits
+    @Agg(name = "customer_name", showField = true)
+    @Key(name = "customer_name")
     private String customerName;
 
     // 开户证件号码
-    @Local(name = "customer_identity_card")
-    @Opposite(name = "transaction_opposite_certificate_number")
-    @Hits
+    @Agg(name = "customer_identity_card", showField = true)
+    @Key(name = "customer_identity_card")
     private String customerIdentityCard;
 
     // 开户银行
-    @Local(name = "bank")
-    @Opposite(name = "transaction_opposite_account_open_bank")
-    @Hits
+    @Agg(name = "bank", showField = true)
+    @Key(name = "bank")
     private String bank;
 
     // 账号
-    @Local(name = "query_account")
-    @Opposite(name = "transaction_opposite_account")
-    @Hits
+    @Agg(name = "query_account", showField = true)
+    @Key(name = "query_account")
     private String queryAccount;
 
     // 交易卡号
-    @Local(name = "query_card")
-    @Opposite(name = "transaction_opposite_card")
-    @Hits
+    @Agg(name = "query_card", showField = true)
+    @Key(name = "query_card")
     private String tradeCard;
 
     // 对方开户名称
-    @Local(name = "transaction_opposite_name")
-    @Opposite(name = "customer_name")
-    @Hits
+    @Agg(name = "transaction_opposite_name", showField = true)
+    @Key(name = "transaction_opposite_name")
     private String oppositeCustomerName;
 
     // 对方开户证件号码
-    @Local(name = "transaction_opposite_certificate_number")
-    @Opposite(name = "customer_identity_card")
-    @Hits
+    @Agg(name = "transaction_opposite_certificate_number", showField = true)
+    @Key(name = "transaction_opposite_certificate_number")
     private String oppositeIdentityCard;
 
     // 对方开户银行
-    @Local(name = "transaction_opposite_account_open_bank")
-    @Opposite(name = "bank")
-    @Hits
+    @Agg(name = "transaction_opposite_account_open_bank", showField = true)
+    @Key(name = "transaction_opposite_account_open_bank")
     private String oppositeBank;
 
     // 对方卡号
-    @Local(name = "transaction_opposite_card")
-    @Opposite(name = "query_card")
-    @Hits
+    @Agg(name = "transaction_opposite_card", showField = true)
+    @Key(name = "transaction_opposite_card")
     private String oppositeTradeCard;
 
 
