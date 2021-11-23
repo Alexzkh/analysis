@@ -71,16 +71,6 @@ public interface QueryRequestParamFactory {
     <T, V> QuerySpecialParams bulidPeopleAreaDetailAnalysisRequest(T requestParam, V parameter);
 
     /**
-     * 构建资金来源去向es前置查询参数.
-     *
-     * @param requestParam: 资金来源去向body. T -> FundsSourceAndDestinationStatistisRequest.
-     * @param parameter:    案件编号.
-     * @return: com.zqykj.parameters.query.QuerySpecialParams
-     **/
-    <T, V> QuerySpecialParams buildFundsSourceAndDestinationAnalysisResquest(T requestParam, V parameter);
-
-
-    /**
      * <h2> 构建交易汇聚分析结果查询请求(基于选中一组调单卡号集合为查询条件) </h2>
      */
     <T, V> QuerySpecialParams buildTradeConvergenceAnalysisResultMainCardsRequest(T request, V other);
@@ -91,6 +81,7 @@ public interface QueryRequestParamFactory {
      * 案件域
      */
     <T, V> QuerySpecialParams buildBasicParamQueryViaCase(T request, V other);
+
     /**
      * <h2> 给定一组卡号集合, 筛选出调单的 </h2>
      */
@@ -100,4 +91,9 @@ public interface QueryRequestParamFactory {
      * 构建单卡画像查询参数
      */
     <T> QuerySpecialParams buildSingleCardPortraitQueryParams(T request);
+
+    /**
+     * 构建选择个人查询参数
+     */
+    <T> QuerySpecialParams buildAdjustIndividualQuery(T request);
 }

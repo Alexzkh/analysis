@@ -47,13 +47,6 @@ public interface AggregationRequestParamFactory {
      **/
     <T> AggregationParams createPeopleAreaQueryAgg(T request);
 
-    /**
-     * 构建资金来源去向中来源的topN
-     *
-     * @param request: 资金来源去向查询请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildFundsSourceTopNAgg(T request);
 
     /**
      * <h2>  构建交易汇聚分析结果聚合请求(基于选中一组调单卡号集合为查询条件) </h2>
@@ -74,11 +67,6 @@ public interface AggregationRequestParamFactory {
      * @param size 条数
      */
     AggregationParams buildGetCardNumsInBatchesAgg(int from, int size);
-
-    /**
-     * <h2> 获取调单卡号总量 </h2>
-     */
-    <T> AggregationParams getCardNumsTotal(T request);
 
     /**
      * <h2> 按指定字段groupBy </h2>
@@ -112,4 +100,20 @@ public interface AggregationRequestParamFactory {
      */
     <T> AggregationParams buildSingleCardPortraitAgg(T request);
 
+    /**
+     * <h2> 构建选择个体聚合 </h2>
+     */
+    <T> AggregationParams buildAdjustIndividualAgg(T request);
+
+    /**
+     * <h2> 构建调单卡号聚合 </h2>
+     */
+    <T> AggregationParams buildAdjustCardsAgg(T request);
+
+    /**
+     * <h2> 构建去重请求 根据去重字段 </h2>
+     *
+     * @param distinctField 去重字段
+     */
+    AggregationParams buildDistinctViaField(String distinctField);
 }

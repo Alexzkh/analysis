@@ -11,6 +11,8 @@ import com.zqykj.app.service.strategy.PeopleAreaAnalysisFieldStrategy;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.builder.QueryParamsBuilders;
+import com.zqykj.common.enums.FundsResultType;
+import com.zqykj.common.enums.FundsSourceAndDestinationStatisticsType;
 import com.zqykj.common.request.*;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
@@ -257,26 +259,6 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
-    @Override
-    public <T, V> QuerySpecialParams buildFundsSourceAndDestinationAnalysisResquest(T requestParam, V parameter) {
-
-        FundsSourceAndDestinationStatisticsRequest fundsSourceAndDestinationStatisticsRequest =
-                (FundsSourceAndDestinationStatisticsRequest) requestParam;
-        String caseId = parameter.toString();
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.must);
-        // 指定caseId
-        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, FundTacticsAnalysisField.CASE_ID, caseId));
-
-        // 指定证件号码,添加证件号码过滤条件
-        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
-                fundsSourceAndDestinationStatisticsRequest.getIdentityCard()));
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-        return querySpecialParams;
-    }
-
 
     public <T, V> QuerySpecialParams buildTradeConvergenceAnalysisResultMainCardsRequest(T t, V v) {
 
@@ -361,6 +343,37 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         querySpecialParams.setPagination(new Pagination(0, 1));
         querySpecialParams.setSort(new FieldSort(SingleCardPortraitAnalysisField.TRADING_TIME, Sort.Direction.DESC.name()));
 
+        return querySpecialParams;
+    }
+
+    public <T> QuerySpecialParams buildAdjustIndividualQuery(T request) {
+
+        AdjustIndividualRequest adjustIndividualRequest = (AdjustIndividualRequest) request;
+        // 案件Id
+        String caseId = adjustIndividualRequest.getCaseId();
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, caseId));
+        // 指定开户证件号码
+        if (StringUtils.isNotBlank(adjustIndividualRequest.getCustomerIdentityCard())) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
+                    adjustIndividualRequest.getCustomerIdentityCard()));
+        }
+        // 模糊查询
+        if (!StringUtils.isBlank(adjustIndividualRequest.getKeyword())) {
+
+            CombinationQueryParams fuzzyQuery = new CombinationQueryParams();
+            fuzzyQuery.setType(ConditionType.should);
+            fuzzyQuery.addCommonQueryParams(QueryParamsBuilders.fuzzy(adjustIndividualRequest.getKeyword(),
+                    FundTacticsAnalysisField.CUSTOMER_NAME));
+            fuzzyQuery.addCommonQueryParams(QueryParamsBuilders.fuzzy(adjustIndividualRequest.getKeyword(),
+                    FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD));
+            // 增加模糊查询
+            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(fuzzyQuery));
+        }
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
         return querySpecialParams;
     }
 }

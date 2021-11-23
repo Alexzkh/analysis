@@ -6,16 +6,16 @@ package com.zqykj.app.service.annotation;
 import java.lang.annotation.*;
 
 /**
- * <h1> 资金交易战法另外一方标识 </h1>
+ * @Description: TODO
+ * @Author zhangkehou
+ * @Date 2021/11/22
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.TYPE})
 @Documented
-public @interface Opposite {
+public @interface Sort {
 
-    // 聚合名称
     String name() default "";
 
-    // 聚合中展示字段标记
-    boolean showField() default false;
+    String direction() default "desc";
 }
