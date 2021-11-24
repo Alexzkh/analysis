@@ -280,12 +280,13 @@ public class AggregationParams {
         addSiblingAggregation(pipelineParams);
     }
 
-    // 添加一个统计管道聚合的时候 设置mapping
-    public void addSiblingAggregation(PipelineAggregationParams sibling, Map<String, String> mapping) {
+    // 添加一个同级管道聚合的时候 设置mapping、结果名称
+    public void addSiblingAggregation(PipelineAggregationParams sibling, Map<String, String> mapping, String resultName) {
 
         AggregationParams pipelineParams = new AggregationParams();
         pipelineParams.toPipeline(sibling);
         pipelineParams.setMapping(mapping);
+        pipelineParams.setResultName(resultName);
         addSiblingAggregation(pipelineParams);
     }
 
