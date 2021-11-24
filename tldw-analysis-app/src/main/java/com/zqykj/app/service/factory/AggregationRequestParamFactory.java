@@ -27,6 +27,11 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request, int from, int size);
 
     /**
+     * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合、只返回查询卡号) </h2>
+     */
+    <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size);
+
+    /**
      * 构建获取交易统计分析根据时间类型获取结果的聚合参数.
      *
      * @param request: 交易统计按时间类型统计请求体
@@ -57,7 +62,7 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams buildTradeConvergenceAnalysisResultMainCardsAgg(T request, int from, int size);
 
     /**
-     * <h2> 构建交易汇聚分析结果聚合请求(基于选中一组合并集合为查询条件)  </h2>
+     * <h2> 构建交易汇聚分析结果聚合请求(基于选中一组合并卡号集合为查询条件)  </h2>
      */
     <T> AggregationParams buildTradeConvergenceQueryAndMergeCardsAgg(T request, int from, int size);
 

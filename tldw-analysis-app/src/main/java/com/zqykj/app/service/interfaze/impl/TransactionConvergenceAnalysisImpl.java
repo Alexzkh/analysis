@@ -169,7 +169,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 构建查询请求参数
         QuerySpecialParams query = queryRequestParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, caseId);
         // 构建 交易汇聚分析聚合请求
-        AggregationParams agg = aggregationRequestParamFactory.buildTradeConvergenceQueryAndMergeCardsAgg(request, from, size);        // 聚合显示字段
+        AggregationParams agg = aggregationRequestParamFactory.buildTradeConvergenceQueryAndMergeCardsAgg(request, from, size);
         // 构建 mapping (聚合名称 -> 聚合属性)
         Map<String, String> mapping = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
         agg.setMapping(mapping);
@@ -262,11 +262,14 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
                 position = next;
             }
         }
+        List<TradeConvergenceAnalysisResult> convergenceAnalysisResults = new ArrayList<>();
         // convergenceAnalysisResultAdjustCards 是过滤出的合并卡号集合
         // 获取这些合并卡号集合的聚合分析结果
-        request.setMergeCards(convergenceAnalysisResultAdjustCards);
-        Map<String, Object> resultsMap = convergenceAnalysisResultViaChosenMainCards(request, 0, convergenceAnalysisResultAdjustCards.size(), caseId, false);
-        List<TradeConvergenceAnalysisResult> convergenceAnalysisResults = (List<TradeConvergenceAnalysisResult>) resultsMap.get("result");
+        if (!CollectionUtils.isEmpty(convergenceAnalysisResultAdjustCards)) {
+            request.setMergeCards(convergenceAnalysisResultAdjustCards);
+            Map<String, Object> resultsMap = convergenceAnalysisResultViaChosenMainCards(request, 0, convergenceAnalysisResultAdjustCards.size(), caseId, false);
+            convergenceAnalysisResults = (List<TradeConvergenceAnalysisResult>) resultsMap.get("result");
+        }
         stopWatch.stop();
         log.info("async compute convergence analysis results cost time = {} ms", stopWatch.getTime(TimeUnit.MILLISECONDS));
         resultMap.put("total", total);

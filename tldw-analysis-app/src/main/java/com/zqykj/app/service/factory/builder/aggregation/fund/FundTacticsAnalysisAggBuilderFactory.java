@@ -93,6 +93,27 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         return cardTerms;
     }
 
+    public <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size) {
+        TradeStatisticalAnalysisQueryRequest queryRequest = (TradeStatisticalAnalysisQueryRequest) request;
+
+        AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD);
+        cardTerms.setSize(queryRequest.getGroupInitSize());
+        // 交易总次数
+        AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
+                FundTacticsAnalysisField.QUERY_CARD, null);
+        setSubAggregation(cardTerms, tradeTotalTimes);
+        fundTacticsPartUniversalAgg(cardTerms, queryRequest);
+        // 排序
+        PipelineAggregationParams sort = fundTacticsPartUniversalAggSort(queryRequest.getSortRequest(), from, size);
+        if (null != sort) {
+            cardTerms.setPerSubAggregation(sort);
+        }
+        // 聚合展示字段
+        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(new String[]{FundTacticsAnalysisField.QUERY_CARD}, "local_hits", null);
+        cardTerms.setPerSubAggregation(showFields);
+        return cardTerms;
+    }
+
     /**
      * <h2> 资金战法分析部分通用聚合查询(适用于用户指定了一组调单卡号集合) </h2>
      * <p>
