@@ -347,11 +347,23 @@ public final class ReflectionUtils {
      * <h2> 获取当前类 及其 父类所有的fields </h2>
      */
     public static List<Field> getAllFields(Class<?> clazz) {
-        List<Field> fieldList = new ArrayList<>();
-        while (clazz != null) {
-            fieldList.addAll(new ArrayList<>(Arrays.asList(clazz.getDeclaredFields())));
+        List<Field> fields = new ArrayList<>();
+        while (null != clazz) {
+            fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
             clazz = clazz.getSuperclass();
         }
-        return fieldList;
+        return fields;
+    }
+
+    /**
+     * <h2> 获取当前类 及其 父类的所有的Methods </h2>
+     */
+    public static List<Method> getAllMethods(Class<?> clazz) {
+        List<Method> methods = new ArrayList<>();
+        while (null != clazz) {
+            methods.addAll(Arrays.asList(clazz.getDeclaredMethods()));
+            clazz = clazz.getSuperclass();
+        }
+        return methods;
     }
 }

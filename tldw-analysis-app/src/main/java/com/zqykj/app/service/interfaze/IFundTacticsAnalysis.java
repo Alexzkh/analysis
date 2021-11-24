@@ -38,7 +38,7 @@ public interface IFundTacticsAnalysis {
     /**
      * <h2> 获取调单个体分析结果 </h2>
      */
-    ServerResponse getAdjustIndividual(AdjustIndividualRequest request);
+    ServerResponse getAdjustIndividuals(AdjustIndividualRequest request);
 
     /**
      * <h2> 获取调单卡号集合(选个个体账号展示下面的调单卡号) </h2>

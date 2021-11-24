@@ -148,7 +148,7 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
     /**
      * <h2> 获取调单个体分析结果 </h2>
      */
-    public ServerResponse getAdjustIndividual(AdjustIndividualRequest request) {
+    public ServerResponse getAdjustIndividuals(AdjustIndividualRequest request) {
 
         // 设置分组最大返回数量
         request.setGroupInitSize(initGroupSize);

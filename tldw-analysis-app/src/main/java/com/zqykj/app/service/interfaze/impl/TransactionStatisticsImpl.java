@@ -10,12 +10,10 @@ import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.enums.HistogramStatistic;
-import com.zqykj.common.request.TradeStatisticalAnalysisPreRequest;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.response.*;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
-import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
@@ -29,7 +27,6 @@ import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
@@ -76,45 +73,6 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     @Value("${chunkSize}")
     private int chunkSize;
-
-
-    @Override
-    public TransactionStatisticsResponse calculateStatisticalResults(String caseId, TransactionStatisticsRequest transactionStatisticsRequest) {
-        TradeStatisticalAnalysisPreRequest tradeStatisticalAnalysisPreRequest = transactionStatisticsRequest.getTradeStatisticalAnalysisPreRequest();
-        TransactionStatisticsAggs transactionStatisticsAggs = transactionStatisticsRequest.getTransactionStatisticsAggs();
-        TimeTypeRequest timeTypeRequest = transactionStatisticsAggs.getDateType();
-
-        /**
-         * 获取交易金额聚合统计直方图结果.
-         * */
-        FundTacticsPartGeneralPreRequest tacticsPartGeneralPreRequest = new FundTacticsPartGeneralPreRequest();
-        BeanUtils.copyProperties(tradeStatisticalAnalysisPreRequest, tacticsPartGeneralPreRequest);
-        HistogramStatisticResponse histogramStatisticResponse = this.getHistogramStatistics(caseId, tacticsPartGeneralPreRequest, transactionStatisticsAggs);
-
-        /**
-         * 获取日期折现图聚合统计结果.
-         * */
-        FundDateRequest fundAnalysisDateRequest = new FundDateRequest();
-        BeanUtils.copyProperties(tradeStatisticalAnalysisPreRequest, fundAnalysisDateRequest);
-        fundAnalysisDateRequest.setTimeType(timeTypeRequest);
-        TradeStatisticalAnalysisFundSumByDate tradeAmountByTime = this.getSummaryOfTradeAmountGroupedByTime(caseId, fundAnalysisDateRequest);
-
-        TimeGroupTradeAmountSum timeGroupTradeAmountSum = new TimeGroupTradeAmountSum();
-
-        timeGroupTradeAmountSum.setDates(tradeAmountByTime.getDates());
-        timeGroupTradeAmountSum.setTradeAmounts(tradeAmountByTime.getTradeAmounts());
-
-        // todo 获取卡聚合统计列表
-
-        /**
-         * 交易统计返回结果封装.
-         * */
-        TransactionStatisticsResponse transactionStatisticsResponse = new TransactionStatisticsResponse(histogramStatisticResponse, timeGroupTradeAmountSum, null);
-
-
-        return transactionStatisticsResponse;
-    }
-
 
     @Override
     public HistogramStatisticResponse getHistogramStatistics(String caseId, FundTacticsPartGeneralPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs) {

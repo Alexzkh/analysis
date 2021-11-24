@@ -4,6 +4,7 @@
 package com.zqykj.core.aggregation.parse;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -31,6 +32,8 @@ public class AggregationParser {
 
     /**
      * <h2> 解析多组聚合结果 </h2>
+     * <p>
+     * TODO 后续将继续优化此取值算法
      */
     public static List<List<Object>> parseMulti(Aggregations aggregations, Map<String, String> map, boolean isConvert) {
 
@@ -113,6 +116,8 @@ public class AggregationParser {
      */
     public static List<Object> parse(Aggregations aggregations, String aggregationName, String key) {
 
+        // 支持下划线驼峰处理
+        key = applyCamelCase(key);
         // 讲首字母大写然后拼接上 get
         key = applyFirstChartUpperCase(key);
 
@@ -138,9 +143,9 @@ public class AggregationParser {
 
         Class<? extends Aggregation> aClass = aggregation.getClass();
 
-        Method[] methods = aClass.getMethods();
+        List<Method> methods = com.zqykj.util.ReflectionUtils.getAllMethods(aClass);
 
-        if (methods.length == 0) {
+        if (CollectionUtils.isEmpty(methods)) {
             return;
         }
 
@@ -150,7 +155,7 @@ public class AggregationParser {
 
 
             // 桶聚合
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+            Optional<Method> methodOptional = methods.stream().filter(method ->
                     method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
             methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, (MultiBucketsAggregation) aggregation,
                     aggMethodKey, aggregationName));
@@ -167,7 +172,7 @@ public class AggregationParser {
             }
         } else {
             // 子聚合处理
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+            Optional<Method> methodOptional = methods.stream().filter(method ->
                     method.getName().equals(applyFirstChartUpperCase(SUB_AGGREGATION))).findFirst();
             methodOptional.ifPresent(method -> {
 
@@ -200,7 +205,7 @@ public class AggregationParser {
                 List<? extends Bucket> buckets = (List<? extends Bucket>) value;
                 for (Bucket bucket : buckets) {
                     Class<? extends Bucket> aClass = bucket.getClass();
-                    Method[] methods = aClass.getMethods();
+                    List<Method> methods = com.zqykj.util.ReflectionUtils.getAllMethods(aClass);
                     Aggregations aggregations = bucket.getAggregations();
                     // 首先找这一层的相关属性, 找不到看看是否有子聚合(继续下钻处理)
                     if (aggregation.getName().equals(aggregationName)) {
@@ -229,8 +234,8 @@ public class AggregationParser {
         }
     }
 
-    private static Optional<Method> getAggregationMethod(String aggMethodKey, Method[] methods) {
-        return Arrays.stream(methods).filter(method -> method.getName().equals(aggMethodKey)).findFirst();
+    private static Optional<Method> getAggregationMethod(String aggMethodKey, List<Method> methods) {
+        return methods.stream().filter(method -> method.getName().equals(aggMethodKey)).findFirst();
     }
 
     /**
@@ -245,5 +250,27 @@ public class AggregationParser {
     private static String applyFirstChartUpperCase(String key) {
 
         return AGG_METHOD_PREFIX + key.substring(0, 1).toUpperCase() + key.substring(1);
+    }
+
+    /**
+     * <h2> 将下划线转成驼峰 </h2>
+     */
+    private static String applyCamelCase(String underscoreStr) {
+        String[] split = StringUtils.split(underscoreStr, "_");
+        if (null == split || split.length == 0) {
+            return underscoreStr;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < split.length; i++) {
+            String str = split[i];
+            if (i == 0) {
+                builder.append(str);
+            } else {
+                // 首字母大写
+                String toUpper = str.substring(0, 1).toUpperCase() + str.substring(1);
+                builder.append(toUpper);
+            }
+        }
+        return builder.toString();
     }
 }
