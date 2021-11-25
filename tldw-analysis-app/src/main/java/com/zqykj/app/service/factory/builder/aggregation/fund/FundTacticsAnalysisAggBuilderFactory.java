@@ -428,7 +428,7 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
             cardTerms.setPerSubAggregation(sort);
         }
         // 聚合展示字段
-        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(FundTacticsAnalysisField.tradeConvergencecAnalysisShowField(), "local_hits", null);
+        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(FundTacticsAnalysisField.tradeConvergenceAnalysisShowField(), "local_hits", null);
         cardTerms.setPerSubAggregation(showFields);
         return cardTerms;
     }
