@@ -47,6 +47,11 @@ public interface AggregationEntityMappingFactory {
     Map<String, String> buildGroupByAggMapping(String field);
 
     /**
+     * <h2> 构建聚合显示字段 聚合名称 - 聚合属性映射  </h2>
+     */
+    Map<String, String> buildShowFieldsAggMapping();
+
+    /**
      * 构建单卡画像分析结果,聚合和实体属性映射
      *
      * @param aggKeyMapping       聚合名称-聚合属性Map

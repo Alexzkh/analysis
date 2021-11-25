@@ -255,17 +255,16 @@ public class AggregationMappingBuilder {
                 throw new IllegalArgumentException("could not find this aggregation type!");
             }
             Optional<Constructor<?>> constructor;
-            Object target = null;
+            Object target;
             // 分2类, 一类是不需要script , 一类是需要的
             if (StringUtils.isNotBlank(parameters.getBucketsPath())
                     && !CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
                 log.error("Cannot use [bucketsPath] with [bucketsPaths] configuration option");
             }
+            if (StringUtils.isBlank(parameters.getBucketsPath()) && CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
+                return buildSpecialPipelineAggregation(aggregationClass, parameters);
+            }
             if (StringUtils.isBlank(parameters.getScript())) {
-
-                if (CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
-                    return buildSpecialPipelineAggregation(aggregationClass, parameters);
-                }
 
                 constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), parameters.getBucketsPath());
                 if (constructor.isPresent()) {
@@ -282,7 +281,7 @@ public class AggregationMappingBuilder {
                     target = ReflectionUtils.getTargetInstanceViaReflection(constructor, aggregationClass, parameters.getName(), parameters.getBucketsPathMap(), script);
                 } else {
                     // TODO 可能存在一些不太统一的构造函数情况,等到发现的时候再去处理
-
+                    return buildSpecialPipelineAggregation(aggregationClass, parameters);
                 }
             }
             return target;

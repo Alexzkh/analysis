@@ -280,6 +280,16 @@ public class AggregationParams {
         addSiblingAggregation(pipelineParams);
     }
 
+    // 添加一个同级管道聚合的时候 设置mapping、结果名称
+    public void addSiblingAggregation(PipelineAggregationParams sibling, Map<String, String> mapping, String resultName) {
+
+        AggregationParams pipelineParams = new AggregationParams();
+        pipelineParams.toPipeline(sibling);
+        pipelineParams.setMapping(mapping);
+        pipelineParams.setResultName(resultName);
+        addSiblingAggregation(pipelineParams);
+    }
+
     // 将 AggregationParams 包装成一个管道聚合
     public void toPipeline(PipelineAggregationParams params) {
 

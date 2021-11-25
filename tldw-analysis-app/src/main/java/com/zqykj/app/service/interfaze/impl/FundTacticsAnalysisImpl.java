@@ -129,7 +129,7 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
         // 筛选出调单卡号集合的查询请求
         QuerySpecialParams query = queryRequestParamFactory.filterMainCards(caseId, cards);
         // 筛选出调单卡号的聚合请求
-        AggregationParams agg = aggregationRequestParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, cards.size());
+        AggregationParams agg = aggregationRequestParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, cards.size(), null);
         Map<String, String> mapping = aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD);
         agg.setMapping(mapping);
         agg.setResultName("groupByQueryCards");
@@ -148,7 +148,7 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
     /**
      * <h2> 获取调单个体分析结果 </h2>
      */
-    public ServerResponse getAdjustIndividual(AdjustIndividualRequest request) {
+    public ServerResponse getAdjustIndividuals(AdjustIndividualRequest request) {
 
         // 设置分组最大返回数量
         request.setGroupInitSize(initGroupSize);

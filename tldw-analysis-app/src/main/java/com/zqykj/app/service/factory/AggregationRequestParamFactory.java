@@ -3,7 +3,10 @@
  */
 package com.zqykj.app.service.factory;
 
+import com.zqykj.parameters.FieldSort;
+import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import org.springframework.lang.Nullable;
 
 /**
  * <h1> 公共聚合请求参数构建工厂 </h1>
@@ -22,6 +25,11 @@ public interface AggregationRequestParamFactory {
      * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合) 、全部查询不适用此方法 </h2>
      */
     <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request, int from, int size);
+
+    /**
+     * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合、只返回查询卡号) </h2>
+     */
+    <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size);
 
     /**
      * 构建获取交易统计分析根据时间类型获取结果的聚合参数.
@@ -54,6 +62,11 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams buildTradeConvergenceAnalysisResultMainCardsAgg(T request, int from, int size);
 
     /**
+     * <h2> 构建交易汇聚分析结果聚合请求(基于选中一组合并卡号集合为查询条件)  </h2>
+     */
+    <T> AggregationParams buildTradeConvergenceQueryAndMergeCardsAgg(T request, int from, int size);
+
+    /**
      * <h2> 获取交易汇聚分析结果查询总数据量 </h2>
      */
     <T> AggregationParams buildTradeConvergenceAnalysisResultTotalAgg(T request);
@@ -69,9 +82,19 @@ public interface AggregationRequestParamFactory {
     AggregationParams buildGetCardNumsInBatchesAgg(int from, int size);
 
     /**
-     * <h2> 按指定字段groupBy </h2>
+     * <h2> 按指定字段groupBy且分页操作 </h2>
+     *
+     * @param field      分组字段
+     * @param groupSize  group by 结果的size eg. 例如实际有20000个,如果不设置默认只返回10个,后续一些sum操作,都是基于这个size操作的
+     * @param pagination 分页参数: from: 起始位置 (从0开始) 、 size: 返回结果条件
      */
-    AggregationParams groupByField(String field, int size);
+    AggregationParams groupByField(String field, int groupSize, @Nullable Pagination pagination);
+
+    /**
+     * <h2> 聚合展示字段并且按某个字段排序 </h2>
+     */
+    AggregationParams showFields(@Nullable FieldSort sort, String... fields);
+
 
     /**
      * 构建单卡画像最早交易时间聚合查询参数

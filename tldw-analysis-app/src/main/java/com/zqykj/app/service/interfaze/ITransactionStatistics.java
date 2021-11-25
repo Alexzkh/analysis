@@ -21,15 +21,6 @@ import java.util.concurrent.ExecutionException;
  */
 public interface ITransactionStatistics {
 
-
-    /**
-     * 交易统计计算结果.
-     *
-     * @param transactionStatisticsRequest: 交易统计的请求体.
-     * @return: com.zqykj.common.response。TransactionStatisticsResponse
-     **/
-    TransactionStatisticsResponse calculateStatisticalResults(String caseId, TransactionStatisticsRequest transactionStatisticsRequest);
-
     /**
      * 根据交易金额、入账金额、出账金额,获取交易统计直方图聚合统计结果.
      *

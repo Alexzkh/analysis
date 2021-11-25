@@ -201,7 +201,7 @@ public interface FundTacticsAnalysisField {
     }
 
     // 交易汇聚分析需要展示的字段
-    static String[] tradeConvergencecAnalysisShowField() {
+    static String[] tradeConvergenceAnalysisShowField() {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD, TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD,
                 OPPOSITE_BANK, TRANSACTION_OPPOSITE_CARD};
