@@ -87,14 +87,10 @@ public class AggregationParser {
                         List<Map<String, Object>> source = new ArrayList<>();
                         SearchHits hits = (SearchHits) o;
                         SearchHit[] searchHits = hits.getHits();
-                        if (searchHits.length == 1) {
-                            newOne.add(searchHits[0].getSourceAsMap());
-                        } else {
-                            for (SearchHit searchHit : searchHits) {
-                                source.add(searchHit.getSourceAsMap());
-                            }
-                            newOne.add(source);
+                        for (SearchHit searchHit : searchHits) {
+                            source.add(searchHit.getSourceAsMap());
                         }
+                        newOne.add(source);
                     } else {
                         newOne.add(oldOne.get(i));
                     }

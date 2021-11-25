@@ -178,7 +178,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         List<List<Object>> cards = results.get(agg.getResultName());
         return cards.stream().map(e -> {
             Object o = e.get(0);
-            Map<String, Object> sourceMap = (Map<String, Object>) o;
+            List<Map<String, Object>> source = (List<Map<String, Object>>) o;
+            Map<String, Object> sourceMap = source.get(0);
             String queryCard = sourceMap.get(FundTacticsAnalysisField.QUERY_CARD).toString();
             String mergeCard = sourceMap.get(FundTacticsAnalysisField.MERGE_CARD).toString();
             Map<String, String> cardsMap = new HashMap<>();
@@ -206,6 +207,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
      * <p>
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
+    @SuppressWarnings("all")
     protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
 
         // 前台分页
@@ -242,7 +244,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 需要返回的数量
         int skip = com.zqykj.common.vo.PageRequest.getOffset(page, pageSize);
         int limit = pageSize;
-        List<String> convergenceAnalysisResultAdjustCards = new ArrayList<>();
+        List<String> mergeCards = new ArrayList<>();
         StopWatch stopWatch = StopWatch.createStarted();
         while (position < size) {
             int next = Math.min(position + chunkSize, size);
@@ -250,14 +252,14 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
                     chunkSize, skip, limit, caseId, request));
             List<String> results = future.get();
             if (!CollectionUtils.isEmpty(results)) {
-                convergenceAnalysisResultAdjustCards.addAll(results);
+                mergeCards.addAll(results);
             }
-            if (convergenceAnalysisResultAdjustCards.size() == pageSize) {
+            if (mergeCards.size() == pageSize) {
                 break;
             } else {
-                if (convergenceAnalysisResultAdjustCards.size() > 0) {
+                if (mergeCards.size() > 0) {
                     skip = 0;
-                    limit = pageSize - convergenceAnalysisResultAdjustCards.size();
+                    limit = pageSize - mergeCards.size();
                 }
                 position = next;
             }
@@ -265,9 +267,9 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         List<TradeConvergenceAnalysisResult> convergenceAnalysisResults = new ArrayList<>();
         // convergenceAnalysisResultAdjustCards 是过滤出的合并卡号集合
         // 获取这些合并卡号集合的聚合分析结果
-        if (!CollectionUtils.isEmpty(convergenceAnalysisResultAdjustCards)) {
-            request.setMergeCards(convergenceAnalysisResultAdjustCards);
-            Map<String, Object> resultsMap = convergenceAnalysisResultViaChosenMainCards(request, 0, convergenceAnalysisResultAdjustCards.size(), caseId, false);
+        if (!CollectionUtils.isEmpty(mergeCards)) {
+            request.setMergeCards(mergeCards);
+            Map<String, Object> resultsMap = convergenceAnalysisResultViaChosenMainCards(request, 0, mergeCards.size(), caseId, false);
             convergenceAnalysisResults = (List<TradeConvergenceAnalysisResult>) resultsMap.get("result");
         }
         stopWatch.stop();

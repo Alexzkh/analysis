@@ -313,6 +313,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
      * <p>
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
+    @SuppressWarnings("all")
     protected Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
 
         // 前台分页
@@ -399,7 +400,8 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         List<List<Object>> cards = results.get(agg.getResultName());
         return cards.stream().map(e -> {
             Object o = e.get(0);
-            Map<String, Object> sourceMap = (Map<String, Object>) o;
+            List<Map<String, Object>> source = (List<Map<String, Object>>) o;
+            Map<String, Object> sourceMap = source.get(0);
             return sourceMap.get(FundTacticsAnalysisField.QUERY_CARD).toString();
         }).collect(Collectors.toList());
     }
