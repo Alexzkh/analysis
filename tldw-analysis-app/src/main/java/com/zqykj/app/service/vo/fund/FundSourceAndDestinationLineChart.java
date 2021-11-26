@@ -18,34 +18,32 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Agg(name = "local_hits")
-@Key
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FundSourceAndDestinationLineChart {
 
     // 入账次数
-    @Agg(name = "local_credits_times")
+    @Agg(name = "opposite_credits_times")
     @Key(name = "docCount")
-    private int creditsTimes;
+    private int creditsTimes = 0;
 
     // 入账金额
-    @Agg(name = "local_credits_amount")
+    @Agg(name = "opposite_credits_amount")
     @Key(name = "valueAsString")
     private BigDecimal creditsAmount;
 
     // 出账次数
-    @Agg(name = "local_out_times")
+    @Agg(name = "opposite_out_times")
     @Key(name = "docCount")
-    private int payOutTimes;
+    private int payOutTimes = 0;
 
     // 出账金额
-    @Agg(name = "local_out_amount")
+    @Agg(name = "opposite_out_amount")
     @Key(name = "valueAsString")
     private BigDecimal payOutAmount;
 
     // 交易时间
-    @Agg(name = "local_max_date")
-    @Key(name = "valueAsString")
+    @Agg(name = "date_histogram_trading_time")
+    @Key(name = "keyAsString")
     private String tradingTime;
 
 

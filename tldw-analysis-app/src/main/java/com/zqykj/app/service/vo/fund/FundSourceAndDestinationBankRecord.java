@@ -17,19 +17,19 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Agg(name = "local_hits")
+@Agg(name = "opposite_hits")
 @Key
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FundSourceAndDestinationBankRecord {
 
     // 开户名称
-    @Agg(name = "customer_name")
-    @Key(name = "customer_name")
+    @Agg(name = "transaction_opposite_name",showField = true)
+    @Key(name = "transaction_opposite_name")
     private String customerName;
 
     // 开户证件号码
-    @Agg(name = "customer_identity_card")
-    @Key(name = "customer_identity_card")
+    @Agg(name = "transaction_opposite_certificate_number",showField = true)
+    @Key(name = "transaction_opposite_certificate_number")
     private String customerIdentityCard;
 
 
@@ -39,13 +39,13 @@ public class FundSourceAndDestinationBankRecord {
     private BigDecimal tradeTotalAmount;
 
     // 最早交易时间
-    @Agg(name = "local_min_date")
-    @Key(name = "value")
+    @Agg(name = "opposite_min_date")
+    @Key(name = "valueAsString")
     private String earliestTradingTime;
 
     // 最晚交易时间
-    @Agg(name = "local_max_date")
-    @Key(name = "value")
+    @Agg(name = "opposite_max_date")
+    @Key(name = "valueAsString")
     private String latestTradingTime;
 
     public enum EntityMapping {

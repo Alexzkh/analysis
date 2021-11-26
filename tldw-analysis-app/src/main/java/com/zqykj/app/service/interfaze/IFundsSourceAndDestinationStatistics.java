@@ -61,6 +61,6 @@ public interface IFundsSourceAndDestinationStatistics {
      * @param caseId:                                    案件编号用作路由id
      * @return: java.util.List<com.zqykj.app.service.vo.fund.FundSourceAndDestinationResultCardList>
      **/
-    List<FundSourceAndDestinationResultCardList> accessFundSourceAndDestinationCardList(FundSourceAndDestinationCardResultRequest fundSourceAndDestinationCardResultRequest, String caseId) throws Exception;
+    List<FundSourceAndDestinationResultCardList> accessFundSourceAndDestinationCardList(FundsSourceAndDestinationStatisticsRequest fundSourceAndDestinationCardResultRequest, String caseId) throws Exception;
 
 }

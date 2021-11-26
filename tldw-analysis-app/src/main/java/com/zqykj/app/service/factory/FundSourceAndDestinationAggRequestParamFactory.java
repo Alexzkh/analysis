@@ -48,6 +48,6 @@ public interface FundSourceAndDestinationAggRequestParamFactory {
      * @param request: 资金来源去向请求体
      * @return: com.zqykj.parameters.aggregate.AggregationParams
      **/
-    <T> AggregationParams buildFundsSourceAndDestinationPieChartAgg(T request);
+    <T> AggregationParams buildFundsSourceAndDestinationPieChartAgg(T request,FundsResultType fundsResultType);
 
 }

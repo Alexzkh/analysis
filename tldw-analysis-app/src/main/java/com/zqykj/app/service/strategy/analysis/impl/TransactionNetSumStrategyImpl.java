@@ -2,6 +2,8 @@ package com.zqykj.app.service.strategy.analysis.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.factory.*;
+import com.zqykj.app.service.factory.builder.aggregation.fund.FundSourceAndDestinationAggPublicFactory;
+import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.strategy.analysis.FundSourceAndDestinationStrategy;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.enums.FundsResultType;
@@ -20,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,32 +45,20 @@ public class TransactionNetSumStrategyImpl implements FundSourceAndDestinationSt
 
     private final AggregationResultEntityParseFactory aggregationResultEntityParseFactory;
 
+    private final FundSourceAndDestinationAggPublicFactory fundSourceAndDestinationAggPublicFactory;
+
     @Override
     public FundSourceAndDestinationFlowDiagramResponse accessFundSourceAndDestinationTopN(FundsSourceAndDestinationStatisticsRequest fundsSourceAndDestinationStatisticsRequest, String caseId) {
         // 构建公共查询参数.
         QuerySpecialParams querySpecialParams = queryRequestParamFactory.buildFundsSourceAndDestinationAnalysisResquest(fundsSourceAndDestinationStatisticsRequest, caseId, FundsResultType.SOURCE);
-
-        //构建来源的聚合参数.
+        // 构建来源的聚合参数.
         AggregationParams sourceAggsParams = aggregationRequestParamFactory.buildFundsSourceTopNAgg(fundsSourceAndDestinationStatisticsRequest, FundsResultType.SOURCE);
-        Map<String, List<List<Object>>> sourcedResult = entranceRepository.compoundQueryAndAgg(querySpecialParams, sourceAggsParams, BankTransactionRecord.class, caseId);
-        List<String> sourceOppositeTitles = new ArrayList<>(sourceAggsParams.getMapping().keySet());
-        List<Map<String, Object>> localEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                sourcedResult.get(sourceAggsParams.getResultName()),sourceOppositeTitles,FundSourceAndDestinationBankRecord.class);
-        // 来源实体数据组装
-        List<FundSourceAndDestinationBankRecord> localResults = JacksonUtils.parse(JacksonUtils.toJson(localEntityMapping), new TypeReference<List<FundSourceAndDestinationBankRecord>>() {
-        });
-
-
+        // 获取来源的结果
+        List<FundSourceAndDestinationBankRecord> localResults = fundSourceAndDestinationAggPublicFactory.accessTopN(sourceAggsParams, querySpecialParams, caseId);
         // 构建去向的聚合参数
         AggregationParams destinationAggsParams = aggregationRequestParamFactory.buildFundsSourceTopNAgg(fundsSourceAndDestinationStatisticsRequest, FundsResultType.DESTINATION);
-
-        Map<String, List<List<Object>>> destinationresult = entranceRepository.compoundQueryAndAgg(querySpecialParams, destinationAggsParams, BankTransactionRecord.class, caseId);
-        List<String> destinationOppositeTitles = new ArrayList<>(sourceAggsParams.getMapping().keySet());
-        List<Map<String, Object>> destinationEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                destinationresult.get(sourceAggsParams.getResultName()), destinationOppositeTitles,FundSourceAndDestinationBankRecord.class);
-        // 来源实体数据组装
-        List<FundSourceAndDestinationBankRecord> destinationResults = JacksonUtils.parse(JacksonUtils.toJson(destinationEntityMapping), new TypeReference<List<FundSourceAndDestinationBankRecord>>() {
-        });
+        // 去向实体数据组装
+        List<FundSourceAndDestinationBankRecord> destinationResults =fundSourceAndDestinationAggPublicFactory.accessTopN(destinationAggsParams, querySpecialParams, caseId);
         return FundSourceAndDestinationFlowDiagramResponse.builder()
                 .localResults(localResults)
                 .destinationResults(destinationResults)
@@ -88,14 +77,14 @@ public class TransactionNetSumStrategyImpl implements FundSourceAndDestinationSt
          * elasticsearch返回的结果.
          * */
         Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, lineChartAggsParams, BankTransactionRecord.class, caseId);
-        List<String> lineChartTitles = new ArrayList<>(lineChartAggsParams.getMapping().keySet());
+        List<String> lineChartTitles = new ArrayList<>(lineChartAggsParams.getEntityAggColMapping().keySet());
         List<Map<String, Object>> lineChartEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                result.get(lineChartAggsParams.getResultName()), lineChartTitles,fundsSourceAndDestinationStatisticsRequest
+                result.get(lineChartAggsParams.getResultName()), lineChartTitles, fundsSourceAndDestinationStatisticsRequest
                         .getFundsSourceAndDestinationStatisticsType()
                         .equals(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT) ?
                         FundSourceAndDestinationLineChart.class :
                         FundSourceAndDestinationNetLineChart.class
-              );
+        );
         // 来源实体数据组装
         List<FundSourceAndDestinationLineChart> lineChartResults = JacksonUtils.parse(JacksonUtils.toJson(lineChartEntityMapping), new TypeReference<List<FundSourceAndDestinationLineChart>>() {
         });
@@ -106,14 +95,14 @@ public class TransactionNetSumStrategyImpl implements FundSourceAndDestinationSt
          * elasticsearch返回的结果.
          * */
         Map<String, List<List<Object>>> destinationResult = entranceRepository.compoundQueryAndAgg(querySpecialParams, destinationLineChartAggsParams, BankTransactionRecord.class, caseId);
-        List<String> destinationChartTitles = new ArrayList<>(destinationLineChartAggsParams.getMapping().keySet());
+        List<String> destinationChartTitles = new ArrayList<>(destinationLineChartAggsParams.getEntityAggColMapping().keySet());
         List<Map<String, Object>> destinationLineChartEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-              destinationResult.get(destinationLineChartAggsParams.getResultName()), destinationChartTitles,fundsSourceAndDestinationStatisticsRequest
+                destinationResult.get(destinationLineChartAggsParams.getResultName()), destinationChartTitles, fundsSourceAndDestinationStatisticsRequest
                         .getFundsSourceAndDestinationStatisticsType()
                         .equals(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT) ?
                         FundSourceAndDestinationLineChart.class :
                         FundSourceAndDestinationNetLineChart.class
-                );
+        );
         // 来源实体数据组装
         List<FundSourceAndDestinationLineChart> destinationLineChartResults = JacksonUtils.parse(JacksonUtils.toJson(destinationLineChartEntityMapping), new TypeReference<List<FundSourceAndDestinationLineChart>>() {
         });
@@ -143,7 +132,7 @@ public class TransactionNetSumStrategyImpl implements FundSourceAndDestinationSt
     }
 
     @Override
-    public List<FundSourceAndDestinationResultList>accessFundSourceAndDestinationList(FundsSourceAndDestinationStatisticsRequest fundsSourceAndDestinationStatisticsRequest, String caseId) {
+    public List<FundSourceAndDestinationResultList> accessFundSourceAndDestinationList(FundsSourceAndDestinationStatisticsRequest fundsSourceAndDestinationStatisticsRequest, String caseId) {
         // 构建公共查询参数.
         QuerySpecialParams querySpecialParams = queryRequestParamFactory.buildFundsSourceAndDestinationAnalysisResquest(fundsSourceAndDestinationStatisticsRequest, caseId,
                 fundsSourceAndDestinationStatisticsRequest.getFundsResultType());
@@ -152,10 +141,10 @@ public class TransactionNetSumStrategyImpl implements FundSourceAndDestinationSt
         AggregationParams aggregationParams = aggregationRequestParamFactory.buildFundsSourceAndDestinationResultListAgg(fundsSourceAndDestinationStatisticsRequest);
 
         Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, caseId);
-        List<String> resultListTitles = new ArrayList<>(aggregationParams.getMapping().keySet());
+        List<String> resultListTitles = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
         List<Map<String, Object>> resultListEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-           result.get(aggregationParams.getResultName()), resultListTitles,FundSourceAndDestinationResultList.class
-           );
+                result.get(aggregationParams.getResultName()), resultListTitles, FundSourceAndDestinationResultList.class
+        );
         // 来源实体数据组装
         List<FundSourceAndDestinationResultList> fundsResultList = JacksonUtils.parse(JacksonUtils.toJson(resultListEntityMapping), new TypeReference<List<FundSourceAndDestinationResultList>>() {
         });
@@ -165,12 +154,22 @@ public class TransactionNetSumStrategyImpl implements FundSourceAndDestinationSt
     @Override
     public FundsSourceAndDestinationPieChartStatisticsResponse accessFundSourceAndDestinationPieChart(FundsSourceAndDestinationStatisticsRequest fundsSourceAndDestinationStatisticsRequest, String caseId) {
 
+        QuerySpecialParams querySpecialParams = queryRequestParamFactory.buildFundsSourceAndDestinationAnalysisResquest(fundsSourceAndDestinationStatisticsRequest, caseId,
+                FundsResultType.SOURCE);
 
-        return null;
+        AggregationParams aggregationParams = aggregationRequestParamFactory.buildFundsSourceAndDestinationPieChartAgg(fundsSourceAndDestinationStatisticsRequest, FundsResultType.SOURCE);
+        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, caseId);
+        List<List<Object>> sourceResult = result.get(FundTacticsAnalysisField.PIPLINE_SUM_BUCKET);
+
+        AggregationParams destinationParams = aggregationRequestParamFactory.buildFundsSourceAndDestinationPieChartAgg(fundsSourceAndDestinationStatisticsRequest, FundsResultType.DESTINATION);
+        Map<String, List<List<Object>>> destinationResult = entranceRepository.compoundQueryAndAgg(querySpecialParams, destinationParams, BankTransactionRecord.class, caseId);
+        List<List<Object>> destResult = destinationResult.get(FundTacticsAnalysisField.PIPLINE_TRANSACTION_NET_NUMBER);
+
+        return transferPieChartResult(sourceResult, destResult);
     }
 
     @Override
-    public List<FundSourceAndDestinationResultCardList> accessFundSourceAndDestinationCardList(FundSourceAndDestinationCardResultRequest fundSourceAndDestinationCardResultRequest, String caseId) {
+    public List<FundSourceAndDestinationResultCardList> accessFundSourceAndDestinationCardList(FundsSourceAndDestinationStatisticsRequest fundSourceAndDestinationCardResultRequest, String caseId) {
 
 
         // 构建公共查询参数.
@@ -179,10 +178,10 @@ public class TransactionNetSumStrategyImpl implements FundSourceAndDestinationSt
         AggregationParams aggregationParams = aggregationRequestParamFactory.buildFundsSourceAndDestinationCardResultListAgg(fundSourceAndDestinationCardResultRequest);
         aggregationParams.setResultName("FundSourceAndDestinationCardLis");
         Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, caseId);
-        List<String> resultListTitles = new ArrayList<>(aggregationParams.getMapping().keySet());
+        List<String> resultListTitles = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
         List<Map<String, Object>> resultListEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                result.get(aggregationParams.getResultName()), resultListTitles,FundSourceAndDestinationResultCardList.class
-               );
+                result.get(aggregationParams.getResultName()), resultListTitles, FundSourceAndDestinationResultCardList.class
+        );
         // 来源实体数据组装
         List<FundSourceAndDestinationResultCardList> fundsResultList = JacksonUtils.parse(JacksonUtils.toJson(resultListEntityMapping), new TypeReference<List<FundSourceAndDestinationResultCardList>>() {
         });

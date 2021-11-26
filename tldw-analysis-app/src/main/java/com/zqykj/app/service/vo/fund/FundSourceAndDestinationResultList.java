@@ -19,18 +19,18 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Agg(name = "local_hits")
+@Agg(name = "opposite_hits")
 @Key
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FundSourceAndDestinationResultList {
 
     // 开户名称
-    @Agg(name = "transaction_opposite_name")
+    @Agg(name = "transaction_opposite_name",showField = true)
     @Key(name = "transaction_opposite_name")
     private String customerName;
 
     // 开户证件号码
-    @Agg(name = "transaction_opposite_certificate_number")
+    @Agg(name = "transaction_opposite_certificate_number",showField = true)
     @Key(name = "transaction_opposite_certificate_number")
     private String customerIdentityCard;
 

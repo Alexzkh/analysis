@@ -159,7 +159,7 @@ public interface FundTacticsAnalysisField {
     /**
      * 管道聚合,selector名称
      */
-    String PIPLINE_SUM_BUCKET = "sum_bucket";
+    String PIPLINE_SUM_BUCKET = "card_number_sum_bucket";
 
     /**
      * 管道聚合,selector名称
@@ -200,6 +200,12 @@ public interface FundTacticsAnalysisField {
         return new String[]{TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD, OPPOSITE_BANK, OPPOSITE_ACCOUNT, TRANSACTION_OPPOSITE_CARD};
     }
 
+    // 交易统计分析结果本方需要展示的字段
+    static String[] tradeStatisticalAnalysisOppositeResultShowField() {
+
+        return new String[]{TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD};
+    }
+
     // 交易汇聚分析需要展示的字段
     static String[] tradeConvergenceAnalysisShowField() {
 
@@ -210,6 +216,6 @@ public interface FundTacticsAnalysisField {
     // 交易统计分析结果本方需要展示的字段
     static String[] fundSourceAndDestinationAnalysisOppositeShowField() {
 
-        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD};
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT,QUERY_CARD};
     }
 }
