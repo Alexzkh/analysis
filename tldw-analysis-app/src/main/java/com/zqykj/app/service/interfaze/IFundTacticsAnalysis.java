@@ -35,6 +35,8 @@ public interface IFundTacticsAnalysis {
      */
     Map<String, String> asyncFilterMainCards(String caseId, List<String> cards) throws ExecutionException, InterruptedException;
 
+
+
     /**
      * <h2> 获取调单个体分析结果 </h2>
      */
