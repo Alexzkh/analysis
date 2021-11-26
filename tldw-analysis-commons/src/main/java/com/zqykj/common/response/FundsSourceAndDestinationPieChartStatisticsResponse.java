@@ -1,6 +1,7 @@
 package com.zqykj.common.response;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,18 +15,19 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class FundsSourceAndDestinationPieChartStatisticsResponse {
 
 
     /**
      * 交易账户总个数
      */
-    private Integer transcationAccountTotalNumber;
+    private BigDecimal transcationAccountTotalNumber;
 
     /**
      * 来源账户个数
      */
-    private Integer sourceAccountNumber;
+    private BigDecimal sourceAccountNumber;
 
     /**
      * 来源账户百分比
@@ -35,7 +37,7 @@ public class FundsSourceAndDestinationPieChartStatisticsResponse {
     /**
      * 去向账户个数
      */
-    private Integer destinationAccountNumber;
+    private BigDecimal destinationAccountNumber;
 
     /**
      * 来源账户百分比

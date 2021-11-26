@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Agg(name = "local_hits")
+@Agg(name = "opposite_hits")
 @Key
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FundSourceAndDestinationResultCardList {
@@ -48,46 +48,50 @@ public class FundSourceAndDestinationResultCardList {
     @Agg(name = "query_card", showField = true)
     @Key(name = "query_card")
     private String tradeCard;
+    // 交易总次数
+    @Agg(name = "opposite_trade_total")
+    @Key(name = "value")
+    private int tradeTotalTimes = 0;
+
     // 交易总金额
-    @Agg(name = "local_trade_amount")
+    @Agg(name = "opposite_trade_amount")
     @Key(name = "valueAsString")
     private BigDecimal tradeTotalAmount;
 
     // 入账次数
-    @Agg(name = "local_credits_times")
+    @Agg(name = "opposite_credits_times")
     @Key(name = "docCount")
-    private int creditsTimes;
+    private int creditsTimes = 0;
 
     // 入账金额
-    @Agg(name = "local_credits_amount")
+    @Agg(name = "opposite_credits_amount")
     @Key(name = "valueAsString")
     private BigDecimal creditsAmount;
 
     // 出账次数
-    @Agg(name = "local_out_times")
+    @Agg(name = "opposite_out_times")
     @Key(name = "docCount")
-    private int payOutTimes;
+    private int payOutTimes = 0;
 
     // 出账金额
-    @Agg(name = "local_out_amount")
+    @Agg(name = "opposite_out_amount")
     @Key(name = "valueAsString")
     private BigDecimal payOutAmount;
 
     // 交易净和
-    @Agg(name = "local_trade_net")
+    @Agg(name = "opposite_trade_net")
     @Key(name = "valueAsString")
     private BigDecimal tradeNet;
 
     // 最早交易时间
-    @Agg(name = "local_min_date")
-    @Key(name = "valueAsString")
+    @Agg(name = "opposite_min_date")
+    @Key(name = "value")
     private String earliestTradingTime;
 
     // 最晚交易时间
-    @Agg(name = "local_max_date")
-    @Key(name = "valueAsString")
+    @Agg(name = "opposite_max_date")
+    @Key(name = "value")
     private String latestTradingTime;
-
     public enum EntityMapping {
         customerName, customerIdentityCard, bank,tradeTotalTimes, tradeTotalAmount,
         creditsTimes, creditsAmount, payOutTimes, payOutAmount, tradeNet, earliestTradingTime, latestTradingTime,

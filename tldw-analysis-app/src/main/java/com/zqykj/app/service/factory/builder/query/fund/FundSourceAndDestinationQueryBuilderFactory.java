@@ -115,7 +115,7 @@ public class FundSourceAndDestinationQueryBuilderFactory implements FundSourceAn
 
     @Override
     public <T, V> QuerySpecialParams buildFundsSourceAndDestinationCardResultResquest(T requestParam, V parameter) {
-        FundSourceAndDestinationCardResultRequest request = (FundSourceAndDestinationCardResultRequest) requestParam;
+        FundsSourceAndDestinationStatisticsRequest request = (FundsSourceAndDestinationStatisticsRequest) requestParam;
         String caseId = parameter.toString();
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
 
@@ -131,7 +131,7 @@ public class FundSourceAndDestinationQueryBuilderFactory implements FundSourceAn
 
         // 指定证件号码,添加证件号码过滤条件
         combinationQueryParams.addCommonQueryParams(new CommonQueryParams(QueryType.term, FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
-                request.getCustomerIdentityCard()));
+                request.getIdentityCard()));
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
         return querySpecialParams;
     }
