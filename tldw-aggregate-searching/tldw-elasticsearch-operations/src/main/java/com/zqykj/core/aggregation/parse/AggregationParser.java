@@ -4,6 +4,7 @@
 package com.zqykj.core.aggregation.parse;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -28,10 +29,11 @@ public class AggregationParser {
     private final static String AGG_TERMS = "terms";
     private final static String AGG_METHOD_PREFIX = "get";
     private final static String AGG_DATE_HISTOGRAM = "date_histogram";
-    private final static String SUM_BUCKET = "simple_value";
 
     /**
      * <h2> 解析多组聚合结果 </h2>
+     * <p>
+     * TODO 后续将继续优化此取值算法
      */
     public static List<List<Object>> parseMulti(Aggregations aggregations, Map<String, String> map, boolean isConvert) {
 
@@ -114,6 +116,8 @@ public class AggregationParser {
      */
     public static List<Object> parse(Aggregations aggregations, String aggregationName, String key) {
 
+        // 支持下划线驼峰处理
+        key = applyCamelCase(key);
         // 讲首字母大写然后拼接上 get
         key = applyFirstChartUpperCase(key);
 
@@ -151,7 +155,7 @@ public class AggregationParser {
 
 
             // 桶聚合
-            Optional<Method> methodOptional =methods.stream().filter(method ->
+            Optional<Method> methodOptional = methods.stream().filter(method ->
                     method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
             methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, (MultiBucketsAggregation) aggregation,
                     aggMethodKey, aggregationName));
@@ -246,5 +250,27 @@ public class AggregationParser {
     private static String applyFirstChartUpperCase(String key) {
 
         return AGG_METHOD_PREFIX + key.substring(0, 1).toUpperCase() + key.substring(1);
+    }
+
+    /**
+     * <h2> 将下划线转成驼峰 </h2>
+     */
+    private static String applyCamelCase(String underscoreStr) {
+        String[] split = StringUtils.split(underscoreStr, "_");
+        if (null == split || split.length == 0) {
+            return underscoreStr;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < split.length; i++) {
+            String str = split[i];
+            if (i == 0) {
+                builder.append(str);
+            } else {
+                // 首字母大写
+                String toUpper = str.substring(0, 1).toUpperCase() + str.substring(1);
+                builder.append(toUpper);
+            }
+        }
+        return builder.toString();
     }
 }

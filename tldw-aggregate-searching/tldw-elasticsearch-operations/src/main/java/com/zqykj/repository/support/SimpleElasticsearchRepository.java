@@ -1033,7 +1033,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 }
             }
         }
-
         // 构建搜索请求
         SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
         if (StringUtils.isNotBlank(routing)) {

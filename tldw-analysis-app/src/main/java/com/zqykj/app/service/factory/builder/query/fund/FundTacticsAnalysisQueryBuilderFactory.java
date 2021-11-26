@@ -267,7 +267,10 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         // 获取前置请求
         FundTacticsPartGeneralPreRequest preRequest = request.convertFrom(request);
         CombinationQueryParams combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionRecord(preRequest, v);
-
+        // 合并卡号集合过滤
+        if (!CollectionUtils.isEmpty(request.getMergeCards())) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.MERGE_CARD, request.getMergeCards()));
+        }
         // 增加模糊查询条件
         if (StringUtils.isNotBlank(request.getKeyword())) {
 

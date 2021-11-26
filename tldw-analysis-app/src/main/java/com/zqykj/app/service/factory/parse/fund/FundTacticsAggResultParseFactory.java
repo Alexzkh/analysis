@@ -40,7 +40,7 @@ public class FundTacticsAggResultParseFactory implements AggregationResultEntity
                 if (null == value) {
                     continue;
                 }
-                if (value instanceof List) {
+                if (value instanceof List || value instanceof Map) {
 
                     // 需要处理hits(展示的字段)
                     applySource(map, perLine.get(i), entity);
@@ -116,37 +116,40 @@ public class FundTacticsAggResultParseFactory implements AggregationResultEntity
      */
     private static void applySource(Map<String, Object> map, Object value, Class<?> entity) {
 
+        Map<String, Object> sourceMap;
         if (value instanceof ArrayList) {
 
             List<Map<String, Object>> source = (List<Map<String, Object>>) value;
             if (CollectionUtils.isEmpty(source)) {
                 return;
             }
-            Map<String, Object> sourceMap = source.get(0);
+            sourceMap = source.get(0);
+        } else {
+            sourceMap = (Map<String, Object>) value;
+        }
 
-            List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
+        List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
 
-            for (Field field : fields) {
-                Local local = field.getAnnotation(Local.class);
-                if (null != local && local.showField()) {
-                    Object fieldValue = sourceMap.get(local.name());
-                    if (null != fieldValue) {
-                        map.put(field.getName(), fieldValue);
-                    }
+        for (Field field : fields) {
+            Local local = field.getAnnotation(Local.class);
+            if (null != local && local.showField()) {
+                Object fieldValue = sourceMap.get(local.name());
+                if (null != fieldValue) {
+                    map.put(field.getName(), fieldValue);
                 }
-                Opposite opposite = field.getAnnotation(Opposite.class);
-                if (null != opposite && opposite.showField()) {
-                    Object fieldValue = sourceMap.get(opposite.name());
-                    if (null != fieldValue) {
-                        map.put(field.getName(), fieldValue);
-                    }
+            }
+            Opposite opposite = field.getAnnotation(Opposite.class);
+            if (null != opposite && opposite.showField()) {
+                Object fieldValue = sourceMap.get(opposite.name());
+                if (null != fieldValue) {
+                    map.put(field.getName(), fieldValue);
                 }
-                Agg agg = field.getAnnotation(Agg.class);
-                if (null != agg && agg.showField()) {
-                    Object fieldValue = sourceMap.get(agg.name());
-                    if (null != fieldValue) {
-                        map.put(field.getName(), fieldValue);
-                    }
+            }
+            Agg agg = field.getAnnotation(Agg.class);
+            if (null != agg && agg.showField()) {
+                Object fieldValue = sourceMap.get(agg.name());
+                if (null != fieldValue) {
+                    map.put(field.getName(), fieldValue);
                 }
             }
         }

@@ -88,7 +88,29 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
             cardTerms.setPerSubAggregation(sort);
         }
         // 聚合展示字段
-        fundTacticsPartUniversalAggShowFields(cardTerms, FundTacticsAnalysisField.tradeStatisticalAnalysisLocalShowField(), "local_hits", null);
+        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(FundTacticsAnalysisField.tradeStatisticalAnalysisLocalShowField(), "local_hits", null);
+        cardTerms.setPerSubAggregation(showFields);
+        return cardTerms;
+    }
+
+    public <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size) {
+        TradeStatisticalAnalysisQueryRequest queryRequest = (TradeStatisticalAnalysisQueryRequest) request;
+
+        AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD);
+        cardTerms.setSize(queryRequest.getGroupInitSize());
+        // 交易总次数
+        AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
+                FundTacticsAnalysisField.QUERY_CARD, null);
+        setSubAggregation(cardTerms, tradeTotalTimes);
+        fundTacticsPartUniversalAgg(cardTerms, queryRequest);
+        // 排序
+        PipelineAggregationParams sort = fundTacticsPartUniversalAggSort(queryRequest.getSortRequest(), from, size);
+        if (null != sort) {
+            cardTerms.setPerSubAggregation(sort);
+        }
+        // 聚合展示字段
+        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(new String[]{FundTacticsAnalysisField.QUERY_CARD}, "local_hits", null);
+        cardTerms.setPerSubAggregation(showFields);
         return cardTerms;
     }
 
@@ -137,13 +159,15 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         setSubAggregation(cardTerms, tradeNet);
     }
 
-    private void fundTacticsPartUniversalAggShowFields(AggregationParams cardTerms, String[] strings, String hitsAggName, @Nullable FieldSort sort) {
-        FetchSource fetchSource = new FetchSource(strings, 0, 1);
+    /**
+     * <h2> 聚合展示字段 </h2>
+     */
+    private AggregationParams fundTacticsPartUniversalAggShowFields(String[] fields, String hitsAggName, @Nullable FieldSort sort) {
+        FetchSource fetchSource = new FetchSource(fields, 0, 1);
         if (null != sort) {
             fetchSource.setSort(sort);
         }
-        AggregationParams hits = AggregationParamsBuilders.fieldSource(hitsAggName, fetchSource);
-        setSubAggregation(cardTerms, hits);
+        return AggregationParamsBuilders.fieldSource(hitsAggName, fetchSource);
     }
 
     public <T> AggregationParams buildTradeStatisticsAnalysisTotalAgg(T request) {
@@ -404,7 +428,32 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
             cardTerms.setPerSubAggregation(sort);
         }
         // 聚合展示字段
-        fundTacticsPartUniversalAggShowFields(cardTerms, FundTacticsAnalysisField.tradeConvergencecAnalysisShowField(), "local_hits", null);
+        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(FundTacticsAnalysisField.tradeConvergenceAnalysisShowField(), "local_hits", null);
+        cardTerms.setPerSubAggregation(showFields);
+        return cardTerms;
+    }
+
+    public <T> AggregationParams buildTradeConvergenceQueryAndMergeCardsAgg(T request, int from, int size) {
+        TradeConvergenceAnalysisQueryRequest convergenceRequest = (TradeConvergenceAnalysisQueryRequest) request;
+
+        AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.MERGE_CARD);
+        cardTerms.setSize(convergenceRequest.getGroupInitSize());
+        // 交易总次数
+        AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
+                FundTacticsAnalysisField.MERGE_CARD, null);
+
+        setSubAggregation(cardTerms, tradeTotalTimes);
+        fundTacticsPartUniversalAgg(cardTerms, convergenceRequest);
+        // 设置分页 与 排序
+        // 排序
+        PipelineAggregationParams sort = fundTacticsPartUniversalAggSort(convergenceRequest.getSortRequest(), from, size);
+        if (null != sort) {
+            cardTerms.setPerSubAggregation(sort);
+        }
+        // 聚合展示字段
+        String[] fields = new String[]{FundTacticsAnalysisField.MERGE_CARD, FundTacticsAnalysisField.QUERY_CARD};
+        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(fields, "local_hits", null);
+        cardTerms.setPerSubAggregation(showFields);
         return cardTerms;
     }
 
@@ -451,10 +500,21 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         return groupQueryCard;
     }
 
-    public AggregationParams groupByField(String field, int size) {
+    public AggregationParams groupByField(String field, int groupSize, @Nullable Pagination pagination) {
         AggregationParams groupBy = AggregationParamsBuilders.terms("groupBy_" + field, field);
-        groupBy.setSize(size);
+        groupBy.setSize(groupSize);
+        // 设置分页
+        if (null != pagination) {
+            int from = pagination.getFrom();
+            Integer size = pagination.getSize();
+            PipelineAggregationParams page = AggregationParamsBuilders.sort("page", from, size);
+            groupBy.setPerSubAggregation(page);
+        }
         return groupBy;
+    }
+
+    public AggregationParams showFields(@Nullable FieldSort sort, String... fields) {
+        return fundTacticsPartUniversalAggShowFields(fields, "local_hits", sort);
     }
 
     /**
@@ -541,11 +601,13 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
 
         // 设置聚合展示字
         String[] showFields = new String[]{FundTacticsAnalysisField.CUSTOMER_NAME, FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD};
-        fundTacticsPartUniversalAggShowFields(accountTerms, showFields, "local_hits", null);
+        AggregationParams showFieldsAgg = fundTacticsPartUniversalAggShowFields(showFields, "local_hits", null);
+        accountTerms.setPerSubAggregation(showFieldsAgg);
         // 排序
         PageRequest pageRequest = adjustIndividualRequest.getPageRequest();
-        fundTacticsPartUniversalAggSort(adjustIndividualRequest.getSortRequest(),
+        PipelineAggregationParams sortAgg = fundTacticsPartUniversalAggSort(adjustIndividualRequest.getSortRequest(),
                 PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize()), pageRequest.getPageSize());
+        accountTerms.setPerSubAggregation(sortAgg);
         return accountTerms;
     }
 
@@ -572,12 +634,13 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         // 设置聚合展示字
         String[] showFields = new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK,
                 FundTacticsAnalysisField.CUSTOMER_NAME, FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD};
-        fundTacticsPartUniversalAggShowFields(queryCardTerms, showFields, "local_hits", null);
+        AggregationParams aggShowFields = fundTacticsPartUniversalAggShowFields(showFields, "local_hits", null);
+        queryCardTerms.setPerSubAggregation(aggShowFields);
         // 排序
         PageRequest pageRequest = adjustIndividualRequest.getPageRequest();
-        fundTacticsPartUniversalAggSort(adjustIndividualRequest.getSortRequest(),
+        PipelineAggregationParams sortAgg = fundTacticsPartUniversalAggSort(adjustIndividualRequest.getSortRequest(),
                 PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize()), pageRequest.getPageSize());
-
+        queryCardTerms.setPerSubAggregation(sortAgg);
         return queryCardTerms;
     }
 }
