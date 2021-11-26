@@ -20,11 +20,6 @@ import java.util.*;
 @Service
 public class FundTacticsAggResultParseFactory implements AggregationResultEntityParseFactory {
 
-    public List<Map<String, Object>> convertEntity(List<List<Object>> values, List<String> titles, Class<?> entity) {
-
-        return convertEntityMapping(values, titles, entity);
-    }
-
     /**
      * <h1> 直接将聚合返回的结果 与 实体属性做映射 </h1>
      * <p>
@@ -57,6 +52,11 @@ public class FundTacticsAggResultParseFactory implements AggregationResultEntity
         });
 
         return colValueMapList;
+    }
+
+    public List<Map<String, Object>> convertEntity(List<List<Object>> values, List<String> titles, Class<?> entity) {
+
+        return convertEntityMapping(values, titles, entity);
     }
 
     private static void applyLocalSource(Map<String, Object> map, Object value, Class<?> entity) {

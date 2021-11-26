@@ -18,19 +18,17 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Agg(name = "local_hits")
-@Key
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FundSourceAndDestinationNetLineChart {
 
     // 出账金额
-    @Agg(name = "local_out_amount")
+    @Agg(name = "transaction_money_sum")
     @Key(name = "valueAsString")
     private BigDecimal payOutAmount;
 
     // 交易时间
-    @Agg(name = "local_max_date")
-    @Key(name = "valueAsString")
+    @Agg(name = "date_histogram_trading_time")
+    @Key(name = "keyAsString")
     private String tradingTime;
 
 

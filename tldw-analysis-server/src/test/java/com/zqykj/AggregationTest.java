@@ -12,6 +12,7 @@ import com.zqykj.common.enums.FundsSourceAndDestinationStatisticsType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.*;
 import com.zqykj.common.response.AggregationResult;
+import com.zqykj.common.response.FundsSourceAndDestinationPieChartStatisticsResponse;
 import com.zqykj.common.response.PersonalStatisticsResponse;
 import com.zqykj.domain.Range;
 import com.zqykj.domain.bank.BankTransactionFlow;
@@ -689,7 +690,6 @@ public class AggregationTest {
             e.printStackTrace();
         }
 
-
     }
 
     @Test
@@ -700,11 +700,16 @@ public class AggregationTest {
         FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
         request.setIdentityCard("322125198702200000");
         request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT);
+        request.setFundsResultType(FundsResultType.SOURCE);
 
         QueryRequest queryRequest = new QueryRequest();
         PagingRequest pagingRequest = new PagingRequest();
+        SortingRequest sortingRequest = new SortingRequest();
+        sortingRequest.setProperty("opposite_trade_amount");
+        sortingRequest.setOrder(SortingRequest.Direction.DESC);
         pagingRequest.setPage(0);
         pagingRequest.setPageSize(10);
+        queryRequest.setSorting(sortingRequest);
         queryRequest.setPaging(pagingRequest);
         request.setQueryRequest(queryRequest);
 
@@ -729,6 +734,11 @@ public class AggregationTest {
         PagingRequest pagingRequest = new PagingRequest();
         pagingRequest.setPage(0);
         pagingRequest.setPageSize(10);
+        SortingRequest sortingRequest = new SortingRequest();
+
+        sortingRequest.setProperty("opposite_trade_amount");
+        sortingRequest.setOrder(SortingRequest.Direction.DESC);
+        queryRequest.setSorting(sortingRequest);
         queryRequest.setPaging(pagingRequest);
         request.setQueryRequest(queryRequest);
 
@@ -745,10 +755,67 @@ public class AggregationTest {
 
 
         // caseID :834da065584948318c359b8f5d5fe49d
-        FundSourceAndDestinationCardResultRequest request = new FundSourceAndDestinationCardResultRequest();
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
         request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
         request.setFundsResultType(FundsResultType.SOURCE);
-        request.setCustomerIdentityCard("452632198702200766");
+        request.setIdentityCard("452632198702200766");
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        SortingRequest sortingRequest = new SortingRequest();
+        sortingRequest.setProperty("opposite_trade_amount");
+        sortingRequest.setOrder(SortingRequest.Direction.DESC);
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setSorting(sortingRequest);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationCardList(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testaccessFundSourceAndDestinationCardList_交易金额() {
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT);
+        request.setFundsResultType(FundsResultType.SOURCE);
+        request.setIdentityCard("452632198702200766");
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        SortingRequest sortingRequest = new SortingRequest();
+        sortingRequest.setProperty("opposite_trade_amount");
+        sortingRequest.setOrder(SortingRequest.Direction.DESC);
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setSorting(sortingRequest);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationCardList(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Test
+    public void testaccessFundSourceAndDestinationPieChart_交易金额(){
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.TRANSACTION_AMOUNT);
+        request.setFundsResultType(FundsResultType.SOURCE);
+        request.setIdentityCard("322125198702200000");
 
         QueryRequest queryRequest = new QueryRequest();
         PagingRequest pagingRequest = new PagingRequest();
@@ -758,7 +825,36 @@ public class AggregationTest {
         request.setQueryRequest(queryRequest);
 
         try {
-            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationCardList(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+            FundsSourceAndDestinationPieChartStatisticsResponse response = fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationPieChart(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+            System.out.println();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Test
+    public void testaccessFundSourceAndDestinationPieChart_交易净和(){
+
+
+        // caseID :834da065584948318c359b8f5d5fe49d
+        FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
+        request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
+        request.setFundsResultType(FundsResultType.SOURCE);
+        request.setIdentityCard("322125198702200000");
+
+        QueryRequest queryRequest = new QueryRequest();
+        PagingRequest pagingRequest = new PagingRequest();
+        pagingRequest.setPage(0);
+        pagingRequest.setPageSize(10);
+        queryRequest.setPaging(pagingRequest);
+        request.setQueryRequest(queryRequest);
+
+        try {
+            FundsSourceAndDestinationPieChartStatisticsResponse response = fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType())
+                    .accessFundSourceAndDestinationPieChart(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+
+            System.out.println();
         } catch (Exception e) {
             e.printStackTrace();
         }

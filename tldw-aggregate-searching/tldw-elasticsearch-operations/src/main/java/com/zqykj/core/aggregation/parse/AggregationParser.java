@@ -28,6 +28,7 @@ public class AggregationParser {
     private final static String AGG_TERMS = "terms";
     private final static String AGG_METHOD_PREFIX = "get";
     private final static String AGG_DATE_HISTOGRAM = "date_histogram";
+    private final static String SUM_BUCKET = "simple_value";
 
     /**
      * <h2> 解析多组聚合结果 </h2>
@@ -138,9 +139,9 @@ public class AggregationParser {
 
         Class<? extends Aggregation> aClass = aggregation.getClass();
 
-        Method[] methods = aClass.getMethods();
+        List<Method> methods = com.zqykj.util.ReflectionUtils.getAllMethods(aClass);
 
-        if (methods.length == 0) {
+        if (CollectionUtils.isEmpty(methods)) {
             return;
         }
 
@@ -150,7 +151,7 @@ public class AggregationParser {
 
 
             // 桶聚合
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+            Optional<Method> methodOptional =methods.stream().filter(method ->
                     method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
             methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, (MultiBucketsAggregation) aggregation,
                     aggMethodKey, aggregationName));
@@ -167,7 +168,7 @@ public class AggregationParser {
             }
         } else {
             // 子聚合处理
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+            Optional<Method> methodOptional = methods.stream().filter(method ->
                     method.getName().equals(applyFirstChartUpperCase(SUB_AGGREGATION))).findFirst();
             methodOptional.ifPresent(method -> {
 
@@ -200,7 +201,7 @@ public class AggregationParser {
                 List<? extends Bucket> buckets = (List<? extends Bucket>) value;
                 for (Bucket bucket : buckets) {
                     Class<? extends Bucket> aClass = bucket.getClass();
-                    Method[] methods = aClass.getMethods();
+                    List<Method> methods = com.zqykj.util.ReflectionUtils.getAllMethods(aClass);
                     Aggregations aggregations = bucket.getAggregations();
                     // 首先找这一层的相关属性, 找不到看看是否有子聚合(继续下钻处理)
                     if (aggregation.getName().equals(aggregationName)) {
@@ -229,8 +230,8 @@ public class AggregationParser {
         }
     }
 
-    private static Optional<Method> getAggregationMethod(String aggMethodKey, Method[] methods) {
-        return Arrays.stream(methods).filter(method -> method.getName().equals(aggMethodKey)).findFirst();
+    private static Optional<Method> getAggregationMethod(String aggMethodKey, List<Method> methods) {
+        return methods.stream().filter(method -> method.getName().equals(aggMethodKey)).findFirst();
     }
 
     /**

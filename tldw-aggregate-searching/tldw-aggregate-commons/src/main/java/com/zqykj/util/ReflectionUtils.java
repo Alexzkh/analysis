@@ -354,4 +354,16 @@ public final class ReflectionUtils {
         }
         return fieldList;
     }
+
+    /**
+     * <h2> 获取当前类 及其 父类的所有的Methods </h2>
+     */
+    public static List<Method> getAllMethods(Class<?> clazz) {
+        List<Method> methods = new ArrayList<>();
+        while (null != clazz) {
+            methods.addAll(Arrays.asList(clazz.getDeclaredMethods()));
+            clazz = clazz.getSuperclass();
+        }
+        return methods;
+    }
 }

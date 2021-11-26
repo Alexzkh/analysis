@@ -54,7 +54,7 @@ public class FundsSourceAndDestinationStatisticsImpl implements IFundsSourceAndD
     }
 
     @Override
-    public List<FundSourceAndDestinationResultCardList> accessFundSourceAndDestinationCardList(FundSourceAndDestinationCardResultRequest request, String caseId) throws Exception {
+    public List<FundSourceAndDestinationResultCardList> accessFundSourceAndDestinationCardList(FundsSourceAndDestinationStatisticsRequest request, String caseId) throws Exception {
         return fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationCardList(request,caseId);
     }
 

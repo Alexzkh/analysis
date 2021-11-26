@@ -263,7 +263,7 @@ public class AggregationMappingBuilder {
             }
             if (StringUtils.isBlank(parameters.getScript())) {
 
-                if (CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
+                if (CollectionUtils.isEmpty(parameters.getBucketsPathMap())&&StringUtils.isEmpty(parameters.getBucketsPath())) {
                     return buildSpecialPipelineAggregation(aggregationClass, parameters);
                 }
 
