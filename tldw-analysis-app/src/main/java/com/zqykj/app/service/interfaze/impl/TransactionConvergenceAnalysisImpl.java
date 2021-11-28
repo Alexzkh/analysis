@@ -16,6 +16,7 @@ import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -145,6 +146,10 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         });
         // 将金额保留2位小数
         tradeConvergenceAnalysisResults.forEach(TradeConvergenceAnalysisResult::amountReservedTwo);
+        // 补齐聚合需要展示的字段
+        List<String> mergeCards = tradeConvergenceAnalysisResults.stream().map(e -> e.getMergeCardKey()).collect(Collectors.toList());
+        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisHits = getTradeConvergenceAnalysisHits(mergeCards, caseId);
+        addTradeConvergenceAnalysisShowFields(tradeConvergenceAnalysisResults, tradeConvergenceAnalysisHits);
 
         if (CollectionUtils.isEmpty(results)) {
             map.put("total", 0);
@@ -369,6 +374,59 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             return null;
         }
         return convergenceResults;
+    }
+
+    /**
+     * <h2> 获取交易汇聚分析结果中的非统计分析值 </h2>
+     * <p>
+     * 开户名称、开户证件号码、开户银行、交易卡号、对方开户名称、对方开户证件号码、对方开户银行、对方卡号
+     */
+    private List<TradeConvergenceAnalysisResult> getTradeConvergenceAnalysisHits(List<String> mergeCards, String caseId) {
+
+        // 构建查询参数
+        QuerySpecialParams condition = queryRequestParamFactory.buildTradeConvergenceAnalysisHitsQuery(mergeCards, caseId);
+        // 构建聚合参数
+        AggregationParams agg = aggregationRequestParamFactory.buildTradeConvergenceAnalysisHitsAgg(mergeCards.size());
+        Map<String, String> map = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
+        agg.setMapping(map);
+        agg.setResultName("hits");
+        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(condition, agg, BankTransactionRecord.class, caseId);
+        List<Map<String, Object>> results = aggregationResultEntityParseFactory.convertEntity(resultMap.get(agg.getResultName()),
+                new ArrayList<>(), TradeConvergenceAnalysisResult.class);
+        return JacksonUtils.parse(JacksonUtils.toJson(results), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
+        });
+    }
+
+    /**
+     * <h2> 补充交易汇聚分析结果聚合展示字段 </h2>
+     */
+    private void addTradeConvergenceAnalysisShowFields(List<TradeConvergenceAnalysisResult> convergenceAnalysisResults,
+                                                       List<TradeConvergenceAnalysisResult> hits) {
+
+        for (TradeConvergenceAnalysisResult convergenceAnalysisResult : convergenceAnalysisResults) {
+
+            for (TradeConvergenceAnalysisResult hit : hits) {
+
+                if (convergenceAnalysisResult.getMergeCardKey().equals(hit.getMergeCard())) {
+                    // 开户名称
+                    convergenceAnalysisResult.setCustomerName(hit.getCustomerName());
+                    // 开户证件号码
+                    convergenceAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
+                    // 开户银行
+                    convergenceAnalysisResult.setBank(hit.getBank());
+                    // 交易卡号
+                    convergenceAnalysisResult.setTradeCard(hit.getTradeCard());
+                    // 对方开户名称
+                    convergenceAnalysisResult.setOppositeCustomerName(hit.getOppositeCustomerName());
+                    // 对方开户证件号码
+                    convergenceAnalysisResult.setOppositeIdentityCard(hit.getOppositeIdentityCard());
+                    // 对方开户银行
+                    convergenceAnalysisResult.setOppositeBank(hit.getOppositeBank());
+                    // 对方卡号
+                    convergenceAnalysisResult.setOppositeTradeCard(hit.getOppositeTradeCard());
+                }
+            }
+        }
     }
 }
 

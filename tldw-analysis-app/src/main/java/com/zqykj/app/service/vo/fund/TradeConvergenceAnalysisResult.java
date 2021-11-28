@@ -3,6 +3,8 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.common.vo.Direction;
@@ -10,7 +12,6 @@ import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.*;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -26,13 +27,13 @@ import java.util.stream.Collectors;
 @Setter
 @Getter
 @NoArgsConstructor
-// 对于es 来说聚合需要带出字段名称,需要再类上加上 @Agg 注解指定聚合名称, @Key(name="hits")是固定的
-// 其他数据源正常 eg. mysql 可以直接带出field (field 的名称  就等于 我们定义的聚合名称)
-// eg. customerName 定义了  @Agg(name = "customer_name", showField = true)
-@Agg(name = "local_hits")
-@Key
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
+
+    // 合并卡号
+    @Agg(name = "local_card_terms")
+    @Key(name = "keyAsString")
+    private String mergeCardKey;
 
     // 开户名称
     @Agg(name = "customer_name", showField = true)
@@ -52,6 +53,7 @@ public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
     // 账号
     @Agg(name = "query_account", showField = true)
     @Key(name = "query_account")
+    @JsonIgnore
     private String queryAccount;
 
     // 交易卡号
@@ -78,6 +80,11 @@ public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
     @Agg(name = "transaction_opposite_card", showField = true)
     @Key(name = "transaction_opposite_card")
     private String oppositeTradeCard;
+
+    // 合并卡号
+    @Agg(name = "merge_card", showField = true)
+    @Key(name = "merge_card")
+    private String mergeCard;
 
 
     public static void calculationDate(TradeConvergenceAnalysisResult bankFlow, long minDate, long maxDate) {

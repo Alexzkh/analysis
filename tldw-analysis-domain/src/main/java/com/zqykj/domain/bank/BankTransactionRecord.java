@@ -15,7 +15,7 @@ public class BankTransactionRecord {
      * 全局唯一id
      */
     @Id
-    private Long id;
+    private String id;
 
 
     /**

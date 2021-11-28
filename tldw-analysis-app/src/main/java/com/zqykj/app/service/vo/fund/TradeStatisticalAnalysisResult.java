@@ -3,13 +3,13 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zqykj.app.service.annotation.*;
 import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.*;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.Instant;

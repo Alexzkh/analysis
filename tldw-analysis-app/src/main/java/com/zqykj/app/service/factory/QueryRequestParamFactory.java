@@ -76,6 +76,11 @@ public interface QueryRequestParamFactory {
     <T, V> QuerySpecialParams buildTradeConvergenceAnalysisResultMainCardsRequest(T request, V other);
 
     /**
+     * <h2> 构建交易汇聚分析聚合展示字段查询 </h2>
+     */
+    QuerySpecialParams buildTradeConvergenceAnalysisHitsQuery(List<String> mergeCards, String caseId);
+
+    /**
      * <h2> 构建最基本查询参数请求 </h2>
      * <p>
      * 案件域
@@ -96,4 +101,9 @@ public interface QueryRequestParamFactory {
      * 构建选择个人查询参数
      */
     <T> QuerySpecialParams buildAdjustIndividualQuery(T request);
+
+    /**
+     * 构建查询 入账的调单卡号集合参数
+     */
+    QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota);
 }

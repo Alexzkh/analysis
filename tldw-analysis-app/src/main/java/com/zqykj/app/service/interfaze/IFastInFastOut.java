@@ -4,7 +4,11 @@
 package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
+import com.zqykj.app.service.vo.fund.middle.CreditAdjustCards;
 import com.zqykj.common.core.ServerResponse;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * <h1> 战法快进快出 </h1>
