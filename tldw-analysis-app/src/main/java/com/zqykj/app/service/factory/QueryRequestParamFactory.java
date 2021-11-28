@@ -25,6 +25,11 @@ public interface QueryRequestParamFactory {
     <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other, Class<?> queryTable);
 
     /**
+     * <h2> 构建交易统计分析聚合展示字段查询 </h2>
+     */
+    QuerySpecialParams buildTradeStatisticalAnalysisHitsQuery(List<String> queryCards, String caseId);
+
+    /**
      * 构建公共查询请求体.
      *
      * @param request:   前置请求body.T->TradeStatisticalAnalysisPreRequest

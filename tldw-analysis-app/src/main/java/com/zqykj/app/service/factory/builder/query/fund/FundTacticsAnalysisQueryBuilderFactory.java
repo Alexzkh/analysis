@@ -82,6 +82,22 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
+    public QuerySpecialParams buildTradeStatisticalAnalysisHitsQuery(List<String> queryCards, String caseId) {
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        // 指定合并卡号集合过滤
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, queryCards));
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        // 设置需要返回的字段
+        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.tradeStatisticalAnalysisLocalShowField());
+
+        return querySpecialParams;
+    }
+
     /**
      * <h2> 通用前置查询条件 </h2>
      */

@@ -27,6 +27,11 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request, int from, int size);
 
     /**
+     * <h2> 构建交易统计分析聚合展示字段聚合 </h2>
+     */
+    AggregationParams buildTradeStatisticalAnalysisHitsAgg(int groupSize);
+
+    /**
      * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合、只返回查询卡号) </h2>
      */
     <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size);

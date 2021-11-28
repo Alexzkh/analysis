@@ -32,6 +32,11 @@ import java.util.stream.Collectors;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TradeStatisticalAnalysisResult extends FundPartAnalysisResult {
 
+    // 合并卡号
+    @Agg(name = "local_card_terms")
+    @Key(name = "keyAsString")
+    private String queryCardKey;
+
     // 开户名称
     @Agg(name = "customer_name", showField = true)
     @Key(name = "customer_name")

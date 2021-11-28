@@ -91,7 +91,16 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         if (null != sort) {
             cardTerms.setPerSubAggregation(sort);
         }
-        // 聚合展示字段
+        return cardTerms;
+    }
+
+    /**
+     * <h2> 构建交易统计分析聚合展示字段聚合 </h2>
+     */
+    public AggregationParams buildTradeStatisticalAnalysisHitsAgg(int groupSize) {
+
+        AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD);
+        cardTerms.setSize(groupSize);
         AggregationParams showFields = fundTacticsPartUniversalAggShowFields(FundTacticsAnalysisField.tradeStatisticalAnalysisLocalShowField(), "local_hits", null);
         cardTerms.setPerSubAggregation(showFields);
         return cardTerms;
