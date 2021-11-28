@@ -210,12 +210,12 @@ public interface FundTacticsAnalysisField {
     static String[] tradeConvergenceAnalysisShowField() {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD, TRANSACTION_OPPOSITE_NAME, OPPOSITE_IDENTITY_CARD,
-                OPPOSITE_BANK, TRANSACTION_OPPOSITE_CARD};
+                OPPOSITE_BANK, TRANSACTION_OPPOSITE_CARD, MERGE_CARD};
     }
 
     // 交易统计分析结果本方需要展示的字段
     static String[] fundSourceAndDestinationAnalysisOppositeShowField() {
 
-        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT,QUERY_CARD};
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
     }
 }

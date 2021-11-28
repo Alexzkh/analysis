@@ -16,11 +16,6 @@ import lombok.Setter;
 public class AdjustIndividualRequest extends FundTacticsPartGeneralRequest {
 
     /**
-     * 案件Id
-     */
-    private String caseId;
-
-    /**
      * 开户证件号码
      */
     private String customerIdentityCard;

@@ -280,6 +280,11 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 将金额保留2位小数
         tradeStatisticalAnalysisResults.forEach(TradeStatisticalAnalysisResult::amountReservedTwo);
 
+        // 补齐聚合需要展示的字段
+        List<String> queryCards = tradeStatisticalAnalysisResults.stream().map(e -> e.getQueryCardKey()).collect(Collectors.toList());
+        List<TradeStatisticalAnalysisResult> tradeStatisticalAnalysisHits = getTradeStatisticalAnalysisHits(queryCards, caseId);
+        addTradeStatisticalAnalysisShowFields(tradeStatisticalAnalysisResults, tradeStatisticalAnalysisHits);
+
         if (CollectionUtils.isEmpty(totalResults)) {
             resultMap.put("total", 0);
         } else {
@@ -490,5 +495,52 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         }
 
         return queryCards;
+    }
+
+    /**
+     * <h2> 获取交易统计分析结果中的非统计分析值 </h2>
+     * <p>
+     * 开户名称、开户证件号码、开户银行、账号、交易卡号
+     */
+    private List<TradeStatisticalAnalysisResult> getTradeStatisticalAnalysisHits(List<String> queryCards, String caseId) {
+
+        // 构建查询参数
+        QuerySpecialParams condition = queryRequestParamFactory.buildTradeStatisticalAnalysisHitsQuery(queryCards, caseId);
+        // 构建聚合参数
+        AggregationParams agg = aggregationRequestParamFactory.buildTradeStatisticalAnalysisHitsAgg(queryCards.size());
+        Map<String, String> map = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
+        agg.setMapping(map);
+        agg.setResultName("hits");
+        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(condition, agg, BankTransactionRecord.class, caseId);
+        List<Map<String, Object>> results = aggregationResultEntityParseFactory.convertEntity(resultMap.get(agg.getResultName()),
+                new ArrayList<>(), TradeStatisticalAnalysisResult.class);
+        return JacksonUtils.parse(JacksonUtils.toJson(results), new TypeReference<List<TradeStatisticalAnalysisResult>>() {
+        });
+    }
+
+    /**
+     * <h2> 补充交易统计分析结果聚合展示字段 </h2>
+     */
+    private void addTradeStatisticalAnalysisShowFields(List<TradeStatisticalAnalysisResult> statisticalAnalysisResults,
+                                                       List<TradeStatisticalAnalysisResult> hits) {
+
+        for (TradeStatisticalAnalysisResult statisticalAnalysisResult : statisticalAnalysisResults) {
+
+            for (TradeStatisticalAnalysisResult hit : hits) {
+
+                if (statisticalAnalysisResult.getQueryCardKey().equals(hit.getTradeCard())) {
+                    // 开户名称
+                    statisticalAnalysisResult.setCustomerName(hit.getCustomerName());
+                    // 开户证件号码
+                    statisticalAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
+                    // 开户银行
+                    statisticalAnalysisResult.setBank(hit.getBank());
+                    // 账号
+                    statisticalAnalysisResult.setQueryAccount(hit.getQueryAccount());
+                    // 交易卡号
+                    statisticalAnalysisResult.setTradeCard(hit.getTradeCard());
+                }
+            }
+        }
     }
 }

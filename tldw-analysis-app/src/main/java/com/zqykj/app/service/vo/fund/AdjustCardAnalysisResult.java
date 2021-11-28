@@ -3,12 +3,12 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  * <h1> 调单卡号分析结果 </h1>

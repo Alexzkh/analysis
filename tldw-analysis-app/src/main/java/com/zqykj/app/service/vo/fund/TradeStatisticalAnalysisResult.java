@@ -3,13 +3,13 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zqykj.app.service.annotation.*;
 import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.*;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,6 +31,11 @@ import java.util.stream.Collectors;
 @Key
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TradeStatisticalAnalysisResult extends FundPartAnalysisResult {
+
+    // 合并卡号
+    @Agg(name = "local_card_terms")
+    @Key(name = "keyAsString")
+    private String queryCardKey;
 
     // 开户名称
     @Agg(name = "customer_name", showField = true)

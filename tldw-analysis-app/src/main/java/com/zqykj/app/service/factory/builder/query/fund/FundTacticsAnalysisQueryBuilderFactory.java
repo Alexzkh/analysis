@@ -82,6 +82,22 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
+    public QuerySpecialParams buildTradeStatisticalAnalysisHitsQuery(List<String> queryCards, String caseId) {
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        // 指定合并卡号集合过滤
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, queryCards));
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        // 设置需要返回的字段
+        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.tradeStatisticalAnalysisLocalShowField());
+
+        return querySpecialParams;
+    }
+
     /**
      * <h2> 通用前置查询条件 </h2>
      */
@@ -288,6 +304,22 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return convergenceQuery;
     }
 
+    public QuerySpecialParams buildTradeConvergenceAnalysisHitsQuery(List<String> mergeCards, String caseId) {
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        // 指定caseId
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        // 指定合并卡号集合过滤
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.MERGE_CARD, mergeCards));
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        // 设置需要返回的字段
+        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.tradeConvergenceAnalysisShowField());
+
+        return querySpecialParams;
+    }
+
     public <T, V> QuerySpecialParams buildBasicParamQueryViaCase(T request, V other) {
 
         //TODO 后续可能会加一些request的参数作为 查询条件
@@ -377,6 +409,19 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             combinationQueryParams.addCommonQueryParams(new CommonQueryParams(fuzzyQuery));
         }
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        return querySpecialParams;
+    }
+
+    public QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota) {
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        querySpecialParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        querySpecialParams.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
+        if (!CollectionUtils.isEmpty(adjustCards)) {
+
+            // 调单卡号集合过滤
+            querySpecialParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, adjustCards));
+        }
         return querySpecialParams;
     }
 }

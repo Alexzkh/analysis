@@ -27,6 +27,11 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request, int from, int size);
 
     /**
+     * <h2> 构建交易统计分析聚合展示字段聚合 </h2>
+     */
+    AggregationParams buildTradeStatisticalAnalysisHitsAgg(int groupSize);
+
+    /**
      * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合、只返回查询卡号) </h2>
      */
     <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size);
@@ -65,6 +70,11 @@ public interface AggregationRequestParamFactory {
      * <h2> 构建交易汇聚分析结果聚合请求(基于选中一组合并卡号集合为查询条件)  </h2>
      */
     <T> AggregationParams buildTradeConvergenceQueryAndMergeCardsAgg(T request, int from, int size);
+
+    /**
+     * <h2> 构建交易汇聚分析聚合展示字段聚合 </h2>
+     */
+    AggregationParams buildTradeConvergenceAnalysisHitsAgg(int groupSize);
 
     /**
      * <h2> 获取交易汇聚分析结果查询总数据量 </h2>
@@ -139,4 +149,14 @@ public interface AggregationRequestParamFactory {
      * @param distinctField 去重字段
      */
     AggregationParams buildDistinctViaField(String distinctField);
+
+    /**
+     * <h2> 构建查询 入账的调单卡号集合聚合参数 </h2>
+     */
+    AggregationParams buildCreditsAdjustCardsAgg(int initGroupSize, int from, int size);
+
+    /**
+     * <h2> 构建查询 入账的调单卡号集合总量聚合参数 </h2>
+     */
+    AggregationParams buildCreditsAdjustCardsTotalAgg();
 }
