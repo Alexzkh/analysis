@@ -73,6 +73,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
             int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
             int size = pageRequest.getPageSize();
+            // 设置分组桶的大小
+            request.setGroupInitSize(initGroupSize);
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
         } else {
             // TODO 全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
@@ -101,9 +103,6 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
      */
     @SuppressWarnings("all")
     protected Map<String, Object> convergenceAnalysisResultViaChosenMainCards(TradeConvergenceAnalysisQueryRequest request, int from, int size, String caseId, boolean isComputeTotal) {
-
-        // 设置分组桶的大小
-        request.setGroupInitSize(initGroupSize);
 
         // 构建 交易汇聚分析查询请求
         QuerySpecialParams convergenceQuery = queryRequestParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, caseId);
@@ -229,6 +228,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         }
         // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
         long computeTotal = total + total / 10;
+        // 设置分组数量
+        request.setGroupInitSize(initGroupSize);
         // 异步任务查询起始位置
         int position = 0;
         // 异步任务查询总量
@@ -264,6 +265,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 获取这些合并卡号集合的聚合分析结果
         if (!CollectionUtils.isEmpty(mergeCards)) {
             request.setMergeCards(mergeCards);
+            // 设置分组桶的大小
+            request.setGroupInitSize(mergeCards.size());
             Map<String, Object> resultsMap = convergenceAnalysisResultViaChosenMainCards(request, 0, mergeCards.size(), caseId, false);
             convergenceAnalysisResults = (List<TradeConvergenceAnalysisResult>) resultsMap.get("result");
         }
@@ -330,6 +333,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
      */
     private List<String> asyncQueryConvergenceResultCards(int from, int size, TradeConvergenceAnalysisQueryRequest request,
                                                           String caseId) throws ExecutionException, InterruptedException {
+        StopWatch stopWatch = StopWatch.createStarted();
         int position = from;
         List<String> cards = new ArrayList<>(size);
         List<CompletableFuture<List<String>>> futures = new ArrayList<>();
@@ -347,6 +351,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
                 cards.addAll(card);
             }
         }
+        stopWatch.stop();
+        log.info("async batch query merge cards cost time = {}", stopWatch.getTime(TimeUnit.MILLISECONDS));
         return cards;
     }
 
