@@ -360,7 +360,7 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         while (position < size) {
             int next = Math.min(position + chunkSize, size);
             Future<List<String>> future = executor.submit(new StatisticalFutureTask(position,
-                    chunkSize, skip, limit, caseId, request));
+                    next, skip, limit, caseId, request));
             List<String> results = future.get();
             if (!CollectionUtils.isEmpty(results)) {
                 queryCards.addAll(results);
@@ -398,17 +398,12 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         // 构建 交易汇聚分析聚合请求
         AggregationParams agg = aggregationRequestParamFactory.buildTradeStatisticalQueryCardsAgg(request, from, size);
         // 构建 mapping (聚合名称 -> 聚合属性)
-        Map<String, String> mapping = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
+        Map<String, String> mapping = aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD);
         agg.setMapping(mapping);
         agg.setResultName("queryCards");
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
         List<List<Object>> cards = results.get(agg.getResultName());
-        return cards.stream().map(e -> {
-            Object o = e.get(0);
-            List<Map<String, Object>> source = (List<Map<String, Object>>) o;
-            Map<String, Object> sourceMap = source.get(0);
-            return sourceMap.get(FundTacticsAnalysisField.QUERY_CARD).toString();
-        }).collect(Collectors.toList());
+        return cards.stream().map(e -> e.get(0).toString()).collect(Collectors.toList());
     }
 
     /**
