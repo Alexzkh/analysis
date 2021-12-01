@@ -25,7 +25,7 @@ public class CreditAdjustCards {
      * 调单卡号
      */
     @Agg(name = "query_card_terms")
-    @Key(name = "key")
+    @Key(name = "keyAsString")
     private String adjustCard;
 
     /**
@@ -33,7 +33,7 @@ public class CreditAdjustCards {
      */
     @Agg(name = "credits_cards")
     @Key(name = "docCount")
-    private String creditsTimes;
+    private int creditsTimes;
 
     /**
      * 入账金额

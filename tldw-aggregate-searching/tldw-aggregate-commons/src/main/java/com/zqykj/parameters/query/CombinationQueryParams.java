@@ -4,7 +4,6 @@
 package com.zqykj.parameters.query;
 
 import com.zqykj.common.enums.ConditionType;
-import com.zqykj.common.enums.QueryType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,5 +49,9 @@ public class CombinationQueryParams {
             return "mustNot";
         }
         return type.toString();
+    }
+
+    public CombinationQueryParams(ConditionType type) {
+        this.type = type;
     }
 }

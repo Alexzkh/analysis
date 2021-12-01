@@ -36,6 +36,11 @@ public enum QueryType {
     wildcard,
 
     /**
+     * 过滤出值存在的
+     */
+    exists,
+
+    /**
      * 多字段 单值匹配
      */
     multi_match;
