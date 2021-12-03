@@ -122,7 +122,7 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
     }
 
     /**
-     * <h2> 从交易汇聚结果给定的卡号集合中过滤出 调单卡号集合 </h2>
+     * <h2> 从给定的卡号集合中过滤出 调单卡号集合 </h2>
      * 查询的表是 {@link BankTransactionFlow}
      */
     private Map<String, String> filterMainCards(String caseId, List<String> cards) {

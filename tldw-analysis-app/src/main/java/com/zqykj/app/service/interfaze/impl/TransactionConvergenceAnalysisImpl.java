@@ -73,6 +73,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
             int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
             int size = pageRequest.getPageSize();
+            // 设置分组桶的大小
+            request.setGroupInitSize(initGroupSize);
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
         } else {
             // TODO 全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
@@ -101,9 +103,6 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
      */
     @SuppressWarnings("all")
     protected Map<String, Object> convergenceAnalysisResultViaChosenMainCards(TradeConvergenceAnalysisQueryRequest request, int from, int size, String caseId, boolean isComputeTotal) {
-
-        // 设置分组桶的大小
-        request.setGroupInitSize(initGroupSize);
 
         // 构建 交易汇聚分析查询请求
         QuerySpecialParams convergenceQuery = queryRequestParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, caseId);
@@ -145,6 +144,10 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         });
         // 将金额保留2位小数
         tradeConvergenceAnalysisResults.forEach(TradeConvergenceAnalysisResult::amountReservedTwo);
+        // 补齐聚合需要展示的字段
+        List<String> mergeCards = tradeConvergenceAnalysisResults.stream().map(e -> e.getMergeCardKey()).collect(Collectors.toList());
+        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisHits = getTradeConvergenceAnalysisHits(mergeCards, caseId);
+        addTradeConvergenceAnalysisShowFields(tradeConvergenceAnalysisResults, tradeConvergenceAnalysisHits);
 
         if (CollectionUtils.isEmpty(results)) {
             map.put("total", 0);
@@ -164,28 +167,19 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
     /**
      * <h2> 通过查询条件过滤获取去重后的调单查询卡号集合 </h2>
      */
-    private List<Map<String, String>> getQueryCardsViaDistinctMergeCard(TradeConvergenceAnalysisQueryRequest request, int from, int size, String caseId) {
+    private List<String> getQueryCardsViaDistinctMergeCard(TradeConvergenceAnalysisQueryRequest request, int from, int size, String caseId) {
 
         // 构建查询请求参数
         QuerySpecialParams query = queryRequestParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, caseId);
         // 构建 交易汇聚分析聚合请求
         AggregationParams agg = aggregationRequestParamFactory.buildTradeConvergenceQueryAndMergeCardsAgg(request, from, size);
         // 构建 mapping (聚合名称 -> 聚合属性)
-        Map<String, String> mapping = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
+        Map<String, String> mapping = aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.MERGE_CARD);
         agg.setMapping(mapping);
         agg.setResultName("queryAndMergeCards");
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
         List<List<Object>> cards = results.get(agg.getResultName());
-        return cards.stream().map(e -> {
-            Object o = e.get(0);
-            List<Map<String, Object>> source = (List<Map<String, Object>>) o;
-            Map<String, Object> sourceMap = source.get(0);
-            String queryCard = sourceMap.get(FundTacticsAnalysisField.QUERY_CARD).toString();
-            String mergeCard = sourceMap.get(FundTacticsAnalysisField.MERGE_CARD).toString();
-            Map<String, String> cardsMap = new HashMap<>();
-            cardsMap.put(queryCard, mergeCard);
-            return cardsMap;
-        }).collect(Collectors.toList());
+        return cards.stream().map(e -> e.get(0).toString()).collect(Collectors.toList());
     }
 
     /**
@@ -234,6 +228,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         }
         // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
         long computeTotal = total + total / 10;
+        // 设置分组数量
+        request.setGroupInitSize(initGroupSize);
         // 异步任务查询起始位置
         int position = 0;
         // 异步任务查询总量
@@ -249,7 +245,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         while (position < size) {
             int next = Math.min(position + chunkSize, size);
             Future<List<String>> future = executor.submit(new ConvergenceFutureTask(position,
-                    chunkSize, skip, limit, caseId, request));
+                    next, skip, limit, caseId, request));
             List<String> results = future.get();
             if (!CollectionUtils.isEmpty(results)) {
                 mergeCards.addAll(results);
@@ -269,6 +265,8 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 获取这些合并卡号集合的聚合分析结果
         if (!CollectionUtils.isEmpty(mergeCards)) {
             request.setMergeCards(mergeCards);
+            // 设置分组桶的大小
+            request.setGroupInitSize(mergeCards.size());
             Map<String, Object> resultsMap = convergenceAnalysisResultViaChosenMainCards(request, 0, mergeCards.size(), caseId, false);
             convergenceAnalysisResults = (List<TradeConvergenceAnalysisResult>) resultsMap.get("result");
         }
@@ -310,21 +308,20 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         public List<String> call() throws ExecutionException, InterruptedException {
 
             StopWatch stopWatch = StopWatch.createStarted();
-            List<Map<String, String>> queryCardsAndMergeCards = asyncQueryConvergenceResultCards(position, next, request, caseId);
-            if (CollectionUtils.isEmpty(queryCardsAndMergeCards)) {
+            List<String> mergeCards = asyncQueryConvergenceResultCards(position, next, request, caseId);
+            if (CollectionUtils.isEmpty(mergeCards)) {
                 return null;
             }
-            List<String> cards = queryCardsAndMergeCards.stream().
-                    map(e -> e.entrySet().iterator().next().getKey()).collect(Collectors.toList());
+            List<String> adjustCards = mergeCards.stream().
+                    map(e -> e.split("-")[0]).collect(Collectors.toList());
             // 过滤出的调单卡号集合
-            Map<String, String> filterMainCards = fundTacticsAnalysis.asyncFilterMainCards(caseId, cards);
+            Map<String, String> filterMainCards = fundTacticsAnalysis.asyncFilterMainCards(caseId, adjustCards);
             if (CollectionUtils.isEmpty(filterMainCards)) {
                 return null;
             }
             // 返回最终的合并卡号
-            List<String> finalCards = queryCardsAndMergeCards.stream()
-                    .filter(e -> filterMainCards.containsKey(e.entrySet().iterator().next().getKey()))
-                    .map(e -> e.entrySet().iterator().next().getValue())
+            List<String> finalCards = mergeCards.stream()
+                    .filter(e -> filterMainCards.containsKey(e.split("-")[0]))
                     .skip(skip).limit(limit).collect(Collectors.toList());
             log.info("Current Thread  = {} ,filter mainCards  cost time = {} ms", Thread.currentThread().getName(), stopWatch.getTime(TimeUnit.MILLISECONDS));
             return finalCards;
@@ -334,25 +331,28 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
     /**
      * <h2> 异步任务查询交易汇聚结果(获取交易卡号、合并卡号集合) </h2>
      */
-    private List<Map<String, String>> asyncQueryConvergenceResultCards(int from, int size, TradeConvergenceAnalysisQueryRequest request,
-                                                                       String caseId) throws ExecutionException, InterruptedException {
+    private List<String> asyncQueryConvergenceResultCards(int from, int size, TradeConvergenceAnalysisQueryRequest request,
+                                                          String caseId) throws ExecutionException, InterruptedException {
+        StopWatch stopWatch = StopWatch.createStarted();
         int position = from;
-        List<Map<String, String>> cards = new ArrayList<>(size);
-        List<CompletableFuture<List<Map<String, String>>>> futures = new ArrayList<>();
+        List<String> cards = new ArrayList<>(size);
+        List<CompletableFuture<List<String>>> futures = new ArrayList<>();
         while (position < size) {
             int next = Math.min(position + chunkSize, size);
             int finalPosition = position;
-            CompletableFuture<List<Map<String, String>>> future = CompletableFuture.supplyAsync(() ->
+            CompletableFuture<List<String>> future = CompletableFuture.supplyAsync(() ->
                     getCardsViaQueryConvergenceResult(request, finalPosition, chunkSize, caseId), ThreadPoolConfig.getExecutor());
             position = next;
             futures.add(future);
         }
-        for (CompletableFuture<List<Map<String, String>>> future : futures) {
-            List<Map<String, String>> card = future.get();
+        for (CompletableFuture<List<String>> future : futures) {
+            List<String> card = future.get();
             if (!CollectionUtils.isEmpty(card)) {
                 cards.addAll(card);
             }
         }
+        stopWatch.stop();
+        log.info("async batch query merge cards cost time = {}", stopWatch.getTime(TimeUnit.MILLISECONDS));
         return cards;
     }
 
@@ -361,14 +361,67 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
      * <p>
      * 查询的表是 {@link BankTransactionRecord}
      */
-    private List<Map<String, String>> getCardsViaQueryConvergenceResult(TradeConvergenceAnalysisQueryRequest request, int position, int next,
-                                                                        String caseId) {
+    private List<String> getCardsViaQueryConvergenceResult(TradeConvergenceAnalysisQueryRequest request, int position, int next,
+                                                           String caseId) {
 
-        List<Map<String, String>> convergenceResults = getQueryCardsViaDistinctMergeCard(request, position, next, caseId);
+        List<String> convergenceResults = getQueryCardsViaDistinctMergeCard(request, position, next, caseId);
         if (CollectionUtils.isEmpty(convergenceResults)) {
             return null;
         }
         return convergenceResults;
+    }
+
+    /**
+     * <h2> 获取交易汇聚分析结果中的非统计分析值 </h2>
+     * <p>
+     * 开户名称、开户证件号码、开户银行、交易卡号、对方开户名称、对方开户证件号码、对方开户银行、对方卡号
+     */
+    private List<TradeConvergenceAnalysisResult> getTradeConvergenceAnalysisHits(List<String> mergeCards, String caseId) {
+
+        // 构建查询参数
+        QuerySpecialParams condition = queryRequestParamFactory.buildTradeConvergenceAnalysisHitsQuery(mergeCards, caseId);
+        // 构建聚合参数
+        AggregationParams agg = aggregationRequestParamFactory.buildTradeConvergenceAnalysisHitsAgg(mergeCards.size());
+        Map<String, String> map = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
+        agg.setMapping(map);
+        agg.setResultName("hits");
+        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(condition, agg, BankTransactionRecord.class, caseId);
+        List<Map<String, Object>> results = aggregationResultEntityParseFactory.convertEntity(resultMap.get(agg.getResultName()),
+                new ArrayList<>(), TradeConvergenceAnalysisResult.class);
+        return JacksonUtils.parse(JacksonUtils.toJson(results), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
+        });
+    }
+
+    /**
+     * <h2> 补充交易汇聚分析结果聚合展示字段 </h2>
+     */
+    private void addTradeConvergenceAnalysisShowFields(List<TradeConvergenceAnalysisResult> convergenceAnalysisResults,
+                                                       List<TradeConvergenceAnalysisResult> hits) {
+
+        for (TradeConvergenceAnalysisResult convergenceAnalysisResult : convergenceAnalysisResults) {
+
+            for (TradeConvergenceAnalysisResult hit : hits) {
+
+                if (convergenceAnalysisResult.getMergeCardKey().equals(hit.getMergeCard())) {
+                    // 开户名称
+                    convergenceAnalysisResult.setCustomerName(hit.getCustomerName());
+                    // 开户证件号码
+                    convergenceAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
+                    // 开户银行
+                    convergenceAnalysisResult.setBank(hit.getBank());
+                    // 交易卡号
+                    convergenceAnalysisResult.setTradeCard(hit.getTradeCard());
+                    // 对方开户名称
+                    convergenceAnalysisResult.setOppositeCustomerName(hit.getOppositeCustomerName());
+                    // 对方开户证件号码
+                    convergenceAnalysisResult.setOppositeIdentityCard(hit.getOppositeIdentityCard());
+                    // 对方开户银行
+                    convergenceAnalysisResult.setOppositeBank(hit.getOppositeBank());
+                    // 对方卡号
+                    convergenceAnalysisResult.setOppositeTradeCard(hit.getOppositeTradeCard());
+                }
+            }
+        }
     }
 }
 

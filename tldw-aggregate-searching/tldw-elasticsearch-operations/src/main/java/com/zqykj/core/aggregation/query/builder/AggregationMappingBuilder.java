@@ -338,9 +338,16 @@ public class AggregationMappingBuilder {
 
         if (field.isAnnotationPresent(OptionalParam.class)) {
 
-            if (aggregationClass.isAssignableFrom(TermsAggregationBuilder.class) && field.getName().equals("includeExclude")) {
-
-                applyIncludeExclude(target, aggregationClass, field, parameters);
+            // 特殊处理 TermsAggregationBuilder 的一些方法
+            if (aggregationClass.isAssignableFrom(TermsAggregationBuilder.class)) {
+                if (field.getName().equals("includeExclude")) {
+                    applyIncludeExclude(target, aggregationClass, field, parameters);
+                } else if (field.getName().equals(COLLECT_MODE)) {
+                    applyCollectMode(target, aggregationClass, field, parameters);
+                } else {
+                    // 默认处理
+                    applyDefaultField(target, aggregationClass, field, parameters);
+                }
             } else {
                 // 默认处理
                 applyDefaultField(target, aggregationClass, field, parameters);
@@ -504,13 +511,6 @@ public class AggregationMappingBuilder {
             org.springframework.util.ReflectionUtils.makeAccessible(subField);
             Object value = org.springframework.util.ReflectionUtils.getField(subField, parameters);
             if (null != value) {
-                if (subField.getName().equals(COLLECT_MODE)) {
-                    if (value.toString().equals(DEPTH_FIRST)) {
-                        value = Aggregator.SubAggCollectionMode.DEPTH_FIRST;
-                    } else if (value.toString().equals(BREADTH_FIRST)) {
-                        value = Aggregator.SubAggCollectionMode.BREADTH_FIRST;
-                    }
-                }
                 org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
             }
         });
@@ -526,6 +526,22 @@ public class AggregationMappingBuilder {
             Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), TERMS_INCLUDE_EXCLUDE_CLASS);
             // 开始调用此聚合类的方法, 为target 赋值
             optionalMethod.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, includeExclude));
+        }
+    }
+
+    private static void applyCollectMode(Object target, Class<?> aggregationClass, Field subField, Object parameters) {
+        org.springframework.util.ReflectionUtils.makeAccessible(subField);
+        Object value = org.springframework.util.ReflectionUtils.getField(subField, parameters);
+        if (null != value) {
+            if (value.toString().equals(DEPTH_FIRST)) {
+                value = Aggregator.SubAggCollectionMode.DEPTH_FIRST;
+            } else if (value.toString().equals(BREADTH_FIRST)) {
+                value = Aggregator.SubAggCollectionMode.BREADTH_FIRST;
+            }
+            Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), Aggregator.SubAggCollectionMode.class);
+            // 开始调用此聚合类的方法, 为target 赋值
+            Object finalValue = value;
+            optionalMethod.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, finalValue));
         }
     }
 

@@ -18,6 +18,11 @@ import lombok.Setter;
 public class FundTacticsPartGeneralRequest {
 
     /**
+     * 案件Id
+     */
+    private String caseId;
+
+    /**
      * 模糊查询
      */
     private String keyword;
