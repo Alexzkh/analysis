@@ -37,7 +37,9 @@ public class FundTrackingQueryBuilderFactory implements IFundTrackingQueryReques
                 FundTacticsAnalysisField.TRANSACTION_MONEY,
                 FundTacticsAnalysisField.LOAN_FLAG,
                 FundTacticsAnalysisField.TRANSACTION_TYPE,
-                FundTacticsAnalysisField.TRANSACTION_SUMMARY
+                FundTacticsAnalysisField.TRANSACTION_SUMMARY,
+                FundTacticsAnalysisField.CUSTOMER_NAME,
+                FundTacticsAnalysisField.TRANSACTION_OPPOSITE_NAME
         };
     }
 
