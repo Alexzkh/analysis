@@ -46,6 +46,10 @@ enable:
 buckets:
   page:
     initSize: 100_000
+chunkSize: 1000
+## 资金追踪条数默认1000
+global:
+  chunkSize: 1000
 
 ## **********************************************************
 ##   Plugins Settings (插件其他相关配置 详见tldw-analysis-plugins/README.md 参考文档)

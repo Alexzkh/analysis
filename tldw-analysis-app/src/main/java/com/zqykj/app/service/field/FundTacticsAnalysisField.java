@@ -187,6 +187,16 @@ public interface FundTacticsAnalysisField {
      */
     String MULTI_IDENTITY_TERMS = "multi_identity_terms";
 
+    /**
+     * 交易类型
+     */
+    String TRANSACTION_TYPE = "transaction_type";
+
+    /**
+     * 交易摘要
+     */
+    String TRANSACTION_SUMMARY = "transaction_summary";
+
 
     // 交易统计分析结果本方需要展示的字段
     static String[] tradeStatisticalAnalysisLocalShowField() {
@@ -218,4 +228,6 @@ public interface FundTacticsAnalysisField {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
     }
+
+
 }

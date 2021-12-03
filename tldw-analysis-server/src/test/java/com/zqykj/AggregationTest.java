@@ -3,10 +3,12 @@ package com.zqykj;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zqykj.app.service.interfaze.IFundTracking;
 import com.zqykj.app.service.interfaze.IFundsSourceAndDestinationStatistics;
 import com.zqykj.app.service.strategy.analysis.impl.FundSourceAndDestinationFactory;
 import com.zqykj.app.service.strategy.analysis.impl.TransactionAmountStrategyImpl;
 import com.zqykj.common.constant.Constants;
+import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.enums.FundsResultType;
 import com.zqykj.common.enums.FundsSourceAndDestinationStatisticsType;
 import com.zqykj.common.enums.QueryType;
@@ -14,6 +16,7 @@ import com.zqykj.common.request.*;
 import com.zqykj.common.response.AggregationResult;
 import com.zqykj.common.response.FundsSourceAndDestinationPieChartStatisticsResponse;
 import com.zqykj.common.response.PersonalStatisticsResponse;
+import com.zqykj.common.vo.TrackingNode;
 import com.zqykj.domain.Range;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.StandardBankTransactionFlow;
@@ -25,11 +28,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.StopWatch;
 
+import java.math.BigDecimal;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @Description: aggregations test .
@@ -624,7 +625,7 @@ public class AggregationTest {
 
         // caseID :834da065584948318c359b8f5d5fe49d
         FundsSourceAndDestinationStatisticsRequest request = new FundsSourceAndDestinationStatisticsRequest();
-        request.setIdentityCard("322125198702200000");
+        request.setIdentityCard("132530198111095616");
         request.setFundsSourceAndDestinationStatisticsType(FundsSourceAndDestinationStatisticsType.NET);
 
         QueryRequest queryRequest = new QueryRequest();
@@ -635,7 +636,7 @@ public class AggregationTest {
         request.setQueryRequest(queryRequest);
 
         try {
-            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationTopN(request, "a24c5d1d7bf743cfba1b0120aa0a172c");
+            fundSourceAndDestinationFactory.access(request.getFundsSourceAndDestinationStatisticsType()).accessFundSourceAndDestinationTopN(request, "7f21ba8423b04887aa079834aa9dce36");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -858,5 +859,42 @@ public class AggregationTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Autowired
+    private IFundTracking iFundTracking;
+
+    @Test
+    public void testAccessFundTrackingResultList() throws Exception {
+
+        FundTrackingRequest fundTrackingRequest =FundTrackingRequest.builder()
+                .leftCard(Arrays.asList("60138216660017566"))
+                .rightCard(Arrays.asList("60138216660030800",
+                        "60138216660047600",
+                        "60138216660030898"))
+                .paging(new PagingRequest(1,25))
+                .operator(AmountOperationSymbol.gte)
+                .fund("11")
+                .build();
+
+        iFundTracking.accessFundTrackingResult(fundTrackingRequest,"465bfd6a53ef469f9f5cffd730e86a08");
+
+
+    }
+
+    @Test
+    public void testAccessGraduallyTrackingResult() throws Exception {
+
+        GraduallyTrackingRequest graduallyTrackingRequest =GraduallyTrackingRequest.builder()
+                .start(TrackingNode.builder().name("刘志勇").amount(new BigDecimal(20000)).cardNumber("6210676862225356521").tradingTime("2020-11-22 23:00:59").build())
+                .next(TrackingNode.builder().name("谢毅东").amount(new BigDecimal(20000)).cardNumber("6230361108125230467").tradingTime("2020-11-22 23:00:59").build())
+                .amountDeviation(30)
+                .dateInterval(10)
+                .unit("d")
+                .build();
+
+        iFundTracking.accessGraduallyTrackingResult(graduallyTrackingRequest,"7f21ba8423b04887aa079834aa9dce36");
+
+
     }
 }
