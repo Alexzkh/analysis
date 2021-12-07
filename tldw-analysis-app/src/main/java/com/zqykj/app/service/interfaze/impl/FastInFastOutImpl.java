@@ -224,11 +224,15 @@ public class FastInFastOutImpl implements IFastInFastOut {
         String property = sortRequest.getProperty();
         // 查询记录的起始位置
         int from = 0;
-        if (property.equals("flow_in_money")) {
-            // 按入账金额排序
+        // 根据计算查询入账 还是 出账数据
+        boolean isCredits = true;
+        if (property.equals("flow_out_money") || property.equals("flow_out_time")) {
+            isCredits = false;
+        }
+        if (isCredits) {
+            // 按入账金额排序(默认)
             return getOrderRecordsViaAdjust(request, cardNum, from, querySize);
-
-        } else if (property.equals("flow_out_money") || property.equals("flow_out_time")) {
+        } else {
             // 异步任务执行
             List<BankTransactionRecord> finalTransactionRecords = new ArrayList<>();
             List<CompletableFuture<List<BankTransactionRecord>>> futures = new ArrayList<>();
@@ -253,9 +257,6 @@ public class FastInFastOutImpl implements IFastInFastOut {
             unadjustedRecords.addAll(adjustPayoutRecords);
             return unadjustedRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount)).
                     skip(0).limit(querySize).collect(Collectors.toList());
-        } else {
-            // 按入账金额排序(默认)
-            return getOrderRecordsViaAdjust(request, cardNum, from, querySize);
         }
     }
 
@@ -300,13 +301,17 @@ public class FastInFastOutImpl implements IFastInFastOut {
         List<String> cardNum = request.getCardNum();
         SortRequest sortRequest = request.getSortRequest();
         String property = sortRequest.getProperty();
+        // 根据计算查询入账 还是 出账数据
+        boolean isCredits = true;
+        if (property.equals("flow_out_money") || property.equals("flow_out_time")) {
+            isCredits = false;
+        }
         // 查询数据的起始位置
         int from = 0;
-        if (property.equals("flow_in_money")) {
-            // 按入账金额排序
+        if (isCredits) {
+            // 按入账金额排序(默认)
             return getOrderRecordsViaAdjust(request, cardNum, from, size);
-
-        } else if (property.equals("flow_out_money") || property.equals("flow_out_time")) {
+        } else {
 
             // 调单卡号出账记录的排序
             List<BankTransactionRecord> adjustPayoutRecords = getOrderRecordsViaAdjust(request, oppositeAdjustCards, from, size);
@@ -327,10 +332,6 @@ public class FastInFastOutImpl implements IFastInFastOut {
             } else {
                 return new ArrayList<>();
             }
-        } else {
-
-            // 按入账金额排序(默认)
-            return getOrderRecordsViaAdjust(request, cardNum, from, size);
         }
     }
 
