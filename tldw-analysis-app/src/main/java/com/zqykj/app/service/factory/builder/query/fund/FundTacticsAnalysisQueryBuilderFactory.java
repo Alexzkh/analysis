@@ -428,4 +428,46 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         }
         return querySpecialParams;
     }
+
+    public QuerySpecialParams buildFastInFastOutAdjustQuery(FastInFastOutRequest request) {
+
+        // 构建查询参数
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        // 调单卡号集合过滤
+        if (!CollectionUtils.isEmpty(request.getCardNum())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNum()));
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getCardNum()));
+        }
+        // 单笔限额过滤
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, request.getSingleQuota(), QueryOperator.gte));
+        // 出账
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
+        return querySpecialParams;
+    }
+
+    public QuerySpecialParams oppositeCardDistinctFromFastInFastOut(FastInFastOutRequest request, String loanFlag) {
+
+        // 构建查询参数
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        // 案件Id
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
+        // 交易金额
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, request.getSingleQuota(), QueryOperator.gte));
+        // 借贷标志
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, loanFlag));
+        // 查询卡号
+        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNum()));
+        // !=
+        CombinationQueryParams mustNot = new CombinationQueryParams(ConditionType.must_not);
+        // 对方卡号不在这些卡号之内的
+        mustNot.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getCardNum()));
+
+        query.addCombiningQueryParams(filter);
+        query.addCombiningQueryParams(mustNot);
+        // 设置source
+        query.setIncludeFields(FundTacticsAnalysisField.fastInFastOutFields());
+        return query;
+    }
 }

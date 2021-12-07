@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.factory;
 
+import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
@@ -111,4 +112,17 @@ public interface QueryRequestParamFactory {
      * 构建查询 入账的调单卡号集合参数
      */
     QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota);
+
+    /**
+     * <h2> 构建快进快出调单卡号查询 </h2>
+     */
+    QuerySpecialParams buildFastInFastOutAdjustQuery(FastInFastOutRequest request);
+
+    /**
+     * <h2> 快进快出(查询卡号为给定的调单卡号、对方卡号是去除掉这些调单卡号作为主要查询条件) </h2>
+     *
+     * @param request  快进快出请求
+     * @param loanFlag 借贷标志
+     */
+    QuerySpecialParams oppositeCardDistinctFromFastInFastOut(FastInFastOutRequest request, String loanFlag);
 }

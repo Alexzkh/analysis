@@ -19,7 +19,7 @@ public class EntityGraph {
     @Field(name = "id", type = FieldType.Long)
     private Long id;
 
-    @Field(name = "type", type = FieldType.Keyword)
+    @Field(name = "entityId", type = FieldType.Keyword)
     private String entityId;
 
     @Field(name = "type", type = FieldType.Keyword)

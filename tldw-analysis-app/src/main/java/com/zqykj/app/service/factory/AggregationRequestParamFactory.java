@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.factory;
 
+import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -159,4 +160,9 @@ public interface AggregationRequestParamFactory {
      * <h2> 构建查询 入账的调单卡号集合总量聚合参数 </h2>
      */
     AggregationParams buildCreditsAdjustCardsTotalAgg();
+
+    /**
+     * <h2> 快进快出聚合(查询卡号与对方卡号均在选择个体的调单卡号内) 结果对对方卡号去重返回 </h2>
+     */
+    AggregationParams buildFastInFastOutOppositeCardGroup(FastInFastOutRequest request);
 }

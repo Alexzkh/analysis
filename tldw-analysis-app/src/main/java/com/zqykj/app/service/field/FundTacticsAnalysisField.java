@@ -218,4 +218,12 @@ public interface FundTacticsAnalysisField {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
     }
+
+    // 快进快出分析结果展示字段(本方的)
+    static String[] fastInFastOutFields() {
+
+        return new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.CUSTOMER_NAME,
+                FundTacticsAnalysisField.TRADING_TIME, FundTacticsAnalysisField.CHANGE_AMOUNT,
+                FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD};
+    }
 }

@@ -17,6 +17,7 @@ import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.parameters.query.CombinationQueryParams;
+import com.zqykj.parameters.query.QueryOperator;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import com.zqykj.common.enums.QueryType;
@@ -189,9 +190,9 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         CombinationQueryParams combinationOne = new CombinationQueryParams();
         combinationOne.setType(ConditionType.filter);
         // 本方查询卡号(有可能是查询全部,那么卡号不为空的时候才能选用此条件)
-        if (!CollectionUtils.isEmpty(queryRequest.getCardNums())) {
-            combinationOne.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, queryRequest.getCardNums()));
-        }
+//        if (!CollectionUtils.isEmpty(queryRequest.getCardNums())) {
+//            combinationOne.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, queryRequest.getCardNums()));
+//        }
         if (StringUtils.isNotBlank(queryRequest.getKeyword())) {
             // 本方需要的模糊匹配
             combinationOne.addCommonQueryParams(new CommonQueryParams(queryBuilderFactory.assembleLocalFuzzy(queryRequest.getKeyword())));
@@ -688,5 +689,9 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         AggregationParams total = AggregationParamsBuilders.cardinality("distinct_" + FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.QUERY_CARD);
         root.setPerSubAggregation(total);
         return root;
+    }
+
+    public AggregationParams buildFastInFastOutOppositeCardGroup(FastInFastOutRequest request) {
+        return groupByField(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getCardNum().size(), null);
     }
 }

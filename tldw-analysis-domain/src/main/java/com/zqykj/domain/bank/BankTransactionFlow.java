@@ -107,7 +107,7 @@ public class BankTransactionFlow {
      * 交易对方证件号码
      */
     @MultiField(
-            mainField =  @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
             otherFields = {@InnerField(suffix = "opposite_certificate_number_wildcard", type = FieldType.Wildcard)}
     )
     private String transactionOppositeCertificateNumber;

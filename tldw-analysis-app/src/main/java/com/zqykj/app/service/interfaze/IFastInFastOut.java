@@ -9,6 +9,7 @@ import com.zqykj.common.core.ServerResponse;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <h1> 战法快进快出 </h1>
@@ -18,5 +19,5 @@ public interface IFastInFastOut {
     /**
      * <h2> 快进快出分析 </h2>
      */
-    ServerResponse fastInFastOutAnalysis(FastInFastOutRequest request);
+    ServerResponse fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException;
 }
