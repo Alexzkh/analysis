@@ -4,6 +4,7 @@
 package com.zqykj.app.service.factory.builder.aggregation.fund;
 
 import com.zqykj.app.service.factory.builder.query.fund.FundTacticsAnalysisQueryBuilderFactory;
+import com.zqykj.app.service.field.IndividualPortraitAnalysisField;
 import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.builder.AggregationParamsBuilders;
@@ -33,12 +34,12 @@ import com.zqykj.parameters.aggregate.date.DateParams;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.util.*;
 
@@ -688,5 +689,203 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         AggregationParams total = AggregationParamsBuilders.cardinality("distinct_" + FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.QUERY_CARD);
         root.setPerSubAggregation(total);
         return root;
+    }
+
+    @Override
+    public <T> AggregationParams buildIndividualInfoAndStatisticsAgg(T request) {
+        IndividualPortraitCommonParams individualPortraitCommonParams = new IndividualPortraitCommonParams().invoke();
+        AggregationParams customerIdentityCardTerms = individualPortraitCommonParams.getCustomerIdentityCardTerms();
+        AggregationParams queryCardTerms = individualPortraitCommonParams.getQueryCardTerms();
+
+        // 1.2 成功累计收入金额
+        String cumulativeIncomeBucketsPath = "queryCardTerms>totalEntryTransactionMoney";
+        PipelineAggregationParams cumulativeIncome = new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.CUMULATIVE_INCOME,
+                AggsType.sum_bucket.name(), cumulativeIncomeBucketsPath);
+
+        // 1.3 成功累计支出金额
+        String cumulativeExpenditureBucketsPath = "queryCardTerms>totalOutTransactionMoney";
+        PipelineAggregationParams cumulativeExpenditure = new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.CUMULATIVE_EXPENDITURE,
+                AggsType.sum_bucket.name(), cumulativeExpenditureBucketsPath);
+
+        // 1.4 成功累计交易净额
+        String cumulativeNetBucketsPath = "queryCardTerms>netTransactionMoney";
+        PipelineAggregationParams cumulativeNet = new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.CUMULATIVE_NET,
+                AggsType.sum_bucket.name(), cumulativeNetBucketsPath);
+
+        customerIdentityCardTerms.setPerSubAggregation(queryCardTerms);
+        customerIdentityCardTerms.setPerSubAggregation(cumulativeIncome);
+        customerIdentityCardTerms.setPerSubAggregation(cumulativeExpenditure);
+        customerIdentityCardTerms.setPerSubAggregation(cumulativeNet);
+
+        return customerIdentityCardTerms;
+    }
+
+    @Override
+    public <T> AggregationParams buildIndividualCardTransactionStatisticsAgg(T request) {
+        IndividualCardTransactionStatisticsRequest individualCardTransactionStatisticsRequest = (IndividualCardTransactionStatisticsRequest) request;
+        Pagination pagination = individualCardTransactionStatisticsRequest.getPagination();
+        SortRequest sortRequest = individualCardTransactionStatisticsRequest.getSortRequest();
+
+        IndividualPortraitCommonParams individualPortraitCommonParams = new IndividualPortraitCommonParams().invoke();
+        AggregationParams customerIdentityCardTerms = individualPortraitCommonParams.getCustomerIdentityCardTerms();
+        AggregationParams queryCardTerms = individualPortraitCommonParams.getQueryCardTerms();
+        // 1.1.8 单卡交易最早时间
+        queryCardTerms.setPerSubAggregation(earliestTradingTimeAgg());
+        // 1.1.9 单卡最晚交易时间
+        queryCardTerms.setPerSubAggregation(latestTradingTimeAgg());
+        // 单卡交易总次数
+        queryCardTerms.setPerSubAggregation(totalTransactionTimesAgg());
+
+        // 分页、排序
+        PipelineAggregationParams pipelineAggregationParams;
+        // 默认按照交易总次数降序
+        String defaultSortProperty = "totalTransactionTimes";
+        // 排除排序字段
+        List<String> excludeSortProperties = Arrays.asList("transactionBalance", "fundsProportion");
+        FieldSort fieldSort;
+        if (!ObjectUtils.isEmpty(sortRequest) && pagination.getSize() != null && !excludeSortProperties.contains(sortRequest.getProperty())) {
+            switch (sortRequest.getProperty()) {
+                case "entryTransactionTimes":
+                    fieldSort = new FieldSort("entryFilter.entryTransactionTimes", sortRequest.getOrder().name());
+                    break;
+                case "outTransactionTimes":
+                    fieldSort = new FieldSort("outFilter.outTransactionTimes", sortRequest.getOrder().name());
+                    break;
+                default:
+                    fieldSort = new FieldSort(sortRequest.getProperty(), sortRequest.getOrder().name());
+                    break;
+            }
+            List<FieldSort> fieldSorts = Collections.singletonList(fieldSort);
+            pipelineAggregationParams = new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.BUCKET_SORT_NAME,
+                    AggsType.bucket_sort.name(), fieldSorts, pagination);
+        } else {
+            fieldSort = new FieldSort(defaultSortProperty, Direction.DESC.name());
+            List<FieldSort> fieldSorts = Collections.singletonList(fieldSort);
+            pipelineAggregationParams = new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.BUCKET_SORT_NAME,
+                    AggsType.bucket_sort.name(), fieldSorts, pagination);
+        }
+        queryCardTerms.setPerSubAggregation(pipelineAggregationParams);
+
+        customerIdentityCardTerms.setPerSubAggregation(queryCardTerms);
+
+        return customerIdentityCardTerms;
+    }
+
+    private AggregationParams loanFlagInFilterAgg() {
+        QuerySpecialParams loanFlagInQuerySpecialParams = new QuerySpecialParams();
+        CommonQueryParams loanFlagInTermsQuery = QueryParamsBuilders.term(IndividualPortraitAnalysisField.LOAN_FLAG,
+                IndividualPortraitAnalysisField.Value.LOAN_FLAG_IN);
+        loanFlagInQuerySpecialParams.addCommonQueryParams(loanFlagInTermsQuery);
+        AggregationParams loanFlagInFilter = AggregationParamsBuilders.filter(IndividualPortraitAnalysisField.AggResultName.ENTRY_FILTER,
+                loanFlagInQuerySpecialParams, null);
+        AggregationParams loanFlagInSumAggregation = AggregationParamsBuilders.sum(IndividualPortraitAnalysisField.AggResultName.ENTRY_TRANSACTION_MONEY_SUM,
+                IndividualPortraitAnalysisField.TRANSACTION_MONEY);
+        AggregationParams entryCountAggregation = AggregationParamsBuilders.count(IndividualPortraitAnalysisField.AggResultName.ENTRY_TRANSACTION_TIMES,
+                IndividualPortraitAnalysisField.LOAN_FLAG, null);
+        loanFlagInFilter.setPerSubAggregation(loanFlagInSumAggregation);
+        loanFlagInFilter.setPerSubAggregation(entryCountAggregation);
+        return loanFlagInFilter;
+    }
+
+    private AggregationParams loanFlagOutFilterAgg() {
+        QuerySpecialParams loanFlagOutQuerySpecialParams = new QuerySpecialParams();
+        CommonQueryParams loanFlagOutTermsQuery = QueryParamsBuilders.term(IndividualPortraitAnalysisField.LOAN_FLAG,
+                IndividualPortraitAnalysisField.Value.LOAN_FLAG_OUT);
+        loanFlagOutQuerySpecialParams.addCommonQueryParams(loanFlagOutTermsQuery);
+        AggregationParams loanFlagOutFilter = AggregationParamsBuilders.filter(IndividualPortraitAnalysisField.AggResultName.OUT_FILTER,
+                loanFlagOutQuerySpecialParams, null);
+        AggregationParams loanFlagOutSumAggregation = AggregationParamsBuilders.sum(IndividualPortraitAnalysisField.AggResultName.OUT_TRANSACTION_MONEY_SUM,
+                IndividualPortraitAnalysisField.TRANSACTION_MONEY);
+        AggregationParams outCountAggregation = AggregationParamsBuilders.count(IndividualPortraitAnalysisField.AggResultName.OUT_TRANSACTION_TIMES,
+                IndividualPortraitAnalysisField.LOAN_FLAG, null);
+        loanFlagOutFilter.setPerSubAggregation(loanFlagOutSumAggregation);
+        loanFlagOutFilter.setPerSubAggregation(outCountAggregation);
+        return loanFlagOutFilter;
+    }
+
+    private PipelineAggregationParams totalTransactionMoneyAgg() {
+        Map<String, String> bucketsPathMap = new HashMap<>(16);
+        bucketsPathMap.put("totalEntryTransactionMoneyPath", "entryFilter>entryTransactionMoneySum");
+        bucketsPathMap.put("totalOutgoingTransactionMoneyPath", "outFilter>outTransactionMoneySum");
+        String script = "params.totalEntryTransactionMoneyPath - params.totalOutgoingTransactionMoneyPath";
+        return new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.TOTAL_TRANSACTION_MONEY,
+                AggsType.bucket_script.name(), bucketsPathMap, script);
+    }
+
+    private PipelineAggregationParams totalEntryTransactionMoneyAgg() {
+        Map<String, String> bucketsPathMap = new HashMap<>(16);
+        bucketsPathMap.put("entryTransactionMoneyPath", "entryFilter.entryTransactionMoneySum");
+        String script = "params.entryTransactionMoneyPath";
+        return new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.TOTAL_ENTRY_TRANSACTION_MONEY,
+                AggsType.bucket_script.name(), bucketsPathMap, script);
+    }
+
+    private PipelineAggregationParams totalOutTransactionMoneyAgg() {
+        Map<String, String> bucketsPathMap = new HashMap<>(16);
+        bucketsPathMap.put("outTransactionMoneyPath", "outFilter.outTransactionMoneySum");
+        String script = "Math.abs(params.outTransactionMoneyPath)";
+        return new PipelineAggregationParams(IndividualPortraitAnalysisField.AggResultName.TOTAL_OUT_TRANSACTION_MONEY,
+                AggsType.bucket_script.name(), bucketsPathMap, script);
+    }
+
+    private AggregationParams netTransactionMoneyAgg() {
+        return AggregationParamsBuilders.sum(IndividualPortraitAnalysisField.AggResultName.NET_TRANSACTION_MONEY, IndividualPortraitAnalysisField.TRANSACTION_MONEY);
+    }
+
+    private AggregationParams earliestTradingTimeAgg() {
+        return AggregationParamsBuilders.min(IndividualPortraitAnalysisField.AggResultName.EARLIEST_TRADING_TIME, IndividualPortraitAnalysisField.TRADING_TIME, null);
+    }
+
+    private AggregationParams latestTradingTimeAgg() {
+        return AggregationParamsBuilders.max(IndividualPortraitAnalysisField.AggResultName.LATEST_TRADING_TIME, IndividualPortraitAnalysisField.TRADING_TIME, null);
+    }
+
+    private AggregationParams queryCardTopHits() {
+        FetchSource fetchSource = new FetchSource();
+        fetchSource.setIncludes(IndividualPortraitAnalysisField.Value.INCLUDES_TOP_HITS);
+        fetchSource.setSize(1);
+        fetchSource.setSort(new FieldSort(IndividualPortraitAnalysisField.TRADING_TIME, Direction.DESC.name()));
+        return AggregationParamsBuilders.fieldSource(IndividualPortraitAnalysisField.AggResultName.QUERY_CARD_TOP_HITS, fetchSource);
+    }
+
+    private AggregationParams totalTransactionTimesAgg() {
+        return AggregationParamsBuilders.count(IndividualPortraitAnalysisField.AggResultName.TOTAL_TRANSACTION_TIMES, IndividualPortraitAnalysisField.QUERY_CARD, null);
+    }
+
+    private class IndividualPortraitCommonParams {
+        private AggregationParams customerIdentityCardTerms;
+        private AggregationParams queryCardTerms;
+
+        private AggregationParams getCustomerIdentityCardTerms() {
+            return customerIdentityCardTerms;
+        }
+
+        private AggregationParams getQueryCardTerms() {
+            return queryCardTerms;
+        }
+
+        private IndividualPortraitCommonParams invoke() {
+            // 1 按身份证号分桶
+            customerIdentityCardTerms = AggregationParamsBuilders.terms(IndividualPortraitAnalysisField.AggResultName.CUSTOMER_IDENTITY_CARD_TERMS,
+                    IndividualPortraitAnalysisField.CUSTOMER_IDENTITY_CARD);
+            // 1.1 按个人卡号分桶
+            queryCardTerms = AggregationParamsBuilders.terms(IndividualPortraitAnalysisField.AggResultName.QUERY_CARD_TERMS,
+                    IndividualPortraitAnalysisField.QUERY_CARD);
+            // 1.1.1 单卡进账过滤
+            queryCardTerms.setPerSubAggregation(loanFlagInFilterAgg());
+            // 1.1.2 单卡出账过滤
+            queryCardTerms.setPerSubAggregation(loanFlagOutFilterAgg());
+            // 1.1.3 单卡交易净额
+            queryCardTerms.setPerSubAggregation(netTransactionMoneyAgg());
+            // 1.1.4 单卡交易总金额
+            queryCardTerms.setPerSubAggregation(totalTransactionMoneyAgg());
+            // 1.1.5 单卡交易进账总金额
+            queryCardTerms.setPerSubAggregation(totalEntryTransactionMoneyAgg());
+            // 1.1.6 单卡交易出账总金额
+            queryCardTerms.setPerSubAggregation(totalOutTransactionMoneyAgg());
+            // 1.1.7 单卡基本信息top_hits
+            queryCardTerms.setPerSubAggregation(queryCardTopHits());
+            return this;
+        }
     }
 }

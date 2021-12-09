@@ -159,4 +159,22 @@ public interface AggregationRequestParamFactory {
      * <h2> 构建查询 入账的调单卡号集合总量聚合参数 </h2>
      */
     AggregationParams buildCreditsAdjustCardsTotalAgg();
+
+    /**
+     * 构建个体画像-基本信息和统计聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildIndividualInfoAndStatisticsAgg(T request);
+
+    /**
+     * 构建个体画像-名下卡交易统计聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildIndividualCardTransactionStatisticsAgg(T request);
 }

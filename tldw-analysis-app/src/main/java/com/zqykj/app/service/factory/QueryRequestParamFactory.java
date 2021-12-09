@@ -111,4 +111,22 @@ public interface QueryRequestParamFactory {
      * 构建查询 入账的调单卡号集合参数
      */
     QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota);
+
+    /**
+     * 构建单卡画像-基本信息和统计查询参数
+     *
+     * @param request 单卡画像-基本信息和统计请求体
+     * @param <T>     T
+     * @return 返回构建的查询参数
+     */
+    <T> QuerySpecialParams buildIndividualInfoAndStatisticsQueryParams(T request);
+
+    /**
+     * 构建单卡画像-名下卡交易统计查询参数
+     *
+     * @param request 单卡画像-名下卡交易统计请求体
+     * @param <T>     T
+     * @return 返回构建的查询参数
+     */
+    <T> QuerySpecialParams buildIndividualCardTransactionStatisticsQueryParams(T request);
 }
