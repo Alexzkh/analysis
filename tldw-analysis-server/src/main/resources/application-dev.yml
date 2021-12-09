@@ -29,7 +29,7 @@ spring:
     host: 172.30.6.31
     port: 6379
   data:
-    #HBase 配置bucket_script
+    #HBase 配置
     hbase:
       quorum: 172.30.6.31:2181
       rootDir: file:///hbase
@@ -51,10 +51,6 @@ chunkSize: 1000
 global:
   chunkSize: 1000
 
-global:
-  chunkSize: 3000
-
-chunkSize: 600
 ## **********************************************************
 ##   Plugins Settings (插件其他相关配置 详见tldw-analysis-plugins/README.md 参考文档)
 ## **********************************************************
