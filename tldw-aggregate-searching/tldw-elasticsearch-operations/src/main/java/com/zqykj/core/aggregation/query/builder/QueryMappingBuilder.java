@@ -199,10 +199,10 @@ public class QueryMappingBuilder {
 
         Optional<Constructor<?>> constructor;
         if (null != common.getFields()) {
-            // 单字段处理
+            // 多字段处理
             constructor = ReflectionUtils.findConstructor(queryClass, common.getValue(), common.getFields());
         } else {
-            // 多字段处理
+            // 单字段处理
             constructor = ReflectionUtils.findConstructor(queryClass, common.getField(), common.getValue());
         }
         Object target;
@@ -243,8 +243,12 @@ public class QueryMappingBuilder {
                 target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
                 applyNumericalValueRange(queryClass, queryOperator, target, common.getValue());
             }
+        } else if (null == common.getValue()) {
+            Optional<Constructor<?>> constructor = ReflectionUtils.findConstructor(queryClass, common.getField());
+            if (constructor.isPresent()) {
+                target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
+            }
         }
-
         return target;
     }
 

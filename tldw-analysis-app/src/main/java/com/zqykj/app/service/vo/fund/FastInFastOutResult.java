@@ -70,5 +70,5 @@ public class FastInFastOutResult {
     /**
      * 特征比: (入账金额 - 出账金额) / 入账金额
      */
-    private int characteristicRatio;
+    private String characteristicRatio;
 }

@@ -294,9 +294,13 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
 
             combinationQueryParams.addCommonQueryParams(new CommonQueryParams(localFuzzy));
         }
-
+        // 过滤 查询卡号 和 对方卡号为空的交易记录
+        CombinationQueryParams mustNot = new CombinationQueryParams();
+        mustNot.setType(ConditionType.must_not);
+        mustNot.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.QUERY_CARD, ""));
+        mustNot.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, ""));
+        convergenceQuery.addCombiningQueryParams(mustNot);
         convergenceQuery.addCombiningQueryParams(combinationQueryParams);
-
         return convergenceQuery;
     }
 

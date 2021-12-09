@@ -110,8 +110,9 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
     public <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size) {
         TradeStatisticalAnalysisQueryRequest queryRequest = (TradeStatisticalAnalysisQueryRequest) request;
 
-        AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.QUERY_CARD);
+        AggregationParams cardTerms = AggregationParamsBuilders.terms("groupBy_" + FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.QUERY_CARD);
         cardTerms.setSize(queryRequest.getGroupInitSize());
+        cardTerms.setCollectMode(BREADTH_FIRST);
         // 交易总次数
         AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
                 FundTacticsAnalysisField.QUERY_CARD, null);
@@ -122,9 +123,6 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         if (null != sort) {
             cardTerms.setPerSubAggregation(sort);
         }
-        // 聚合展示字段
-        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(new String[]{FundTacticsAnalysisField.QUERY_CARD}, "local_hits", null);
-        cardTerms.setPerSubAggregation(showFields);
         return cardTerms;
     }
 
@@ -448,8 +446,9 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
     public <T> AggregationParams buildTradeConvergenceQueryAndMergeCardsAgg(T request, int from, int size) {
         TradeConvergenceAnalysisQueryRequest convergenceRequest = (TradeConvergenceAnalysisQueryRequest) request;
 
-        AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.MERGE_CARD);
+        AggregationParams cardTerms = AggregationParamsBuilders.terms("groupBy_" + FundTacticsAnalysisField.MERGE_CARD, FundTacticsAnalysisField.MERGE_CARD);
         cardTerms.setSize(convergenceRequest.getGroupInitSize());
+        cardTerms.setCollectMode(BREADTH_FIRST);
         // 交易总次数
         AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
                 FundTacticsAnalysisField.MERGE_CARD, null);
@@ -462,10 +461,6 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         if (null != sort) {
             cardTerms.setPerSubAggregation(sort);
         }
-        // 聚合展示字段
-        String[] fields = new String[]{FundTacticsAnalysisField.MERGE_CARD, FundTacticsAnalysisField.QUERY_CARD};
-        AggregationParams showFields = fundTacticsPartUniversalAggShowFields(fields, "local_hits", null);
-        cardTerms.setPerSubAggregation(showFields);
         return cardTerms;
     }
 

@@ -77,4 +77,12 @@ public class QueryParamsBuilders {
 
         return new CommonQueryParams(QueryType.wildcard, field, value);
     }
+
+    /**
+     * <h2> 过滤null、空值等 </h2>
+     */
+    public static CommonQueryParams exists(String field) {
+
+        return new CommonQueryParams(QueryType.exists, field);
+    }
 }
