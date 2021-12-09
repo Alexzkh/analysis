@@ -53,55 +53,63 @@ public class IndividualPortraitStatisticsImpl implements IIndividualPortraitStat
 
     @Override
     public ServerResponse<IndividualInfoAndStatisticsResponse> accessIndividualInfoAndStatistics(IndividualInfoAndStatisticsRequest individualInfoAndStatisticsRequest) {
-        String routing = individualInfoAndStatisticsRequest.getCaseId();
-        // 构建query
-        QuerySpecialParams querySpecialParams = queryRequestParamFactory.buildIndividualInfoAndStatisticsQueryParams(individualInfoAndStatisticsRequest);
-        // 构建aggregations
-        AggregationParams aggregationParams = aggregationRequestParamFactory.buildIndividualInfoAndStatisticsAgg(individualInfoAndStatisticsRequest);
-        Map<String, String> aggMapping = new LinkedHashMap<>();
-        Map<String, String> entityMapping = new LinkedHashMap<>();
-        // 构造聚合名称、聚合属性、实体属性之间的映射
-        aggregationEntityMappingFactory.buildIndividualInfoAndStatisticsAggMapping(aggMapping, entityMapping, IndividualInfoAndStatistics.class);
-        mappingParamsSet(aggregationParams, aggMapping, entityMapping);
-        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, routing);
-        // 解析数据、构造响应结果
-        List<List<Object>> aggValueList = resultMap.get(aggregationParams.getResultName());
-        List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
-        List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualInfoAndStatistics.class);
-        List<IndividualInfoAndStatistics> individualInfoAndStatisticsList = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualInfoAndStatistics>>() {
-        });
-        // 基本信息与统计-数据整理
-        IndividualInfoAndStatisticsResponse individualInfoAndStatisticsResponse = getIndividualInfoAndStatisticsResponse(individualInfoAndStatisticsList);
-        return ServerResponse.createBySuccess(individualInfoAndStatisticsResponse);
-    }
+        IndividualInfoAndStatisticsResponse individualInfoAndStatisticsResponse;
+        try {
+            String routing = individualInfoAndStatisticsRequest.getCaseId();
+            // 构建query
+            QuerySpecialParams querySpecialParams = queryRequestParamFactory.buildIndividualInfoAndStatisticsQueryParams(individualInfoAndStatisticsRequest);
+            // 构建aggregations
+            AggregationParams aggregationParams = aggregationRequestParamFactory.buildIndividualInfoAndStatisticsAgg(individualInfoAndStatisticsRequest);
+            Map<String, String> aggMapping = new LinkedHashMap<>();
+            Map<String, String> entityMapping = new LinkedHashMap<>();
+            // 构造聚合名称、聚合属性、实体属性之间的映射
+            aggregationEntityMappingFactory.buildIndividualInfoAndStatisticsAggMapping(aggMapping, entityMapping, IndividualInfoAndStatistics.class);
+            mappingParamsSet(aggregationParams, aggMapping, entityMapping);
+            Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, routing);
 
-    private void mappingParamsSet(AggregationParams aggregationParams, Map<String, String> aggMapping, Map<String, String> entityMapping) {
-        aggregationParams.setMapping(aggMapping);
-        aggregationParams.setEntityAggColMapping(entityMapping);
-        aggregationParams.setResultName(IndividualPortraitAnalysisField.ResultName.CUSTOMER_IDENTITY_CARD);
+            // 解析数据、构造响应结果
+            List<List<Object>> aggValueList = resultMap.get(aggregationParams.getResultName());
+            List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
+            List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualInfoAndStatistics.class);
+            List<IndividualInfoAndStatistics> individualInfoAndStatisticsList = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualInfoAndStatistics>>() {
+            });
+            // 基本信息与统计-数据整理
+            individualInfoAndStatisticsResponse = getIndividualInfoAndStatisticsResponse(individualInfoAndStatisticsList);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return ServerResponse.createByErrorMessage(e.getMessage());
+        }
+        return ServerResponse.createBySuccess(individualInfoAndStatisticsResponse);
     }
 
     @Override
     public ServerResponse<List<IndividualCardTransactionStatisticsResponse>> accessIndividualCardTransactionStatistics(IndividualCardTransactionStatisticsRequest individualCardTransactionStatisticsRequest) {
-        String routing = individualCardTransactionStatisticsRequest.getCaseId();
-        // 构建query
-        QuerySpecialParams querySpecialParams = queryRequestParamFactory.buildIndividualCardTransactionStatisticsQueryParams(individualCardTransactionStatisticsRequest);
-        // 构建aggregations
-        AggregationParams aggregationParams = aggregationRequestParamFactory.buildIndividualCardTransactionStatisticsAgg(individualCardTransactionStatisticsRequest);
-        Map<String, String> aggMapping = new LinkedHashMap<>();
-        Map<String, String> entityMapping = new LinkedHashMap<>();
-        // 构造聚合名称、聚合属性、实体属性之间的映射
-        aggregationEntityMappingFactory.buildIndividualCardTransactionStatisticsAggMapping(aggMapping, entityMapping, IndividualCardTransactionStatisticsResponse.class);
-        mappingParamsSet(aggregationParams, aggMapping, entityMapping);
-        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, routing);
-        // 解析数据、构造响应结果
-        List<List<Object>> aggValueList = resultMap.get(aggregationParams.getResultName());
-        List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
-        List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualCardTransactionStatisticsResponse.class);
-        List<IndividualCardTransactionStatisticsResponse> individualCardTransactionStatisticsResponses = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualCardTransactionStatisticsResponse>>() {
-        });
-        // 名下卡交易统计-数据整理
-        individualCardTransactionDataFlow(routing, individualCardTransactionStatisticsResponses);
+        List<IndividualCardTransactionStatisticsResponse> individualCardTransactionStatisticsResponses;
+        try {
+            String routing = individualCardTransactionStatisticsRequest.getCaseId();
+            // 构建query
+            QuerySpecialParams querySpecialParams = queryRequestParamFactory.buildIndividualCardTransactionStatisticsQueryParams(individualCardTransactionStatisticsRequest);
+            // 构建aggregations
+            AggregationParams aggregationParams = aggregationRequestParamFactory.buildIndividualCardTransactionStatisticsAgg(individualCardTransactionStatisticsRequest);
+            Map<String, String> aggMapping = new LinkedHashMap<>();
+            Map<String, String> entityMapping = new LinkedHashMap<>();
+            // 构造聚合名称、聚合属性、实体属性之间的映射
+            aggregationEntityMappingFactory.buildIndividualCardTransactionStatisticsAggMapping(aggMapping, entityMapping, IndividualCardTransactionStatisticsResponse.class);
+            mappingParamsSet(aggregationParams, aggMapping, entityMapping);
+            Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, routing);
+
+            // 解析数据、构造响应结果
+            List<List<Object>> aggValueList = resultMap.get(aggregationParams.getResultName());
+            List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
+            List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualCardTransactionStatisticsResponse.class);
+            individualCardTransactionStatisticsResponses = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualCardTransactionStatisticsResponse>>() {
+            });
+            // 名下卡交易统计-数据整理
+            individualCardTransactionDataFlow(routing, individualCardTransactionStatisticsResponses);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return ServerResponse.createByErrorMessage(e.getMessage());
+        }
         return ServerResponse.createBySuccess(individualCardTransactionStatisticsResponses);
     }
 
@@ -149,6 +157,15 @@ public class IndividualPortraitStatisticsImpl implements IIndividualPortraitStat
         individualInfoAndStatistics.setCumulativeNet(BigDecimalUtil.value(cumulativeNet));
         BeanUtils.copyProperties(individualInfoAndStatistics, response);
         return response;
+    }
+
+    /**
+     * 映射参数设置
+     */
+    private void mappingParamsSet(AggregationParams aggregationParams, Map<String, String> aggMapping, Map<String, String> entityMapping) {
+        aggregationParams.setMapping(aggMapping);
+        aggregationParams.setEntityAggColMapping(entityMapping);
+        aggregationParams.setResultName(IndividualPortraitAnalysisField.ResultName.CUSTOMER_IDENTITY_CARD);
     }
 
 }
