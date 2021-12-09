@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class IndividualPortraitStatisticsImpl implements IIndividualPortraitStat
 
     @Override
     public ServerResponse<IndividualInfoAndStatisticsResponse> accessIndividualInfoAndStatistics(IndividualInfoAndStatisticsRequest individualInfoAndStatisticsRequest) {
-        IndividualInfoAndStatisticsResponse individualInfoAndStatisticsResponse;
+        IndividualInfoAndStatisticsResponse individualInfoAndStatisticsResponse = null;
         try {
             String routing = individualInfoAndStatisticsRequest.getCaseId();
             // 构建query
@@ -66,15 +67,16 @@ public class IndividualPortraitStatisticsImpl implements IIndividualPortraitStat
             aggregationEntityMappingFactory.buildIndividualInfoAndStatisticsAggMapping(aggMapping, entityMapping, IndividualInfoAndStatistics.class);
             mappingParamsSet(aggregationParams, aggMapping, entityMapping);
             Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, routing);
-
             // 解析数据、构造响应结果
             List<List<Object>> aggValueList = resultMap.get(aggregationParams.getResultName());
-            List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
-            List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualInfoAndStatistics.class);
-            List<IndividualInfoAndStatistics> individualInfoAndStatisticsList = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualInfoAndStatistics>>() {
-            });
-            // 基本信息与统计-数据整理
-            individualInfoAndStatisticsResponse = getIndividualInfoAndStatisticsResponse(individualInfoAndStatisticsList);
+            if (!CollectionUtils.isEmpty(aggValueList)) {
+                List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
+                List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualInfoAndStatistics.class);
+                List<IndividualInfoAndStatistics> individualInfoAndStatisticsList = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualInfoAndStatistics>>() {
+                });
+                // 基本信息与统计-数据整理
+                individualInfoAndStatisticsResponse = getIndividualInfoAndStatisticsResponse(individualInfoAndStatisticsList);
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return ServerResponse.createByErrorMessage(e.getMessage());
@@ -84,7 +86,7 @@ public class IndividualPortraitStatisticsImpl implements IIndividualPortraitStat
 
     @Override
     public ServerResponse<List<IndividualCardTransactionStatisticsResponse>> accessIndividualCardTransactionStatistics(IndividualCardTransactionStatisticsRequest individualCardTransactionStatisticsRequest) {
-        List<IndividualCardTransactionStatisticsResponse> individualCardTransactionStatisticsResponses;
+        List<IndividualCardTransactionStatisticsResponse> individualCardTransactionStatisticsResponses = null;
         try {
             String routing = individualCardTransactionStatisticsRequest.getCaseId();
             // 构建query
@@ -100,12 +102,14 @@ public class IndividualPortraitStatisticsImpl implements IIndividualPortraitStat
 
             // 解析数据、构造响应结果
             List<List<Object>> aggValueList = resultMap.get(aggregationParams.getResultName());
-            List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
-            List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualCardTransactionStatisticsResponse.class);
-            individualCardTransactionStatisticsResponses = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualCardTransactionStatisticsResponse>>() {
-            });
-            // 名下卡交易统计-数据整理
-            individualCardTransactionDataFlow(routing, individualCardTransactionStatisticsResponses);
+            if (!CollectionUtils.isEmpty(aggValueList)) {
+                List<String> entityFields = new ArrayList<>(aggregationParams.getEntityAggColMapping().keySet());
+                List<Map<String, Object>> maps = aggregationResultEntityParseFactory.convertEntity(aggValueList, entityFields, IndividualCardTransactionStatisticsResponse.class);
+                individualCardTransactionStatisticsResponses = JacksonUtils.parse(JacksonUtils.toJson(maps), new TypeReference<List<IndividualCardTransactionStatisticsResponse>>() {
+                });
+                // 名下卡交易统计-数据整理
+                individualCardTransactionDataFlow(routing, individualCardTransactionStatisticsResponses);
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return ServerResponse.createByErrorMessage(e.getMessage());
