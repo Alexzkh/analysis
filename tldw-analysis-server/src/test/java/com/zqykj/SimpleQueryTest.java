@@ -1,18 +1,21 @@
 package com.zqykj;
 
 
+import com.zqykj.app.service.interfaze.IIndividualPortraitStatistics;
 import com.zqykj.app.service.interfaze.ISingleCardPortraitStatistics;
+import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.enums.ConditionType;
-import com.zqykj.app.service.vo.fund.SingleCardPortraitRequest;
-import com.zqykj.app.service.vo.fund.SingleCardPortraitResponse;
+import com.zqykj.common.vo.Direction;
+import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.CommonQueryParams;
+import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
@@ -68,6 +71,9 @@ public class SimpleQueryTest {
 
     @Resource
     private ISingleCardPortraitStatistics iSingleCardPortraitStatistics;
+
+    @Resource
+    private IIndividualPortraitStatistics iIndividualPortraitStatistics;
 
     /**
      * GET /bank_transaction_flow/_doc/907673916787392515
@@ -564,43 +570,76 @@ public class SimpleQueryTest {
     /**
      * 返回结果JSON格式：
      * {
-     *     "earliest_trading_time": [
-     *         [
-     *             "2018-12-25 18:18:34"
-     *         ]
-     *     ],
-     *     "latest_trading_time": [
-     *         [
-     *             "2020-03-22 23:31:15"
-     *         ]
-     *     ],
-     *     "query_card_terms": [
-     *         [
-     *             296336.1,
-     *             -292845.51,
-     *             [
-     *                 {
-     *                     "bank": "中国建设银行",
-     *                     "transaction_balance": 69320.62,
-     *                     "query_card": "60138216660030800",
-     *                     "query_account": "322125198702200000",
-     *                     "trading_time": "2019-04-06 03:20:49",
-     *                     "customer_identity_card": "322125198702200000",
-     *                     "customer_name": "马行空"
-     *                 }
-     *             ]
-     *         ]
-     *     ]
+     * "earliest_trading_time": [
+     * [
+     * "2018-12-25 18:18:34"
+     * ]
+     * ],
+     * "latest_trading_time": [
+     * [
+     * "2020-03-22 23:31:15"
+     * ]
+     * ],
+     * "query_card_terms": [
+     * [
+     * 296336.1,
+     * -292845.51,
+     * [
+     * {
+     * "bank": "中国建设银行",
+     * "transaction_balance": 69320.62,
+     * "query_card": "60138216660030800",
+     * "query_account": "322125198702200000",
+     * "trading_time": "2019-04-06 03:20:49",
+     * "customer_identity_card": "322125198702200000",
+     * "customer_name": "马行空"
+     * }
+     * ]
+     * ]
+     * ]
      * }
      */
     @Test
     public void singleCardQuery() {
-        String caseId = "a24c5d1d7bf743cfba1b0120aa0a172c";
-//        String queryCard = "60138216660030800";
-        String queryCard = "60138216660046202";
+        String caseId = "bf72ac24e9aa4929a58ab35d699ef50f";
+        String queryCard = "60138216660030800";
         SingleCardPortraitRequest singleCardPortraitRequest = SingleCardPortraitRequest.builder().caseId(caseId).queryCard(queryCard).build();
         ServerResponse<SingleCardPortraitResponse> singleCardPortraitResponseServerResponse = iSingleCardPortraitStatistics.accessSingleCardPortraitStatistics(singleCardPortraitRequest);
         log.info(JacksonUtils.toJson(singleCardPortraitResponseServerResponse));
+    }
+
+    @Test
+    public void individualInfoAndStatisticsQuery() {
+        String caseId = "bf72ac24e9aa4929a58ab35d699ef50f";
+        String customerIdentityCard = "322125198702200000";
+        IndividualInfoAndStatisticsRequest individualInfoAndStatisticsRequest = IndividualInfoAndStatisticsRequest.builder().caseId(caseId).customerIdentityCard(customerIdentityCard).build();
+        ServerResponse<IndividualInfoAndStatisticsResponse> response = iIndividualPortraitStatistics.accessIndividualInfoAndStatistics(individualInfoAndStatisticsRequest);
+        log.info(JacksonUtils.toJson(response));
+    }
+
+    @Test
+    public void individualCardTransactionStatisticsQuery() {
+        String caseId = "bf72ac24e9aa4929a58ab35d699ef50f";
+        String customerIdentityCard = "322125198702200000";
+        String[] cards = {"60138216660030800",
+                "60138216660047600"};
+        List<String> queryCards = Arrays.asList(cards);
+        String keyword = "6013821666003";
+        DateRange dateRange = new DateRange("2019-12-09", "2020-12-09");
+        dateRange.setFormat("yyyy-MM-dd");
+        Pagination pagination = new Pagination(0, 3);
+        SortRequest sortRequest = new SortRequest("netTransactionMoney", Direction.DESC);
+        IndividualCardTransactionStatisticsRequest request = IndividualCardTransactionStatisticsRequest.builder()
+                .caseId(caseId)
+                .customerIdentityCard(customerIdentityCard)
+                .queryCards(queryCards)
+                .dateRange(dateRange)
+                .keyword(keyword)
+                .pagination(pagination)
+                .sortRequest(sortRequest)
+                .build();
+        ServerResponse<List<IndividualCardTransactionStatisticsResponse>> response = iIndividualPortraitStatistics.accessIndividualCardTransactionStatistics(request);
+        log.info(JacksonUtils.toJson(response));
     }
 
 }
