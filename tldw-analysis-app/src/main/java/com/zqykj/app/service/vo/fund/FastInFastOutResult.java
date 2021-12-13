@@ -6,6 +6,7 @@ package com.zqykj.app.service.vo.fund;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.math.BigDecimal;
 
@@ -71,4 +72,22 @@ public class FastInFastOutResult {
      * 特征比: (入账金额 - 出账金额) / 入账金额
      */
     private String characteristicRatio;
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.fundSourceCard);
+        sb.append(this.inflowDate);
+        sb.append(this.inflowAmount.toString());
+        sb.append(this.fundTransitCard);
+        sb.append(this.outflowDate);
+        sb.append(this.outflowAmount.toString());
+        sb.append(this.fundDepositCard);
+        return sb.toString();
+    }
+
+    public static String tagCode(String str) {
+
+        return DigestUtils.md5Hex(str);
+    }
 }

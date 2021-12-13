@@ -224,6 +224,6 @@ public interface FundTacticsAnalysisField {
 
         return new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.CUSTOMER_NAME,
                 FundTacticsAnalysisField.TRADING_TIME, FundTacticsAnalysisField.CHANGE_AMOUNT,
-                FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD};
+                FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, FundTacticsAnalysisField.TRANSACTION_OPPOSITE_NAME};
     }
 }

@@ -33,7 +33,15 @@ public class FastInFastOutRequest extends FundTacticsPartGeneralRequest {
     private int singleQuota;
 
     /**
-     * 时间间隔(分钟) >= 最小0 最大1000000000 int够用
+     * 时间间隔(分钟) >= 最小0 最大1000000000
      */
-    private int timeInterval;
+    private long timeInterval;
+
+    public static FastInFastOutRequest simple(String caseId, int singleQuota) {
+
+        FastInFastOutRequest fastInFastOutRequest = new FastInFastOutRequest();
+        fastInFastOutRequest.setCaseId(caseId);
+        fastInFastOutRequest.setSingleQuota(singleQuota);
+        return fastInFastOutRequest;
+    }
 }

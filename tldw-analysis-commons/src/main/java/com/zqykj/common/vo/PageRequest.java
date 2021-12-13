@@ -20,6 +20,8 @@ public class PageRequest {
     private Integer page = 1;
     private Integer pageSize = 25;
 
+    private SortRequest sortRequest;
+
     // 计算总页数
     public static int getTotalPages(int total, int pageSize) {
         return total == 0 ? 0 : (int) Math.ceil((double) total / (double) pageSize);
@@ -27,5 +29,20 @@ public class PageRequest {
 
     public static int getOffset(int page, int pageSize) {
         return page * pageSize;
+    }
+
+    public static PageRequest of(int page, int pageSize, SortRequest sortRequest) {
+        PageRequest pageRequest = new PageRequest();
+        pageRequest.setPage(page);
+        pageRequest.setPageSize(pageSize);
+        pageRequest.setSortRequest(sortRequest);
+        return pageRequest;
+    }
+
+    public static PageRequest of(int page, int pageSize) {
+        PageRequest pageRequest = new PageRequest();
+        pageRequest.setPage(page);
+        pageRequest.setPageSize(pageSize);
+        return pageRequest;
     }
 }

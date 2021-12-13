@@ -22,4 +22,7 @@ public class SortRequest {
 
     // 排序方向  ASC,DESC
     private Direction order = Direction.DESC;
+
+    // 排序类型
+    private String sortType;
 }

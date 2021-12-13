@@ -227,7 +227,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             }
         }
         // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
-        long computeTotal = total + total / 10;
+        long computeTotal = total + total / 100;
         // 设置分组数量
         request.setGroupInitSize(initGroupSize);
         // 异步任务查询起始位置

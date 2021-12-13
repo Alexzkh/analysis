@@ -6,9 +6,11 @@ package com.zqykj;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
+import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.common.enums.ConditionType;
@@ -17,6 +19,8 @@ import com.zqykj.common.request.*;
 import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
+import com.zqykj.common.vo.Direction;
+import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.archive.PeopleCardInfo;
@@ -40,6 +44,7 @@ import org.springframework.util.StopWatch;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 @SpringBootTest
 @Slf4j
@@ -62,6 +67,9 @@ public class OriginEsOperationTest {
 
     @Autowired
     AggregationRequestParamFactory aggregationRequestParamFactory;
+
+    @Autowired
+    IFastInFastOut iFastInFastOut;
 
 
     @Test
@@ -411,5 +419,20 @@ public class OriginEsOperationTest {
         long afterCount = entranceRepository.count("61e9e22a-a6b1-4838-8cea-df8995bc2d8g", BankTransactionFlow.class, condition);
 
         System.out.println("删除后总数量: " + afterCount);
+    }
+
+    @Test
+    public void fastInFastOutTest() throws ExecutionException, InterruptedException {
+
+        FastInFastOutRequest fastInFastOutRequest = new FastInFastOutRequest();
+        fastInFastOutRequest.setCaseId("b3048cdbc6094d0f83889f9665a440c6");
+        fastInFastOutRequest.setCardNum(Arrays.asList("60138216660037818", "520112198702200011", "520112198702200012"));
+        fastInFastOutRequest.setTimeInterval(1000000000);
+        fastInFastOutRequest.setSingleQuota(1);
+        fastInFastOutRequest.setCharacteristicRatio(100);
+        com.zqykj.common.vo.PageRequest pageRequest = new com.zqykj.common.vo.PageRequest(0, 25,
+                new SortRequest("", Direction.DESC, "outflowAmount"));
+        fastInFastOutRequest.setPageRequest(pageRequest);
+        iFastInFastOut.fastInFastOutAnalysis(fastInFastOutRequest);
     }
 }

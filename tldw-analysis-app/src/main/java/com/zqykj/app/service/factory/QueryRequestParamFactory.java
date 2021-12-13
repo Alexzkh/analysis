@@ -4,9 +4,14 @@
 package com.zqykj.app.service.factory;
 
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
+import com.zqykj.common.vo.PageRequest;
+import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.query.CombinationQueryParams;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.springframework.lang.Nullable;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -114,9 +119,16 @@ public interface QueryRequestParamFactory {
     QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota);
 
     /**
-     * <h2> 构建快进快出调单卡号查询 </h2>
+     * <h2> 查询出  入账/出账记录 (不在给定的这一组卡号之内的) - 快进快出 </h2>
      */
-    QuerySpecialParams buildFastInFastOutAdjustQuery(FastInFastOutRequest request);
+    QuerySpecialParams buildCreditAndPayoutRecordsNoSuchCards(FastInFastOutRequest request, int size,
+                                                              boolean isCredits, String... includeFields);
+
+    /**
+     * <h2> 构建 本方查询卡号、对方卡号之间的进账/出账记录 </h2>
+     */
+    QuerySpecialParams buildCreditAndPayOutViaLocalAndOpposite(String caseId, List<String> queryCards, List<String> oppositeCards,
+                                                               int singleQuota, boolean isCredits, @Nullable String... includeFields);
 
     /**
      * <h2> 快进快出(查询卡号为给定的调单卡号、对方卡号是去除掉这些调单卡号作为主要查询条件) </h2>
@@ -124,5 +136,39 @@ public interface QueryRequestParamFactory {
      * @param request  快进快出请求
      * @param loanFlag 借贷标志
      */
-    QuerySpecialParams oppositeCardDistinctFromFastInFastOut(FastInFastOutRequest request, String loanFlag);
+    QuerySpecialParams queryAsAdjustOppositeNoSuchAdjust(FastInFastOutRequest request, String loanFlag);
+
+    /**
+     * <h2> 获取快进快出 进账或者出账交易记录(通过一些组合查询条件) </h2>
+     * <p>
+     * 限定条件为本方查询卡号
+     *
+     * @param caseId         案件Id
+     * @param singleQuota    单笔限额
+     * @param queryCards     查询卡号
+     * @param isQueryCredits 查询的借贷标志是出还是进
+     * @param tradeDate      交易日期
+     * @param operator       日期查询的范围条件
+     * @param includeFields  查询返回包含的字段
+     */
+    QuerySpecialParams getFastInOutTradeRecordsByCondition(String caseId, int singleQuota, List<String> queryCards,
+                                                           boolean isQueryCredits, Date tradeDate, QueryOperator operator,
+                                                           String... includeFields);
+
+    /**
+     * <h2> 获取快进快出 进账或者出账交易记录(通过一些组合查询条件) </h2>
+     * <p>
+     * 限定条件为本方查询卡号 和 对方卡号
+     *
+     * @param caseId         案件Id
+     * @param singleQuota    单笔限额
+     * @param queryCards     查询卡号
+     * @param oppositeCards  对方卡号
+     * @param isQueryCredits 查询的借贷标志是出还是进
+     * @param tradeDate      交易日期
+     * @param operator       日期查询的范围条件
+     * @param includeFields  查询返回包含的字段
+     */
+    QuerySpecialParams getFastInOutTradeRecordsByLocalOpposite(String caseId, int singleQuota, List<String> queryCards, List<String> oppositeCards,
+                                                               boolean isQueryCredits, Date tradeDate, QueryOperator operator, String... includeFields);
 }

@@ -31,8 +31,8 @@ public class CreditAdjustCards {
     /**
      * 入账次数
      */
-    @Agg(name = "credits_cards")
-    @Key(name = "docCount")
+    @Agg(name = "credits_times")
+    @Key(name = "value")
     private int creditsTimes;
 
     /**

@@ -668,11 +668,14 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         AggregationParams root = AggregationParamsBuilders.filter("filter_credits", filter, null);
         AggregationParams cardTerms = AggregationParamsBuilders.terms("query_card_terms", FundTacticsAnalysisField.QUERY_CARD);
         root.setPerSubAggregation(cardTerms);
-
-        AggregationParams creditsAmountSum = AggregationParamsBuilders.sum("money_sum", FundTacticsAnalysisField.CHANGE_MONEY);
+        // 入账金额
+        AggregationParams creditsAmountSum = AggregationParamsBuilders.sum("credit_amount", FundTacticsAnalysisField.CHANGE_MONEY);
+        // 入账次数
+        AggregationParams creditsCount = AggregationParamsBuilders.count("credits_times", FundTacticsAnalysisField.QUERY_CARD, null);
         // 设置分组数量
         cardTerms.setSize(initGroupSize);
         cardTerms.setPerSubAggregation(creditsAmountSum);
+        cardTerms.setPerSubAggregation(creditsCount);
         // 设置分页
         PipelineAggregationParams sortAgg = AggregationParamsBuilders.sort("sort", from, size);
         cardTerms.setPerSubAggregation(sortAgg);
