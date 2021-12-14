@@ -86,7 +86,12 @@ public class FastInFastOutResult {
         return sb.toString();
     }
 
-    public static String tagCode(String str) {
+    public static String md5(String str) {
+
+        return DigestUtils.md5Hex(str);
+    }
+
+    public static String hash(String str) {
 
         return DigestUtils.md5Hex(str);
     }

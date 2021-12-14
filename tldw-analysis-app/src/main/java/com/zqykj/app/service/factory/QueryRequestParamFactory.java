@@ -153,7 +153,7 @@ public interface QueryRequestParamFactory {
      */
     QuerySpecialParams getFastInOutTradeRecordsByCondition(String caseId, int singleQuota, List<String> queryCards,
                                                            boolean isQueryCredits, Date tradeDate, QueryOperator operator,
-                                                           String... includeFields);
+                                                           @Nullable String... includeFields);
 
     /**
      * <h2> 获取快进快出 进账或者出账交易记录(通过一些组合查询条件) </h2>

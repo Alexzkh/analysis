@@ -12,6 +12,7 @@ import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.app.service.vo.fund.FastInFastOutResult;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
@@ -31,12 +32,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -74,21 +79,20 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 异步操作
         List<CompletableFuture<List<FastInFastOutResult>>> futures = new ArrayList<>();
         // 返回调单卡号为来源卡号情况的结果数据
-        // TODO 调单卡号为来源情况测试完毕(流入金额排序、流出金额排序)
-//        CompletableFuture<List<FastInFastOutResult>> asFundSourceCardFuture = CompletableFuture.supplyAsync(() ->
-//        {
-//            try {
-//                return processAdjustCardAsFundSourceCard(request, QUERY_SIZE, limit);
-//            } catch (ExecutionException | InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            return null;
-//        }, ThreadPoolConfig.getExecutor());
-//        futures.add(asFundSourceCardFuture);
+        CompletableFuture<List<FastInFastOutResult>> asFundSourceCardFuture = CompletableFuture.supplyAsync(() ->
+        {
+            try {
+                return processAdjustCardAsFundSourceCard(request, QUERY_SIZE, limit);
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }, ThreadPoolConfig.getExecutor());
+        futures.add(asFundSourceCardFuture);
         // 返回调单卡号为中转卡号情况的结果数据
-//        CompletableFuture<List<FastInFastOutResult>> asFundTransitFuture = CompletableFuture.supplyAsync(() ->
-//                processAdjustCardAsFundTransitCard(request, QUERY_SIZE, limit), ThreadPoolConfig.getExecutor());
-//        futures.add(asFundTransitFuture);
+        CompletableFuture<List<FastInFastOutResult>> asFundTransitFuture = CompletableFuture.supplyAsync(() ->
+                processAdjustCardAsFundTransitCard(request, QUERY_SIZE, limit), ThreadPoolConfig.getExecutor());
+        futures.add(asFundTransitFuture);
         // 返回调单卡号为沉淀卡号情况的结果数据
         CompletableFuture<List<FastInFastOutResult>> asFundDepositFuture = CompletableFuture.supplyAsync(() ->
         {
@@ -107,12 +111,45 @@ public class FastInFastOutImpl implements IFastInFastOut {
 
             fastInFastOutResults.addAll(future.get());
         }
-        // 对汇总后的数据进行去重,分页与排序
-//        List<FastInFastOutResult> results = fastInFastOutResults.stream().collect(
-//                Collectors.collectingAndThen(Collectors.toCollection(() ->
-//                        new TreeSet<>(Comparator.comparing(o -> FastInFastOutResult.tagCode(o.toString())))), ArrayList::new))
-//                .stream().skip(0).limit(limit).collect(Collectors.toList());
-        return ServerResponse.createBySuccess(fastInFastOutResults);
+        // 对汇总的数据去重
+        List<FastInFastOutResult> results = fastInFastOutResults.stream().collect(
+                Collectors.collectingAndThen(Collectors.toCollection(() ->
+                        new TreeSet<>(Comparator.comparing(o -> FastInFastOutResult.hash(o.toString())))), ArrayList::new));
+//        if (results.size() < limit) {
+        // TODO 需要继续下钻,知道补充到 limit的数量为止
+//        }
+        // 然后排序
+        Direction order = request.getSortRequest().getOrder();
+        Comparator<BigDecimal> bigDecimalComparator = Comparator.reverseOrder();
+        Comparator<Long> dateComparator = Comparator.reverseOrder();
+        if (order.isAscending()) {
+            bigDecimalComparator = Comparator.naturalOrder();
+            dateComparator = Comparator.naturalOrder();
+        }
+        // 最终排序后的返回结果
+        List<FastInFastOutResult> orderResults;
+        if (request.getSortRequest().getSortType().equals("inflowAmount")) {
+            // 流入金额排序
+            orderResults = results.stream().sorted(Comparator.comparing(FastInFastOutResult::getInflowAmount, bigDecimalComparator)).collect(Collectors.toList());
+        } else if (request.getSortRequest().getSortType().equals("outflowAmount")) {
+            // 流出金额排序
+            orderResults = results.stream().sorted(Comparator.comparing(FastInFastOutResult::getOutflowAmount, bigDecimalComparator)).collect(Collectors.toList());
+        } else {
+            // 流出日期排序
+            orderResults = results.stream().sorted(Comparator.comparing(e -> {
+                try {
+                    return format.parse(e.getOutflowDate()).getTime();
+                } catch (ParseException ex) {
+                    return 0L;
+                }
+            }, dateComparator)).collect(Collectors.toList());
+        }
+        return ServerResponse.createBySuccess(orderResults);
+    }
+
+    private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
     }
 
     /**
@@ -127,15 +164,8 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 按照排序需要将分页的足够数据筛选出来
         // 需要筛选出2部分数据, 调单卡号出账数据(这部分作为来源-中转)、 调单卡后出账数据的出账数据(这部分作为中转-沉淀)
         List<FastInFastOutResult> results = new ArrayList<>();
-        // 过滤调单卡号的情况(查询卡号是调单、对方卡号也是调单卡号的情况,借贷标志为出)
-        List<String> oppositeCards = getLocalAndOppositeAsAdjust(request, false);
-        // 计算 调单卡号(作为查询卡号)、对方卡号(不在这些调单卡号之内的),借贷标志为出的交易记录,然后对对方卡号去重(获取去重后的总数量)
-        long distinct = getDistinctLocalAsAdjustAndOppositeNoSuchAdjust(request, FundTacticsAnalysisField.LOAN_FLAG_OUT);
-        if (CollectionUtils.isEmpty(oppositeCards) && distinct == 0L) {
-            return results;
-        }
         // 若大于10000 (暂定),则使用方案一,否则使用方案二
-        batchProcessSource(request, oppositeCards, querySize, limit, distinct, results);
+        batchProcessSource(request, querySize, limit, results);
         // 外部需要一个总数量来限制while循环
 //        while (results.size() < limit) {
 //            // TODO
@@ -156,12 +186,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
 
         // 按照排序需要将分页的足够数据筛选出来
         List<FastInFastOutResult> results = new ArrayList<>();
-        // 过滤调单卡号的情况(查询卡号是调单、对方卡号也是调单卡号的情况,借贷标志为进)
-        List<String> oppositeCards = getLocalAndOppositeAsAdjust(request, true);
-        // 计算 调单卡号(作为查询卡号)、对方卡号(不在这些调单卡号之内的),借贷标志为进的交易记录,然后对对方卡号去重(获取去重后的总数量)
-        long distinct = getDistinctLocalAsAdjustAndOppositeNoSuchAdjust(request, FundTacticsAnalysisField.LOAN_FLAG_IN);
-        // 若大于10000 (暂定),则使用方案一,否则使用方案二
-        batchProcessDeposit(request, oppositeCards, querySize, limit, distinct, results);
+        batchProcessDeposit(request, querySize, limit, results);
 //        while (results.size() < limit) {
 //
 //            // TODO
@@ -194,8 +219,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
     /**
      * <h2> 批量处理沉淀数据(调单卡号为沉淀的情况) </h2>
      */
-    private void batchProcessDeposit(FastInFastOutRequest request, List<String> oppositeCards, int querySize, int limit, long distinct,
-                                     List<FastInFastOutResult> results) throws ExecutionException, InterruptedException {
+    private void batchProcessDeposit(FastInFastOutRequest request, int querySize, int limit, List<FastInFastOutResult> results) throws ExecutionException, InterruptedException {
 
         int singleQuota = request.getSingleQuota();
         // 排序请求
@@ -208,14 +232,8 @@ public class FastInFastOutImpl implements IFastInFastOut {
         int from = 0;
         com.zqykj.domain.PageRequest pageRequest =
                 com.zqykj.domain.PageRequest.of(from, querySize, Sort.Direction.valueOf(sortRequest.getOrder().name()), sortProperty);
-        List<BankTransactionRecord> bankTransactionRecords;
-        if (distinct > OPPOSITE_CARD_COUNT) {
-            // 第一种方案
-            bankTransactionRecords = getOrderRecordsViaDeposit(request, pageRequest, oppositeCards, querySize);
-        } else {
-            // 第二种方案
-            bankTransactionRecords = getOrderRecordsViaDepositSecondOption(request, pageRequest, oppositeCards, Integer.parseInt(String.valueOf(distinct)), querySize);
-        }
+        List<BankTransactionRecord> bankTransactionRecords = getOrderRecordsViaDeposit(request, pageRequest, querySize);
+        // TODO 可以继续优化(查看 bankTransactionRecords 的对方卡号是否有进账的,查询卡号是否有出账的, 先过滤掉一部分)
         if (CollectionUtils.isEmpty(bankTransactionRecords)) {
             return;
         }
@@ -226,14 +244,17 @@ public class FastInFastOutImpl implements IFastInFastOut {
                 second = getFastInOutTradeRecords(request.getCaseId(), singleQuota, Collections.singletonList(first.getTransactionOppositeCard()), true,
                         first.getTradingTime(), QueryOperator.lte, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
             } else {
-                second = getFastInOutTradeRecordsViaLocalOpposite(request.getCaseId(), singleQuota, Collections.singletonList(first.getQueryCard()), request.getCardNum(),
+                second = getFastInOutTradeRecordsViaLocalOpposite(request.getCaseId(), singleQuota, request.getCardNum(), Collections.singletonList(first.getQueryCard()),
                         true, first.getTradingTime(), QueryOperator.gte, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
             }
             if (CollectionUtils.isEmpty(second)) {
                 continue;
             }
             // 获取快进快出结果(处理调单卡号作为来源的情况)
-            computeResultFromTransitAndDeposit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, second, results, limit);
+            computeResultFromDeposit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, second, results, limit);
+            if (second.size() < querySize) {
+                continue;
+            }
             // 若limit 不够,继续下钻 second 记录(调整分页参数)
             while (results.size() < limit) {
 
@@ -244,13 +265,16 @@ public class FastInFastOutImpl implements IFastInFastOut {
                             first.getTradingTime(), QueryOperator.lte, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
                 } else {
                     secondNew = getFastInOutTradeRecordsViaLocalOpposite(request.getCaseId(), singleQuota, request.getCardNum(),
-                            Collections.singletonList(first.getQueryCard()), true, first.getTradingTime(), QueryOperator.gte, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
+                            Collections.singletonList(first.getQueryCard()), false, first.getTradingTime(), QueryOperator.gte, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
                 }
                 if (CollectionUtils.isEmpty(secondNew)) {
                     // 结束while,进行下一轮的 batchProcessSource()
                     break;
                 }
-                computeResultFromTransitAndDeposit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, secondNew, results, limit);
+                computeResultFromDeposit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, secondNew, results, limit);
+                if (secondNew.size() < querySize) {
+                    break;
+                }
             }
         }
     }
@@ -262,8 +286,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
      * 处理的是 调单卡号 ----(出) ----(出)
      * 调单卡号作为来源首先过滤出出账的数据(借贷标志为出), 以这批数据的对方卡号(可能是调单或者非调单) 继续过滤出账记录(借贷标志为出)
      */
-    private void batchProcessSource(FastInFastOutRequest request, List<String> oppositeCards, int querySize, int limit, long distinct,
-                                    List<FastInFastOutResult> results) throws ExecutionException, InterruptedException {
+    private void batchProcessSource(FastInFastOutRequest request, int querySize, int limit, List<FastInFastOutResult> results) throws ExecutionException, InterruptedException {
 
         String caseId = request.getCaseId();
         int singleQuota = request.getSingleQuota();
@@ -277,14 +300,8 @@ public class FastInFastOutImpl implements IFastInFastOut {
         int from = 0;
         com.zqykj.domain.PageRequest pageRequest =
                 com.zqykj.domain.PageRequest.of(from, querySize, Sort.Direction.valueOf(sortRequest.getOrder().name()), sortProperty);
-        List<BankTransactionRecord> bankTransactionRecords;
-        if (distinct > OPPOSITE_CARD_COUNT) {
-            // 第一种方案
-            bankTransactionRecords = getOrderRecordsViaSource(request, oppositeCards, querySize, pageRequest);
-        } else {
-            // 第二种方案
-            bankTransactionRecords = getOrderRecordsViaSourceSecondOption(request, pageRequest, oppositeCards, Integer.parseInt(String.valueOf(distinct)), querySize);
-        }
+        List<BankTransactionRecord> bankTransactionRecords = getOrderRecordsViaSource(request, querySize, pageRequest);
+        // TODO 可以继续优化(查看 bankTransactionRecords 的查询卡号和对方卡号哪些有出账的,先过滤掉一部分)
         if (CollectionUtils.isEmpty(bankTransactionRecords)) {
             return;
         }
@@ -303,6 +320,9 @@ public class FastInFastOutImpl implements IFastInFastOut {
             }
             // 获取快进快出结果(处理调单卡号作为来源的情况)i
             computeResultFromSource(sortProperty, request.getCharacteristicRatio(), request.getTimeInterval(), first, second, results, limit);
+            if (second.size() < querySize) {
+                continue;
+            }
             // 若limit 不够,继续下钻 second 记录(调整分页参数)
             int fromNew = 0;
             while (results.size() < limit) {
@@ -324,6 +344,9 @@ public class FastInFastOutImpl implements IFastInFastOut {
                     break;
                 }
                 computeResultFromSource(sortProperty, request.getCharacteristicRatio(), request.getTimeInterval(), first, secondNew, results, limit);
+                if (secondNew.size() < querySize) {
+                    break;
+                }
             }
         }
     }
@@ -341,14 +364,15 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 计算单卡 查询的入账 还是 出账的数据(排序的进出 和 单卡查询的进出相反)
         // eg. 调单卡为中转卡情况下, 若按流入金额排序(查询的是这些调单进账的数据,假设拿到一个最高的一条,需要与沉淀数据匹配,必然查询的是这个调单的出账数据)
         String sortProperty = FundTacticsAnalysisField.CHANGE_MONEY;
-        // 流入金额排序
-        boolean isCredits = true;
-        QueryOperator operator = QueryOperator.gte;
+        // 流出金额、流出日期排序
+        boolean isCredits = false;
+        QueryOperator operator = QueryOperator.lte;
         if (sortRequest.getSortType().equals("outflowTime")) {
             sortProperty = FundTacticsAnalysisField.TRADING_TIME;
-            // 流出金额、流出日期时间排序
-            isCredits = false;
-            operator = QueryOperator.lte;
+        } else if (sortRequest.getSortType().equals("inflowAmount")) {
+            // 流入金额排序
+            isCredits = true;
+            operator = QueryOperator.gte;
         }
         // 查询的起始位置
         int from = 0;
@@ -359,8 +383,26 @@ public class FastInFastOutImpl implements IFastInFastOut {
         if (CollectionUtils.isEmpty(bankTransactionRecords)) {
             return;
         }
+        // 看看这些调单卡号中哪些有出账的(这些调单查询卡号是根据排序得来的)
+        List<String> queryCards = bankTransactionRecords.stream().map(e -> e.getQueryCard()).distinct().collect(Collectors.toList());
+        QuerySpecialParams querySpecialParams = queryRequestParamFactory.getFastInOutTradeRecordsByCondition(caseId, singleQuota, queryCards, !isCredits, null, null);
+        AggregationParams aggregationParams = aggregationRequestParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, queryCards.size(), new Pagination(0, queryCards.size()));
+        aggregationParams.setMapping(aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
+        aggregationParams.setResultName("queryCardGroupBy");
+        Map<String, List<List<Object>>> resultMaps = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionRecord.class, caseId);
+        if (CollectionUtils.isEmpty(resultMaps)) {
+            return;
+        }
+        List<List<Object>> result = resultMaps.get(aggregationParams.getResultName());
+        if (CollectionUtils.isEmpty(result)) {
+            return;
+        }
+        Map<String, String> queryCardMaps = result.stream().map(e -> e.get(0).toString()).collect(Collectors.toMap(e -> e.toString(), e -> e.toString(), (v1, v2) -> v1));
+        // 筛选出符合的查询卡号
+        List<BankTransactionRecord> bankTransactionRecordsNew = bankTransactionRecords.stream().filter(e -> queryCardMaps.containsKey(e.getQueryCard()))
+                .collect(Collectors.toList());
         // 依次计算每一条记录
-        for (BankTransactionRecord first : bankTransactionRecords) {
+        for (BankTransactionRecord first : bankTransactionRecordsNew) {
             // 根据排序查询入账和出账的数据
             List<BankTransactionRecord> second = getFastInOutTradeRecords(caseId, singleQuota, Collections.singletonList(first.getQueryCard()),
                     !isCredits, first.getTradingTime(), operator, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
@@ -368,7 +410,10 @@ public class FastInFastOutImpl implements IFastInFastOut {
                 continue;
             }
             // 处理多个来源/多个沉淀情况
-            computeResultFromTransitAndDeposit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, second, results, limit);
+            computeResultFromTransit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, second, results, limit);
+            if (second.size() < querySize) {
+                continue;
+            }
             //  当limit 不够, 继续下钻 second 数据
             int fromNew = 0;
             while (results.size() < limit) {
@@ -381,107 +426,11 @@ public class FastInFastOutImpl implements IFastInFastOut {
                     // 结束while,进行下一轮的 batchProcessTransit()
                     break;
                 }
-                computeResultFromTransitAndDeposit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, second, results, limit);
-            }
-        }
-    }
-
-    /**
-     * <h2> 返回的数据是根据排序来的(调单卡号作为来源卡号的情况) </h2>
-     * <p>
-     * 方案二
-     */
-    private List<BankTransactionRecord> getOrderRecordsViaSourceSecondOption(FastInFastOutRequest request, com.zqykj.domain.PageRequest pageRequest, List<String> oppositeAdjustCards,
-                                                                             int total, int querySize) throws ExecutionException, InterruptedException {
-
-        List<String> cardNum = request.getCardNum();
-        String caseId = request.getCaseId();
-        int singleQuota = request.getSingleQuota();
-        if (request.getSortRequest().getSortType().equals("inflowAmount")) {
-            // 按流入金额排序(默认)
-            return getTradeRecordsViaCards(caseId, singleQuota, cardNum, false, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
-        } else {
-            // total 要适当加一些(因为es的去重数量算的是近似值,所以可能会比实际的值少)
-            if (total == 0) {
-                return null;
-            }
-            total = total + total / 100;
-            // 异步任务执行
-            List<BankTransactionRecord> finalTransactionRecords = new ArrayList<>();
-            List<CompletableFuture<List<BankTransactionRecord>>> futures = new ArrayList<>();
-            int position = 0;
-            // TODO 暂定
-            int chunkSize = 1000;
-            while (position < total) {
-                int next = Math.min(position + chunkSize, total);
-                int finalPosition = position;
-                CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() -> getQueryAsAdjustOppositeNoSuchAdjust(request, finalPosition, next,
-                        FundTacticsAnalysisField.LOAN_FLAG_OUT, false, pageRequest), ThreadPoolConfig.getExecutor());
-                futures.add(future);
-                position = next;
-            }
-            for (CompletableFuture<List<BankTransactionRecord>> future : futures) {
-                List<BankTransactionRecord> bankTransactionRecords = future.get();
-                if (!CollectionUtils.isEmpty(bankTransactionRecords)) {
-                    finalTransactionRecords.addAll(bankTransactionRecords);
+                computeResultFromTransit(sortRequest.getSortType(), request.getCharacteristicRatio(), request.getTimeInterval(), first, second, results, limit);
+                if (secondNew.size() < querySize) {
+                    break;
                 }
             }
-            // 再次对 finalTransactionRecords 排序,取前 querySize
-            List<BankTransactionRecord> unadjustedRecords = finalTransactionRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder()))
-                    .skip(0).limit(querySize).collect(Collectors.toList());
-            // 调单卡号出账记录的排序
-            List<BankTransactionRecord> adjustPayoutRecords = getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, false, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
-            // 合并继续排序
-            unadjustedRecords.addAll(adjustPayoutRecords);
-            return unadjustedRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder())).
-                    skip(0).limit(querySize).collect(Collectors.toList());
-        }
-    }
-
-    /**
-     * <h2> 返回的数据是根据排序来的(调单卡号作为卡号的情况) </h2>
-     * <p>
-     * 方案二
-     */
-    private List<BankTransactionRecord> getOrderRecordsViaDepositSecondOption(FastInFastOutRequest request, com.zqykj.domain.PageRequest pageRequest, List<String> oppositeAdjustCards,
-                                                                              int total, int querySize) throws ExecutionException, InterruptedException {
-        List<String> cardNum = request.getCardNum();
-        String caseId = request.getCaseId();
-        int singleQuota = request.getSingleQuota();
-        if (!request.getSortRequest().getSortType().equals("inflowAmount")) {
-            // 流出金额、流出时间日期 排序(借贷标志为进)
-            return getTradeRecordsViaCards(caseId, singleQuota, cardNum, true, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
-        } else {
-            // total 要适当加一些(因为es的去重数量算的是近似值,所以可能会比实际的值少)
-            if (total == 0) {
-                return null;
-            }
-            total = total + total / 100;
-            // 异步任务执行
-            List<BankTransactionRecord> finalTransactionRecords = new ArrayList<>();
-            List<CompletableFuture<List<BankTransactionRecord>>> futures = new ArrayList<>();
-            int position = 0;
-            int chunkSize = 1000;
-            while (position < total) {
-                int next = Math.min(position + chunkSize, total);
-                int finalPosition = position;
-                CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() ->
-                        getQueryAsAdjustOppositeNoSuchAdjust(request, finalPosition, next, FundTacticsAnalysisField.LOAN_FLAG_IN, true, pageRequest), ThreadPoolConfig.getExecutor());
-                futures.add(future);
-                position = next;
-            }
-            for (CompletableFuture<List<BankTransactionRecord>> future : futures) {
-                finalTransactionRecords.addAll(future.get());
-            }
-            // 再次对 finalTransactionRecords 排序,取前 querySize
-            List<BankTransactionRecord> unadjustedRecords = finalTransactionRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder()))
-                    .skip(0).limit(querySize).collect(Collectors.toList());
-            // 调单卡号进账记录的排序
-            List<BankTransactionRecord> adjustPayoutRecords = getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, true, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
-            // 合并继续排序
-            unadjustedRecords.addAll(adjustPayoutRecords);
-            return unadjustedRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder())).
-                    skip(0).limit(querySize).collect(Collectors.toList());
         }
     }
 
@@ -522,80 +471,233 @@ public class FastInFastOutImpl implements IFastInFastOut {
     /**
      * <h2> 返回的数据是根据排序来的(调单卡号作为来源卡号的情况) </h2>
      */
-    private List<BankTransactionRecord> getOrderRecordsViaSource(FastInFastOutRequest request, List<String> oppositeAdjustCards, int querySize,
-                                                                 com.zqykj.domain.PageRequest pageRequest) {
+    private List<BankTransactionRecord> getOrderRecordsViaSource(FastInFastOutRequest request, int querySize,
+                                                                 com.zqykj.domain.PageRequest pageRequest) throws ExecutionException, InterruptedException {
 
+        List<String> cardNum = request.getCardNum();
+        String sortType = request.getSortRequest().getSortType();
         String caseId = request.getCaseId();
         int singleQuota = request.getSingleQuota();
-        List<String> cardNum = request.getCardNum();
-        SortRequest sortRequest = request.getSortRequest();
         String[] fields = FundTacticsAnalysisField.fastInFastOutFields();
-        if (request.getSortRequest().getSortType().equals("inflowAmount")) {
+        if (sortType.equals("inflowAmount")) {
             // 按流入金额排序
-            return getTradeRecordsViaCards(caseId, singleQuota, cardNum, true, pageRequest, fields);
+            return getTradeRecordsViaCards(caseId, singleQuota, cardNum, false, pageRequest, fields);
         } else {
-
-            // 调单卡号(原调单卡号出账的对方卡号) 出账记录的排序
-            List<BankTransactionRecord> adjustPayoutRecords =
-                    getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, false, pageRequest, fields);
-            // 非调单(原调单卡号出账的对方卡号)  出账记录的排序
-            List<BankTransactionRecord> unadjustedRecords = getOrderRecordsUnadjusted(request, false, querySize);
-            // 合并排序
-            unadjustedRecords.addAll(adjustPayoutRecords);
-            // TODO 将 unadjustedRecords 分散开来,多线程异步去查
-            // 检查这些卡号是否是调单卡号出账记录的对方卡号
-            List<String> oppositeCards = unadjustedRecords.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
-            Map<String, String> filterOppositeCards = getCreditAndPayOutViaLocalAndOpposite(caseId, singleQuota, cardNum, oppositeCards, querySize, false, sortRequest,
-                    FundTacticsAnalysisField.fastInFastOutFields()).stream().collect(Collectors.toMap(BankTransactionRecord::getTransactionOppositeCard,
-                    BankTransactionRecord::getTransactionOppositeCard, (v1, v2) -> v1));
-            // 过滤对方卡号集合
-            if (!CollectionUtils.isEmpty(filterOppositeCards)) {
-
-                return unadjustedRecords.stream().filter(e -> oppositeCards.contains(e.getQueryCard())).collect(Collectors.toList());
-            } else {
+            // 分为2种情况处理
+            // 过滤调单卡号的情况(查询卡号是调单、对方卡号也是调单卡号的情况,借贷标志为出)
+            List<String> oppositeCards = getLocalAndOppositeAsAdjust(request, false);
+            // 计算 调单卡号(作为查询卡号)、对方卡号(不在这些调单卡号之内的),借贷标志为出的交易记录,然后对对方卡号去重(获取去重后的总数量)
+            long distinct = getDistinctLocalAsAdjustAndOppositeNoSuchAdjust(request, FundTacticsAnalysisField.LOAN_FLAG_OUT);
+            if (CollectionUtils.isEmpty(oppositeCards) && distinct == 0L) {
                 return null;
             }
+            // 若 oppositeCards size 大于10000 (暂定),则使用方案一,否则使用方案二
+            if (distinct > OPPOSITE_CARD_COUNT) {
+
+                return getOutFlowOrderResultFromSourceOne(request, oppositeCards, querySize, pageRequest, fields);
+            } else {
+                return getOutFlowOrderResultFromSourceTwo(request, pageRequest, oppositeCards, Integer.parseInt(String.valueOf(distinct)), querySize);
+            }
         }
+    }
+
+
+    /**
+     * <h2> 返回以流出金额、流出日期排序的结果(调单卡号作为来源的情况) </h2>
+     * <p>
+     * 方案一
+     */
+    private List<BankTransactionRecord> getOutFlowOrderResultFromSourceOne(FastInFastOutRequest request, List<String> oppositeAdjustCards,
+                                                                           int querySize, com.zqykj.domain.PageRequest pageRequest,
+                                                                           String... fields) {
+        String caseId = request.getCaseId();
+        int singleQuota = request.getSingleQuota();
+        // 调单卡号(原调单卡号出账的对方卡号) 出账记录的排序
+        List<BankTransactionRecord> adjustPayoutRecords =
+                getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, false, pageRequest, fields);
+        // 非调单(原调单卡号出账的对方卡号)  出账记录的排序
+        List<BankTransactionRecord> unadjustedRecords = getOrderRecordsUnadjusted(request, false, querySize);
+        // 合并排序
+        unadjustedRecords.addAll(adjustPayoutRecords);
+        // TODO 将 unadjustedRecords 分散开来,多线程异步去查
+        // 检查这些卡号是否是调单卡号出账记录的对方卡号
+        List<String> oppositeCards = unadjustedRecords.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
+        Map<String, String> filterOppositeCards = getCreditAndPayOutViaLocalAndOpposite(caseId, singleQuota, request.getCardNum(),
+                oppositeCards, querySize, false, request.getSortRequest(), FundTacticsAnalysisField.fastInFastOutFields())
+                .stream().collect(Collectors.toMap(BankTransactionRecord::getTransactionOppositeCard, BankTransactionRecord::getTransactionOppositeCard, (v1, v2) -> v1));
+        // 过滤对方卡号集合
+        if (!CollectionUtils.isEmpty(filterOppositeCards)) {
+            return unadjustedRecords.stream().filter(e -> oppositeCards.contains(e.getQueryCard())).collect(Collectors.toList());
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * <h2> 返回以流出金额、流出日期排序的结果(调单卡号作为来源的情况) </h2>
+     * <p>
+     * 方案二
+     */
+    @SuppressWarnings("all")
+    private List<BankTransactionRecord> getOutFlowOrderResultFromSourceTwo(FastInFastOutRequest request, com.zqykj.domain.PageRequest pageRequest,
+                                                                           List<String> oppositeAdjustCards, int total, int querySize) throws ExecutionException, InterruptedException {
+        String caseId = request.getCaseId();
+        int singleQuota = request.getSingleQuota();
+        // total 要适当加一些(因为es的去重数量算的是近似值,所以可能会比实际的值少)
+        if (total == 0) {
+            return null;
+        }
+        total = total + total / 100;
+        // 异步任务执行
+        List<BankTransactionRecord> finalTransactionRecords = new ArrayList<>();
+        List<CompletableFuture<List<BankTransactionRecord>>> futures = new ArrayList<>();
+        int position = 0;
+        // TODO 暂定
+        int chunkSize = 1000;
+        while (position < total) {
+            int next = Math.min(position + chunkSize, total);
+            int finalPosition = position;
+            CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() -> getQueryAsAdjustOppositeNoSuchAdjust(request, finalPosition, next,
+                    FundTacticsAnalysisField.LOAN_FLAG_OUT, false, pageRequest), ThreadPoolConfig.getExecutor());
+            futures.add(future);
+            position = next;
+        }
+        for (CompletableFuture<List<BankTransactionRecord>> future : futures) {
+            List<BankTransactionRecord> bankTransactionRecords = future.get();
+            if (!CollectionUtils.isEmpty(bankTransactionRecords)) {
+                finalTransactionRecords.addAll(bankTransactionRecords);
+            }
+        }
+        // 再次对 finalTransactionRecords 排序,取前 querySize
+        List<BankTransactionRecord> unadjustedRecords = finalTransactionRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder()))
+                .skip(0).limit(querySize).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(finalTransactionRecords) && CollectionUtils.isEmpty(oppositeAdjustCards)) {
+            return null;
+        }
+        if (!CollectionUtils.isEmpty(oppositeAdjustCards)) {
+            // 调单卡号出账记录的排序
+            List<BankTransactionRecord> adjustPayoutRecords = getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, false, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
+            // 合并继续排序
+            unadjustedRecords.addAll(adjustPayoutRecords);
+        }
+        return unadjustedRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder())).
+                skip(0).limit(querySize).collect(Collectors.toList());
     }
 
     /**
      * <h2> 根据排序获取沉淀数据(调单卡号作为沉淀情况) </h2>
      */
-    private List<BankTransactionRecord> getOrderRecordsViaDeposit(FastInFastOutRequest request, com.zqykj.domain.PageRequest pageRequest, List<String> oppositeAdjustCards, int querySize) {
+    private List<BankTransactionRecord> getOrderRecordsViaDeposit(FastInFastOutRequest request, com.zqykj.domain.PageRequest pageRequest, int querySize) throws ExecutionException, InterruptedException {
 
         String caseId = request.getCaseId();
         int singleQuota = request.getSingleQuota();
-        SortRequest sortRequest = request.getSortRequest();
         List<String> cardNum = request.getCardNum();
         String[] fields = FundTacticsAnalysisField.fastInFastOutFields();
         if (!request.getSortRequest().getSortType().equals("inflowAmount")) {
             // 按流出金额、流出日期排序(调单卡号作为查询卡号,找出进的)
             return getTradeRecordsViaCards(caseId, singleQuota, cardNum, true, pageRequest, fields);
         } else {
-            // 按流入金额排序计算
+            // 过滤调单卡号的情况(查询卡号是调单、对方卡号也是调单卡号的情况,借贷标志为进)
+            List<String> oppositeCards = getLocalAndOppositeAsAdjust(request, true);
+            // 计算 调单卡号(作为查询卡号)、对方卡号(不在这些调单卡号之内的),借贷标志为进的交易记录,然后对对方卡号去重(获取去重后的总数量)
+            long distinct = getDistinctLocalAsAdjustAndOppositeNoSuchAdjust(request, FundTacticsAnalysisField.LOAN_FLAG_IN);
+            // 若 oppositeCards size 大于10000 (暂定),则使用方案一,否则使用方案二
+            if (distinct > OPPOSITE_CARD_COUNT) {
 
-            // 调单卡号(原调单卡号进账的对方卡号) 进账记录的排序
-            List<BankTransactionRecord> adjustPayoutRecords = getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, false, pageRequest, fields);
-            // 未调单卡号(原调单卡号进账的对方卡号) 进账记录的排序
-            List<BankTransactionRecord> unadjustedRecords = getOrderRecordsUnadjusted(request, true, querySize);
-            // 合并排序
-            unadjustedRecords.addAll(adjustPayoutRecords);
-            // TODO 将 unadjustedRecords 分散开来,多线程异步去查
-            // 检查这些卡号是否调单卡号进账记录的对方卡号
-            List<String> oppositeCards = unadjustedRecords.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
-            Map<String, String> filterOppositeCards = getCreditAndPayOutViaLocalAndOpposite(caseId, singleQuota, cardNum, oppositeCards, querySize, true, sortRequest,
-                    FundTacticsAnalysisField.fastInFastOutFields()).stream().collect(Collectors.toMap(BankTransactionRecord::getTransactionOppositeCard,
-                    BankTransactionRecord::getTransactionOppositeCard, (v1, v2) -> v1));
-            // 过滤对方卡号集合
-            if (!CollectionUtils.isEmpty(filterOppositeCards)) {
-
-                return unadjustedRecords.stream().filter(e -> oppositeCards.contains(e.getQueryCard())).collect(Collectors.toList());
+                return getInFlowOrderResultFromDepositOne(request, oppositeCards, pageRequest, querySize, fields);
             } else {
-                // 结束,进行下一次的批量查询batchProcessDeposit
-                return null;
+
+                return getInFlowOrderResultFromDepositTwo(request, pageRequest, oppositeCards, Integer.parseInt(String.valueOf(distinct)), querySize);
             }
         }
 
+    }
+
+
+    /**
+     * <h2> 获取流入金额排序的结果(调单卡号作为沉淀的情况)  </h2>
+     * <p>
+     * 方案一
+     */
+    private List<BankTransactionRecord> getInFlowOrderResultFromDepositOne(FastInFastOutRequest request, List<String> oppositeAdjustCards,
+                                                                           com.zqykj.domain.PageRequest pageRequest, int querySize, String... fields) {
+
+        String caseId = request.getCaseId();
+        int singleQuota = request.getSingleQuota();
+        SortRequest sortRequest = request.getSortRequest();
+        // 调单卡号(原调单卡号进账的对方卡号) 进账记录的排序
+        List<BankTransactionRecord> adjustPayoutRecords = getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, false, pageRequest, fields);
+        // 未调单卡号(原调单卡号进账的对方卡号) 进账记录的排序
+        List<BankTransactionRecord> unadjustedRecords = getOrderRecordsUnadjusted(request, true, querySize);
+        // 合并排序
+        unadjustedRecords.addAll(adjustPayoutRecords);
+        // TODO 将 unadjustedRecords 分散开来,多线程异步去查
+        // 检查这些卡号是否调单卡号进账记录的对方卡号
+        List<String> oppositeCards = unadjustedRecords.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
+        Map<String, String> filterOppositeCards = getCreditAndPayOutViaLocalAndOpposite(caseId, singleQuota, request.getCardNum(), oppositeCards, querySize, true, sortRequest,
+                FundTacticsAnalysisField.fastInFastOutFields()).stream().collect(Collectors.toMap(BankTransactionRecord::getTransactionOppositeCard,
+                BankTransactionRecord::getTransactionOppositeCard, (v1, v2) -> v1));
+        // 过滤对方卡号集合
+        if (!CollectionUtils.isEmpty(filterOppositeCards)) {
+
+            return unadjustedRecords.stream().filter(e -> oppositeCards.contains(e.getQueryCard())).collect(Collectors.toList());
+        } else {
+            // 结束,进行下一次的批量查询batchProcessDeposit
+            return null;
+        }
+    }
+
+    /**
+     * <h2> 获取流入金额排序的结果(调单卡号作为沉淀的情况)  </h2>
+     * <p>
+     * 方案二
+     */
+    @SuppressWarnings("all")
+    private List<BankTransactionRecord> getInFlowOrderResultFromDepositTwo(FastInFastOutRequest request, com.zqykj.domain.PageRequest pageRequest,
+                                                                           List<String> oppositeAdjustCards, int total, int querySize) throws ExecutionException, InterruptedException {
+        List<String> cardNum = request.getCardNum();
+        String caseId = request.getCaseId();
+        int singleQuota = request.getSingleQuota();
+        if (!request.getSortRequest().getSortType().equals("inflowAmount")) {
+            // 流出金额、流出时间日期 排序(借贷标志为进)
+            return getTradeRecordsViaCards(caseId, singleQuota, cardNum, true, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
+        } else {
+            // total 要适当加一些(因为es的去重数量算的是近似值,所以可能会比实际的值少)
+            if (total == 0) {
+                return null;
+            }
+            total = total + total / 100;
+            // 异步任务执行
+            List<BankTransactionRecord> finalTransactionRecords = new ArrayList<>();
+            List<CompletableFuture<List<BankTransactionRecord>>> futures = new ArrayList<>();
+            int position = 0;
+            int chunkSize = 1000;
+            while (position < total) {
+                int next = Math.min(position + chunkSize, total);
+                int finalPosition = position;
+                CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() ->
+                        getQueryAsAdjustOppositeNoSuchAdjust(request, finalPosition, next, FundTacticsAnalysisField.LOAN_FLAG_IN, true, pageRequest), ThreadPoolConfig.getExecutor());
+                futures.add(future);
+                position = next;
+            }
+            for (CompletableFuture<List<BankTransactionRecord>> future : futures) {
+                finalTransactionRecords.addAll(future.get());
+            }
+            // 再次对 finalTransactionRecords 排序,取前 querySize
+            List<BankTransactionRecord> unadjustedRecords = finalTransactionRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder()))
+                    .skip(0).limit(querySize).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(finalTransactionRecords) && CollectionUtils.isEmpty(oppositeAdjustCards)) {
+                return null;
+            }
+            // 调单卡号进账记录的排序
+            if (!CollectionUtils.isEmpty(oppositeAdjustCards)) {
+                List<BankTransactionRecord> adjustPayoutRecords = getTradeRecordsViaCards(caseId, singleQuota, oppositeAdjustCards, true, pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
+                // 合并继续排序
+                unadjustedRecords.addAll(adjustPayoutRecords);
+            }
+            return unadjustedRecords.stream().sorted(Comparator.comparing(BankTransactionRecord::getChangeAmount, Comparator.reverseOrder())).
+                    skip(0).limit(querySize).collect(Collectors.toList());
+        }
     }
 
     /**
@@ -632,11 +734,11 @@ public class FastInFastOutImpl implements IFastInFastOut {
     /**
      * <h2> 计算快进快出结果 </h2>
      * <p>
-     * 适用于调单卡号作为中转、沉淀情况
+     * 适用于调单卡号作为中转情况
      */
-    private void computeResultFromTransitAndDeposit(String sortType, int characteristicRatio, long timeInterval,
-                                                    BankTransactionRecord first, List<BankTransactionRecord> seconds,
-                                                    List<FastInFastOutResult> results, int limit) {
+    private void computeResultFromTransit(String sortType, int characteristicRatio, long timeInterval,
+                                          BankTransactionRecord first, List<BankTransactionRecord> seconds,
+                                          List<FastInFastOutResult> results, int limit) {
         for (BankTransactionRecord second : seconds) {
             // 如果满足limit也停止计算
             if (results.size() >= limit) {
@@ -645,14 +747,30 @@ public class FastInFastOutImpl implements IFastInFastOut {
             // 检查特征比
             boolean checkTimeInterval = checkTimeIntervalAndFeatureRatio(sortType, characteristicRatio, timeInterval, first, second);
             if (checkTimeInterval) {
-                FastInFastOutResult fastInFastOutResult;
-                if (sortType.equals("inflowAmount")) {
-                    // 生成FastInFastOutResult记录
-                    fastInFastOutResult = convertFromDataTransitAndDeposit(first, second);
-                } else {
-                    // 生成FastInFastOutResult记录
-                    fastInFastOutResult = convertFromDataTransitAndDeposit(second, first);
-                }
+                FastInFastOutResult fastInFastOutResult = convertFromDataTransit(first, second, sortType);
+                results.add(fastInFastOutResult);
+            }
+        }
+    }
+
+
+    /**
+     * <h2> 计算快进快出结果 </h2>
+     * <p>
+     * 适用于调单卡号作为沉淀情况
+     */
+    private void computeResultFromDeposit(String sortType, int characteristicRatio, long timeInterval,
+                                          BankTransactionRecord first, List<BankTransactionRecord> seconds,
+                                          List<FastInFastOutResult> results, int limit) {
+        for (BankTransactionRecord second : seconds) {
+            // 如果满足limit也停止计算
+            if (results.size() >= limit) {
+                break;
+            }
+            // 检查特征比
+            boolean checkTimeInterval = checkTimeIntervalAndFeatureRatio(sortType, characteristicRatio, timeInterval, first, second);
+            if (checkTimeInterval) {
+                FastInFastOutResult fastInFastOutResult = convertFromDataDeposit(first, second, sortType);
                 results.add(fastInFastOutResult);
             }
         }
@@ -812,71 +930,137 @@ public class FastInFastOutImpl implements IFastInFastOut {
         } else {
 
             // 按照流出金额、流出日期排序
-            fastInFastOutResult.setFundSourceCard(first.getTransactionOppositeCard());
-            fastInFastOutResult.setFundSourceAccountName(first.getTransactionOppositeName());
-            fastInFastOutResult.setInflowDate(format.format(first.getTradingTime()));
-            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
-            creditAmount = first.getChangeAmount();
+            fastInFastOutResult.setFundSourceCard(second.getQueryCard());
+            fastInFastOutResult.setFundSourceAccountName(second.getCustomerName());
+            fastInFastOutResult.setInflowDate(format.format(second.getTradingTime()));
+            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
+            creditAmount = second.getChangeAmount();
             fastInFastOutResult.setFundTransitCard(first.getQueryCard());
             fastInFastOutResult.setFundTransitAccountName(first.getCustomerName());
-            fastInFastOutResult.setOutflowDate(format.format(second.getTradingTime()));
-            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
-            fastInFastOutResult.setFundDepositCard(second.getTransactionOppositeCard());
+            fastInFastOutResult.setOutflowDate(format.format(first.getTradingTime()));
+            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
+            fastInFastOutResult.setFundDepositCard(first.getTransactionOppositeCard());
             fastInFastOutResult.setFundDepositAccountName(first.getTransactionOppositeName());
         }
         // 特征比(入账金额-出账金额) / 入账金额
-        BigDecimal sub;
-        if (first.getChangeAmount() < second.getChangeAmount()) {
-            sub = BigDecimalUtil.sub(second.getChangeAmount(), first.getChangeAmount());
-        } else {
-            sub = BigDecimalUtil.sub(first.getChangeAmount(), second.getChangeAmount());
-        }
-        BigDecimal div = BigDecimalUtil.divReserveFour(sub.doubleValue(), creditAmount);
-        BigDecimal mul = BigDecimalUtil.mul(div.doubleValue(), 100);
-        fastInFastOutResult.setCharacteristicRatio(mul.toString() + "%");
+        computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), fastInFastOutResult, creditAmount);
         return fastInFastOutResult;
     }
 
     /**
      * <h2> 生成一条快进快出记录 </h2>
      * <p>
-     * 适用于调单卡号作为中转、沉淀情况
+     * 适用于调单卡号作为中转情况
      */
     @SuppressWarnings("all")
-    private FastInFastOutResult convertFromDataTransitAndDeposit(BankTransactionRecord first, BankTransactionRecord second) {
+    private FastInFastOutResult convertFromDataTransit(BankTransactionRecord first, BankTransactionRecord second, String sortType) {
 
         FastInFastOutResult fastInFastOutResult = new FastInFastOutResult();
-        // 资金来源卡号
-        fastInFastOutResult.setFundSourceCard(first.getTransactionOppositeCard());
-        // 资金来源户名
-        fastInFastOutResult.setFundSourceAccountName(first.getTransactionOppositeName());
-        // 流入时间日期
-        fastInFastOutResult.setInflowDate(format.format(first.getTradingTime()));
-        // 流入金额
-        fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
-        // 资金中转卡号
-        fastInFastOutResult.setFundTransitCard(first.getQueryCard());
-        // 资金中转户名
-        fastInFastOutResult.setFundTransitAccountName(first.getCustomerName());
-        // 流出时间日期
-        fastInFastOutResult.setOutflowDate(format.format(second.getTradingTime()));
-        // 流出金额
-        fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
-        // 资金沉淀卡号
-        fastInFastOutResult.setFundDepositCard(second.getTransactionOppositeCard());
-        // 资金沉淀户名
-        fastInFastOutResult.setFundDepositAccountName(second.getTransactionOppositeName());
-        // 特征比(入账金额-出账金额) / 入账金额
-        BigDecimal sub;
-        if (first.getChangeAmount() < second.getChangeAmount()) {
-            sub = BigDecimalUtil.sub(second.getChangeAmount(), first.getChangeAmount());
+        double inflowAmount;
+        if (sortType.equals("inflowAmount")) {
+            // 资金来源卡号
+            fastInFastOutResult.setFundSourceCard(first.getTransactionOppositeCard());
+            // 资金来源户名
+            fastInFastOutResult.setFundSourceAccountName(first.getTransactionOppositeName());
+            // 流入时间日期
+            fastInFastOutResult.setInflowDate(format.format(first.getTradingTime()));
+            // 流入金额
+            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
+            inflowAmount = first.getChangeAmount();
+            // 资金中转卡号
+            fastInFastOutResult.setFundTransitCard(first.getQueryCard());
+            // 资金中转户名
+            fastInFastOutResult.setFundTransitAccountName(first.getCustomerName());
+            // 流出时间日期
+            fastInFastOutResult.setOutflowDate(format.format(second.getTradingTime()));
+            // 流出金额
+            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
+            // 资金沉淀卡号
+            fastInFastOutResult.setFundDepositCard(second.getTransactionOppositeCard());
+            // 资金沉淀户名
+            fastInFastOutResult.setFundDepositAccountName(second.getTransactionOppositeName());
         } else {
-            sub = BigDecimalUtil.sub(first.getChangeAmount(), second.getChangeAmount());
+            fastInFastOutResult.setFundSourceCard(second.getTransactionOppositeCard());
+            fastInFastOutResult.setFundSourceAccountName(second.getTransactionOppositeName());
+            fastInFastOutResult.setInflowDate(format.format(second.getTradingTime()));
+            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
+            inflowAmount = second.getChangeAmount();
+            fastInFastOutResult.setFundTransitCard(second.getQueryCard());
+            fastInFastOutResult.setFundTransitAccountName(second.getCustomerName());
+            fastInFastOutResult.setOutflowDate(format.format(first.getTradingTime()));
+            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
+            fastInFastOutResult.setFundDepositCard(first.getTransactionOppositeCard());
+            fastInFastOutResult.setFundDepositAccountName(first.getTransactionOppositeName());
         }
-        BigDecimal div = BigDecimalUtil.divReserveFour(sub.doubleValue(), first.getChangeAmount());
+        // 特征比(入账金额-出账金额) / 入账金额
+        computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), fastInFastOutResult, inflowAmount);
+        return fastInFastOutResult;
+    }
+
+    /**
+     * <h2> 生成一条快进快出记录 </h2>
+     * <p>
+     * 适用于调单卡号作为沉淀情况
+     */
+    @SuppressWarnings("all")
+    private FastInFastOutResult convertFromDataDeposit(BankTransactionRecord first, BankTransactionRecord second, String sortType) {
+
+        FastInFastOutResult fastInFastOutResult = new FastInFastOutResult();
+        double inflowAmount;
+        if (sortType.equals("inflowAmount")) {
+            // 资金来源卡号
+            fastInFastOutResult.setFundSourceCard(first.getTransactionOppositeCard());
+            // 资金来源户名
+            fastInFastOutResult.setFundSourceAccountName(first.getTransactionOppositeName());
+            // 流入时间日期
+            fastInFastOutResult.setInflowDate(format.format(first.getTradingTime()));
+            // 流入金额
+            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
+            inflowAmount = first.getChangeAmount();
+            // 资金中转卡号
+            fastInFastOutResult.setFundTransitCard(first.getQueryCard());
+            // 资金中转户名
+            fastInFastOutResult.setFundTransitAccountName(first.getCustomerName());
+            // 流出时间日期
+            fastInFastOutResult.setOutflowDate(format.format(second.getTradingTime()));
+            // 流出金额
+            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
+            // 资金沉淀卡号
+            fastInFastOutResult.setFundDepositCard(second.getQueryCard());
+            // 资金沉淀户名
+            fastInFastOutResult.setFundDepositAccountName(second.getCustomerName());
+        } else {
+            fastInFastOutResult.setFundSourceCard(second.getTransactionOppositeCard());
+            fastInFastOutResult.setFundSourceAccountName(second.getTransactionOppositeName());
+            fastInFastOutResult.setInflowDate(format.format(second.getTradingTime()));
+            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
+            inflowAmount = second.getChangeAmount();
+            fastInFastOutResult.setFundTransitCard(second.getQueryCard());
+            fastInFastOutResult.setFundTransitAccountName(second.getCustomerName());
+            fastInFastOutResult.setOutflowDate(format.format(first.getTradingTime()));
+            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
+            fastInFastOutResult.setFundDepositCard(first.getQueryCard());
+            fastInFastOutResult.setFundDepositAccountName(first.getCustomerName());
+        }
+        // 特征比(入账金额-出账金额) / 入账金额
+        computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), fastInFastOutResult, inflowAmount);
+        return fastInFastOutResult;
+    }
+
+    /**
+     * <h2> 计算快进快出结果的特征比 </h2>
+     */
+    private void computeFastInFastOutCharacteristicRatio(double firstChangeAmount, double secondChangeAmount,
+                                                         FastInFastOutResult fastInFastOutResult, double inflowAmount) {
+        BigDecimal sub;
+        if (firstChangeAmount < secondChangeAmount) {
+            sub = BigDecimalUtil.sub(secondChangeAmount, firstChangeAmount);
+        } else {
+            sub = BigDecimalUtil.sub(firstChangeAmount, secondChangeAmount);
+        }
+        BigDecimal div = BigDecimalUtil.divReserveFour(sub.doubleValue(), inflowAmount);
         BigDecimal mul = BigDecimalUtil.mul(div.doubleValue(), 100);
         fastInFastOutResult.setCharacteristicRatio(mul.toString() + "%");
-        return fastInFastOutResult;
     }
 
     /**

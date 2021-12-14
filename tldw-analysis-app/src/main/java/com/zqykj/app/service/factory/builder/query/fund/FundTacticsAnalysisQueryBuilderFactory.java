@@ -528,7 +528,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
 
     public QuerySpecialParams getFastInOutTradeRecordsByCondition(String caseId, int singleQuota, List<String> queryCards,
                                                                   boolean isQueryCredits, Date tradeDate, QueryOperator operator,
-                                                                  String... includeFields) {
+                                                                  @Nullable String... includeFields) {
         // 构建查询参数
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
