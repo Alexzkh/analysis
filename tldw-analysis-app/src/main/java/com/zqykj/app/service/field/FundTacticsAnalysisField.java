@@ -188,6 +188,32 @@ public interface FundTacticsAnalysisField {
     String MULTI_IDENTITY_TERMS = "multi_identity_terms";
 
 
+    /**
+     * 快进快出字段
+     */
+
+    // 时间间隔
+    String TIME_INTERVAL = "time_interval";
+
+    // 特征比
+    String FEATURE_RATIO = "feature_ratio";
+
+    // 调单卡号
+    String ADJUST_CARD = "adjust_card";
+
+    // 流出金额
+    String OUTFLOW_AMOUNT = "outflow_amount";
+
+    // 流入金额
+    String INFLOW_AMOUNT = "inflow_amount";
+
+    // 快进快出需要展示的字段
+    static String[] fastInFastOutFields() {
+        return new String[]{"source_card", "source_account_name", "inflow_date", "inflow_amount", "transit_card", "transit_account_name",
+                "outflow_date", "outflow_amount", "deposit_card", "deposit_account_name", "feature_ratio"
+        };
+    }
+
     // 交易统计分析结果本方需要展示的字段
     static String[] tradeStatisticalAnalysisLocalShowField() {
 
@@ -217,13 +243,5 @@ public interface FundTacticsAnalysisField {
     static String[] fundSourceAndDestinationAnalysisOppositeShowField() {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
-    }
-
-    // 快进快出分析结果展示字段(本方的)
-    static String[] fastInFastOutFields() {
-
-        return new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.CUSTOMER_NAME,
-                FundTacticsAnalysisField.TRADING_TIME, FundTacticsAnalysisField.CHANGE_AMOUNT,
-                FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, FundTacticsAnalysisField.TRANSACTION_OPPOSITE_NAME};
     }
 }

@@ -37,6 +37,8 @@ public class FastInFastOutRequest extends FundTacticsPartGeneralRequest {
      */
     private long timeInterval;
 
+    private int type = 0;
+
     public static FastInFastOutRequest simple(String caseId, int singleQuota) {
 
         FastInFastOutRequest fastInFastOutRequest = new FastInFastOutRequest();

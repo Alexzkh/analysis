@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,6 +121,14 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
     public Map<String, String> buildGroupByAggMapping(String field) {
         Map<String, String> aggMapping = new HashMap<>();
         aggMapping.put("groupBy_" + field, "keyAsString");
+        return aggMapping;
+    }
+
+    public Map<String, String> buildGroupByAggDocCountMapping(String field) {
+
+        Map<String, String> aggMapping = new LinkedHashMap<>();
+        aggMapping.put("groupBy_" + field, "keyAsString");
+        aggMapping.put("count_" + field, "value");
         return aggMapping;
     }
 

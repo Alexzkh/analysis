@@ -101,6 +101,8 @@ public interface AggregationRequestParamFactory {
      */
     AggregationParams groupByField(String field, int groupSize, @Nullable Pagination pagination);
 
+    AggregationParams groupByAndCountField(String field, int groupSize, @Nullable Pagination pagination);
+
     /**
      * <h2> 聚合展示字段并且按某个字段排序 </h2>
      */

@@ -593,6 +593,31 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             // 出账
             filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
         }
+        querySpecialParams.addCombiningQueryParams(filter);
+        return querySpecialParams;
+    }
+
+    public QuerySpecialParams getFastInFastOutRecord(FastInFastOutRequest request) {
+
+        // 构建查询参数
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        // 案件Id 过滤
+        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
+        // 过滤调单卡号
+        if (!CollectionUtils.isEmpty(request.getCardNum())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.ADJUST_CARD, request.getCardNum()));
+        }
+        // 时间间隔限制(分钟)
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TIME_INTERVAL, request.getTimeInterval(), QueryOperator.lte));
+        // 特征比
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.FEATURE_RATIO, request.getCharacteristicRatio(), QueryOperator.lte));
+        // 单笔限额
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.INFLOW_AMOUNT, request.getSingleQuota(), QueryOperator.gte));
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.OUTFLOW_AMOUNT, request.getSingleQuota(), QueryOperator.gte));
+        querySpecialParams.addCombiningQueryParams(filter);
+        // 设置source
+        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.fastInFastOutFields());
         return querySpecialParams;
     }
 }

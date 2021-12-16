@@ -9,7 +9,9 @@ import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
+import com.zqykj.app.service.vo.fund.FastInFastOutResult;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -24,6 +26,7 @@ import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -82,111 +85,207 @@ public class FastInFastOutImpl implements IFastInFastOut {
     public ServerResponse fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
 
 
+        List<String> adjustCards = request.getCardNum();
+        String caseId = request.getCaseId();
+        int interceptCardPosition = 0;
         // TODO 需要判断
         // TODO 等待调单卡号作为来源、中转、沉淀的快进快出记录生成完毕之后 (再根据 FastInFastOutRequest 筛选符合的快进快出结果)
-        return null;
+        // 根据配置值生成固定数量的快进快出记录
+        String tradeAmount = FundTacticsAnalysisField.CHANGE_MONEY;
+        String tradingTime = FundTacticsAnalysisField.TRADING_TIME;
+        // 来源的
+
+        // 中转的
+        saveResultViaTransit(adjustCards, caseId, orderChunkSize, interceptCardPosition, true, tradeAmount);
+//        saveResultViaTransit(adjustCards, caseId, orderChunkSize, interceptCardPosition, false, tradeAmount);
+//        saveResultViaTransit(adjustCards, caseId, orderChunkSize, interceptCardPosition, false, tradingTime);
+
+        // 沉淀的
+
+        if (request.getType() == 1) {
+            // 当快进快出数据统计表完成后, 开始统计
+            return ServerResponse.createBySuccess(queryFastInFastOutResult(request));
+        }
+        return ServerResponse.createBySuccess();
     }
 
     /**
-     * <h2> 批量处理调单卡号作为资金来源卡号 </h2>
+     * <h2> 生成按流入金额/流出金额/流出日期 排序的快进快出记录 </h2>
      * <p>
-     * 方案一
-     * 处理的是 调单卡号 ----(出) ----(出)
-     * 调单卡号作为来源首先过滤出出账的数据(借贷标志为出), 以这批数据的对方卡号(可能是调单或者非调单) 继续过滤出账记录(借贷标志为出)
+     * 按调单卡号进账金额排序
      */
-    private void batchBuildFastInoutFromSource(List<String> adjustCards) throws ExecutionException, InterruptedException {
+    private Map<String, Map<String, Object>> saveResultViaTransit(List<String> adjustCards, String caseId, int orderChunkSize, int interceptPosition,
+                                                                  boolean isInflow, String property) {
 
-        // 根据配置值生成固定数量的快进快出记录
-
+        Map<String, Map<String, Object>> inflowAmountMap = new HashMap<>();
+        CompletableFuture<Map<String, Object>> inflowAmountDescFutures = CompletableFuture.supplyAsync(() -> {
+            Map<String, Object> inflowAmountDescMap = new HashMap<>();
+            // 当前排序分页取的前多少条
+            inflowAmountDescMap.put("orderChunkSize", orderChunkSize);
+            // 从上面的结果中取部分记录(截取记录的位置)
+            inflowAmountDescMap.put("interceptPosition", interceptPosition);
+            Map<String, Object> map = saveFastInOutFromTransit(adjustCards, caseId, orderChunkSize, interceptPosition, inflowAmountDescMap,
+                    isInflow, property, Sort.Direction.DESC);
+            inflowAmountMap.put("inflowAmountDesc", map);
+            return map;
+        });
+        // 查看这些卡号的进账的数量
+        // 如果 count <= orderChunkSize, 那么降序 和 升序 的数据只需要入一次
+        long count = getInOutCountViaQueryCards(adjustCards, caseId, isInflow);
+        if (count > orderChunkSize) {
+            CompletableFuture<Map<String, Object>> inflowAmounAscFutures = CompletableFuture.supplyAsync(() -> {
+                // 流入金额升序排序生成快进快出记录
+                Map<String, Object> inflowAmountAscMap = new HashMap<>();
+                // 当前排序分页取的前多少条
+                inflowAmountAscMap.put("orderChunkSize", orderChunkSize);
+                // 从上面的结果中取部分记录(截取记录的位置)
+                inflowAmountAscMap.put("interceptPosition", interceptPosition);
+                Map<String, Object> map = saveFastInOutFromTransit(adjustCards, caseId, orderChunkSize, interceptPosition, inflowAmountAscMap,
+                        isInflow, property, Sort.Direction.ASC);
+                inflowAmountMap.put("inflowAmountAsc", map);
+                return map;
+            });
+        }
+        return inflowAmountMap;
     }
 
     /**
-     * <h2> 批量处理调单卡号为中转卡号情况 </h2>
+     * <h2> 调单卡号作为中转卡号情况 保存快进快出记录 </h2>
      */
-    private void batchProcessTransit(List<String> adjustCards, String caseId) {
+    private Map<String, Object> saveFastInOutFromTransit(List<String> adjustCards, String caseId, int orderChunkSize, int interceptPosition,
+                                                         Map<String, Object> transitMap, boolean isInflow, String sortProperty, Sort.Direction direction) {
 
-        // 根据配置值生成固定数量的快进快出记录
-
-        generateInflowAmountResultViaTransit(adjustCards, caseId);
-
-        generateOutFlowViaTransit(adjustCards);
+        // 流入金额/流出金额/流出日期 降序排序生成快进快出记录
+        List<BankTransactionRecord> inOutflowOrder = getInOutRecordOrderViaQueryCards(adjustCards, caseId, isInflow, sortProperty, direction, orderChunkSize);
+        if (CollectionUtils.isEmpty(inOutflowOrder)) {
+            return transitMap;
+        }
+        // 去重 inOutflowOrder 中的查询卡号,查询这些卡号的进账/出账记录数
+        List<String> distinctQueryCard = inOutflowOrder.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
+        Map<String, Integer> queryCardInOutTimes = getInOutTotalTimesViaQueryCards(distinctQueryCard, caseId, !isInflow);
+        if (CollectionUtils.isEmpty(queryCardInOutTimes)) {
+            return transitMap;
+        }
+        // 查看 inOutflowOrder 前 interceptCardPosition 到 perQueryCardNum 的数量的查询卡号的出账总次数是否 == resultChunkSize
+        // 当大于 resultChunkSize 的时候截止,或者 queryCardOutTimes的size 扫描结束为止
+        int resultTotal = 0;
+        // 需要查询出账的卡集合
+        List<String> requireQueryInOutCards = new ArrayList<>();
+        List<BankTransactionRecord> inOutflowOrderInRecords = new ArrayList<>();
+        int recordNextInterceptPosition = interceptPosition;
+        for (BankTransactionRecord record : inOutflowOrder) {
+            if (resultTotal >= resultChunkSize) {
+                break;
+            }
+            Integer outTimes = queryCardInOutTimes.get(record.getQueryCard());
+            if (outTimes > 0) {
+                inOutflowOrderInRecords.add(record);
+                recordNextInterceptPosition += 1;
+                resultTotal += outTimes;
+                requireQueryInOutCards.add(record.getQueryCard());
+            }
+        }
+        // 记录 下一次的interceptPosition
+        transitMap.put("interceptPosition", recordNextInterceptPosition);
+        List<BankTransactionRecord> inOutflowOrderInOutRecords = asyncQueryInOutRecord(resultTotal, requireQueryInOutCards, caseId, isInflow);
+        if (CollectionUtils.isEmpty(inOutflowOrderInOutRecords)) {
+            return transitMap;
+        }
+        // 生成快进快出记录(调单作为中转卡号-流入金额/流出金额/流出日期 降序/升序情况)
+        Map<Integer, Integer> hashValueMaps = generateFastInOutFromTransit(inOutflowOrderInRecords, inOutflowOrderInOutRecords, caseId, isInflow);
+        transitMap.put("hashValueMaps", hashValueMaps);
+        return transitMap;
     }
 
-
     /**
-     * <h2> 批量处理沉淀数据(调单卡号为沉淀的情况) </h2>
+     * <h2> 批量查询卡号的进出记录 </h2>
      */
-    private void batchBuildFastInoutFromDeposit(List<String> adjustCards) throws ExecutionException, InterruptedException {
+    @SuppressWarnings("all")
+    private List<BankTransactionRecord> asyncQueryInOutRecord(int resultTotal, List<String> requireQueryInOutCards, String caseId, boolean isInflow) {
 
-        // 根据配置值生成固定数量的快进快出记录
+        int position = 0;
+        List<CompletableFuture<List<BankTransactionRecord>>> futures = new ArrayList<>();
+        while (position < resultTotal) {
+            // 查询这些卡号的入账(批量查询,每次查询 perQueryNum)
+            int next = Math.min(position + perQueryNum, resultTotal);
+
+            // 批量查询这些卡号的出账记录
+            int finalPosition = position;
+            CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() ->
+                    getInOutRecordViaQueryCards(requireQueryInOutCards, caseId, !isInflow, finalPosition, next));
+            futures.add(future);
+            position = next;
+        }
+        List<BankTransactionRecord> inOutflowOrderInOutRecords = new ArrayList<>();
+        futures.forEach(record -> {
+            try {
+                inOutflowOrderInOutRecords.addAll(record.get());
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.warn("async query card out records exception from adjust card!");
+            }
+        });
+        return inOutflowOrderInOutRecords;
     }
 
-
     /**
-     * <h2> 生成按流入金额排序的快进快出记录 </h2>
+     * <h2> 生成快进快出记录 入统计表 {@link FastInFastOutRecord} </h2>
      * <p>
-     * 调单卡号的来源(即它的进账记录排序)
+     * 调单卡号作为中转卡号的情况
+     *
+     * @return 返回一条快进快出记录的hash值
      */
-    private void generateInflowAmountResultViaTransit(List<String> adjustCards, String caseId) {
+    private Map<Integer, Integer> generateFastInOutFromTransit(List<BankTransactionRecord> first, List<BankTransactionRecord> second,
+                                                               String caseId, boolean isInflow) {
 
-        CompletableFuture<List<BankTransactionRecord>> inflowAmountDescFutures =
-                CompletableFuture.supplyAsync(() -> {
-                    // 流入金额降序排序生成快进快出记录
-                    List<BankTransactionRecord> inflowAmountDesc = getInOutRecordViaCards(adjustCards, caseId, true, FundTacticsAnalysisField.CHANGE_MONEY, Sort.Direction.DESC);
-                    if (CollectionUtils.isEmpty(inflowAmountDesc)) {
-                        return null;
-                    }
-                    // 去重 inflowAmountDesc 记录中的查询卡号(以这批卡号作为查询卡号,筛选 出账的记录)
-                    List<String> distinctQueryCard = inflowAmountDesc.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
-                    Map<String, BankTransactionRecord> inflowAmountDescMap = inflowAmountDesc.stream().collect(Collectors.toMap(BankTransactionRecord::getQueryCard, e -> e, (v1, v2) -> v1));
-                    // 每次查询 perQueryCardNum 张卡,然后生成快进快出记录,一旦超过  resultChunkSize 条就停止
-                    int position = 0;
-                    int size = distinctQueryCard.size();
-                    while (position < size) {
-                        int next = Math.min(position + perQueryCardNum, size);
-                        // 查询这 perQueryCardNum 张卡的出账记录,然后生成快进快出记录
+        // 将second 转成map,避免 n * n, 改成 2 * n
+        Map<String, List<BankTransactionRecord>> maps = new HashMap<>();
+        second.forEach(e -> {
 
-                    }
-                    return null;
-                });
-        CompletableFuture<List<BankTransactionRecord>> inflowAmounAscFutures =
-                CompletableFuture.supplyAsync(() -> {
-                    // 流入金额升序排序生成快进快出记录
-                    List<BankTransactionRecord> inflowAmountAsc = getInOutRecordViaCards(adjustCards, caseId, true, FundTacticsAnalysisField.CHANGE_MONEY, Sort.Direction.ASC);
-                    if (CollectionUtils.isEmpty(inflowAmountAsc)) {
-                        return null;
-                    }
-                    // 去重inflowAmountAsc 记录中的查询卡号(以这批卡号作为查询卡号, 筛选出账的记录)
-                    List<String> distinctQueryCard = inflowAmountAsc.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
-                    Map<String, BankTransactionRecord> inflowAmountDescMap = inflowAmountAsc.stream().collect(Collectors.toMap(BankTransactionRecord::getQueryCard, e -> e, (v1, v2) -> v1));
-                    // 每次查询 perQueryCardNum 张卡,然后生成快进快出记录,一旦超过 resultChunkSize 就停止
-                    int position = 0;
+            if (maps.containsKey(e.getQueryCard())) {
+                maps.get(e.getQueryCard()).add(e);
+            } else {
+                List<BankTransactionRecord> bankTransactionRecords = new ArrayList<>();
+                bankTransactionRecords.add(e);
+                maps.put(e.getQueryCard(), bankTransactionRecords);
+            }
+        });
+        // 快进快出记录
+        List<Map<String, ?>> fastInFastOutRecords = new ArrayList<>();
+        Map<Integer, Integer> hashValueMaps = new HashMap<>();
+        // 快进快出每一条记录的hash值
+        for (BankTransactionRecord orderRecord : first) {
 
-                    return null;
-                });
-    }
-
-
-    private boolean generateFastInoutFromTransit(List<String> cards, String caseId) {
-
-        // 查询这批卡号的总量
-
-
-        return true;
+            List<BankTransactionRecord> otherRecords = maps.get(orderRecord.getQueryCard());
+            if (CollectionUtils.isEmpty(otherRecords)) {
+                continue;
+            }
+            for (BankTransactionRecord otherRecord : otherRecords) {
+                Map<String, Object> fastInFastOutRecord = convertFromDataTransit(orderRecord, otherRecord, caseId, isInflow);
+                if (!CollectionUtils.isEmpty(fastInFastOutRecord)) {
+                    fastInFastOutRecords.add(fastInFastOutRecord);
+                    hashValueMaps.put(Integer.parseInt(fastInFastOutRecord.get("id").toString()), 0);
+                }
+            }
+        }
+        // 录入记录
+        entranceRepository.saveAll(fastInFastOutRecords, caseId, FastInFastOutRecord.class);
+        return hashValueMaps;
     }
 
     /**
-     * <h2> 生成按流出金额、流出日期排序的快进快出记录 </h2>
+     * <h2> 通过查询卡号获取进出的总次数 </h2>
      */
-    private void generateOutFlowViaTransit(List<String> adjustCards) {
+    private long getInOutCountViaQueryCards(List<String> cards, String caseId, boolean isIn) {
 
+        QuerySpecialParams query = queryRequestParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, isIn);
+        return entranceRepository.count(caseId, BankTransactionRecord.class, query);
     }
 
-
     /**
-     * <h2> 通过卡号获取进出记录(根据排序) </h2>
+     * <h2> 通过查询卡号获取进出记录(根据排序) </h2>
      */
-    private List<BankTransactionRecord> getInOutRecordViaCards(List<String> cards, String caseId, boolean isIn, String property, Sort.Direction direction) {
+    private List<BankTransactionRecord> getInOutRecordOrderViaQueryCards(List<String> cards, String caseId, boolean isIn, String property, Sort.Direction direction, int orderChunkSize) {
 
         QuerySpecialParams query = queryRequestParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, isIn);
         Page<BankTransactionRecord> recordPage = entranceRepository.findAll(PageRequest.of(0, orderChunkSize, direction, property), caseId, BankTransactionRecord.class, query);
@@ -194,6 +293,36 @@ public class FastInFastOutImpl implements IFastInFastOut {
             return null;
         }
         return recordPage.getContent();
+    }
+
+    /**
+     * <h2> 通过查询卡号获取进出记录(不排序) </h2>
+     */
+    private List<BankTransactionRecord> getInOutRecordViaQueryCards(List<String> cards, String caseId, boolean isIn, int from, int orderChunkSize) {
+
+        QuerySpecialParams query = queryRequestParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, isIn);
+        Page<BankTransactionRecord> recordPage = entranceRepository.findAll(PageRequest.of(from, orderChunkSize), caseId, BankTransactionRecord.class, query);
+        if (null == recordPage || CollectionUtils.isEmpty(recordPage.getContent())) {
+            return null;
+        }
+        return recordPage.getContent();
+    }
+
+    /**
+     * <h2> 通过查询卡号获取进账/出账的总次数 </h2>
+     */
+    private Map<String, Integer> getInOutTotalTimesViaQueryCards(List<String> cards, String caseId, boolean isInFlow) {
+
+        QuerySpecialParams query = queryRequestParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, isInFlow);
+        AggregationParams agg = aggregationRequestParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, cards.size(), new Pagination(0, cards.size()));
+        agg.setMapping(aggregationEntityMappingFactory.buildGroupByAggDocCountMapping(FundTacticsAnalysisField.QUERY_CARD));
+        agg.setResultName("getQueryCardOutTimes");
+        Map<String, List<List<Object>>> resultMaps = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
+        if (CollectionUtils.isEmpty(resultMaps) || CollectionUtils.isEmpty(resultMaps.get(agg.getResultName()))) {
+            return null;
+        }
+        List<List<Object>> results = resultMaps.get(agg.getResultName());
+        return results.stream().collect(Collectors.toMap(e -> e.get(0).toString(), e -> Integer.parseInt(e.get(1).toString()), (v1, v2) -> v1));
     }
 
 
@@ -230,71 +359,6 @@ public class FastInFastOutImpl implements IFastInFastOut {
                 pageRequest, FundTacticsAnalysisField.fastInFastOutFields());
     }
 
-    /**
-     * <h2> 计算快进快出结果 </h2>
-     * <p>
-     * 适用于调单卡号作为来源的情况
-     */
-    private void computeResultFromSource(String sortType, int characteristicRatio, long timeInterval,
-                                         BankTransactionRecord first, List<BankTransactionRecord> seconds,
-                                         List<FastInFastOutRecord> results, int limit) {
-        for (BankTransactionRecord second : seconds) {
-            // 如果满足limit也停止计算
-            if (results.size() >= limit) {
-                break;
-            }
-            boolean checkTimeInterval = checkTimeIntervalAndFeatureRatio(sortType, characteristicRatio, timeInterval, first, second);
-            if (checkTimeInterval) {
-                FastInFastOutRecord fastInFastOutResult = convertFromDataSource(first, second, sortType);
-                results.add(fastInFastOutResult);
-            }
-        }
-    }
-
-    /**
-     * <h2> 计算快进快出结果 </h2>
-     * <p>
-     * 适用于调单卡号作为中转情况
-     */
-    private void computeResultFromTransit(String sortType, int characteristicRatio, long timeInterval,
-                                          BankTransactionRecord first, List<BankTransactionRecord> seconds,
-                                          List<FastInFastOutRecord> results, int limit) {
-        for (BankTransactionRecord second : seconds) {
-            // 如果满足limit也停止计算
-            if (results.size() >= limit) {
-                break;
-            }
-            // 检查特征比
-            boolean checkTimeInterval = checkTimeIntervalAndFeatureRatio(sortType, characteristicRatio, timeInterval, first, second);
-            if (checkTimeInterval) {
-                FastInFastOutRecord fastInFastOutResult = convertFromDataTransit(first, second, sortType);
-                results.add(fastInFastOutResult);
-            }
-        }
-    }
-
-
-    /**
-     * <h2> 计算快进快出结果 </h2>
-     * <p>
-     * 适用于调单卡号作为沉淀情况
-     */
-    private void computeResultFromDeposit(String sortType, int characteristicRatio, long timeInterval,
-                                          BankTransactionRecord first, List<BankTransactionRecord> seconds,
-                                          List<FastInFastOutRecord> results, int limit) {
-        for (BankTransactionRecord second : seconds) {
-            // 如果满足limit也停止计算
-            if (results.size() >= limit) {
-                break;
-            }
-            // 检查特征比
-            boolean checkTimeInterval = checkTimeIntervalAndFeatureRatio(sortType, characteristicRatio, timeInterval, first, second);
-            if (checkTimeInterval) {
-                FastInFastOutRecord fastInFastOutResult = convertFromDataDeposit(first, second, sortType);
-                results.add(fastInFastOutResult);
-            }
-        }
-    }
 
     /**
      * <h2> 获取给定一组查询卡号和对方卡号 入账/出账的数据 </h2>
@@ -463,7 +527,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
             fastInFastOutResult.setFundDepositAccountName(first.getTransactionOppositeName());
         }
         // 特征比(入账金额-出账金额) / 入账金额
-        computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), fastInFastOutResult, creditAmount);
+        computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), creditAmount);
         return fastInFastOutResult;
     }
 
@@ -473,48 +537,70 @@ public class FastInFastOutImpl implements IFastInFastOut {
      * 适用于调单卡号作为中转情况
      */
     @SuppressWarnings("all")
-    private FastInFastOutRecord convertFromDataTransit(BankTransactionRecord first, BankTransactionRecord second, String sortType) {
+    private Map<String, Object> convertFromDataTransit(BankTransactionRecord first, BankTransactionRecord second, String caseId, boolean isInflow) {
 
-        FastInFastOutRecord fastInFastOutResult = new FastInFastOutRecord();
+        Map<String, Object> map = new HashMap<>();
         double inflowAmount;
-        if (sortType.equals("inflowAmount")) {
+        if (isInflow) {
             // 资金来源卡号
-            fastInFastOutResult.setFundSourceCard(first.getTransactionOppositeCard());
+            map.put("source_card", first.getTransactionOppositeCard());
             // 资金来源户名
-            fastInFastOutResult.setFundSourceAccountName(first.getTransactionOppositeName());
+            map.put("source_account_name", first.getTransactionOppositeName());
             // 流入时间日期
-            fastInFastOutResult.setInflowDate(first.getTradingTime());
+            map.put("inflow_date", first.getTradingTime());
             // 流入金额
-            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
+            map.put("inflow_amount", BigDecimalUtil.value(first.getChangeAmount().toString()));
             inflowAmount = first.getChangeAmount();
             // 资金中转卡号
-            fastInFastOutResult.setFundTransitCard(first.getQueryCard());
+            map.put("transit_card", first.getQueryCard());
             // 资金中转户名
-            fastInFastOutResult.setFundTransitAccountName(first.getCustomerName());
+            map.put("transit_account_name", first.getCustomerName());
             // 流出时间日期
-            fastInFastOutResult.setOutflowDate(second.getTradingTime());
+            map.put("outflow_date", second.getTradingTime());
             // 流出金额
-            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
+            map.put("outflow_amount", second.getChangeAmount());
             // 资金沉淀卡号
-            fastInFastOutResult.setFundDepositCard(second.getTransactionOppositeCard());
+            map.put("deposit_card", second.getTransactionOppositeCard());
             // 资金沉淀户名
-            fastInFastOutResult.setFundDepositAccountName(second.getTransactionOppositeName());
+            map.put("deposit_account_name", second.getTransactionOppositeName());
+            // 时间间隔
+            long timeInterval = computeTimeInterval(first.getTradingTime(), second.getTradingTime());
+            if (timeInterval == -1L) {
+                return null;
+            }
+            map.put("time_interval", timeInterval);
+            // 调单卡号
+            map.put("adjust_card", first.getQueryCard());
         } else {
-            fastInFastOutResult.setFundSourceCard(second.getTransactionOppositeCard());
-            fastInFastOutResult.setFundSourceAccountName(second.getTransactionOppositeName());
-            fastInFastOutResult.setInflowDate(second.getTradingTime());
-            fastInFastOutResult.setInflowAmount(BigDecimalUtil.value(second.getChangeAmount().toString()));
+            map.put("source_card", second.getTransactionOppositeCard());
+            map.put("source_account_name", second.getTransactionOppositeName());
+            map.put("inflow_date", second.getTradingTime());
+            map.put("inflow_amount", BigDecimalUtil.value(second.getChangeAmount().toString()));
             inflowAmount = second.getChangeAmount();
-            fastInFastOutResult.setFundTransitCard(second.getQueryCard());
-            fastInFastOutResult.setFundTransitAccountName(second.getCustomerName());
-            fastInFastOutResult.setOutflowDate(first.getTradingTime());
-            fastInFastOutResult.setOutflowAmount(BigDecimalUtil.value(first.getChangeAmount().toString()));
-            fastInFastOutResult.setFundDepositCard(first.getTransactionOppositeCard());
-            fastInFastOutResult.setFundDepositAccountName(first.getTransactionOppositeName());
+            map.put("transit_card", second.getQueryCard());
+            map.put("transit_account_name", second.getCustomerName());
+            map.put("outflow_date", first.getTradingTime());
+            map.put("outflow_amount", first.getChangeAmount());
+            map.put("deposit_card", first.getTransactionOppositeCard());
+            map.put("deposit_account_name", first.getTransactionOppositeName());
+            // 时间间隔
+            long timeInterval = computeTimeInterval(second.getTradingTime(), first.getTradingTime());
+            if (timeInterval == -1L) {
+                return null;
+            }
+            map.put("time_interval", timeInterval);
+            // 调单卡号
+            map.put("adjust_card", second.getQueryCard());
         }
         // 特征比(入账金额-出账金额) / 入账金额
-        computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), fastInFastOutResult, inflowAmount);
-        return fastInFastOutResult;
+        int characteristicRatio = computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), inflowAmount);
+        map.put("feature_ratio", characteristicRatio);
+        int fastInFastOutRecordHash = computeFastInFastOutRecordHash(map);
+        map.put("id", fastInFastOutRecordHash);
+        map.put("case_id", caseId);
+        map.put("case_id_hash", caseId.hashCode());
+        // hash 值Id
+        return map;
     }
 
     /**
@@ -563,15 +649,15 @@ public class FastInFastOutImpl implements IFastInFastOut {
             fastInFastOutResult.setFundDepositAccountName(first.getCustomerName());
         }
         // 特征比(入账金额-出账金额) / 入账金额
-        computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), fastInFastOutResult, inflowAmount);
+        int characteristicRatio = computeFastInFastOutCharacteristicRatio(first.getChangeAmount(), second.getChangeAmount(), inflowAmount);
+
         return fastInFastOutResult;
     }
 
     /**
      * <h2> 计算快进快出结果的特征比 </h2>
      */
-    private void computeFastInFastOutCharacteristicRatio(double firstChangeAmount, double secondChangeAmount,
-                                                         FastInFastOutRecord fastInFastOutResult, double inflowAmount) {
+    private int computeFastInFastOutCharacteristicRatio(double firstChangeAmount, double secondChangeAmount, double inflowAmount) {
         BigDecimal sub;
         if (firstChangeAmount < secondChangeAmount) {
             sub = BigDecimalUtil.sub(secondChangeAmount, firstChangeAmount);
@@ -579,8 +665,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
             sub = BigDecimalUtil.sub(firstChangeAmount, secondChangeAmount);
         }
         BigDecimal div = BigDecimalUtil.divReserveFour(sub.doubleValue(), inflowAmount);
-        BigDecimal mul = BigDecimalUtil.mul(div.doubleValue(), 100);
-        fastInFastOutResult.setCharacteristicRatio(mul.intValue());
+        return BigDecimalUtil.mul(div.doubleValue(), 100).intValue();
     }
 
     /**
@@ -635,5 +720,60 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 查看时间间隔
         long minutes = ChronoUnit.MINUTES.between(Instant.ofEpochMilli(inflowDate.getTime()), Instant.ofEpochMilli(outflowDate.getTime()));
         return minutes <= timeInterval;
+    }
+
+
+    private long computeTimeInterval(Date inflowDate, Date outflowDate) {
+        long minutes = ChronoUnit.MINUTES.between(Instant.ofEpochMilli(outflowDate.getTime()), Instant.ofEpochMilli(inflowDate.getTime()));
+        if (minutes < 0) {
+            return -1L;
+        }
+        return minutes;
+    }
+
+    private int computeFastInFastOutRecordHash(Map<String, Object> fastInFastOutRecord) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(fastInFastOutRecord.get("source_card"));
+        sb.append(fastInFastOutRecord.get("inflow_date"));
+        sb.append(fastInFastOutRecord.get("inflow_amount"));
+        sb.append(fastInFastOutRecord.get("transit_card"));
+        sb.append(fastInFastOutRecord.get("outflow_date"));
+        sb.append(fastInFastOutRecord.get("outflow_amount"));
+        sb.append(fastInFastOutRecord.get("deposit_card"));
+        return FastInFastOutRecord.hash(sb.toString());
+    }
+
+    private List<FastInFastOutResult> queryFastInFastOutResult(FastInFastOutRequest request) {
+
+        QuerySpecialParams fastInFastOutRecord = queryRequestParamFactory.getFastInFastOutRecord(request);
+        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
+        SortRequest sortRequest = request.getSortRequest();
+        Direction order = sortRequest.getOrder();
+        Page<FastInFastOutRecord> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
+                Sort.Direction.valueOf(order.name()), sortRequest.getProperty()), request.getCaseId(), FastInFastOutRecord.class, fastInFastOutRecord);
+        if (null == page) {
+            return new ArrayList<>();
+        }
+        List<FastInFastOutRecord> content = page.getContent();
+        if (CollectionUtils.isEmpty(content)) {
+            return new ArrayList<>();
+        }
+        return convertFromFastInFastOutResult(content);
+    }
+
+    private List<FastInFastOutResult> convertFromFastInFastOutResult(List<FastInFastOutRecord> records) {
+
+        List<FastInFastOutResult> fastInFastOutResults = new ArrayList<>();
+
+        for (FastInFastOutRecord record : records) {
+
+            FastInFastOutResult fastInFastOutResult = new FastInFastOutResult();
+            BeanUtils.copyProperties(record, fastInFastOutResult);
+            fastInFastOutResult.setInflowDate(format.format(record.getInflowDate()));
+            fastInFastOutResult.setOutflowDate(format.format(record.getOutflowDate()));
+            fastInFastOutResults.add(fastInFastOutResult);
+        }
+        return fastInFastOutResults;
     }
 }

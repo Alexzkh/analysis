@@ -108,8 +108,14 @@ public class FastInFastOutRecord {
     /**
      * 时间间隔
      */
-    @Field(type = FieldType.Integer, name = "time_interval")
-    private int timeInterval;
+    @Field(type = FieldType.Long, name = "time_interval")
+    private Long timeInterval;
+
+    /**
+     * 调单卡号
+     */
+    @Field(type = FieldType.Keyword, name = "adjust_card")
+    private String adjustCard;
 
 
     @Override
@@ -130,8 +136,8 @@ public class FastInFastOutRecord {
         return DigestUtils.md5Hex(str);
     }
 
-    public static String hash(String str) {
+    public static int hash(String str) {
 
-        return DigestUtils.md5Hex(str);
+        return str.hashCode();
     }
 }

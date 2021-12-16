@@ -43,8 +43,17 @@ public interface AggregationEntityMappingFactory {
 
     /**
      * <h2> 构建groupBy 聚合名称 - 聚合属性映射  </h2>
+     * <p>
+     * 可以获取分组后的属性集合
      */
     Map<String, String> buildGroupByAggMapping(String field);
+
+    /**
+     * <h2> 构建groupBy 聚合名称 - 聚合属性映射  </h2>
+     * <p>
+     * 可以获取分组后的属性集合、以及数量
+     */
+    Map<String, String> buildGroupByAggDocCountMapping(String field);
 
     /**
      * <h2> 构建聚合显示字段 聚合名称 - 聚合属性映射  </h2>

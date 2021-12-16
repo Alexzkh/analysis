@@ -529,6 +529,21 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         return groupBy;
     }
 
+    public AggregationParams groupByAndCountField(String field, int groupSize, @Nullable Pagination pagination) {
+        AggregationParams groupBy = AggregationParamsBuilders.terms("groupBy_" + field, field);
+        groupBy.setSize(groupSize);
+        // 设置分页
+        if (null != pagination) {
+            int from = pagination.getFrom();
+            Integer size = pagination.getSize();
+            PipelineAggregationParams page = AggregationParamsBuilders.sort("page", from, size);
+            groupBy.setPerSubAggregation(page);
+        }
+        AggregationParams valueCount = AggregationParamsBuilders.count("count_" + field, FundTacticsAnalysisField.QUERY_CARD, null);
+        groupBy.setPerSubAggregation(valueCount);
+        return groupBy;
+    }
+
     public AggregationParams showFields(@Nullable FieldSort sort, String... fields) {
         return fundTacticsPartUniversalAggShowFields(fields, "local_hits", sort);
     }

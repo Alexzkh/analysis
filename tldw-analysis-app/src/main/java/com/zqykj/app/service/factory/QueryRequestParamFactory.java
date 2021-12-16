@@ -183,4 +183,9 @@ public interface QueryRequestParamFactory {
      * 其中cards 卡号作为查询卡号
      */
     QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, boolean isIn);
+
+    /**
+     * <h2> 获取快进快出结果记录 </h2>
+     */
+    QuerySpecialParams getFastInFastOutRecord(FastInFastOutRequest request);
 }
