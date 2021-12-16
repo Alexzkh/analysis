@@ -27,6 +27,7 @@
             <artifactId>tldw-elasticsearch-operations</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.zqykj</groupId>
             <artifactId>tldw-analysis-commons</artifactId>

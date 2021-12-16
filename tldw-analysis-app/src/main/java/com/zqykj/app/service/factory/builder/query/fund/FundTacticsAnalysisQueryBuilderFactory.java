@@ -575,4 +575,24 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         }
         return params;
     }
+
+    public QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, boolean isIn) {
+        // 构建查询参数
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        // 案件Id 过滤
+        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, caseId));
+        // 查询卡号集合过滤
+        if (!CollectionUtils.isEmpty(cards)) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
+        }
+        if (isIn) {
+            // 进账
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
+        } else {
+            // 出账
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
+        }
+        return querySpecialParams;
+    }
 }

@@ -202,4 +202,16 @@ public class BankTransactionRecord {
      */
     @Field(type = FieldType.Integer, name = "reverse_mark")
     private Integer reverseMark;
+
+    /**
+     * 创建时间
+     */
+    @Field(type = FieldType.Date, name = "create_time", format = DateFormat.custom, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date createDate;
+
+    /**
+     * 最后一次更新时间
+     */
+    @Field(type = FieldType.Date, name = "last_update_time", format = DateFormat.custom, pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date lastUpdateDate;
 }

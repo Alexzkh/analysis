@@ -114,7 +114,7 @@ public interface QueryRequestParamFactory {
     <T> QuerySpecialParams buildAdjustIndividualQuery(T request);
 
     /**
-     * 构建查询 入账的调单卡号集合参数
+     * 构建查询 入账的调单卡号集合d参数
      */
     QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota);
 
@@ -171,4 +171,16 @@ public interface QueryRequestParamFactory {
      */
     QuerySpecialParams getFastInOutTradeRecordsByLocalOpposite(String caseId, int singleQuota, List<String> queryCards, List<String> oppositeCards,
                                                                boolean isQueryCredits, Date tradeDate, QueryOperator operator, String... includeFields);
+
+
+    /**
+     * 新
+     */
+
+    /**
+     * <h2> 通过卡号获取进出记录 </h2>
+     * <p>
+     * 其中cards 卡号作为查询卡号
+     */
+    QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, boolean isIn);
 }
