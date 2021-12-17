@@ -9,6 +9,8 @@ import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import org.springframework.lang.Nullable;
 
+import java.util.List;
+
 /**
  * <h1> 公共聚合请求参数构建工厂 </h1>
  */
@@ -154,17 +156,7 @@ public interface AggregationRequestParamFactory {
     AggregationParams buildDistinctViaField(String distinctField);
 
     /**
-     * <h2> 构建查询 入账的调单卡号集合聚合参数 </h2>
+     * <h2> 获取对方卡号去重总数量 以及 对方卡号 </h2>
      */
-    AggregationParams buildCreditsAdjustCardsAgg(int initGroupSize, int from, int size);
-
-    /**
-     * <h2> 构建查询 入账的调单卡号集合总量聚合参数 </h2>
-     */
-    AggregationParams buildCreditsAdjustCardsTotalAgg();
-
-    /**
-     * <h2> 快进快出聚合(查询卡号与对方卡号均在选择个体的调单卡号内) 结果对对方卡号去重返回 </h2>
-     */
-    AggregationParams buildFastInFastOutOppositeCardGroup(FastInFastOutRequest request);
+    AggregationParams getCardGroupByAndDistinct(String field);
 }

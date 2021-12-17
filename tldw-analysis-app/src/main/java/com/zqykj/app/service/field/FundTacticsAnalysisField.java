@@ -207,11 +207,16 @@ public interface FundTacticsAnalysisField {
     // 流入金额
     String INFLOW_AMOUNT = "inflow_amount";
 
-    // 快进快出需要展示的字段
+    // 快进快出需要展示的字段(针对 表 FastInFastOutRecord})
     static String[] fastInFastOutFields() {
         return new String[]{"source_card", "source_account_name", "inflow_date", "inflow_amount", "transit_card", "transit_account_name",
                 "outflow_date", "outflow_amount", "deposit_card", "deposit_account_name", "feature_ratio"
         };
+    }
+
+    // 快进快出需要展示的字段(针对 表 BankTransactionRecord})
+    static String[] fastInFastOutQueryFields() {
+        return new String[]{QUERY_CARD, CUSTOMER_NAME, TRADING_TIME, CHANGE_MONEY, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME};
     }
 
     // 交易统计分析结果本方需要展示的字段

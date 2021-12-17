@@ -24,6 +24,8 @@ import static java.util.Collections.addAll;
 public class AbstractQuery implements Query {
 
     protected Pageable pageable = DEFAULT_PAGE;
+    protected int from = 0;
+    protected int size = 10_000;
     @Nullable
     protected Sort sort;
     protected List<String> fields = new ArrayList<>();
@@ -63,6 +65,14 @@ public class AbstractQuery implements Query {
         return this.pageable;
     }
 
+    public int from() {
+        return this.from;
+    }
+
+    public int size() {
+        return this.size;
+    }
+
     @Override
     public final <T extends Query> T setPageable(Pageable pageable) {
 
@@ -70,6 +80,22 @@ public class AbstractQuery implements Query {
 
         this.pageable = pageable;
         return (T) this.addSort(pageable.getSort());
+    }
+
+    public void setFrom(int from) {
+        this.from = from;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public int getFrom() {
+        return from;
+    }
+
+    public int getSize() {
+        return size;
     }
 
     @Override

@@ -17,7 +17,6 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.BankTransactionFlow;
-import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.query.*;
@@ -420,162 +419,6 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
-    public QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota) {
-
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
-        if (!CollectionUtils.isEmpty(adjustCards)) {
-
-            // 调单卡号集合过滤
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, adjustCards));
-        }
-        // 借贷标志进
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        querySpecialParams.addCombiningQueryParams(filter);
-        return querySpecialParams;
-    }
-
-    public QuerySpecialParams buildCreditAndPayoutRecordsNoSuchCards(FastInFastOutRequest request, int size,
-                                                                     boolean isCredits, String... includeFields) {
-        // 案件Id
-        String caseId = request.getCaseId();
-        // 单笔限额(交易金额)
-        int singleQuota = request.getSingleQuota();
-        // 构建查询参数
-        QuerySpecialParams query = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        // 单笔限额过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
-        if (isCredits) {
-            // 进账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        } else {
-            // 出账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
-        }
-        // not in 给定的一组卡号
-        CombinationQueryParams noIn = new CombinationQueryParams(ConditionType.must_not);
-        noIn.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNum()));
-        // 添加一个单个组合查询
-        filter.addCombinationQueryParams(noIn);
-        // 包装查询参数
-        query.addCombiningQueryParams(filter);
-        // 设置查询包含的字段
-        query.setIncludeFields(includeFields);
-        return query;
-    }
-
-    public QuerySpecialParams buildCreditAndPayOutViaLocalAndOpposite(String caseId, List<String> queryCards, List<String> oppositeCards,
-                                                                      int singleQuota, boolean isCredits, @Nullable String... includeFields) {
-        // 构建查询参数
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        // 调单卡号(查询卡号)集合过滤
-        if (!CollectionUtils.isEmpty(queryCards)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, queryCards));
-        }
-        // 对方卡号过滤
-        if (!CollectionUtils.isEmpty(oppositeCards)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, oppositeCards));
-        }
-        // 单笔限额过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
-        if (isCredits) {
-            // 进账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        } else {
-            // 出账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
-        }
-        querySpecialParams.addCombiningQueryParams(filter);
-        // 设置查询包含的字段
-        if (null != includeFields && includeFields.length > 0) {
-            querySpecialParams.setIncludeFields(includeFields);
-        }
-        return querySpecialParams;
-    }
-
-    public QuerySpecialParams queryAsAdjustOppositeNoSuchAdjust(FastInFastOutRequest request, String loanFlag) {
-
-        // 构建查询参数
-        QuerySpecialParams query = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
-        // 交易金额
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, request.getSingleQuota(), QueryOperator.gte));
-        // 借贷标志
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, loanFlag));
-        // 查询卡号
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNum()));
-        // !=
-        CombinationQueryParams mustNot = new CombinationQueryParams(ConditionType.must_not);
-        // 对方卡号不在这些卡号之内的
-        mustNot.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getCardNum()));
-
-        query.addCombiningQueryParams(filter);
-        query.addCombiningQueryParams(mustNot);
-        // 设置source
-        query.setIncludeFields(FundTacticsAnalysisField.fastInFastOutFields());
-        return query;
-    }
-
-    public QuerySpecialParams getFastInOutTradeRecordsByCondition(String caseId, int singleQuota, List<String> queryCards,
-                                                                  boolean isQueryCredits, Date tradeDate, QueryOperator operator,
-                                                                  @Nullable String... includeFields) {
-        // 构建查询参数
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id 过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, caseId));
-        // 查询卡号集合过滤
-        if (!CollectionUtils.isEmpty(queryCards)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, queryCards));
-        }
-        // 单笔限额过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
-        if (isQueryCredits) {
-            // 进账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        } else {
-            // 出账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
-        }
-        // 日期范围过滤
-        if (null != tradeDate && null != operator) {
-            String date = format.format(tradeDate);
-            if (operator == QueryOperator.gte) {
-                // 大于等于first的交易日期
-                filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRADING_TIME, DateRange.gte(date)));
-            } else if (operator == QueryOperator.lte) {
-                // 小于等于first的交易日期
-                filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRADING_TIME, DateRange.lte(date)));
-            }
-        }
-        querySpecialParams.addCombiningQueryParams(filter);
-        // 设置查询包含的字段
-        querySpecialParams.setIncludeFields(includeFields);
-
-        return querySpecialParams;
-    }
-
-    public QuerySpecialParams getFastInOutTradeRecordsByLocalOpposite(String caseId, int singleQuota, List<String> queryCards, List<String> oppositeCards,
-                                                                      boolean isQueryCredits, Date tradeDate, QueryOperator operator, String... includeFields) {
-        QuerySpecialParams params = getFastInOutTradeRecordsByCondition(caseId, singleQuota, queryCards, isQueryCredits, tradeDate, operator, includeFields);
-        CombinationQueryParams filter = params.getCombiningQuery().get(0);
-        // 加上 对方卡号过滤
-        if (!CollectionUtils.isEmpty(oppositeCards)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, oppositeCards));
-        }
-        return params;
-    }
-
     public QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, boolean isIn) {
         // 构建查询参数
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
@@ -594,6 +437,8 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
         }
         querySpecialParams.addCombiningQueryParams(filter);
+        // 设置source
+        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.fastInFastOutQueryFields());
         return querySpecialParams;
     }
 

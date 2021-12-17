@@ -675,41 +675,11 @@ public class FundTacticsAnalysisAggBuilderFactory implements AggregationRequestP
         return queryCardTerms;
     }
 
-    public AggregationParams buildCreditsAdjustCardsAgg(int initGroupSize, int from, int size) {
+    public AggregationParams getCardGroupByAndDistinct(String field) {
 
-        // 过滤出借贷标志为进
-        QuerySpecialParams filter = new QuerySpecialParams();
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        AggregationParams root = AggregationParamsBuilders.filter("filter_credits", filter, null);
-        AggregationParams cardTerms = AggregationParamsBuilders.terms("query_card_terms", FundTacticsAnalysisField.QUERY_CARD);
-        root.setPerSubAggregation(cardTerms);
-        // 入账金额
-        AggregationParams creditsAmountSum = AggregationParamsBuilders.sum("credit_amount", FundTacticsAnalysisField.CHANGE_MONEY);
-        // 入账次数
-        AggregationParams creditsCount = AggregationParamsBuilders.count("credits_times", FundTacticsAnalysisField.QUERY_CARD, null);
-        // 设置分组数量
-        cardTerms.setSize(initGroupSize);
-        cardTerms.setPerSubAggregation(creditsAmountSum);
-        cardTerms.setPerSubAggregation(creditsCount);
-        // 设置分页
-        PipelineAggregationParams sortAgg = AggregationParamsBuilders.sort("sort", from, size);
-        cardTerms.setPerSubAggregation(sortAgg);
+        AggregationParams root = AggregationParamsBuilders.terms("groupBy_" + field, field);
+        AggregationParams distinct = AggregationParamsBuilders.cardinality("distinct_" + field, field);
+        root.setPerSubAggregation(distinct);
         return root;
-    }
-
-    public AggregationParams buildCreditsAdjustCardsTotalAgg() {
-
-        // 过滤出借贷标志为进
-        QuerySpecialParams filter = new QuerySpecialParams();
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        AggregationParams root = AggregationParamsBuilders.filter("filter_credits", filter, null);
-        // 对查询卡号去重
-        AggregationParams total = AggregationParamsBuilders.cardinality("distinct_" + FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.QUERY_CARD);
-        root.setPerSubAggregation(total);
-        return root;
-    }
-
-    public AggregationParams buildFastInFastOutOppositeCardGroup(FastInFastOutRequest request) {
-        return groupByField(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getCardNum().size(), null);
     }
 }

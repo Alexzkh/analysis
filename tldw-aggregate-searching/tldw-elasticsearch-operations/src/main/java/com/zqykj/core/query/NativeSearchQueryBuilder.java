@@ -37,6 +37,8 @@ public class NativeSearchQueryBuilder {
     @Nullable
     private HighlightBuilder.Field[] highlightFields;
     private Pageable pageable = Pageable.unpaged();
+    private int from = 0;
+    private int size = 10_000;
     @Nullable
     private String[] fields;
     @Nullable
@@ -107,6 +109,16 @@ public class NativeSearchQueryBuilder {
 
     public NativeSearchQueryBuilder withPageable(Pageable pageable) {
         this.pageable = pageable;
+        return this;
+    }
+
+    public NativeSearchQueryBuilder withFrom(int from) {
+        this.from = from;
+        return this;
+    }
+
+    public NativeSearchQueryBuilder withSize(int size) {
+        this.size = size;
         return this;
     }
 
