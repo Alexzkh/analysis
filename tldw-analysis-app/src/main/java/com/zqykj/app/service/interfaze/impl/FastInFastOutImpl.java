@@ -85,6 +85,25 @@ public class FastInFastOutImpl implements IFastInFastOut {
 
     public ServerResponse fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
 
+        if (request.getType() == 1) {
+            // 代表全部查询
+            return fastInFastOutViaAllQuery(request);
+        } else {
+            return fastInFastOutViaChosenIndividual(request);
+        }
+    }
+
+    private ServerResponse fastInFastOutViaAllQuery(FastInFastOutRequest request) {
+
+        // 直接查询调单卡号的数量
+
+        return ServerResponse.createBySuccess();
+    }
+
+    /**
+     * 选择个体查询
+     */
+    private ServerResponse fastInFastOutViaChosenIndividual(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
         // 需要返回的数量
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         String property = request.getSortRequest().getProperty();
@@ -184,7 +203,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         resultResponse.setTotalPages(PageRequest.getTotalPages(total, pageRequest.getPageSize()));
         resultResponse.setSize(pageRequest.getPageSize());
         resultResponse.setContent(results);
-        return ServerResponse.createBySuccess();
+        return ServerResponse.createBySuccess(resultResponse);
     }
 
     /**

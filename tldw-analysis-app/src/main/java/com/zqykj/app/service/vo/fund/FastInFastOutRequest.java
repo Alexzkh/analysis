@@ -37,6 +37,7 @@ public class FastInFastOutRequest extends FundTacticsPartGeneralRequest {
      */
     private long timeInterval;
 
+    // 0 选择个体查询 1: 全部查询
     private int type = 0;
 
     public static FastInFastOutRequest simple(String caseId, int singleQuota) {
