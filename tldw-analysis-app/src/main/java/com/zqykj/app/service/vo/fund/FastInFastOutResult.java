@@ -17,6 +17,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class FastInFastOutResult {
 
+    private int hashId;
+
     /**
      * 资金来源卡号
      */
@@ -71,4 +73,10 @@ public class FastInFastOutResult {
      * 特征比: (流入金额 - 流出金额) / 流入金额
      */
     private int characteristicRatio;
+
+    public static String hashString(FastInFastOutResult result) {
+
+        return result.getFundSourceCard() + result.getInflowDate() + result.getOutflowAmount() +
+                result.getFundTransitCard() + result.getOutflowDate() + result.getOutflowAmount() + result.getFundDepositCard();
+    }
 }

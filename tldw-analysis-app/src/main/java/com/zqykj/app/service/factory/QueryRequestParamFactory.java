@@ -118,15 +118,17 @@ public interface QueryRequestParamFactory {
      */
 
     /**
-     * <h2> 通过卡号获取进出记录 </h2>
+     * <h2> 通过查询卡号获取进出记录 </h2>
      * <p>
      * 其中cards 卡号作为查询卡号
      */
-    QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, boolean isIn);
+    QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, int singleQuota, boolean isIn);
 
     /**
-     * <h2> 获取快进快出结果记录 </h2>
+     * <h2> 通过查询卡号与对方卡号 获取进出记录 </h2>
+     * <p>
+     * 其中cards 卡号作为查询卡号
      */
-    QuerySpecialParams getFastInFastOutRecord(FastInFastOutRequest request);
+    QuerySpecialParams getInoutRecordsViaQueryAndOpposite(List<String> cards, List<String> oppositeCards, String caseId, int singleQuota, boolean isIn);
 
 }
