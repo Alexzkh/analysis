@@ -189,23 +189,16 @@ public interface FundTacticsAnalysisField {
 
 
     /**
-     * 快进快出字段
+     * 快进快出排序字段
      */
-
-    // 时间间隔
-    String TIME_INTERVAL = "time_interval";
-
-    // 特征比
-    String FEATURE_RATIO = "feature_ratio";
-
-    // 调单卡号
-    String ADJUST_CARD = "adjust_card";
-
-    // 流出金额
-    String OUTFLOW_AMOUNT = "outflow_amount";
-
-    // 流入金额
-    String INFLOW_AMOUNT = "inflow_amount";
+    interface FastInoutSort {
+        // 流入金额
+        String INFLOW_AMOUNT = "inflowAmount";
+        // 流出时间日期
+        String OUTFLOW_TIME = "outflowTime";
+        // 流出金额
+        String OUTFLOW_AMOUNT = "outflowAmount";
+    }
 
     // 快进快出需要展示的字段(针对 表 BankTransactionRecord})
     static String[] fastInFastOutQueryFields() {

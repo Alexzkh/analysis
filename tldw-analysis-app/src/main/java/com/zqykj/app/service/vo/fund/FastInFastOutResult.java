@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class FastInFastOutResult {
 
+
     private int hashId;
 
     /**
@@ -72,7 +73,7 @@ public class FastInFastOutResult {
     /**
      * 特征比: (流入金额 - 流出金额) / 流入金额
      */
-    private int characteristicRatio;
+    private double characteristicRatio;
 
     public static String hashString(FastInFastOutResult result) {
 

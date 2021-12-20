@@ -27,6 +27,11 @@ public class PageRequest {
         return total == 0 ? 0 : (int) Math.ceil((double) total / (double) pageSize);
     }
 
+    public static int getPage(int page) {
+
+        return page <= 0 ? 0 : page - 1;
+    }
+
     public static int getOffset(int page, int pageSize) {
         return page * pageSize;
     }

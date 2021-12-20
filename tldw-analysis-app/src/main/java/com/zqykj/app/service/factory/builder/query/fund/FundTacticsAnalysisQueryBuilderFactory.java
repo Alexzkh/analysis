@@ -424,7 +424,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         // 案件Id 过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, caseId));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 金额过滤
         filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
         // 查询卡号集合过滤
@@ -444,7 +444,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
-    public QuerySpecialParams getInoutRecordsViaQueryAndOpposite(List<String> cards, List<String> oppositeCards, String caseId, int singleQuota, boolean isIn) {
+    public QuerySpecialParams getInoutRecordsViaQueryAndOpposite(List<String> cards, @Nullable List<String> oppositeCards, String caseId, int singleQuota, boolean isIn) {
 
         // 构建查询参数
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
@@ -471,6 +471,19 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         querySpecialParams.addCombiningQueryParams(filter);
         // 设置source
         querySpecialParams.setIncludeFields(FundTacticsAnalysisField.fastInFastOutQueryFields());
+        return querySpecialParams;
+    }
+
+    public QuerySpecialParams getAdjustCards(String caseId, int singleQuota) {
+        // 构建查询参数
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRANSACTION_MONEY, singleQuota, QueryOperator.gte));
+
+        querySpecialParams.addCombiningQueryParams(filter);
+        // 只查询卡号
+        querySpecialParams.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
         return querySpecialParams;
     }
 }
