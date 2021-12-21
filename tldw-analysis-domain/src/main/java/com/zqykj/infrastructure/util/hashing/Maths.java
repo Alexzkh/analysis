@@ -1,10 +1,9 @@
 package com.zqykj.infrastructure.util.hashing;
 
 
-import com.sun.istack.internal.NotNull;
 
 class Maths {
-    @NotNull
+    
     private static final Maths INSTANCE;
 
     static {

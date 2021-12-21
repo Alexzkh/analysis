@@ -198,6 +198,12 @@ public interface FundTacticsAnalysisField {
     String TRANSACTION_SUMMARY = "transaction_summary";
 
 
+    /**
+     * 主键id
+     * */
+    String ID = "id";
+
+
     // 交易统计分析结果本方需要展示的字段
     static String[] tradeStatisticalAnalysisLocalShowField() {
 

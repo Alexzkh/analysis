@@ -7,6 +7,7 @@ import com.zqykj.app.service.interfaze.IFundTracking;
 import com.zqykj.app.service.interfaze.IFundsSourceAndDestinationStatistics;
 import com.zqykj.app.service.strategy.analysis.impl.FundSourceAndDestinationFactory;
 import com.zqykj.app.service.strategy.analysis.impl.TransactionAmountStrategyImpl;
+import com.zqykj.app.service.strategy.analysis.proxy.BaseAPIProxy;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.enums.FundsResultType;
@@ -123,6 +124,8 @@ public class AggregationTest {
 
     @Autowired
     private IFundsSourceAndDestinationStatistics iFundsSourceAndDestinationStatistics;
+
+
 
     @Test
     public void multilayerAggsTest() throws JsonProcessingException {
@@ -618,6 +621,9 @@ public class AggregationTest {
 
     @Autowired
     private FundSourceAndDestinationFactory fundSourceAndDestinationFactory;
+
+
+
 
     @Test
     public void testAccessFundSourceAndDestinationTopN_交易净和() {

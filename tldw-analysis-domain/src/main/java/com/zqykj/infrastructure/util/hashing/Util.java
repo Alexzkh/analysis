@@ -1,12 +1,7 @@
 package com.zqykj.infrastructure.util.hashing;
 
-import java.nio.ByteBuffer;
-
-import com.sun.istack.internal.NotNull;
-import sun.nio.ch.DirectBuffer;
-
-
-import static java.nio.ByteOrder.*;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static java.nio.ByteOrder.nativeOrder;
 
 final class Util {
     static final boolean NATIVE_LITTLE_ENDIAN = nativeOrder() == LITTLE_ENDIAN;
@@ -21,16 +16,18 @@ final class Util {
      *   - Eclipse OpenJ9 VM
      *   - IBM J9 VM
      */
-    static private boolean isHotSpotVM(@NotNull final String name) {
+    static private boolean isHotSpotVM(final String name) {
         return name.contains("HotSpot") || name.contains("OpenJDK");
     }
-    static private boolean isJ9VM(@NotNull final String name) {
+
+    static private boolean isJ9VM(final String name) {
         return name.contains("Eclipse OpenJ9") || name.contains("IBM J9");
     }
 
-    @NotNull
+
     static final StringHash VALID_STRING_HASH;
-    static  {
+
+    static {
         StringHash stringHash = null;
         try {
             final String vmName = System.getProperty("java.vm.name");
@@ -65,9 +62,5 @@ final class Util {
     static void checkArrayOffs(final int arrayLength, final int off, final int len) {
         if (len < 0 || off < 0 || off + len > arrayLength || off + len < 0)
             throw new IndexOutOfBoundsException();
-    }
-
-    static long getDirectBufferAddress(@NotNull final ByteBuffer buff) {
-        return ((DirectBuffer)buff).address();
     }
 }
