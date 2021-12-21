@@ -76,6 +76,4 @@ public class FundPartAnalysisResult {
     @Key(name = "valueAsString")
     @Sort(name = "local_max_date")
     private String latestTradingTime;
-
-    public static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 }

@@ -29,6 +29,7 @@ import com.zqykj.util.BigDecimalUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.Nullable;
@@ -1063,7 +1064,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 资金来源户名
         result.setFundSourceAccountName(orderRecord.getTransactionOppositeName());
         // 流入时间日期
-        result.setInflowDate(format.format(orderRecord.getTradingTime()));
+        result.setInflowDate(DateFormatUtils.format(orderRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setInflowDateTime(orderRecord.getTradingTime().getTime());
         // 流入金额
         result.setInflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
@@ -1072,7 +1073,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 资金中转户名
         result.setFundTransitAccountName(orderRecord.getCustomerName());
         // 流出时间日期
-        result.setOutflowDate(format.format(unsortedRecord.getTradingTime()));
+        result.setOutflowDate(DateFormatUtils.format(unsortedRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setOutflowDateTime(unsortedRecord.getTradingTime().getTime());
         // 流出金额
         result.setOutflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
@@ -1103,7 +1104,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 资金来源户名
         result.setFundSourceAccountName(orderRecord.getCustomerName());
         // 流入时间日期
-        result.setInflowDate(format.format(orderRecord.getTradingTime()));
+        result.setInflowDate(DateFormatUtils.format(orderRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setInflowDateTime(orderRecord.getTradingTime().getTime());
         // 流入金额
         result.setInflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
@@ -1112,7 +1113,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         // 资金中转户名
         result.setFundTransitAccountName(orderRecord.getTransactionOppositeName());
         // 流出时间日期
-        result.setOutflowDate(format.format(unsortedRecord.getTradingTime()));
+        result.setOutflowDate(DateFormatUtils.format(unsortedRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setOutflowDateTime(unsortedRecord.getTradingTime().getTime());
         // 流出金额
         result.setOutflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
@@ -1141,12 +1142,12 @@ public class FastInFastOutImpl implements IFastInFastOut {
     private void setFastInoutSourceTransitOutflow(FastInFastOutResult result, BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord) {
         result.setFundSourceCard(unsortedRecord.getTransactionOppositeCard());
         result.setFundSourceAccountName(unsortedRecord.getTransactionOppositeName());
-        result.setInflowDate(format.format(unsortedRecord.getTradingTime()));
+        result.setInflowDate(DateFormatUtils.format(unsortedRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setInflowDateTime(unsortedRecord.getTradingTime().getTime());
         result.setInflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
         result.setFundTransitCard(unsortedRecord.getQueryCard());
         result.setFundTransitAccountName(unsortedRecord.getCustomerName());
-        result.setOutflowDate(format.format(orderRecord.getTradingTime()));
+        result.setOutflowDate(DateFormatUtils.format(orderRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setOutflowDateTime(orderRecord.getTradingTime().getTime());
         result.setOutflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
         result.setFundDepositCard(orderRecord.getTransactionOppositeCard());
@@ -1172,12 +1173,12 @@ public class FastInFastOutImpl implements IFastInFastOut {
     private void setFastInoutDepositOutflow(FastInFastOutResult result, BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord) {
         result.setFundSourceCard(unsortedRecord.getTransactionOppositeCard());
         result.setFundSourceAccountName(unsortedRecord.getTransactionOppositeName());
-        result.setInflowDate(format.format(unsortedRecord.getTradingTime()));
+        result.setInflowDate(DateFormatUtils.format(unsortedRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setInflowDateTime(unsortedRecord.getTradingTime().getTime());
         result.setInflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
         result.setFundTransitCard(unsortedRecord.getQueryCard());
         result.setFundTransitAccountName(unsortedRecord.getCustomerName());
-        result.setOutflowDate(format.format(orderRecord.getTradingTime()));
+        result.setOutflowDate(DateFormatUtils.format(orderRecord.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
         result.setOutflowDateTime(orderRecord.getTradingTime().getTime());
         result.setOutflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
         result.setFundDepositCard(orderRecord.getQueryCard());
