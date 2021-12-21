@@ -24,6 +24,12 @@ public class BigDecimalUtil {
         return new BigDecimal(date).longValue();
     }
 
+    public static BigDecimal value(double value) {
+
+        BigDecimal bigDecimal = new BigDecimal(value);
+        return bigDecimal.setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+
     public static BigDecimal value(String value) {
 
         BigDecimal bigDecimal = new BigDecimal(value);

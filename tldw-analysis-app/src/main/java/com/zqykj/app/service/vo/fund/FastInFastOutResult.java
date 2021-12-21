@@ -43,7 +43,7 @@ public class FastInFastOutResult {
     /**
      * 流入金额
      */
-    private double inflowAmount;
+    private BigDecimal inflowAmount;
 
     /**
      * 资金中转卡号
@@ -68,7 +68,7 @@ public class FastInFastOutResult {
     /**
      * 流出金额
      */
-    private double outflowAmount;
+    private BigDecimal outflowAmount;
 
     /**
      * 资金沉淀卡号
