@@ -68,4 +68,22 @@ public interface AggregationEntityMappingFactory {
      * @param mappingEntity       实体类
      */
     void buildSingleCardPortraitResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * 构建个人画像-基本信息和统计，查询聚合名称-聚合属性映射
+     *
+     * @param aggKeyMapping       aggKeyMapping
+     * @param entityAggKeyMapping entityAggKeyMapping
+     * @param mappingEntity       mappingEntity
+     */
+    void buildIndividualInfoAndStatisticsAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * 构建个人画像-名下卡交易统计，查询聚合名称-聚合属性映射
+     *
+     * @param aggKeyMapping aggKeyMapping
+     * @param  entityAggKeyMapping entityAggKeyMapping
+     * @param mappingEntity mappingEntity
+     */
+    void buildIndividualCardTransactionStatisticsAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
 }

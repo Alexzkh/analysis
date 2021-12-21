@@ -3,13 +3,10 @@
  */
 package com.zqykj.app.service.factory;
 
-import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import org.springframework.lang.Nullable;
-
-import java.util.List;
 
 /**
  * <h1> 公共聚合请求参数构建工厂 </h1>
@@ -159,4 +156,22 @@ public interface AggregationRequestParamFactory {
      * <h2> 获取对方卡号去重总数量 以及 对方卡号 </h2>
      */
     AggregationParams getCardGroupByAndDistinct(String field);
+
+    /**
+     * 构建个体画像-基本信息和统计聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildIndividualInfoAndStatisticsAgg(T request);
+
+    /**
+     * 构建个体画像-名下卡交易统计聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildIndividualCardTransactionStatisticsAgg(T request);
 }

@@ -3,10 +3,7 @@
  */
 package com.zqykj.app.service.factory.builder.query.fund;
 
-import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
-import com.zqykj.app.service.field.FundTacticsAnalysisField;
-import com.zqykj.app.service.field.PeopleAreaAnalysisFuzzyQueryField;
-import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
+import com.zqykj.app.service.field.*;
 import com.zqykj.app.service.strategy.PeopleAreaAnalysisFieldStrategy;
 import com.zqykj.app.service.transform.PeopleAreaConversion;
 import com.zqykj.app.service.vo.fund.*;
@@ -24,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -484,6 +482,47 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         querySpecialParams.addCombiningQueryParams(filter);
         // 只查询卡号
         querySpecialParams.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
+        return querySpecialParams;
+    }
+
+    @Override
+    public <T> QuerySpecialParams buildIndividualInfoAndStatisticsQueryParams(T request) {
+        IndividualInfoAndStatisticsRequest individualInfoAndStatisticsRequest = (IndividualInfoAndStatisticsRequest) request;
+        String caseId = individualInfoAndStatisticsRequest.getCaseId();
+        String customerIdentityCard = individualInfoAndStatisticsRequest.getCustomerIdentityCard();
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CASE_ID, caseId));
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CUSTOMER_IDENTITY_CARD, customerIdentityCard));
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        return querySpecialParams;
+    }
+
+    @Override
+    public <T> QuerySpecialParams buildIndividualCardTransactionStatisticsQueryParams(T request) {
+        IndividualCardTransactionStatisticsRequest individualCardTransactionStatisticsRequest = (IndividualCardTransactionStatisticsRequest) request;
+        String caseId = individualCardTransactionStatisticsRequest.getCaseId();
+        String customerIdentityCard = individualCardTransactionStatisticsRequest.getCustomerIdentityCard();
+        List<String> queryCards = individualCardTransactionStatisticsRequest.getQueryCards();
+        String keyword = individualCardTransactionStatisticsRequest.getKeyword();
+        DateRange dateRange = individualCardTransactionStatisticsRequest.getDateRange();
+
+        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        combinationQueryParams.setType(ConditionType.filter);
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CASE_ID, caseId));
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CUSTOMER_IDENTITY_CARD, customerIdentityCard));
+        if (!CollectionUtils.isEmpty(queryCards)) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(IndividualPortraitAnalysisField.QUERY_CARD, queryCards));
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.fuzzy(IndividualPortraitAnalysisField.QUERY_CARD, "*".concat(keyword).concat("*")));
+        }
+        if (!ObjectUtils.isEmpty(dateRange)) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.range(IndividualPortraitAnalysisField.TRADING_TIME, dateRange));
+        }
+        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
         return querySpecialParams;
     }
 }

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * 单卡画像返回体
@@ -53,17 +54,17 @@ public class SingleCardPortraitResponse implements Serializable {
     /**
      * 入账金额
      */
-    private Double entriesAmount;
+    private BigDecimal entriesAmount;
 
     /**
      * 出账金额
      */
-    private Double outGoingAmount;
+    private BigDecimal outGoingAmount;
 
     /**
      * 交易总金额
      */
-    private Double transactionTotalAmount;
+    private BigDecimal transactionTotalAmount;
 
     /**
      * 最早交易时间
@@ -78,6 +79,6 @@ public class SingleCardPortraitResponse implements Serializable {
     /**
      * 账户余额
      */
-    private Double transactionBalance;
+    private BigDecimal transactionBalance;
 
 }

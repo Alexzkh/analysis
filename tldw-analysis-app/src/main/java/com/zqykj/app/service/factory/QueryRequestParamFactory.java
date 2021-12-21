@@ -3,15 +3,10 @@
  */
 package com.zqykj.app.service.factory;
 
-import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
-import com.zqykj.common.vo.PageRequest;
-import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.query.CombinationQueryParams;
-import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.lang.Nullable;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -137,4 +132,22 @@ public interface QueryRequestParamFactory {
      * 过滤条件为交易金额、案件Id、查询的表是{@link com.zqykj.domain.bank.BankTransactionFlow}
      */
     QuerySpecialParams getAdjustCards(String caseId, int singleQuota);
+
+    /**
+     * 构建单卡画像-基本信息和统计查询参数
+     *
+     * @param request 单卡画像-基本信息和统计请求体
+     * @param <T>     T
+     * @return 返回构建的查询参数
+     */
+    <T> QuerySpecialParams buildIndividualInfoAndStatisticsQueryParams(T request);
+
+    /**
+     * 构建单卡画像-名下卡交易统计查询参数
+     *
+     * @param request 单卡画像-名下卡交易统计请求体
+     * @param <T>     T
+     * @return 返回构建的查询参数
+     */
+    <T> QuerySpecialParams buildIndividualCardTransactionStatisticsQueryParams(T request);
 }

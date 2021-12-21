@@ -4,6 +4,7 @@
 package com.zqykj.app.service.factory.mapping.fund;
 
 import com.zqykj.app.service.annotation.*;
+import com.zqykj.app.service.field.IndividualPortraitAnalysisField;
 import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.util.ReflectionUtils;
@@ -144,5 +145,32 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
         aggKeyMapping.put(SingleCardPortraitAnalysisField.AggResultName.LOCAL_IN_TRANSACTION_MONEY, SingleCardPortraitAnalysisField.AggResultField.VALUE);
         aggKeyMapping.put(SingleCardPortraitAnalysisField.AggResultName.LOCAL_OUT_TRANSACTION_MONEY, SingleCardPortraitAnalysisField.AggResultField.VALUE);
         aggKeyMapping.put(SingleCardPortraitAnalysisField.AggResultName.LOCAL_HITS, SingleCardPortraitAnalysisField.AggResultField.HITS);
+    }
+
+    @Override
+    public void buildIndividualInfoAndStatisticsAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity) {
+        buildIndividualPortraitAggMapping(aggKeyMapping, entityAggKeyMapping, mappingEntity);
+    }
+
+    @Override
+    public void buildIndividualCardTransactionStatisticsAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity) {
+        buildIndividualPortraitAggMapping(aggKeyMapping, entityAggKeyMapping, mappingEntity);
+    }
+
+    private void buildIndividualPortraitAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity) {
+        List<Field> allFields = ReflectionUtils.getAllFields(mappingEntity);
+        for (Field field : allFields) {
+            Agg agg = field.getAnnotation(Agg.class);
+            Key key = field.getAnnotation(Key.class);
+            if (agg != null && key != null) {
+                aggKeyMapping.put(agg.name(), key.name());
+                entityAggKeyMapping.put(field.getName(), agg.name());
+            }
+        }
+        Agg entityAgg = mappingEntity.getAnnotation(Agg.class);
+        Key entityKey = mappingEntity.getAnnotation(Key.class);
+        if (null != entityAgg) {
+            aggKeyMapping.put(entityAgg.name(), entityKey.name());
+        }
     }
 }

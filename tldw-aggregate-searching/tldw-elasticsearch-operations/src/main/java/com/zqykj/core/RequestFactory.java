@@ -545,6 +545,7 @@ public class RequestFactory {
             request.routing(query.getRoute());
         }
 
+        sourceBuilder.trackTotalHits(true);
         request.source(sourceBuilder);
         return request;
     }
