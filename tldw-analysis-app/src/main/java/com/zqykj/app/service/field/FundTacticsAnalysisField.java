@@ -199,6 +199,12 @@ public interface FundTacticsAnalysisField {
 
 
     /**
+     * 主键id
+     * */
+    String ID = "id";
+
+
+    /**
      * 快进快出排序字段
      */
     interface FastInoutSort {

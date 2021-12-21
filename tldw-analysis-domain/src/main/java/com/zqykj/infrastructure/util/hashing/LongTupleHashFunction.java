@@ -1,11 +1,6 @@
 package com.zqykj.infrastructure.util.hashing;
 
-import com.sun.istack.internal.NotNull;
 import javax.annotation.ParametersAreNonnullByDefault;
-
-import com.sun.istack.internal.Nullable;
-import sun.nio.ch.DirectBuffer;
-
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -75,7 +70,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #murmur_3(long)
      */
-    @NotNull
+
     public static LongTupleHashFunction murmur_3() {
         return MurmurHash_3.asLongTupleHashFunctionWithoutSeed();
     }
@@ -89,7 +84,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #murmur_3()
      */
-    @NotNull
+
     public static LongTupleHashFunction murmur_3(final long seed) {
         return MurmurHash_3.asLongTupleHashFunctionWithSeed(seed);
     }
@@ -103,7 +98,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #xx128(long)
      */
-    @NotNull
+
     public static LongTupleHashFunction xx128() {
         return XXH3.asLongTupleHashFunctionWithoutSeed();
     }
@@ -116,7 +111,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #xx128()
      */
-    @NotNull
+
     public static LongTupleHashFunction xx128(final long seed) {
         return XXH3.asLongTupleHashFunctionWithSeed(seed);
     }
@@ -124,7 +119,8 @@ public abstract class LongTupleHashFunction implements Serializable {
     /**
      * Constructor for use in subclasses.
      */
-    protected LongTupleHashFunction() {}
+    protected LongTupleHashFunction() {
+    }
 
     // Public API
     //
@@ -136,11 +132,11 @@ public abstract class LongTupleHashFunction implements Serializable {
 
     /**
      * Returns a new-allocated result array.
-     *
+     * <p>
      * If {@code bitsLength()} returns non-multiple of 64, the implementation of this method should
      * round-up the length to a multiple of 64 for allocating the {@code long} array.
      */
-    @NotNull
+
     public long[] newResultArray() {
         return new long[(bitsLength() + 63) / 64];
     }
@@ -158,7 +154,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      */
     public abstract void hashLong(long input, long[] result);
@@ -168,7 +164,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashLong(long, long[])
      */
-    @NotNull
+
     public long[] hashLong(final long input) {
         final long[] result = newResultArray();
         hashLong(input, result);
@@ -188,7 +184,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      */
     public abstract void hashInt(int input, long[] result);
@@ -198,7 +194,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashInt(int, long[])
      */
-    @NotNull
+
     public long[] hashInt(final int input) {
         final long[] result = newResultArray();
         hashInt(input, result);
@@ -218,7 +214,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      */
     public abstract void hashShort(short input, long[] result);
@@ -228,7 +224,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashShort(short, long[])
      */
-    @NotNull
+
     public long[] hashShort(final short input) {
         final long[] result = newResultArray();
         hashShort(input, result);
@@ -248,7 +244,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      */
     public abstract void hashChar(char input, long[] result);
@@ -258,7 +254,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashChar(char, long[])
      */
-    @NotNull
+
     public long[] hashChar(final char input) {
         final long[] result = newResultArray();
         hashChar(input, result);
@@ -277,7 +273,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      */
     public abstract void hashByte(byte input, long[] result);
@@ -287,7 +283,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashByte(byte, long[])
      */
-    @NotNull
+
     public long[] hashByte(final byte input) {
         final long[] result = newResultArray();
         hashByte(input, result);
@@ -304,7 +300,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      */
     public abstract void hashVoid(long[] result);
@@ -314,7 +310,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashVoid(long[])
      */
-    @NotNull
+
     public long[] hashVoid() {
         final long[] result = newResultArray();
         hashVoid(result);
@@ -335,18 +331,18 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the object to read bytes from
+     * @param input  the object to read bytes from
      * @param access access which defines the abstraction of the given input
      *               as ordered byte sequence
-     * @param off offset to the first byte of the subsequence to hash
-     * @param len length of the subsequence to hash
+     * @param off    offset to the first byte of the subsequence to hash
+     * @param len    length of the subsequence to hash
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @param <T> the type of the input
-     * @throws NullPointerException if {@code result == null}
+     * @param <T>    the type of the input
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      */
-    public abstract <T> void hash(@Nullable T input, Access<T> access,
+    public abstract <T> void hash(T input, Access<T> access,
                                   long off, long len, long[] result);
 
     /**
@@ -354,8 +350,8 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hash(Object, Access, long, long, long[])
      */
-    @NotNull
-    public <T> long[] hash(@Nullable final T input, final Access<T> access,
+
+    public <T> long[] hash(final T input, final Access<T> access,
                            final long off, final long len) {
         final long[] result = newResultArray();
         hash(input, access, off, len, result);
@@ -378,7 +374,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashBoolean(boolean, long[])
      */
-    @NotNull
+
     public long[] hashBoolean(final boolean input) {
         final long[] result = newResultArray();
         hashByte(input ? TRUE_BYTE_VALUE : FALSE_BYTE_VALUE, result);
@@ -397,7 +393,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashBooleans(boolean[], long[])
      */
-    @NotNull
+
     public long[] hashBooleans(final boolean[] input) {
         final long[] result = newResultArray();
         unsafeHash(this, input, BOOLEAN_BASE, input.length, result);
@@ -416,12 +412,12 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the array to read data from
-     * @param off index of the first {@code boolean} in the subsequence to hash
-     * @param len length of the subsequence to hash
+     * @param input  the array to read data from
+     * @param off    index of the first {@code boolean} in the subsequence to hash
+     * @param len    length of the subsequence to hash
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -437,7 +433,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashBooleans(boolean[], int, int, long[])
      */
-    @NotNull
+
     public long[] hashBooleans(final boolean[] input, final int off, final int len) {
         checkArrayOffs(input.length, off, len);
         final long[] result = newResultArray();
@@ -457,7 +453,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashBytes(byte[], long[])
      */
-    @NotNull
+
     public long[] hashBytes(final byte[] input) {
         final long[] result = newResultArray();
         unsafeHash(this, input, BYTE_BASE, input.length, result);
@@ -476,12 +472,12 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the array to read data from
-     * @param off index of the first {@code byte} in the subsequence to hash
-     * @param len length of the subsequence to hash
+     * @param input  the array to read data from
+     * @param off    index of the first {@code byte} in the subsequence to hash
+     * @param len    length of the subsequence to hash
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -496,7 +492,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashBytes(byte[], int, int, long[])
      */
-    @NotNull
+
     public long[] hashBytes(final byte[] input, final int off, final int len) {
         checkArrayOffs(input.length, off, len);
         final long[] result = newResultArray();
@@ -517,7 +513,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashBytes(ByteBuffer, long[])
      */
-    @NotNull
+
     public long[] hashBytes(final ByteBuffer input) {
         final long[] result = newResultArray();
         hashByteBuffer(this, input, input.position(), input.remaining(), result);
@@ -539,12 +535,12 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the buffer to read bytes from
-     * @param off index of the first {@code byte} in the subsequence to hash
-     * @param len length of the subsequence to hash
+     * @param input  the buffer to read bytes from
+     * @param off    index of the first {@code byte} in the subsequence to hash
+     * @param len    length of the subsequence to hash
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -560,7 +556,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashBytes(ByteBuffer, int, int, long[])
      */
-    @NotNull
+
     public long[] hashBytes(final ByteBuffer input, final int off, final int len) {
         checkArrayOffs(input.capacity(), off, len);
         final long[] result = newResultArray();
@@ -580,10 +576,10 @@ public abstract class LongTupleHashFunction implements Serializable {
      * {@code result.length > newResultArray().length]}.
      *
      * @param address the address of the first byte to hash
-     * @param len length of the byte sequence to hash
-     * @param result the container array for storing the hash results,
-     *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @param len     length of the byte sequence to hash
+     * @param result  the container array for storing the hash results,
+     *                should be alloced by {@link #newResultArray}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -597,7 +593,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashMemory(long, long, long[])
      */
-    @NotNull
+
     public long[] hashMemory(final long address, final long len) {
         final long[] result = newResultArray();
         unsafeHash(this, null, address, len, result);
@@ -617,7 +613,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashChars(char[], long[])
      */
-    @NotNull
+
     public long[] hashChars(final char[] input) {
         final long[] result = newResultArray();
         unsafeHash(this, input, CHAR_BASE, input.length * 2L, result);
@@ -636,13 +632,13 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the array to read data from
-     * @param off index of the first {@code char} in the subsequence to hash
-     * @param len length of the subsequence to hash, in chars (i.e. the length of the bytes sequence
-     *            to hash is {@code len * 2L})
+     * @param input  the array to read data from
+     * @param off    index of the first {@code char} in the subsequence to hash
+     * @param len    length of the subsequence to hash, in chars (i.e. the length of the bytes sequence
+     *               to hash is {@code len * 2L})
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -657,7 +653,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashChars(char[], int, int, long[])
      */
-    @NotNull
+
     public long[] hashChars(final char[] input, final int off, final int len) {
         checkArrayOffs(input.length, off, len);
         final long[] result = newResultArray();
@@ -678,7 +674,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashChars(String, long[])
      */
-    @NotNull
+
     public long[] hashChars(final String input) {
         final long[] result = newResultArray();
         VALID_STRING_HASH.hash(input, this, 0, input.length(), result);
@@ -698,13 +694,13 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the string which bytes to hash
-     * @param off index of the first {@code char} in the subsequence to hash
-     * @param len length of the subsequence to hash, in chars (i.e. the length of the bytes sequence
-     *            to hash is {@code len * 2L})
+     * @param input  the string which bytes to hash
+     * @param off    index of the first {@code char} in the subsequence to hash
+     * @param len    length of the subsequence to hash, in chars (i.e. the length of the bytes sequence
+     *               to hash is {@code len * 2L})
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -719,7 +715,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashChars(String, int, int, long[])
      */
-    @NotNull
+
     public long[] hashChars(final String input, final int off, final int len) {
         checkArrayOffs(input.length(), off, len);
         final long[] result = newResultArray();
@@ -740,7 +736,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashChars(CharSequence, long[])
      */
-    @NotNull
+
     public <T extends CharSequence> long[] hashChars(final T input) {
         final long[] result = newResultArray();
         hashNativeChars(this, input, 0, input.length(), result);
@@ -759,13 +755,13 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the char sequence which bytes to hash
-     * @param off index of the first {@code char} in the subsequence to hash
-     * @param len length of the subsequence to hash, in chars (i.e. the length of the bytes sequence
-     *            to hash is {@code len * 2L})
+     * @param input  the char sequence which bytes to hash
+     * @param off    index of the first {@code char} in the subsequence to hash
+     * @param len    length of the subsequence to hash, in chars (i.e. the length of the bytes sequence
+     *               to hash is {@code len * 2L})
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -781,7 +777,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashChars(CharSequence, int, int, long[])
      */
-    @NotNull
+
     public <T extends CharSequence> long[] hashChars(final T input, final int off, final int len) {
         checkArrayOffs(input.length(), off, len);
         final long[] result = newResultArray();
@@ -802,7 +798,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashShorts(short[], long[])
      */
-    @NotNull
+
     public long[] hashShorts(final short[] input) {
         final long[] result = newResultArray();
         unsafeHash(this, input, SHORT_BASE, input.length * 2L, result);
@@ -821,13 +817,13 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the array to read data from
-     * @param off index of the first {@code short} in the subsequence to hash
-     * @param len length of the subsequence to hash, in shorts (i.e. the length of the bytes
-     *            sequence to hash is {@code len * 2L})
+     * @param input  the array to read data from
+     * @param off    index of the first {@code short} in the subsequence to hash
+     * @param len    length of the subsequence to hash, in shorts (i.e. the length of the bytes
+     *               sequence to hash is {@code len * 2L})
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -842,7 +838,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashShorts(short[], int, int, long[])
      */
-    @NotNull
+
     public long[] hashShorts(final short[] input, final int off, final int len) {
         checkArrayOffs(input.length, off, len);
         final long[] result = newResultArray();
@@ -863,7 +859,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashInts(int[], long[])
      */
-    @NotNull
+
     public long[] hashInts(final int[] input) {
         final long[] result = newResultArray();
         unsafeHash(this, input, INT_BASE, input.length * 4L, result);
@@ -882,13 +878,13 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the array to read data from
-     * @param off index of the first {@code int} in the subsequence to hash
-     * @param len length of the subsequence to hash, in ints (i.e. the length of the bytes sequence
-     *            to hash is {@code len * 4L})
+     * @param input  the array to read data from
+     * @param off    index of the first {@code int} in the subsequence to hash
+     * @param len    length of the subsequence to hash, in ints (i.e. the length of the bytes sequence
+     *               to hash is {@code len * 4L})
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -903,7 +899,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashInts(int[], int, int, long[])
      */
-    @NotNull
+
     public long[] hashInts(final int[] input, final int off, final int len) {
         checkArrayOffs(input.length, off, len);
         final long[] result = newResultArray();
@@ -924,7 +920,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashLongs(long[], long[])
      */
-    @NotNull
+
     public long[] hashLongs(final long[] input) {
         final long[] result = newResultArray();
         unsafeHash(this, input, LONG_BASE, input.length * 8L, result);
@@ -943,13 +939,13 @@ public abstract class LongTupleHashFunction implements Serializable {
      * elements of the array will not be touched when
      * {@code result.length > newResultArray().length]}.
      *
-     * @param input the array to read data from
-     * @param off index of the first {@code long} in the subsequence to hash
-     * @param len length of the subsequence to hash, in longs (i.e. the length of the bytes sequence
-     *            to hash is {@code len * 8L})
+     * @param input  the array to read data from
+     * @param off    index of the first {@code long} in the subsequence to hash
+     * @param len    length of the subsequence to hash, in longs (i.e. the length of the bytes sequence
+     *               to hash is {@code len * 8L})
      * @param result the container array for storing the hash results,
      *               should be alloced by {@link #newResultArray}
-     * @throws NullPointerException if {@code result == null}
+     * @throws NullPointerException     if {@code result == null}
      * @throws IllegalArgumentException if {@code result.length < newResultArray().length}
      * @throws IllegalArgumentException if {@code off < 0} or {@code off + len > input.length}
      *                                  or {@code len < 0}
@@ -964,7 +960,7 @@ public abstract class LongTupleHashFunction implements Serializable {
      *
      * @see #hashLongs(long[], int, int, long[])
      */
-    @NotNull
+
     public long[] hashLongs(final long[] input, final int off, final int len) {
         checkArrayOffs(input.length, off, len);
         final long[] result = newResultArray();
@@ -974,14 +970,14 @@ public abstract class LongTupleHashFunction implements Serializable {
 
     // Internal helper
     //
-    @NotNull
+
     private static final Access<Object> OBJECT_ACCESS = UnsafeAccess.INSTANCE;
-    @NotNull
+
     private static final Access<CharSequence> CHAR_SEQ_ACCESS = nativeCharSequenceAccess();
-    @NotNull
+
     private static final Access<ByteBuffer> BYTE_BUF_ACCESS = ByteBufferAccess.INSTANCE;
 
-    private static void unsafeHash(final LongTupleHashFunction f, @Nullable final Object input,
+    private static void unsafeHash(final LongTupleHashFunction f, final Object input,
                                    final long off, final long len, final long[] result) {
         f.hash(input, OBJECT_ACCESS, off, len, result);
     }
@@ -990,8 +986,6 @@ public abstract class LongTupleHashFunction implements Serializable {
                                        final int off, final int len, final long[] result) {
         if (input.hasArray()) {
             unsafeHash(f, input.array(), BYTE_BASE + input.arrayOffset() + off, len, result);
-        } else if (input instanceof DirectBuffer) {
-            unsafeHash(f, null, ((DirectBuffer) input).address() + off, len, result);
         } else {
             f.hash(input, BYTE_BUF_ACCESS, off, len, result);
         }
