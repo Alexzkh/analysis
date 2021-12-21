@@ -2,6 +2,8 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
+import com.zqykj.app.service.factory.requestparam.agg.TradeStatisticalAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.requestparam.query.TradeStatisticalAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
@@ -53,9 +55,9 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     private final EntranceRepository entranceRepository;
 
-    private final AggregationRequestParamFactory aggregationRequestParamFactory;
+    private final TradeStatisticalAnalysisAggParamFactory aggregationRequestParamFactory;
 
-    private final QueryRequestParamFactory queryRequestParamFactory;
+    private final TradeStatisticalAnalysisQueryParamFactory queryRequestParamFactory;
 
     private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
 
@@ -117,12 +119,6 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
     }
 
     @Override
-    public QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, FundTacticsPartGeneralPreRequest request) {
-        // 构建查询参数
-        return queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
-    }
-
-    @Override
     public Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) throws Exception {
 
 
@@ -134,6 +130,12 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
                 , transactionStatisticsDetailRequest.getCardNumber(), caseId, transactionStatisticsDetailRequest.getQueryRequest().getKeyword());
         return page;
 
+    }
+
+    @Override
+    public QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, FundTacticsPartGeneralPreRequest request) {
+        // 构建查询参数
+        return queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
     }
 
     @Override

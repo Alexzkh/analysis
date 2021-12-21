@@ -13,91 +13,21 @@ import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.domain.Sort;
-import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.query.*;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 /**
- * <h1> 公共查询请求参数构建工厂 </h1>
+ * <h1> 资金公共查询请求参数构建工厂 </h1>
  */
 @Service
 public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParamFactory {
-
-    private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-    public <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T requestParam, V other) {
-
-        // 构建前置查询条件
-        FundDateRequest request = (FundDateRequest) requestParam;
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionFlow(requestParam, other);
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
-            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(cardsFilter(request.getCardNums())));
-        }
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-        return querySpecialParams;
-    }
-
-    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other,
-                                                                                           Class<?> queryTable) {
-
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) requestParam;
-        // 获取前置请求
-        FundTacticsPartGeneralPreRequest preRequest = request.convertFrom(request);
-        CombinationQueryParams combinationQueryParams;
-        if (BankTransactionFlow.class.isAssignableFrom(queryTable)) {
-            combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionFlow(preRequest, other);
-        } else {
-            combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionRecord(preRequest, other);
-        }
-
-        CombinationQueryParams cardNumsAndFuzzyQuery = new CombinationQueryParams();
-
-        cardNumsAndFuzzyQuery.setType(ConditionType.must);
-        // 本方查询卡号(有可能是查询全部,那么卡号不为空的时候才能选用此条件)
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
-            cardNumsAndFuzzyQuery.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
-        }
-        // 本方需要的模糊匹配
-        if (StringUtils.isNotBlank(request.getKeyword())) {
-            CombinationQueryParams localFuzzy = assembleLocalFuzzy(request.getKeyword());
-            localFuzzy.setDefaultQueryParam(new DefaultQueryParam());
-            cardNumsAndFuzzyQuery.addCommonQueryParams(new CommonQueryParams(localFuzzy));
-        }
-
-        combinationQueryParams.addCommonQueryParams(new CommonQueryParams(cardNumsAndFuzzyQuery));
-
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-
-        return querySpecialParams;
-    }
-
-    public QuerySpecialParams buildTradeStatisticalAnalysisHitsQuery(List<String> queryCards, String caseId) {
-
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.filter);
-        // 指定caseId
-        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        // 指定合并卡号集合过滤
-        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, queryCards));
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-        // 设置需要返回的字段
-        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.tradeStatisticalAnalysisLocalShowField());
-
-        return querySpecialParams;
-    }
 
     /**
      * <h2> 通用前置查询条件 </h2>
@@ -162,18 +92,6 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, request.getFund(), QueryOperator.of(request.getOperator().name())));
         // 添加组合查询
         return combinationQueryParams;
-    }
-
-    private CombinationQueryParams cardsFilter(List<String> cardNums) {
-
-        CombinationQueryParams combination = new CombinationQueryParams();
-        combination.setType(ConditionType.should);
-
-        if (!CollectionUtils.isEmpty(cardNums)) {
-            combination.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, cardNums));
-            combination.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, cardNums));
-        }
-        return combination;
     }
 
     /**
@@ -276,55 +194,6 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         return querySpecialParams;
     }
 
-
-    public <T, V> QuerySpecialParams buildTradeConvergenceAnalysisResultMainCardsRequest(T t, V v) {
-
-        QuerySpecialParams convergenceQuery = new QuerySpecialParams();
-        TradeConvergenceAnalysisQueryRequest request = (TradeConvergenceAnalysisQueryRequest) t;
-        // 获取前置请求
-        FundTacticsPartGeneralPreRequest preRequest = request.convertFrom(request);
-        CombinationQueryParams combinationQueryParams = this.buildCommonQueryParamsViaBankTransactionRecord(preRequest, v);
-        // 合并卡号集合过滤
-        if (!CollectionUtils.isEmpty(request.getMergeCards())) {
-            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.MERGE_CARD, request.getMergeCards()));
-        }
-        // 增加模糊查询条件
-        if (StringUtils.isNotBlank(request.getKeyword())) {
-
-            CombinationQueryParams localFuzzy = assembleLocalFuzzy(request.getKeyword());
-
-            CombinationQueryParams oppositeFuzzy = assembleOppositeFuzzy(request.getKeyword());
-
-            localFuzzy.getCommonQueryParams().addAll(oppositeFuzzy.getCommonQueryParams());
-
-            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(localFuzzy));
-        }
-        // 过滤 查询卡号 和 对方卡号为空的交易记录
-        CombinationQueryParams mustNot = new CombinationQueryParams();
-        mustNot.setType(ConditionType.must_not);
-        mustNot.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.QUERY_CARD, ""));
-        mustNot.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, ""));
-        convergenceQuery.addCombiningQueryParams(mustNot);
-        convergenceQuery.addCombiningQueryParams(combinationQueryParams);
-        return convergenceQuery;
-    }
-
-    public QuerySpecialParams buildTradeConvergenceAnalysisHitsQuery(List<String> mergeCards, String caseId) {
-
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.filter);
-        // 指定caseId
-        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        // 指定合并卡号集合过滤
-        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.MERGE_CARD, mergeCards));
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-        // 设置需要返回的字段
-        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.tradeConvergenceAnalysisShowField());
-
-        return querySpecialParams;
-    }
-
     public <T, V> QuerySpecialParams buildBasicParamQueryViaCase(T request, V other) {
 
         //TODO 后续可能会加一些request的参数作为 查询条件
@@ -414,74 +283,6 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             combinationQueryParams.addCommonQueryParams(new CommonQueryParams(fuzzyQuery));
         }
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-        return querySpecialParams;
-    }
-
-    public QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, int singleQuota, boolean isIn) {
-        // 构建查询参数
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id 过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        // 金额过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
-        // 查询卡号集合过滤
-        if (!CollectionUtils.isEmpty(cards)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
-        }
-        if (isIn) {
-            // 进账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        } else {
-            // 出账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
-        }
-        querySpecialParams.addCombiningQueryParams(filter);
-        // 设置source
-        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.fastInFastOutQueryFields());
-        return querySpecialParams;
-    }
-
-    public QuerySpecialParams getInoutRecordsViaQueryAndOpposite(List<String> cards, @Nullable List<String> oppositeCards, String caseId, int singleQuota, boolean isIn) {
-
-        // 构建查询参数
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id 过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, caseId));
-        // 金额过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
-        // 查询卡号集合过滤
-        if (!CollectionUtils.isEmpty(cards)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
-        }
-        // 对方卡号集合过滤
-        if (!CollectionUtils.isEmpty(oppositeCards)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, oppositeCards));
-        }
-        if (isIn) {
-            // 进账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        } else {
-            // 出账
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
-        }
-        querySpecialParams.addCombiningQueryParams(filter);
-        // 设置source
-        querySpecialParams.setIncludeFields(FundTacticsAnalysisField.fastInFastOutQueryFields());
-        return querySpecialParams;
-    }
-
-    public QuerySpecialParams getAdjustCards(String caseId, int singleQuota) {
-        // 构建查询参数
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRANSACTION_MONEY, singleQuota, QueryOperator.gte));
-
-        querySpecialParams.addCombiningQueryParams(filter);
-        // 只查询卡号
-        querySpecialParams.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
         return querySpecialParams;
     }
 

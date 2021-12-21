@@ -1,4 +1,4 @@
-package com.zqykj.app.service.factory.fund;
+package com.zqykj.app.service.factory.requestparam;
 
 import com.zqykj.common.enums.FundsResultType;
 import com.zqykj.parameters.aggregate.AggregationParams;

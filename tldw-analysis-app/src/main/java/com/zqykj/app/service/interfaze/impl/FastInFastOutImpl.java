@@ -7,6 +7,7 @@ import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.factory.requestparam.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
@@ -56,7 +57,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
 
     private final AggregationRequestParamFactory aggregationRequestParamFactory;
 
-    private final QueryRequestParamFactory queryRequestParamFactory;
+    private final FastInFastOutQueryParamFactory queryRequestParamFactory;
 
     private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
 

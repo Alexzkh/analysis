@@ -14,37 +14,6 @@ import org.springframework.lang.Nullable;
 public interface AggregationRequestParamFactory {
 
     /**
-     * 构建获取交易统计分析总数的聚合参数.
-     *
-     * @param request: 交易统计查询请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildTradeStatisticsAnalysisTotalAgg(T request);
-
-    /**
-     * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合) 、全部查询不适用此方法 </h2>
-     */
-    <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request, int from, int size);
-
-    /**
-     * <h2> 构建交易统计分析聚合展示字段聚合 </h2>
-     */
-    AggregationParams buildTradeStatisticalAnalysisHitsAgg(int groupSize);
-
-    /**
-     * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合、只返回查询卡号) </h2>
-     */
-    <T> AggregationParams buildTradeStatisticalQueryCardsAgg(T request, int from, int size);
-
-    /**
-     * 构建获取交易统计分析根据时间类型获取结果的聚合参数.
-     *
-     * @param request: 交易统计按时间类型统计请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildTradeStatisticsAnalysisFundByTimeType(T request);
-
-    /**
      * 构建获取资产分析的聚合参数.
      *
      * @param request: 构建资产趋势分析查询请求体.
@@ -59,27 +28,6 @@ public interface AggregationRequestParamFactory {
      * @return: com.zqykj.parameters.aggregate.AggregationParams
      **/
     <T> AggregationParams createPeopleAreaQueryAgg(T request);
-
-
-    /**
-     * <h2>  构建交易汇聚分析结果聚合请求(基于选中一组调单卡号集合为查询条件) </h2>
-     */
-    <T> AggregationParams buildTradeConvergenceAnalysisResultMainCardsAgg(T request, int from, int size);
-
-    /**
-     * <h2> 构建交易汇聚分析结果聚合请求(基于选中一组合并卡号集合为查询条件)  </h2>
-     */
-    <T> AggregationParams buildTradeConvergenceQueryAndMergeCardsAgg(T request, int from, int size);
-
-    /**
-     * <h2> 构建交易汇聚分析聚合展示字段聚合 </h2>
-     */
-    AggregationParams buildTradeConvergenceAnalysisHitsAgg(int groupSize);
-
-    /**
-     * <h2> 获取交易汇聚分析结果查询总数据量 </h2>
-     */
-    <T> AggregationParams buildTradeConvergenceAnalysisResultTotalAgg(T request);
 
     /**
      * <h2> 批量获取调单卡号集合 </h2>

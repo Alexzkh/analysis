@@ -4,7 +4,6 @@
 package com.zqykj.app.service.factory.mapping.fund;
 
 import com.zqykj.app.service.annotation.*;
-import com.zqykj.app.service.field.IndividualPortraitAnalysisField;
 import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.util.ReflectionUtils;
