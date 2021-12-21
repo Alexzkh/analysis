@@ -36,9 +36,14 @@ public class FastInFastOutResult {
     private String inflowDate;
 
     /**
+     * 流入时间日期(ms)
+     */
+    private long inflowDateTime;
+
+    /**
      * 流入金额
      */
-    private BigDecimal inflowAmount;
+    private double inflowAmount;
 
     /**
      * 资金中转卡号
@@ -51,14 +56,19 @@ public class FastInFastOutResult {
     private String fundTransitAccountName;
 
     /**
-     * 流出日期
+     * 流出时间日期
      */
     private String outflowDate;
 
     /**
+     * 流出时间日期(ms)
+     */
+    private long outflowDateTime;
+
+    /**
      * 流出金额
      */
-    private BigDecimal outflowAmount;
+    private double outflowAmount;
 
     /**
      * 资金沉淀卡号
@@ -77,7 +87,7 @@ public class FastInFastOutResult {
 
     public static String hashString(FastInFastOutResult result) {
 
-        return result.getFundSourceCard() + result.getInflowDate() + result.getOutflowAmount() +
-                result.getFundTransitCard() + result.getOutflowDate() + result.getOutflowAmount() + result.getFundDepositCard();
+        return result.getFundSourceCard() + result.getInflowDateTime() + result.getInflowAmount() +
+                result.getFundTransitCard() + result.getOutflowDateTime() + result.getOutflowAmount() + result.getFundDepositCard();
     }
 }
