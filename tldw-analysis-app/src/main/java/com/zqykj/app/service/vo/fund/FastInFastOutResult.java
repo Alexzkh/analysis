@@ -10,12 +10,15 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 /**
- * <h1> 快进快出结果 </h1>
+ * <h1> 快进快出结果(包含调单卡号作为来源的、中转的、沉淀的) </h1>
  */
 @Setter
 @Getter
 @NoArgsConstructor
 public class FastInFastOutResult {
+
+
+    private int hashId;
 
     /**
      * 资金来源卡号
@@ -33,9 +36,14 @@ public class FastInFastOutResult {
     private String inflowDate;
 
     /**
+     * 流入时间日期(ms)
+     */
+    private long inflowDateTime;
+
+    /**
      * 流入金额
      */
-    private BigDecimal inflowAmount;
+    private double inflowAmount;
 
     /**
      * 资金中转卡号
@@ -48,14 +56,19 @@ public class FastInFastOutResult {
     private String fundTransitAccountName;
 
     /**
-     * 流出日期
+     * 流出时间日期
      */
     private String outflowDate;
 
     /**
+     * 流出时间日期(ms)
+     */
+    private long outflowDateTime;
+
+    /**
      * 流出金额
      */
-    private BigDecimal outflowAmount;
+    private double outflowAmount;
 
     /**
      * 资金沉淀卡号
@@ -68,7 +81,13 @@ public class FastInFastOutResult {
     private String fundDepositAccountName;
 
     /**
-     * 特征比: (入账金额 - 出账金额) / 入账金额
+     * 特征比: (流入金额 - 流出金额) / 流入金额
      */
-    private String characteristicRatio;
+    private double characteristicRatio;
+
+    public static String hashString(FastInFastOutResult result) {
+
+        return result.getFundSourceCard() + result.getInflowDateTime() + result.getInflowAmount() +
+                result.getFundTransitCard() + result.getOutflowDateTime() + result.getOutflowAmount() + result.getFundDepositCard();
+    }
 }

@@ -32,6 +32,10 @@ public interface Query {
      */
     Pageable getPageable();
 
+    int from();
+
+    int size();
+
     <T extends Query> T addSort(Sort sort);
 
     /**

@@ -236,7 +236,7 @@ public class QueryMappingBuilder {
                 target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
 
                 applyDateRange(queryClass, dateRange, target);
-            } else if (null != common.getQueryOperator()) {
+            } else {
 
                 // 数值类的范围查询
                 QueryOperator queryOperator = common.getQueryOperator();

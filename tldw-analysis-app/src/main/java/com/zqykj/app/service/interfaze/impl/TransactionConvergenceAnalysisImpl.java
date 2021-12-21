@@ -5,13 +5,13 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
+import com.zqykj.app.service.factory.requestparam.agg.TradeConvergenceAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.requestparam.query.TradeConvergenceAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionConvergenceAnalysis;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
-import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
-import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
@@ -42,9 +42,9 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
 
     private final EntranceRepository entranceRepository;
 
-    private final AggregationRequestParamFactory aggregationRequestParamFactory;
+    private final TradeConvergenceAnalysisAggParamFactory aggregationRequestParamFactory;
 
-    private final QueryRequestParamFactory queryRequestParamFactory;
+    private final TradeConvergenceAnalysisQueryParamFactory queryRequestParamFactory;
 
     private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
 
@@ -227,7 +227,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             }
         }
         // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
-        long computeTotal = total + total / 10;
+        long computeTotal = total + total / 100;
         // 设置分组数量
         request.setGroupInitSize(initGroupSize);
         // 异步任务查询起始位置

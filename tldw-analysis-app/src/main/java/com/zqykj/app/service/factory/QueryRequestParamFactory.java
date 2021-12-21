@@ -14,22 +14,6 @@ import java.util.List;
 public interface QueryRequestParamFactory {
 
     /**
-     * 构建交易统计时间规律的构建.
-     *
-     * @param request: 前置请求body.T->TradeStatisticalAnalysisPreRequest
-     * @param other:   案件编号
-     * @return: com.zqykj.parameters.query.QuerySpecialParams
-     **/
-    <T, V> QuerySpecialParams createTradeAmountByTimeQuery(T request, V other);
-
-    <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other, Class<?> queryTable);
-
-    /**
-     * <h2> 构建交易统计分析聚合展示字段查询 </h2>
-     */
-    QuerySpecialParams buildTradeStatisticalAnalysisHitsQuery(List<String> queryCards, String caseId);
-
-    /**
      * 构建公共查询请求体.
      *
      * @param request:   前置请求body.T->TradeStatisticalAnalysisPreRequest
@@ -76,16 +60,6 @@ public interface QueryRequestParamFactory {
     <T, V> QuerySpecialParams bulidPeopleAreaDetailAnalysisRequest(T requestParam, V parameter);
 
     /**
-     * <h2> 构建交易汇聚分析结果查询请求(基于选中一组调单卡号集合为查询条件) </h2>
-     */
-    <T, V> QuerySpecialParams buildTradeConvergenceAnalysisResultMainCardsRequest(T request, V other);
-
-    /**
-     * <h2> 构建交易汇聚分析聚合展示字段查询 </h2>
-     */
-    QuerySpecialParams buildTradeConvergenceAnalysisHitsQuery(List<String> mergeCards, String caseId);
-
-    /**
      * <h2> 构建最基本查询参数请求 </h2>
      * <p>
      * 案件域
@@ -106,11 +80,6 @@ public interface QueryRequestParamFactory {
      * 构建选择个人查询参数
      */
     <T> QuerySpecialParams buildAdjustIndividualQuery(T request);
-
-    /**
-     * 构建查询 入账的调单卡号集合参数
-     */
-    QuerySpecialParams buildCreditsAdjustCards(String caseId, List<String> adjustCards, int singleQuota);
 
     /**
      * 构建单卡画像-基本信息和统计查询参数

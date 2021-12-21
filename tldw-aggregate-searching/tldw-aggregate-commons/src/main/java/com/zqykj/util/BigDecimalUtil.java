@@ -63,7 +63,13 @@ public class BigDecimalUtil {
     public static BigDecimal mul(double v1, double v2) {
         BigDecimal b1 = new BigDecimal(Double.toString(v1));
         BigDecimal b2 = new BigDecimal(Double.toString(v2));
-        return b1.multiply(b2);
+        return b1.multiply(b2).setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+
+    public static BigDecimal mulReserveFour(double v1, double v2) {
+        BigDecimal b1 = new BigDecimal(Double.toString(v1));
+        BigDecimal b2 = new BigDecimal(Double.toString(v2));
+        return b1.multiply(b2).setScale(4, BigDecimal.ROUND_HALF_UP);
     }
 
     public static BigDecimal mul(String v1, String v2) {
@@ -76,6 +82,17 @@ public class BigDecimalUtil {
         BigDecimal b1 = new BigDecimal(Double.toString(v1));
         BigDecimal b2 = new BigDecimal(Double.toString(v2));
         return b1.divide(b2, 2, BigDecimal.ROUND_HALF_UP);//四舍五入,保留2位小数
+
+        //除不尽的情况
+    }
+
+    /**
+     * <h2> 保留小数的后四位 </h2>
+     */
+    public static BigDecimal divReserveFour(double v1, double v2) {
+        BigDecimal b1 = new BigDecimal(Double.toString(v1));
+        BigDecimal b2 = new BigDecimal(Double.toString(v2));
+        return b1.divide(b2, 4, BigDecimal.ROUND_HALF_UP);//四舍五入,保留2位小数
 
         //除不尽的情况
     }
