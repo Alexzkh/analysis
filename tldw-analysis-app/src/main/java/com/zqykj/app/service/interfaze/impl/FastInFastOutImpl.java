@@ -6,7 +6,6 @@ package com.zqykj.app.service.interfaze.impl;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
-import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.factory.requestparam.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFastInFastOut;
@@ -29,6 +28,7 @@ import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.Nullable;
@@ -85,6 +85,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
     // 中转卡号最大基数
     @Value("${fastInout.transit_card_count}")
     private int transitCardCount;
+    // 最大查询调单卡号数量
     @Value("${fastInout.max_adjustCard_query_count}")
     private int maxAdjustCardQueryCount;
 
@@ -164,7 +165,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
             results = results.stream().skip(skip).limit(limit).collect(Collectors.toList());
         } else {
             // 结果合并去重
-            Comparator<Double> amountComparator = Comparator.reverseOrder();
+            Comparator<BigDecimal> amountComparator = Comparator.reverseOrder();
             Comparator<Long> dateComparator = Comparator.reverseOrder();
             if (order.isAscending()) {
                 amountComparator = Comparator.naturalOrder();
@@ -295,7 +296,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         }
         // 需要查询的卡号
         List<String> queryCards = new ArrayList<>(requireQueryInOutCards.keySet());
-        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, null, request.getCaseId(), singleQuota, isInFlow);
+        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, request.getCardNum(), request.getCaseId(), singleQuota, isInFlow);
         if (CollectionUtils.isEmpty(unsortedRecords)) {
             return null;
         }
@@ -340,7 +341,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         int computeTotal = getRequireQueryCardsAndOrderRecordsAndTotal(sortRecords, requireQueryInOutCards, queryCardInOutTimes, orderRecords);
         // 需要查询的卡号
         List<String> queryCards = new ArrayList<>(requireQueryInOutCards.keySet());
-        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, null, request.getCaseId(), singleQuota, isInFlow);
+        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, request.getCardNum(), request.getCaseId(), singleQuota, isInFlow);
         if (CollectionUtils.isEmpty(unsortedRecords)) {
             return null;
         }
@@ -480,7 +481,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
             int finalPosition = position;
             int finalPage = page;
             CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() ->
-                    getInOutRecordViaQueryCards(requireQueryInOutCards, caseId, singleQuota, !isInflow, finalPage, next - finalPosition));
+                    getInOutRecordViaQueryCards(requireQueryInOutCards, oppositeCards, caseId, singleQuota, !isInflow, finalPage, next - finalPosition));
             futures.add(future);
             position = next;
             page++;
@@ -503,7 +504,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
     /**
      * <h2> 生成快进快出结果 {@link FastInFastOutRecord} </h2>
      * <p>
-     * 调单卡号作为中转卡号的情况
+     * 调单卡号作为中转卡号的情况 (流入和流出排序不同,生成的结果也不同)
      *
      * @return 返回符合limit 数量的结果,返回数据总量
      */
@@ -523,6 +524,10 @@ public class FastInFastOutImpl implements IFastInFastOut {
                 continue;
             }
             for (BankTransactionRecord unsortedRecord : mergeRecords) {
+                //  需要排除 来源卡号 和 沉淀卡号相同的情况
+                if (StringUtils.equals(orderRecord.getTransactionOppositeCard(), unsortedRecord.getTransactionOppositeCard())) {
+                    continue;
+                }
                 // 获取limit数量 所需要的结果
                 if (fastInFastOutResults.size() < limit) {
                     FastInFastOutResult fastInFastOutResult = convertFromDataTransit(characteristicRatio, timeInterval, orderRecord, unsortedRecord, isInflow);
@@ -546,7 +551,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
     /**
      * <h2> 生成快进快出结果 {@link FastInFastOutResult} </h2>
      * <p>
-     * 调单卡号作为来源卡号的情况(按流入、流出排序生成的记录有所区别,因为排序的数据不同)
+     * 调单卡号作为来源卡号的情况 (流入和流出排序不同,生成的结果也不同)
      *
      * @return 返回符合limit 数量的结果,返回数据总量
      */
@@ -569,6 +574,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
             }
             for (BankTransactionRecord unsortedRecord : mergeRecords) {
                 if (fastInFastOutResults.size() < limit) {
+                    // 需要排序来源卡号 与 沉淀卡号相同的情况
                     FastInFastOutResult fastInFastOutRecord = convertFromDataSource(characteristicRatio, timeInterval, orderRecord, unsortedRecord, isInflow);
                     if (null != fastInFastOutRecord) {
                         fastInFastOutResults.add(fastInFastOutRecord);
@@ -587,6 +593,14 @@ public class FastInFastOutImpl implements IFastInFastOut {
         return resultsMap;
     }
 
+    /**
+     * <h2> 生成快进快出结果 {@link FastInFastOutResult} </h2>
+     * <p>
+     * 调单卡号作为沉淀卡号的情况 (流入和流出排序不同,生成的结果也不同)
+     * 需要排除 来源卡号 和 沉淀卡号相同的情况
+     *
+     * @return 返回符合limit 数量的结果,返回数据总量
+     */
     private Map<String, ?> generateFastInOutFromDeposit(int characteristicRatio, long timeInterval, int limit,
                                                         List<BankTransactionRecord> orderRecords, List<BankTransactionRecord> unsortedRecords, boolean isInflow) {
 
@@ -607,6 +621,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
             }
             for (BankTransactionRecord unsortedRecord : mergeRecords) {
                 if (fastInFastOutResults.size() < limit) {
+                    // 需要排序来源卡号 与 沉淀卡号相同的情况
                     FastInFastOutResult fastInFastOutRecord = convertFromDataDeposit(characteristicRatio, timeInterval, orderRecord, unsortedRecord, isInflow);
                     if (null != fastInFastOutRecord) {
                         fastInFastOutResults.add(fastInFastOutRecord);
@@ -688,12 +703,17 @@ public class FastInFastOutImpl implements IFastInFastOut {
     }
 
     /**
-     * <h2> 通过查询卡号获取进出记录(不排序) </h2>
+     * <h2> 通过查询卡号、对方卡号 获取进出记录(不排序) </h2>
      */
-    private List<BankTransactionRecord> getInOutRecordViaQueryCards(List<String> cards, String caseId, int singleQuota,
+    private List<BankTransactionRecord> getInOutRecordViaQueryCards(List<String> cards, List<String> oppositeCards, String caseId, int singleQuota,
                                                                     boolean isIn, int from, int orderChunkSize) {
 
-        QuerySpecialParams query = queryRequestParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, singleQuota, isIn);
+        QuerySpecialParams query;
+        if (CollectionUtils.isEmpty(oppositeCards)) {
+            query = queryRequestParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, singleQuota, isIn);
+        } else {
+            query = queryRequestParamFactory.getInoutRecordsViaQueryAndOpposite(cards, oppositeCards, caseId, singleQuota, isIn);
+        }
         Page<BankTransactionRecord> recordPage = entranceRepository.findAll(PageRequest.of(from, orderChunkSize), caseId, BankTransactionRecord.class, query);
         if (null == recordPage || CollectionUtils.isEmpty(recordPage.getContent())) {
             return null;
@@ -727,6 +747,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
      * <h2> 生成一条快进快出记录 </h2>
      * <p>
      * 适用于调单卡号作为来源情况
+     * 需要排除 来源卡号 和 沉淀卡号相同的情况
      */
     private FastInFastOutResult convertFromDataSource(int characteristicRatio, long timeInterval,
                                                       BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord, boolean isInflow) {
@@ -753,6 +774,10 @@ public class FastInFastOutImpl implements IFastInFastOut {
             if (computeTimeInterval == -1L || computeTimeInterval > timeInterval) {
                 return null;
             }
+        }
+        // 需要排除来源卡号和沉淀卡号相同的情况
+        if (StringUtils.equals(source.getFundSourceCard(), source.getFundDepositCard())) {
+            return null;
         }
         // 特征比(入账金额-出账金额) / 入账金额
         double computeFeatureRatio = computeFastInFastOutCharacteristicRatio(orderRecord.getChangeAmount(), unsortedRecord.getChangeAmount(), inflowAmount);
@@ -809,6 +834,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
      * <h2> 生成一条快进快出记录 </h2>
      * <p>
      * 适用于调单卡号作为沉淀情况
+     * 需要排序来源卡号 与 沉淀卡号相同的情况
      */
     private FastInFastOutResult convertFromDataDeposit(int characteristicRatio, long timeInterval,
                                                        BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord, boolean isInflow) {
@@ -831,6 +857,10 @@ public class FastInFastOutImpl implements IFastInFastOut {
             if (computeTimeInterval == -1L || computeTimeInterval > timeInterval) {
                 return null;
             }
+        }
+        // 需要排序来源卡号 与 沉淀卡号相同的情况
+        if (StringUtils.equals(deposit.getFundSourceCard(), deposit.getFundDepositCard())) {
+            return null;
         }
         // 特征比(入账金额-出账金额) / 入账金额
         double computeFeatureRatio = computeFastInFastOutCharacteristicRatio(orderRecord.getChangeAmount(), unsortedRecord.getChangeAmount(), inflowAmount);
@@ -1015,7 +1045,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         result.setInflowDate(format.format(orderRecord.getTradingTime()));
         result.setInflowDateTime(orderRecord.getTradingTime().getTime());
         // 流入金额
-        result.setInflowAmount(orderRecord.getChangeAmount());
+        result.setInflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
         // 资金中转卡号
         result.setFundTransitCard(orderRecord.getQueryCard());
         // 资金中转户名
@@ -1024,7 +1054,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         result.setOutflowDate(format.format(unsortedRecord.getTradingTime()));
         result.setOutflowDateTime(unsortedRecord.getTradingTime().getTime());
         // 流出金额
-        result.setOutflowAmount(unsortedRecord.getChangeAmount());
+        result.setOutflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
         // 资金沉淀卡号
         result.setFundDepositCard(unsortedRecord.getTransactionOppositeCard());
         // 资金沉淀户名
@@ -1033,8 +1063,8 @@ public class FastInFastOutImpl implements IFastInFastOut {
 
     // 沉淀流入、中转流入
     private String computeHashStringDepositTransitInflow(BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord) {
-        return orderRecord.getTransactionOppositeCard() + orderRecord.getTradingTime().getTime() + orderRecord.getChangeAmount()
-                + orderRecord.getQueryCard() + unsortedRecord.getTradingTime().getTime() + unsortedRecord.getChangeAmount()
+        return orderRecord.getTransactionOppositeCard() + orderRecord.getTradingTime().getTime() + BigDecimalUtil.value(orderRecord.getChangeAmount())
+                + orderRecord.getQueryCard() + unsortedRecord.getTradingTime().getTime() + BigDecimalUtil.value(unsortedRecord.getChangeAmount())
                 + unsortedRecord.getTransactionOppositeCard();
     }
 
@@ -1048,7 +1078,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         result.setInflowDate(format.format(orderRecord.getTradingTime()));
         result.setInflowDateTime(orderRecord.getTradingTime().getTime());
         // 流入金额
-        result.setInflowAmount(orderRecord.getChangeAmount());
+        result.setInflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
         // 资金中转卡号
         result.setFundTransitCard(orderRecord.getTransactionOppositeCard());
         // 资金中转户名
@@ -1057,7 +1087,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
         result.setOutflowDate(format.format(unsortedRecord.getTradingTime()));
         result.setOutflowDateTime(unsortedRecord.getTradingTime().getTime());
         // 流出金额
-        result.setOutflowAmount(unsortedRecord.getChangeAmount());
+        result.setOutflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
         // 资金沉淀卡号
         result.setFundDepositCard(unsortedRecord.getTransactionOppositeCard());
         // 资金沉淀户名
@@ -1066,8 +1096,8 @@ public class FastInFastOutImpl implements IFastInFastOut {
 
     // 来源流入
     private String computeHashStringSourceInflow(BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord) {
-        return orderRecord.getQueryCard() + orderRecord.getTradingTime().getTime() + orderRecord.getChangeAmount()
-                + orderRecord.getTransactionOppositeCard() + unsortedRecord.getTradingTime().getTime() + unsortedRecord.getChangeAmount()
+        return orderRecord.getQueryCard() + orderRecord.getTradingTime().getTime() + BigDecimalUtil.value(orderRecord.getChangeAmount())
+                + orderRecord.getTransactionOppositeCard() + unsortedRecord.getTradingTime().getTime() + BigDecimalUtil.value(unsortedRecord.getChangeAmount())
                 + unsortedRecord.getTransactionOppositeCard();
     }
 
@@ -1078,20 +1108,20 @@ public class FastInFastOutImpl implements IFastInFastOut {
         result.setFundSourceAccountName(unsortedRecord.getTransactionOppositeName());
         result.setInflowDate(format.format(unsortedRecord.getTradingTime()));
         result.setInflowDateTime(unsortedRecord.getTradingTime().getTime());
-        result.setInflowAmount(unsortedRecord.getChangeAmount());
+        result.setInflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
         result.setFundTransitCard(unsortedRecord.getQueryCard());
         result.setFundTransitAccountName(unsortedRecord.getCustomerName());
         result.setOutflowDate(format.format(orderRecord.getTradingTime()));
         result.setOutflowDateTime(orderRecord.getTradingTime().getTime());
-        result.setOutflowAmount(orderRecord.getChangeAmount());
+        result.setOutflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
         result.setFundDepositCard(orderRecord.getTransactionOppositeCard());
         result.setFundDepositAccountName(orderRecord.getTransactionOppositeName());
     }
 
     // 来源流出、中转流出
     private String computeHashStringSourceTransitOutflow(BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord) {
-        return unsortedRecord.getTransactionOppositeCard() + unsortedRecord.getTradingTime().getTime() + unsortedRecord.getChangeAmount()
-                + unsortedRecord.getQueryCard() + orderRecord.getTradingTime().getTime() + orderRecord.getChangeAmount()
+        return unsortedRecord.getTransactionOppositeCard() + unsortedRecord.getTradingTime().getTime() + BigDecimalUtil.value(unsortedRecord.getChangeAmount())
+                + unsortedRecord.getQueryCard() + orderRecord.getTradingTime().getTime() + BigDecimalUtil.value(orderRecord.getChangeAmount())
                 + orderRecord.getTransactionOppositeCard();
     }
 
@@ -1102,20 +1132,20 @@ public class FastInFastOutImpl implements IFastInFastOut {
         result.setFundSourceAccountName(unsortedRecord.getTransactionOppositeName());
         result.setInflowDate(format.format(unsortedRecord.getTradingTime()));
         result.setInflowDateTime(unsortedRecord.getTradingTime().getTime());
-        result.setInflowAmount(unsortedRecord.getChangeAmount());
+        result.setInflowAmount(BigDecimalUtil.value(unsortedRecord.getChangeAmount()));
         result.setFundTransitCard(unsortedRecord.getQueryCard());
         result.setFundTransitAccountName(unsortedRecord.getCustomerName());
         result.setOutflowDate(format.format(orderRecord.getTradingTime()));
         result.setOutflowDateTime(orderRecord.getTradingTime().getTime());
-        result.setOutflowAmount(orderRecord.getChangeAmount());
+        result.setOutflowAmount(BigDecimalUtil.value(orderRecord.getChangeAmount()));
         result.setFundDepositCard(orderRecord.getQueryCard());
         result.setFundDepositAccountName(orderRecord.getCustomerName());
     }
 
     // 来源流出、中转流出
     private String computeHashStringDepositOutflow(BankTransactionRecord orderRecord, BankTransactionRecord unsortedRecord) {
-        return unsortedRecord.getTransactionOppositeCard() + unsortedRecord.getTradingTime().getTime() + unsortedRecord.getChangeAmount()
-                + unsortedRecord.getQueryCard() + orderRecord.getTradingTime().getTime() + orderRecord.getChangeAmount()
+        return unsortedRecord.getTransactionOppositeCard() + unsortedRecord.getTradingTime().getTime() + BigDecimalUtil.value(unsortedRecord.getChangeAmount())
+                + unsortedRecord.getQueryCard() + orderRecord.getTradingTime().getTime() + BigDecimalUtil.value(orderRecord.getChangeAmount())
                 + orderRecord.getQueryCard();
     }
 }
