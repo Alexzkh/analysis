@@ -1,7 +1,5 @@
 package com.zqykj.infrastructure.util.hashing;
-
 import java.nio.ByteBuffer;
-
 
 import static com.zqykj.infrastructure.util.hashing.Maths.unsignedLongMulXorFold;
 import static com.zqykj.infrastructure.util.hashing.UnsafeAccess.BYTE_BASE;

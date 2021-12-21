@@ -1,7 +1,5 @@
 package com.zqykj.infrastructure.util.hashing;
 
-import com.sun.istack.internal.NotNull;
-
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteOrder;
 
@@ -74,13 +72,13 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  */
 @ParametersAreNonnullByDefault
 public class CompactLatin1CharSequenceAccess extends Access<byte[]> {
-    @NotNull
+    
     static final Access<byte[]> INSTANCE = new CompactLatin1CharSequenceAccess();
 
-    @NotNull
+    
     private static final Access<byte[]> INSTANCE_NON_NATIVE = Access.newDefaultReverseAccess(INSTANCE);
 
-    @NotNull
+    
     private static final UnsafeAccess UNSAFE = UnsafeAccess.INSTANCE;
 
     private static final long UNSAFE_IDX_ADJUST
@@ -166,13 +164,13 @@ public class CompactLatin1CharSequenceAccess extends Access<byte[]> {
     }
 
     @Override
-    @NotNull
+    
     public ByteOrder byteOrder(final byte[] input) {
         return UNSAFE.byteOrder(input);
     }
 
     @Override
-    @NotNull
+    
     protected Access<byte[]> reverseAccess() {
         return INSTANCE_NON_NATIVE;
     }
