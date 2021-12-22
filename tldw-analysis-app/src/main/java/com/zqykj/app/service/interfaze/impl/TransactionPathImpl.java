@@ -157,7 +157,7 @@ public class TransactionPathImpl implements ITransactionPath {
                     Page<BankTransactionFlow> sourceFlow = entranceRepository.findAll(sourcePageRequest, caseId, BankTransactionFlow.class, source);
                     Page<BankTransactionFlow> destFlow = entranceRepository.findAll(destPageRequest, caseId, BankTransactionFlow.class, dest);
                     if (!ObjectUtils.isEmpty(sourceFlow.getContent().get(0)) && !ObjectUtils.isEmpty(destFlow.getContent().get(0))) {
-                        long timeSpan = DateTimeCalculatorUtil.betweenTotalDays(sourceFlow.getContent().get(0).getTradingTime(), destFlow.getContent().get(0).getTradingTime());
+                        long timeSpan = Math.abs( DateTimeCalculatorUtil.betweenTotalDays(sourceFlow.getContent().get(0).getTradingTime(), destFlow.getContent().get(0).getTradingTime()));
                         TransactionPathResultVO transactionPathResultVO = this.builder(sourceFlow.getContent().get(0), destFlow.getContent().get(0), timeSpan, rowIdsResult);
                         results.add(transactionPathResultVO);
                     }
