@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <h2> 资金战法部分通用 </h2>
+ * <h1> 资金战法部分通用聚合构建 </h1>
  */
-public class FundTacticsPartCommonAgg {
+public class FundTacticsCommonAgg {
 
     /**
      * <h2> 资金战法分析部分通用聚合查询(适用于用户指定了一组调单卡号集合) </h2>
@@ -64,6 +64,24 @@ public class FundTacticsPartCommonAgg {
         // 交易净额
         AggregationParams tradeNet = AggregationParamsBuilders.sum("local_trade_net", FundTacticsAnalysisField.TRANSACTION_MONEY, null);
         cardTerms.setPerSubAggregation(tradeNet);
+    }
+
+    /**
+     * <h2> 查询调单卡号总量 </h2>
+     */
+    public AggregationParams queryAdjustCardTotal() {
+
+        return AggregationParamsBuilders.cardinality("distinct_" + FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.QUERY_CARD);
+    }
+
+    /**
+     * <h2> 获取固定数量的调单卡号(针对全部查询) </h2>
+     */
+    public AggregationParams queryFixedCountAdjustCards(int size) {
+
+        AggregationParams terms = AggregationParamsBuilders.terms("groupBy_" + FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.QUERY_CARD);
+        terms.setSize(size);
+        return terms;
     }
 
     /**

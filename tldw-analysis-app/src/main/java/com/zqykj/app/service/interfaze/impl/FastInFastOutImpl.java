@@ -6,7 +6,7 @@ package com.zqykj.app.service.interfaze.impl;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
-import com.zqykj.app.service.factory.requestparam.query.FastInFastOutQueryParamFactory;
+import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
@@ -85,12 +85,12 @@ public class FastInFastOutImpl implements IFastInFastOut {
     @Value("${fastInout.transit_card_count}")
     private int transitCardCount;
     // 最大查询调单卡号数量
-    @Value("${fastInout.max_adjustCard_query_count}")
+    @Value("${fundTactics.max_adjustCard_query_count}")
     private int maxAdjustCardQueryCount;
 
     private static final DateParser DATE_PARSER = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
 
-    public ServerResponse fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
+    public ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
 
         if (request.getType() == 1) {
             // 全部查询
@@ -104,7 +104,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
     /**
      * <h2> 全部查询 </h2>
      */
-    private ServerResponse fastInFastOutViaAllQuery(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
+    private ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutViaAllQuery(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
 
         // 直接查询调单卡号的数量,批量获取 maxAdjustCardQueryCount 数量的调单卡号
         // 查询出前 maxAdjustCardQueryCount 个调单卡号
@@ -116,12 +116,12 @@ public class FastInFastOutImpl implements IFastInFastOut {
     /**
      * <h2> 选择个体查询 </h2>
      */
-    private ServerResponse fastInFastOutViaChosenIndividual(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
+    private ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutViaChosenIndividual(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
         // 需要返回的数量
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         String property = request.getSortRequest().getProperty();
         Direction order = request.getSortRequest().getOrder();
-        int limit = pageRequest.getPage() == 0 ? pageRequest.getPageSize() : pageRequest.getPage() * pageRequest.getPageSize();
+        int limit = pageRequest.getPage() == 0 ? pageRequest.getPageSize() : (pageRequest.getPage() + 1) * pageRequest.getPageSize();
         int skip = pageRequest.getPage() * pageRequest.getPageSize();
         int size = pageRequest.getPageSize();
         // 来源的

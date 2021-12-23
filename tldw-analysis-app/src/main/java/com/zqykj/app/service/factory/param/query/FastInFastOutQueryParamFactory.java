@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.requestparam.query;
+package com.zqykj.app.service.factory.param.query;
 
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.lang.Nullable;

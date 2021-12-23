@@ -3,7 +3,7 @@
  */
 package com.zqykj.app.service.factory.builder.query.fund;
 
-import com.zqykj.app.service.factory.requestparam.query.FastInFastOutQueryParamFactory;
+import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;

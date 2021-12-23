@@ -5,8 +5,8 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
-import com.zqykj.app.service.factory.requestparam.agg.TradeConvergenceAnalysisAggParamFactory;
-import com.zqykj.app.service.factory.requestparam.query.TradeConvergenceAnalysisQueryParamFactory;
+import com.zqykj.app.service.factory.param.agg.TradeConvergenceAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.param.query.TradeConvergenceAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionConvergenceAnalysis;
@@ -77,10 +77,10 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             request.setGroupInitSize(initGroupSize);
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
         } else {
-            // TODO 全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
+            // TODO 全部查询,暂定只支持查询到100页,过大不仅消耗内存 且查询速度过慢
             // 全部条件
-            if (request.getPageRequest().getPage() > 30) {
-                return ServerResponse.createBySuccess("分页上限为30页", FundAnalysisResultResponse.empty());
+            if (request.getPageRequest().getPage() > 100) {
+                return ServerResponse.createBySuccess("分页上限为100页", FundAnalysisResultResponse.empty());
             }
             map = convergenceAnalysisResultViaAllMainCards(request, caseId);
         }

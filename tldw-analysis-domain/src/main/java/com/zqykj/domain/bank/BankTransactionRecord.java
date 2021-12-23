@@ -81,7 +81,7 @@ public class BankTransactionRecord {
     /**
      * 查询账号
      */
-    @Field(type = FieldType.Text, name = "query_account", analyzer = "ik_max_word")
+    @Field(type = FieldType.Keyword, name = "query_account")
     private String queryAccount;
 
     /**
@@ -114,7 +114,7 @@ public class BankTransactionRecord {
     /**
      * 交易对方账号
      */
-    @Field(type = FieldType.Text, name = "transaction_opposite_account", analyzer = "ik_max_word")
+    @Field(type = FieldType.Keyword, name = "transaction_opposite_account")
     private String transactionOppositeAccount;
 
     /**

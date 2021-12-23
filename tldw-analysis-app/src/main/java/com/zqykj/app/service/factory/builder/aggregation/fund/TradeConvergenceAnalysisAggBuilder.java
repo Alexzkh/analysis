@@ -4,7 +4,7 @@
 package com.zqykj.app.service.factory.builder.aggregation.fund;
 
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
-import com.zqykj.app.service.factory.requestparam.agg.TradeConvergenceAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.param.agg.TradeConvergenceAnalysisAggParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.builder.AggregationParamsBuilders;
@@ -26,7 +26,7 @@ import org.springframework.util.CollectionUtils;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeConvergenceAnalysisAggBuilder extends FundTacticsPartCommonAgg implements TradeConvergenceAnalysisAggParamFactory {
+public class TradeConvergenceAnalysisAggBuilder extends FundTacticsCommonAgg implements TradeConvergenceAnalysisAggParamFactory {
 
     private final QueryRequestParamFactory queryRequestParamFactory;
 
