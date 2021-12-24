@@ -62,9 +62,6 @@ public class FastInFastOutImpl implements IFastInFastOut {
     private final FastInFastOutQueryParamFactory queryRequestParamFactory;
 
     private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
-    // es group by 分组 数量
-    @Value("${buckets.page.initSize}")
-    private int initGroupSize;
 
     // 快进快出生成结果条数(数值排序有6中规则(降序和升序),流入金额、流出金额、流出日期)
     // 每种规则生成5W数据,比如调单卡号作为来源情况满的话,会有30w数据,可能有重复,需要去重
@@ -85,7 +82,7 @@ public class FastInFastOutImpl implements IFastInFastOut {
     @Value("${fastInout.transit_card_count}")
     private int transitCardCount;
     // 最大查询调单卡号数量
-    @Value("${fundTactics.max_adjustCard_query_count}")
+    @Value("${fundTactics.queryAll.max_adjustCard_query_count}")
     private int maxAdjustCardQueryCount;
 
     private static final DateParser DATE_PARSER = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");

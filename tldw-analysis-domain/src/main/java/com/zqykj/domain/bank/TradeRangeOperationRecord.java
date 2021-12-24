@@ -45,6 +45,11 @@ public class TradeRangeOperationRecord {
     private Date operationDate;
 
     /**
+     * 操作日期(格式化后的日期字符串)
+     */
+    private String operationDateFormat;
+
+    /**
      * 操作人
      */
     @Field(type = FieldType.Keyword, name = "operation_people")
@@ -66,25 +71,25 @@ public class TradeRangeOperationRecord {
      * 账户开户名称
      */
     @Field(type = FieldType.Keyword, name = "account_name")
-    private String accountName;
+    private String accountOpeningName;
 
     /**
      * 账户开户证件号码
      */
     @Field(type = FieldType.Keyword, name = "account_id_number")
-    private String accountIDNumber;
+    private String accountOpeningIDNumber;
 
     /**
      * 个体银行卡数量 (当查询全部调单卡号的时候, 默认设置为int的最大值)
      */
     @Field(type = FieldType.Integer, name = "individual_bankCards_number")
-    private Integer individualBankCardsNumber;
+    private int individualBankCardsNumber;
 
     /**
      * 数据类别
      */
     @Field(type = FieldType.Keyword, name = "data_cateGory")
-    private String dataCateGory;
+    private String dataCategory;
 
     /**
      * 备注

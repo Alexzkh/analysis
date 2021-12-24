@@ -6,6 +6,8 @@ package com.zqykj.app.service.factory.param.query;
 import com.zqykj.app.service.vo.fund.TradeRangeScreeningDataChartRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
+import java.util.List;
+
 /**
  * <h1> 交易区间筛选查询请求参数工厂 </h1>
  */
@@ -22,7 +24,7 @@ public interface TradeRangeScreeningQueryParamFactory {
     QuerySpecialParams queryCreditOrPayoutAmount(TradeRangeScreeningDataChartRequest request, boolean isCredit);
 
     /**
-     * <h2> 根据案件Id查询 </h2>
+     * <h2> 根据条件查询调单卡号的交易记录 </h2>
      */
-    QuerySpecialParams queryCase(String caseId);
+    QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, double minAmount, double maxAmount);
 }

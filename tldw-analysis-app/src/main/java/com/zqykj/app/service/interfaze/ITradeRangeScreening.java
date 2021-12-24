@@ -3,10 +3,12 @@
  */
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.fund.TradeRangeScreeningDataChartRequest;
-import com.zqykj.app.service.vo.fund.TradeRangeScreeningDataChartResult;
-import com.zqykj.app.service.vo.fund.TradeRangeScreeningSaveRequest;
+import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.domain.bank.TradeRangeOperationRecord;
+
+import java.util.List;
 
 /**
  * <h1> 交易区间筛选 </h1>
@@ -22,4 +24,19 @@ public interface ITradeRangeScreening {
      * <h2> 保存交易区间筛选操作记录 </h2>
      */
     ServerResponse<String> saveOperationRecord(TradeRangeScreeningSaveRequest request);
+
+    /**
+     * <h2> 刪除交易区间筛选操作记录 </h2>
+     */
+    ServerResponse<String> deleteOperationRecord(String caseId, String id);
+
+    /**
+     * <h2> 交易区间筛选操作记录列表 </h2>
+     */
+    ServerResponse<List<TradeRangeOperationRecord>> operationRecordsList(FundTacticsPartGeneralRequest request);
+
+    /**
+     * <h2> 查看交易区间筛选操作记录详细列表数据 </h2>
+     */
+    ServerResponse<List<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(TradeRangeOperationDetailSeeRequest request);
 }

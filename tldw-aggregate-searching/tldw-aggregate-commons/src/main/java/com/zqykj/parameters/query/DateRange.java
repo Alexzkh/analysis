@@ -14,7 +14,6 @@ import org.elasticsearch.index.query.RangeQueryBuilder;
  */
 @Setter
 @Getter
-@AllArgsConstructor
 @NoArgsConstructor
 public class DateRange {
 

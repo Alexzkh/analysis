@@ -11,15 +11,19 @@ import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.DateRange;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * <h1> 交易区间筛选查询请求参数构建 </h1>
  */
 @Service
-public class TradeRangeScreeningQueryBuilder extends FundTacticsCommonQuery implements TradeRangeScreeningQueryParamFactory {
+public class TradeRangeScreeningQueryBuilder implements TradeRangeScreeningQueryParamFactory {
+
 
 
     public QuerySpecialParams queryTradeAmount(TradeRangeScreeningDataChartRequest request) {
@@ -50,11 +54,20 @@ public class TradeRangeScreeningQueryBuilder extends FundTacticsCommonQuery impl
         return query;
     }
 
-    public QuerySpecialParams queryCase(String caseId) {
+    public QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, double minAmount, double maxAmount) {
 
-        return queryByCaseId(caseId);
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        // 案件Id
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, adjustCards));
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, minAmount, QueryOperator.gte));
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, maxAmount, QueryOperator.lte));
+        query.addCombiningQueryParams(filter);
+        // 设置queryFields
+        query.setIncludeFields(FundTacticsAnalysisField.tradeRangeOperationDetailQueryFields());
+        return query;
     }
-
 
     /**
      * <h2> 查询金额 </h2>

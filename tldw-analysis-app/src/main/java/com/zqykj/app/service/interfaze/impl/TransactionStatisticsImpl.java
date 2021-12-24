@@ -63,16 +63,18 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
-    @Value("${buckets.page.initSize}")
+//    private final FundTacticsPartCommonImpl partCommon;
+
+    @Value("${fundTactics.bucket_size}")
     private int initGroupSize;
 
-    private static final String CARDINALITY_TOTAL = "cardinality_total";
-
-    @Value("${global.chunkSize}")
+    @Value("${fundTactics.queryAll.chunkSize}")
     private int globalChunkSize;
 
-    @Value("${chunkSize}")
+    @Value("${fundTactics.chunkSize}")
     private int chunkSize;
+
+    private static final String CARDINALITY_TOTAL = "cardinality_total";
 
     @Override
     public HistogramStatisticResponse getHistogramStatistics(String caseId, FundTacticsPartGeneralPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs) {
@@ -325,6 +327,18 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         int page = pageRequest.getPage();
         int pageSize = pageRequest.getPageSize();
+        // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
+//        if (partCommon.checkAdjustCardCount(request.getCaseId())) {
+//            List<String> adjustCards = partCommon.queryMaxAdjustCards(request.getCaseId());
+//            if (CollectionUtils.isEmpty(adjustCards)) {
+//                resultMap.put("total", 0);
+//                resultMap.put("result", new ArrayList<>());
+//                return resultMap;
+//            }
+//            request.setCardNums(adjustCards);
+//            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
+//            return statisticsAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
+//        }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);

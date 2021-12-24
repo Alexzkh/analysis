@@ -52,13 +52,15 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
-    @Value("${buckets.page.initSize}")
+//    private final FundTacticsPartCommonImpl partCommon;
+
+    @Value("${fundTactics.bucket_size}")
     private int initGroupSize;
 
-    @Value("${global.chunkSize}")
+    @Value("${fundTactics.queryAll.chunkSize}")
     private int globalChunkSize;
 
-    @Value("${chunkSize}")
+    @Value("${fundTactics.chunkSize}")
     private int chunkSize;
 
     private static final String CARDINALITY_TOTAL = "cardinality_total";
@@ -77,11 +79,6 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             request.setGroupInitSize(initGroupSize);
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
         } else {
-            // TODO 全部查询,暂定只支持查询到100页,过大不仅消耗内存 且查询速度过慢
-            // 全部条件
-            if (request.getPageRequest().getPage() > 100) {
-                return ServerResponse.createBySuccess("分页上限为100页", FundAnalysisResultResponse.empty());
-            }
             map = convergenceAnalysisResultViaAllMainCards(request, caseId);
         }
         List<TradeConvergenceAnalysisResult> results = (List<TradeConvergenceAnalysisResult>) map.get("result");
@@ -205,10 +202,22 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
     protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
 
         // 前台分页
-        Map<String, Object> resultMap = new HashMap<>();
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         int page = pageRequest.getPage();
         int pageSize = pageRequest.getPageSize();
+        Map<String, Object> resultMap = new HashMap<>();
+        // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
+//        if (partCommon.checkAdjustCardCount(request.getCaseId())) {
+//            List<String> adjustCards = partCommon.queryMaxAdjustCards(request.getCaseId());
+//            if (CollectionUtils.isEmpty(adjustCards)) {
+//                resultMap.put("total", 0);
+//                resultMap.put("result", new ArrayList<>());
+//                return resultMap;
+//            }
+//            request.setCardNums(adjustCards);
+//            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
+//            return convergenceAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
+//        }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);
