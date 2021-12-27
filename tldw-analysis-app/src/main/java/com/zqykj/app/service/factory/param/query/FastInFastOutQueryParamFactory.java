@@ -21,13 +21,6 @@ public interface FastInFastOutQueryParamFactory {
     QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, int singleQuota, boolean isIn);
 
     /**
-     * <h2> 查询调单卡号 </h2>
-     * <p>
-     * 过滤条件为交易金额、案件Id、查询的表是{@link com.zqykj.domain.bank.BankTransactionFlow}
-     */
-    QuerySpecialParams getAdjustCards(String caseId, int singleQuota);
-
-    /**
      * <h2> 通过查询卡号与对方卡号 获取进出记录 </h2>
      * <p>
      * 其中cards 卡号作为查询卡号

@@ -22,6 +22,7 @@ import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
@@ -48,7 +49,7 @@ import java.util.Map;
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TransactionStatisticsImpl implements ITransactionStatistics {
+public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements ITransactionStatistics {
 
 
     private final EntranceRepository entranceRepository;
@@ -63,8 +64,6 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
-//    private final FundTacticsPartCommonImpl partCommon;
-
     @Value("${fundTactics.bucket_size}")
     private int initGroupSize;
 
@@ -73,8 +72,6 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     @Value("${fundTactics.chunkSize}")
     private int chunkSize;
-
-    private static final String CARDINALITY_TOTAL = "cardinality_total";
 
     @Override
     public HistogramStatisticResponse getHistogramStatistics(String caseId, FundTacticsPartGeneralPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs) {
@@ -327,18 +324,20 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         int page = pageRequest.getPage();
         int pageSize = pageRequest.getPageSize();
+        double startAmount = Double.parseDouble(request.getFund());
+        QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
         // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
-//        if (partCommon.checkAdjustCardCount(request.getCaseId())) {
-//            List<String> adjustCards = partCommon.queryMaxAdjustCards(request.getCaseId());
-//            if (CollectionUtils.isEmpty(adjustCards)) {
-//                resultMap.put("total", 0);
-//                resultMap.put("result", new ArrayList<>());
-//                return resultMap;
-//            }
-//            request.setCardNums(adjustCards);
-//            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
-//            return statisticsAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
-//        }
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()));
+            if (CollectionUtils.isEmpty(adjustCards)) {
+                resultMap.put("total", 0);
+                resultMap.put("result", new ArrayList<>());
+                return resultMap;
+            }
+            request.setCardNums(adjustCards);
+            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
+            return statisticsAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
+        }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);

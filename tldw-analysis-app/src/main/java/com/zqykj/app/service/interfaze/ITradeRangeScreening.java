@@ -5,7 +5,6 @@ package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
-import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.TradeRangeOperationRecord;
 
 import java.util.List;

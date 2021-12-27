@@ -48,20 +48,6 @@ public class FastInFastOutQueryBuilder implements FastInFastOutQueryParamFactory
         return querySpecialParams;
     }
 
-    @Override
-    public QuerySpecialParams getAdjustCards(String caseId, int singleQuota) {
-        // 构建查询参数
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRANSACTION_MONEY, singleQuota, QueryOperator.gte));
-
-        querySpecialParams.addCombiningQueryParams(filter);
-        // 只查询卡号
-        querySpecialParams.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
-        return querySpecialParams;
-    }
-
     public QuerySpecialParams getInoutRecordsViaQueryAndOpposite(List<String> cards, @Nullable List<String> oppositeCards, String caseId, int singleQuota, boolean isIn) {
 
         // 构建查询参数

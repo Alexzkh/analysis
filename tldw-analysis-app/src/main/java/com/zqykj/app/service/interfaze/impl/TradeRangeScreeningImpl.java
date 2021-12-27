@@ -3,9 +3,6 @@
  */
 package com.zqykj.app.service.interfaze.impl;
 
-import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
-import com.zqykj.app.service.factory.builder.query.fund.FundTacticsCommonQuery;
-import com.zqykj.app.service.factory.param.agg.TradeRangeScreeningAggParamFactory;
 import com.zqykj.app.service.factory.param.query.TradeRangeScreeningQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITradeRangeScreening;
@@ -16,27 +13,23 @@ import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
-import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.TradeRangeOperationRecord;
-import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.DateRange;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
-import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -45,17 +38,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeRangeScreeningImpl implements ITradeRangeScreening {
+public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements ITradeRangeScreening {
 
-    private final EntranceRepository entranceRepository;
     private final TradeRangeScreeningQueryParamFactory queryParamFactory;
-    private final AggregationEntityMappingFactory entityMappingFactory;
-    private final TradeRangeScreeningAggParamFactory aggParamFactory;
-    private final FundTacticsCommonQuery commonQuery;
-    // 最大查询调单卡号数量
-    @Value("${fundTactics.queryAll.max_adjustCard_query_count}")
-    private int maxAdjustCardQueryCount;
-
 
     @Override
     public ServerResponse<TradeRangeScreeningDataChartResult> getDataChartResult(TradeRangeScreeningDataChartRequest request) {
@@ -97,7 +82,7 @@ public class TradeRangeScreeningImpl implements ITradeRangeScreening {
 
     public ServerResponse<List<TradeRangeOperationRecord>> operationRecordsList(FundTacticsPartGeneralRequest request) {
 
-        QuerySpecialParams query = commonQuery.queryDataByCaseId(request.getCaseId());
+        QuerySpecialParams query = queryRequestParamFactory.queryDataByCaseId(request.getCaseId());
         query.setIncludeFields(FundTacticsAnalysisField.tradeRangeScreeningQueryFields());
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         // 默认按保存日期降序排序
@@ -126,9 +111,9 @@ public class TradeRangeScreeningImpl implements ITradeRangeScreening {
         if (request.isQueryAllFlag()) {
 
             // 检查调单卡号的数量
-            if (checkAdjustCardCount(request.getCaseId(), minAmount, maxAmount, null)) {
+            if (checkAdjustCardCount(request.getCaseId(), minAmount, QueryOperator.gte, maxAmount, QueryOperator.lte, null)) {
                 // 查询最大调单卡号
-                adjustCards = queryMaxAdjustCards(request.getCaseId(), minAmount, maxAmount, null);
+                adjustCards = queryMaxAdjustCards(request.getCaseId(), minAmount, QueryOperator.gte, maxAmount, QueryOperator.lte, null);
             } else {
                 // TODO 大于最大查询调单卡号数量
                 adjustCards = null;
@@ -160,9 +145,9 @@ public class TradeRangeScreeningImpl implements ITradeRangeScreening {
         DateRangeRequest dateRange = request.getDateRange();
         String start = dateRange.getStart() + request.getTimeEnd();
         String end = dateRange.getEnd() + request.getTimeStart();
-        if (checkAdjustCardCount(request.getCaseId(), null, null, new DateRange(start, end))) {
+        if (checkAdjustCardCountByDate(request.getCaseId(), new DateRange(start, end))) {
             // 查询固定最大调单卡号
-            List<String> maxAdjustCards = queryMaxAdjustCards(request.getCaseId(), null, null, new DateRange(start, end));
+            List<String> maxAdjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), new DateRange(start, end));
             if (!CollectionUtils.isEmpty(maxAdjustCards)) {
                 request.setCardNums(maxAdjustCards);
                 return selectIndividualQuery(request);
@@ -180,7 +165,7 @@ public class TradeRangeScreeningImpl implements ITradeRangeScreening {
     private TradeRangeOperationRecord getOperationRecordsAdjustCardsById(String caseId, String id) {
 
         String[] queryFields = new String[]{FundTacticsAnalysisField.TradeRangeScreening.ADJUST_CARD, FundTacticsAnalysisField.TradeRangeScreening.MIN_AMOUNT, FundTacticsAnalysisField.TradeRangeScreening.MAX_AMOUNT};
-        QuerySpecialParams query = commonQuery.queryByIdAndCaseId(caseId, id);
+        QuerySpecialParams query = queryRequestParamFactory.queryByIdAndCaseId(caseId, id);
         query.setIncludeFields(queryFields);
         Page<TradeRangeOperationRecord> page = entranceRepository.findAll(PageRequest.of(0, 1), caseId, TradeRangeOperationRecord.class, query);
         List<TradeRangeOperationRecord> content = page.getContent();
@@ -282,40 +267,4 @@ public class TradeRangeScreeningImpl implements ITradeRangeScreening {
         result.setTradingAmount(BigDecimalUtil.value(record.getChangeAmount()));
         return result;
     }
-
-    /**
-     * <h2> 检查调单卡号数量 </h2>
-     */
-    public boolean checkAdjustCardCount(String caseId, Double minAmount, Double maxAmount, DateRange dateRange) {
-
-        QuerySpecialParams querySpecialParams = commonQuery.queryAdjustNumberByAmountAndDate(caseId, minAmount, maxAmount, dateRange);
-        AggregationParams aggregationParams = aggParamFactory.queryAdjustCardTotal();
-        aggregationParams.setMapping(entityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.QUERY_CARD));
-        aggregationParams.setResultName("adjustCardTotal");
-        Map<String, List<List<Object>>> compoundQueryAndAgg = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionFlow.class, caseId);
-        List<List<Object>> total = compoundQueryAndAgg.get(aggregationParams.getResultName());
-        if (CollectionUtils.isEmpty(total)) {
-            return true;
-        }
-        long count = Long.parseLong(total.get(0).get(0).toString());
-        return count <= maxAdjustCardQueryCount;
-    }
-
-    /**
-     * <h2> 查询最大调单卡号 </h2>
-     */
-    public List<String> queryMaxAdjustCards(String caseId, Double minAmount, Double maxAmount, DateRange dateRange) {
-
-        QuerySpecialParams querySpecialParams = commonQuery.queryAdjustNumberByAmountAndDate(caseId, minAmount, maxAmount, dateRange);
-        AggregationParams aggregationParams = aggParamFactory.queryFixedCountAdjustCards(maxAdjustCardQueryCount);
-        aggregationParams.setMapping(entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
-        aggregationParams.setResultName("adjustCards");
-        Map<String, List<List<Object>>> compoundQueryAndAgg = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionFlow.class, caseId);
-        List<List<Object>> cards = compoundQueryAndAgg.get(aggregationParams.getResultName());
-        if (CollectionUtils.isEmpty(cards)) {
-            return null;
-        }
-        return cards.stream().map(e -> e.get(0).toString()).collect(Collectors.toList());
-    }
-
 }

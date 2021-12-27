@@ -26,7 +26,7 @@ import org.springframework.util.CollectionUtils;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeConvergenceAnalysisAggBuilder extends FundTacticsCommonAgg implements TradeConvergenceAnalysisAggParamFactory {
+public class TradeConvergenceAnalysisAggBuilderBuilder extends FundTacticsCommonAggBuilder implements TradeConvergenceAnalysisAggParamFactory {
 
     private final QueryRequestParamFactory queryRequestParamFactory;
 

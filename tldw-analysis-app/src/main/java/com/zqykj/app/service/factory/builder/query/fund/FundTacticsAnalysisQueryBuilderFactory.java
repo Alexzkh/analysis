@@ -326,4 +326,73 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
         return querySpecialParams;
     }
+
+    public QuerySpecialParams queryDataByCaseId(String caseId) {
+        QuerySpecialParams query = new QuerySpecialParams();
+        query.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        return query;
+    }
+
+    public QuerySpecialParams queryByIdAndCaseId(String caseId, String id) {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.ID, id));
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    /**
+     * <h2> 查询调单卡号 </h2>
+     * <p>
+     * 根据交易金额过滤 、交易日期过滤
+     */
+    public QuerySpecialParams queryAdjustNumberByAmountAndDate(String caseId, Double startAmount, QueryOperator startOperator,
+                                                               Double endAmount, QueryOperator endOperator, DateRange dateRange) {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        if (null != startAmount) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRANSACTION_MONEY, startAmount, startOperator));
+        }
+        if (null != endAmount) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRANSACTION_MONEY, endAmount, endOperator));
+        }
+        if (null != dateRange) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRADING_TIME, dateRange));
+        }
+        query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    public QuerySpecialParams queryAdjustNumberByAmountAndDate(String caseId, Double startAmount, QueryOperator startOperator, DateRange dateRange) {
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        if (null != startAmount) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRANSACTION_MONEY, startAmount, startOperator));
+        }
+        if (null != dateRange) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRADING_TIME, dateRange));
+        }
+        query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    public QuerySpecialParams queryAdjustNumberByDate(String caseId, DateRange dateRange) {
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        if (null != dateRange) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRADING_TIME, dateRange));
+        }
+        query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
 }

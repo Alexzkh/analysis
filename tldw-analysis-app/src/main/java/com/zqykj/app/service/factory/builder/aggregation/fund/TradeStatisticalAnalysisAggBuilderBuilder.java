@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeStatisticalAnalysisAggBuilder extends FundTacticsCommonAgg implements TradeStatisticalAnalysisAggParamFactory {
+public class TradeStatisticalAnalysisAggBuilderBuilder extends FundTacticsCommonAggBuilder implements TradeStatisticalAnalysisAggParamFactory {
 
     private final QueryRequestParamFactory queryRequestParamFactory;
 

@@ -13,6 +13,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeRangeScreeningAggBuilder extends FundTacticsCommonAgg implements TradeRangeScreeningAggParamFactory {
+public class TradeRangeScreeningAggBuilderBuilder extends FundTacticsCommonAggBuilder implements TradeRangeScreeningAggParamFactory {
 
 }

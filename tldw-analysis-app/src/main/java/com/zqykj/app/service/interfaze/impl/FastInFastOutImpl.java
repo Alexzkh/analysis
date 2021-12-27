@@ -4,8 +4,6 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import com.zqykj.app.service.config.ThreadPoolConfig;
-import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
-import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFastInFastOut;
@@ -18,13 +16,12 @@ import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
-import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.FastInFastOutRecord;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
-import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,15 +50,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Slf4j
-public class FastInFastOutImpl implements IFastInFastOut {
-
-    private final EntranceRepository entranceRepository;
-
-    private final AggregationRequestParamFactory aggregationRequestParamFactory;
+public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInFastOut {
 
     private final FastInFastOutQueryParamFactory queryRequestParamFactory;
-
-    private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
 
     // 快进快出生成结果条数(数值排序有6中规则(降序和升序),流入金额、流出金额、流出日期)
     // 每种规则生成5W数据,比如调单卡号作为来源情况满的话,会有30w数据,可能有重复,需要去重
@@ -81,9 +72,6 @@ public class FastInFastOutImpl implements IFastInFastOut {
     // 中转卡号最大基数
     @Value("${fastInout.transit_card_count}")
     private int transitCardCount;
-    // 最大查询调单卡号数量
-    @Value("${fundTactics.queryAll.max_adjustCard_query_count}")
-    private int maxAdjustCardQueryCount;
 
     private static final DateParser DATE_PARSER = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
 
@@ -105,9 +93,18 @@ public class FastInFastOutImpl implements IFastInFastOut {
 
         // 直接查询调单卡号的数量,批量获取 maxAdjustCardQueryCount 数量的调单卡号
         // 查询出前 maxAdjustCardQueryCount 个调单卡号
-        List<String> adjustCards = getAdjustCards(request.getCaseId(), request.getSingleQuota());
-        request.setCardNum(adjustCards);
-        return fastInFastOutViaChosenIndividual(request);
+        double startAmount = Double.parseDouble(String.valueOf(request.getSingleQuota()));
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, QueryOperator.gte, null)) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, QueryOperator.gte, null);
+            if (CollectionUtils.isEmpty(adjustCards)) {
+                return null;
+            }
+            request.setCardNum(adjustCards);
+            return fastInFastOutViaChosenIndividual(request);
+        } else {
+            // TODO 处理超过 maxAdjustCardQueryCount 数量的调单卡号逻辑
+            return null;
+        }
     }
 
     /**
@@ -639,11 +636,11 @@ public class FastInFastOutImpl implements IFastInFastOut {
         QuerySpecialParams query = queryRequestParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, singleQuota, isIn);
         AggregationParams agg;
         if (isLocal) {
-            agg = aggregationRequestParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, transitCardCount, new Pagination(from, size));
-            agg.setMapping(aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
+            agg = aggParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, transitCardCount, new Pagination(from, size));
+            agg.setMapping(entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
         } else {
-            agg = aggregationRequestParamFactory.groupByAndCountField(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, transitCardCount, new Pagination(from, size));
-            agg.setMapping(aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD));
+            agg = aggParamFactory.groupByAndCountField(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, transitCardCount, new Pagination(from, size));
+            agg.setMapping(entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD));
         }
         agg.setResultName("distinctCards");
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
@@ -655,28 +652,6 @@ public class FastInFastOutImpl implements IFastInFastOut {
             return null;
         }
         return result.stream().map(e -> e.get(0).toString()).collect(Collectors.toList());
-    }
-
-    /**
-     * <h2> 获取满足条件的调单卡号 </h2>
-     * <p>
-     * 最大数量为 maxAdjustCardQueryCount
-     */
-    private List<String> getAdjustCards(String caseId, int singleQuota) {
-
-        QuerySpecialParams adjustCardsQuery = queryRequestParamFactory.getAdjustCards(caseId, singleQuota);
-        AggregationParams adjustCardsAgg = aggregationRequestParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, maxAdjustCardQueryCount, new Pagination(0, maxAdjustCardQueryCount));
-        adjustCardsAgg.setMapping(aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
-        adjustCardsAgg.setResultName("adjustCards");
-        Map<String, List<List<Object>>> adjustCards = entranceRepository.compoundQueryAndAgg(adjustCardsQuery, adjustCardsAgg, BankTransactionFlow.class, caseId);
-        if (CollectionUtils.isEmpty(adjustCards)) {
-            return null;
-        }
-        List<List<Object>> results = adjustCards.get(adjustCardsAgg.getResultName());
-        if (CollectionUtils.isEmpty(results)) {
-            return null;
-        }
-        return results.stream().map(e -> e.get(0).toString()).collect(Collectors.toList());
     }
 
     /**
@@ -723,8 +698,8 @@ public class FastInFastOutImpl implements IFastInFastOut {
         } else {
             query = queryRequestParamFactory.getInoutRecordsViaQueryAndOpposite(cards, adjustCards, caseId, singleQuota, isInFlow);
         }
-        AggregationParams agg = aggregationRequestParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, cards.size(), new Pagination(0, cards.size()));
-        agg.setMapping(aggregationEntityMappingFactory.buildGroupByAggDocCountMapping(FundTacticsAnalysisField.QUERY_CARD));
+        AggregationParams agg = aggParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, cards.size(), new Pagination(0, cards.size()));
+        agg.setMapping(entityMappingFactory.buildGroupByAggDocCountMapping(FundTacticsAnalysisField.QUERY_CARD));
         agg.setResultName("queryCardInoutTimes");
         Map<String, List<List<Object>>> resultMaps = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
         if (CollectionUtils.isEmpty(resultMaps) || CollectionUtils.isEmpty(resultMaps.get(agg.getResultName()))) {
