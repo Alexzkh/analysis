@@ -2,8 +2,8 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
-import com.zqykj.app.service.factory.requestparam.agg.TradeStatisticalAnalysisAggParamFactory;
-import com.zqykj.app.service.factory.requestparam.query.TradeStatisticalAnalysisQueryParamFactory;
+import com.zqykj.app.service.factory.param.agg.TradeStatisticalAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.param.query.TradeStatisticalAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
@@ -19,11 +19,10 @@ import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
-import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
-import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
@@ -50,7 +49,7 @@ import java.util.Map;
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TransactionStatisticsImpl implements ITransactionStatistics {
+public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements ITransactionStatistics {
 
 
     private final EntranceRepository entranceRepository;
@@ -65,15 +64,13 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
-    @Value("${buckets.page.initSize}")
+    @Value("${fundTactics.bucket_size}")
     private int initGroupSize;
 
-    private static final String CARDINALITY_TOTAL = "cardinality_total";
-
-    @Value("${global.chunkSize}")
+    @Value("${fundTactics.queryAll.chunkSize}")
     private int globalChunkSize;
 
-    @Value("${chunkSize}")
+    @Value("${fundTactics.chunkSize}")
     private int chunkSize;
 
     @Override
@@ -209,10 +206,10 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
             request.setGroupInitSize(initGroupSize);
             map = statisticsAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
         } else {
-            // TODO  全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
+            // TODO  全部查询,暂定只支持查询到100页,过大不仅消耗内存 且查询速度过慢
             // 全部条件
-            if (request.getPageRequest().getPage() > 30) {
-                return ServerResponse.createBySuccess("分页上限为30页", FundAnalysisResultResponse.empty());
+            if (request.getPageRequest().getPage() > 100) {
+                return ServerResponse.createBySuccess("分页上限为100页", FundAnalysisResultResponse.empty());
             }
             map = statisticsAnalysisResultViaAllMainCards(request, caseId);
         }
@@ -327,6 +324,20 @@ public class TransactionStatisticsImpl implements ITransactionStatistics {
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         int page = pageRequest.getPage();
         int pageSize = pageRequest.getPageSize();
+        double startAmount = Double.parseDouble(request.getFund());
+        QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
+        // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()));
+            if (CollectionUtils.isEmpty(adjustCards)) {
+                resultMap.put("total", 0);
+                resultMap.put("result", new ArrayList<>());
+                return resultMap;
+            }
+            request.setCardNums(adjustCards);
+            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
+            return statisticsAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
+        }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);

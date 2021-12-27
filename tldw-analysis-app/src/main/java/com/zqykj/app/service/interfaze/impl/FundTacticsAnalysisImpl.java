@@ -45,11 +45,11 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
 
     private final FundTacticsAggResultParseFactory parseFactory;
 
-    @Value("${chunkSize}")
-    private int chunkSize;
-
-    @Value("${buckets.page.initSize}")
+    @Value("${fundTactics.bucket_size}")
     private int initGroupSize;
+
+    @Value("${fundTactics.chunkSize}")
+    private int chunkSize;
 
     /**
      * <h2> 批量获取调单卡号集合 </h2>

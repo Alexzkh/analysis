@@ -81,7 +81,7 @@ public class BankTransactionRecord {
     /**
      * 查询账号
      */
-    @Field(type = FieldType.Text, name = "query_account", analyzer = "ik_max_word")
+    @Field(type = FieldType.Keyword, name = "query_account")
     private String queryAccount;
 
     /**
@@ -114,7 +114,7 @@ public class BankTransactionRecord {
     /**
      * 交易对方账号
      */
-    @Field(type = FieldType.Text, name = "transaction_opposite_account", analyzer = "ik_max_word")
+    @Field(type = FieldType.Keyword, name = "transaction_opposite_account")
     private String transactionOppositeAccount;
 
     /**
@@ -198,10 +198,10 @@ public class BankTransactionRecord {
     private String mergeIdentityCard;
 
     /**
-     * 翻转标记  1: 代表原始记录  2:  代表的是把对方的 放到本方, 本方放到对方
+     * 交易摘要
      */
-    @Field(type = FieldType.Integer, name = "reverse_mark")
-    private Integer reverseMark;
+    @Field(type = FieldType.Text, name = "transaction_summary", analyzer = "ik_max_word")
+    private String transactionSummary;
 
     /**
      * 创建时间

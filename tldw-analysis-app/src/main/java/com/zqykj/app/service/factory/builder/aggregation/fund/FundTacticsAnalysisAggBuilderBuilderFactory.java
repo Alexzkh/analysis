@@ -43,7 +43,7 @@ import java.util.*;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class FundTacticsAnalysisAggBuilderFactory extends FundTacticsPartCommonAgg implements AggregationRequestParamFactory {
+public class FundTacticsAnalysisAggBuilderBuilderFactory extends FundTacticsCommonAggBuilder implements AggregationRequestParamFactory {
 
     // 管道聚合 buckets_path 引用标识
     private static final String BUCKET_SCRIPT_PARAM_PREFIX = "params.";

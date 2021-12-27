@@ -4,7 +4,7 @@
 package com.zqykj.app.service.factory.builder.aggregation.fund;
 
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
-import com.zqykj.app.service.factory.requestparam.agg.TradeStatisticalAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.param.agg.TradeStatisticalAnalysisAggParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.vo.fund.FundDateRequest;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeStatisticalAnalysisAggBuilder extends FundTacticsPartCommonAgg implements TradeStatisticalAnalysisAggParamFactory {
+public class TradeStatisticalAnalysisAggBuilderBuilder extends FundTacticsCommonAggBuilder implements TradeStatisticalAnalysisAggParamFactory {
 
     private final QueryRequestParamFactory queryRequestParamFactory;
 

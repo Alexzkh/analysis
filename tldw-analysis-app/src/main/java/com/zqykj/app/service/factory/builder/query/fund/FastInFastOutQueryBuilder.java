@@ -3,7 +3,7 @@
  */
 package com.zqykj.app.service.factory.builder.query.fund;
 
-import com.zqykj.app.service.factory.requestparam.query.FastInFastOutQueryParamFactory;
+import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
@@ -45,20 +45,6 @@ public class FastInFastOutQueryBuilder implements FastInFastOutQueryParamFactory
         querySpecialParams.addCombiningQueryParams(filter);
         // 设置source
         querySpecialParams.setIncludeFields(FundTacticsAnalysisField.fastInFastOutQueryFields());
-        return querySpecialParams;
-    }
-
-    @Override
-    public QuerySpecialParams getAdjustCards(String caseId, int singleQuota) {
-        // 构建查询参数
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRANSACTION_MONEY, singleQuota, QueryOperator.gte));
-
-        querySpecialParams.addCombiningQueryParams(filter);
-        // 只查询卡号
-        querySpecialParams.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD});
         return querySpecialParams;
     }
 

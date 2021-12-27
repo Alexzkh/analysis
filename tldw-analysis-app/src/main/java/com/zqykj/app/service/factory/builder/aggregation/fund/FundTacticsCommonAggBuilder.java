@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <h2> 资金战法部分通用 </h2>
+ * <h1> 资金战法部分通用聚合构建 </h1>
  */
-public class FundTacticsPartCommonAgg {
+public abstract class FundTacticsCommonAggBuilder {
 
     /**
      * <h2> 资金战法分析部分通用聚合查询(适用于用户指定了一组调单卡号集合) </h2>

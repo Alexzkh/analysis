@@ -4,6 +4,8 @@
 package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
+import com.zqykj.app.service.vo.fund.FastInFastOutResult;
+import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.common.core.ServerResponse;
 
 import java.util.concurrent.ExecutionException;
@@ -16,5 +18,5 @@ public interface IFastInFastOut {
     /**
      * <h2> 快进快出分析 </h2>
      */
-    ServerResponse fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException;
+    ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException;
 }

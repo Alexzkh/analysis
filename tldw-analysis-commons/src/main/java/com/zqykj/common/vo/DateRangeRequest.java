@@ -28,4 +28,10 @@ public class DateRangeRequest {
      * 结束时间
      */
     private String end;
+
+    /**
+     * 时间范围
+     */
+    private String timeStart = " 00:00:00";
+    private String timeEnd = " 23:59:59";
 }
