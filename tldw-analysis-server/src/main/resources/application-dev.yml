@@ -54,10 +54,14 @@ athena:
   gdb:
     uri: http://172.30.4.55:8089
 
-global:
-  chunkSize: 4000
+fastInout:
+  result_chunkSize: 5_0000
+  order_chunkSize: 1000
+  per_query_count: 5000
+  transit_card_count: 10_000
+  max_adjustCard_query_count: 8000
 
-chunkSize: 1000
+
 
 ## **********************************************************
 ##   Plugins Settings (插件其他相关配置 详见tldw-analysis-plugins/README.md 参考文档)
