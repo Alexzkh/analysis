@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <h2> 资金战法部分通用 </h2>
+ * <h1> 资金战法部分通用聚合构建 </h1>
  */
-public class FundTacticsPartCommonAgg {
+public abstract class FundTacticsCommonAggBuilder {
 
     /**
      * <h2> 资金战法分析部分通用聚合查询(适用于用户指定了一组调单卡号集合) </h2>
@@ -82,10 +82,30 @@ public class FundTacticsPartCommonAgg {
     }
 
     /**
+     * <h2> 聚合排序 </h2>
+     */
+    protected PipelineAggregationParams fundTacticsPartUniversalAggSort(int from, int size) {
+
+        // 获取真实的聚合排序字段(开户名称、开户证件号码、开户银行、账号、交易卡号 不做排序,按照交易总金额排序处理)
+        return fundTacticsPartUniversalAggSort(null, from, size);
+    }
+
+    /**
      * <h2> 聚合展示字段 </h2>
+     * <p>
+     * 默认只取出一条
      */
     protected AggregationParams fundTacticsPartUniversalAggShowFields(String[] fields, String hitsAggName, @Nullable FieldSort sort) {
-        FetchSource fetchSource = new FetchSource(fields, 0, 1);
+        return fundTacticsPartUniversalAggShowFields(fields, hitsAggName, 0, 1, sort);
+    }
+
+    /**
+     * <h2> 聚合展示字段 </h2>
+     * <p>
+     * 自定义需要展示的字段记录的条数
+     */
+    protected AggregationParams fundTacticsPartUniversalAggShowFields(String[] fields, String hitsAggName, int from, int size, @Nullable FieldSort sort) {
+        FetchSource fetchSource = new FetchSource(fields, from, size);
         if (null != sort) {
             fetchSource.setSort(sort);
         }

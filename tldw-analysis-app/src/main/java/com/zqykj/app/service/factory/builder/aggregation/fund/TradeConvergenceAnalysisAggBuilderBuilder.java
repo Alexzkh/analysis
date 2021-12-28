@@ -4,7 +4,7 @@
 package com.zqykj.app.service.factory.builder.aggregation.fund;
 
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
-import com.zqykj.app.service.factory.requestparam.agg.TradeConvergenceAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.param.agg.TradeConvergenceAnalysisAggParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.builder.AggregationParamsBuilders;
@@ -26,7 +26,7 @@ import org.springframework.util.CollectionUtils;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeConvergenceAnalysisAggBuilder extends FundTacticsPartCommonAgg implements TradeConvergenceAnalysisAggParamFactory {
+public class TradeConvergenceAnalysisAggBuilderBuilder extends FundTacticsCommonAggBuilder implements TradeConvergenceAnalysisAggParamFactory {
 
     private final QueryRequestParamFactory queryRequestParamFactory;
 
@@ -37,7 +37,7 @@ public class TradeConvergenceAnalysisAggBuilder extends FundTacticsPartCommonAgg
 
         AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.MERGE_CARD);
         cardTerms.setSize(convergenceRequest.getGroupInitSize());
-        cardTerms.setCollectMode("DEPTH_FIRST");
+        cardTerms.setCollectMode("BREADTH_FIRST");
         // 交易总次数
         AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
                 FundTacticsAnalysisField.MERGE_CARD, null);
@@ -59,7 +59,7 @@ public class TradeConvergenceAnalysisAggBuilder extends FundTacticsPartCommonAgg
 
         AggregationParams cardTerms = AggregationParamsBuilders.terms("groupBy_" + FundTacticsAnalysisField.MERGE_CARD, FundTacticsAnalysisField.MERGE_CARD);
         cardTerms.setSize(convergenceRequest.getGroupInitSize());
-        cardTerms.setCollectMode("DEPTH_FIRST");
+        cardTerms.setCollectMode("BREADTH_FIRST");
         // 交易总次数
         AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
                 FundTacticsAnalysisField.MERGE_CARD, null);

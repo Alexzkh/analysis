@@ -1,7 +1,7 @@
 /**
  * @作者 Mcj
  */
-package com.zqykj.app.service.factory.requestparam.agg;
+package com.zqykj.app.service.factory.param.agg;
 
 import com.zqykj.parameters.aggregate.AggregationParams;
 

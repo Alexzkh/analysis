@@ -3,18 +3,15 @@
  */
 package com.zqykj.parameters.query;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.elasticsearch.index.query.RangeQueryBuilder;
 
 /**
  * 日期范围
  */
 @Setter
 @Getter
-@AllArgsConstructor
 @NoArgsConstructor
 public class DateRange {
 

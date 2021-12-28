@@ -4,7 +4,7 @@
 package com.zqykj.app.service.factory.builder.query.fund;
 
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
-import com.zqykj.app.service.factory.requestparam.query.TradeStatisticalAnalysisQueryParamFactory;
+import com.zqykj.app.service.factory.param.query.TradeStatisticalAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.vo.fund.FundDateRequest;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;

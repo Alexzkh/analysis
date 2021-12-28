@@ -4,6 +4,8 @@
 package com.zqykj.app.service.factory;
 
 import com.zqykj.parameters.query.CombinationQueryParams;
+import com.zqykj.parameters.query.DateRange;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
 import java.util.List;
@@ -98,4 +100,21 @@ public interface QueryRequestParamFactory {
      * @return 返回构建的查询参数
      */
     <T> QuerySpecialParams buildIndividualCardTransactionStatisticsQueryParams(T request);
+
+
+    QuerySpecialParams queryDataByCaseId(String caseId);
+
+    QuerySpecialParams queryByIdAndCaseId(String caseId, String id);
+
+    /**
+     * <h2> 查询调单卡号 </h2>
+     * <p>
+     * 过滤条件为交易金额、案件Id、交易日期时间 查询的表是{@link com.zqykj.domain.bank.BankTransactionFlow}
+     */
+    QuerySpecialParams queryAdjustNumberByAmountAndDate(String caseId, Double startAmount, QueryOperator startOperator,
+                                                        Double endAmount, QueryOperator endOperator, DateRange dateRange);
+
+    QuerySpecialParams queryAdjustNumberByAmountAndDate(String caseId, Double startAmount, QueryOperator startOperator, DateRange dateRange);
+
+    QuerySpecialParams queryAdjustNumberByDate(String caseId, DateRange dateRange);
 }

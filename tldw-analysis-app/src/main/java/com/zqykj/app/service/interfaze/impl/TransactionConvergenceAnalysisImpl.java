@@ -5,22 +5,22 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
-import com.zqykj.app.service.factory.requestparam.agg.TradeConvergenceAnalysisAggParamFactory;
-import com.zqykj.app.service.factory.requestparam.query.TradeConvergenceAnalysisQueryParamFactory;
+import com.zqykj.app.service.factory.param.agg.TradeConvergenceAnalysisAggParamFactory;
+import com.zqykj.app.service.factory.param.query.TradeConvergenceAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionConvergenceAnalysis;
-import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
-import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,37 +38,31 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Slf4j
-public class TransactionConvergenceAnalysisImpl implements ITransactionConvergenceAnalysis {
-
-    private final EntranceRepository entranceRepository;
+public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl implements ITransactionConvergenceAnalysis {
 
     private final TradeConvergenceAnalysisAggParamFactory aggregationRequestParamFactory;
 
     private final TradeConvergenceAnalysisQueryParamFactory queryRequestParamFactory;
 
-    private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
-
     private final AggregationResultEntityParseFactory aggregationResultEntityParseFactory;
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
-    @Value("${buckets.page.initSize}")
+    @Value("${fundTactics.bucket_size}")
     private int initGroupSize;
 
-    @Value("${global.chunkSize}")
+    @Value("${fundTactics.queryAll.chunkSize}")
     private int globalChunkSize;
 
-    @Value("${chunkSize}")
+    @Value("${fundTactics.chunkSize}")
     private int chunkSize;
-
-    private static final String CARDINALITY_TOTAL = "cardinality_total";
 
     @Override
     public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
 
         FundAnalysisResultResponse<TradeConvergenceAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
-        if (request.getSearchType() == 0 && !CollectionUtils.isEmpty(request.getCardNums())) {
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
 
             com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
             int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
@@ -77,11 +71,6 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             request.setGroupInitSize(initGroupSize);
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
         } else {
-            // TODO 全部查询,暂定只支持查询到30页,过大不仅消耗内存 且查询速度过慢
-            // 全部条件
-            if (request.getPageRequest().getPage() > 30) {
-                return ServerResponse.createBySuccess("分页上限为30页", FundAnalysisResultResponse.empty());
-            }
             map = convergenceAnalysisResultViaAllMainCards(request, caseId);
         }
         List<TradeConvergenceAnalysisResult> results = (List<TradeConvergenceAnalysisResult>) map.get("result");
@@ -113,7 +102,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 构建 mapping (聚合名称 -> 聚合属性)  , (实体属性 -> 聚合名称)
         Map<String, String> aggMapping = new LinkedHashMap<>();
         Map<String, String> entityMapping = new LinkedHashMap<>();
-        aggregationEntityMappingFactory.buildTradeAnalysisResultAggMapping(aggMapping, entityMapping, TradeConvergenceAnalysisResult.class);
+        entityMappingFactory.buildTradeAnalysisResultAggMapping(aggMapping, entityMapping, TradeConvergenceAnalysisResult.class);
         convergenceAgg.setMapping(aggMapping);
         convergenceAgg.setEntityAggColMapping(entityMapping);
         convergenceAgg.setResultName("chosen_main_cards");
@@ -138,11 +127,11 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 一组实体属性集合 与 聚合名称顺序是一一对应的( 所以聚合返回的结果每一列值的属性 与 实体属性也是对应的, 处理聚合展示字段需要特殊处理)
         List<String> entityTitles = new ArrayList<>(entityMapping.keySet());
         // 实体属性值映射
-        List<Map<String, Object>> entityPropertyMapping = aggregationResultEntityParseFactory.convertEntity(returnResults, entityTitles, TradeConvergenceAnalysisResult.class);
+        List<Map<String, Object>> entityPropertyValueMapping = aggregationResultEntityParseFactory.convertEntity(returnResults, entityTitles, TradeConvergenceAnalysisResult.class);
         // 反序列化实体
-        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyMapping), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
+        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyValueMapping), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
         });
-        // 将金额保留2位小数
+        // 将金额保留2位小数,转化科学计算方式的金额
         tradeConvergenceAnalysisResults.forEach(TradeConvergenceAnalysisResult::amountReservedTwo);
         // 补齐聚合需要展示的字段
         List<String> mergeCards = tradeConvergenceAnalysisResults.stream().map(e -> e.getMergeCardKey()).collect(Collectors.toList());
@@ -174,7 +163,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
         // 构建 交易汇聚分析聚合请求
         AggregationParams agg = aggregationRequestParamFactory.buildTradeConvergenceQueryAndMergeCardsAgg(request, from, size);
         // 构建 mapping (聚合名称 -> 聚合属性)
-        Map<String, String> mapping = aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.MERGE_CARD);
+        Map<String, String> mapping = entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.MERGE_CARD);
         agg.setMapping(mapping);
         agg.setResultName("queryAndMergeCards");
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
@@ -191,7 +180,7 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
             return null;
         }
         AggregationParams totalAgg = aggregationRequestParamFactory.buildTradeConvergenceAnalysisResultTotalAgg(request);
-        totalAgg.setMapping(aggregationEntityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.MERGE_CARD));
+        totalAgg.setMapping(entityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.MERGE_CARD));
         totalAgg.setResultName(CARDINALITY_TOTAL);
         return totalAgg;
     }
@@ -205,10 +194,24 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
     protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
 
         // 前台分页
-        Map<String, Object> resultMap = new HashMap<>();
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         int page = pageRequest.getPage();
         int pageSize = pageRequest.getPageSize();
+        Map<String, Object> resultMap = new HashMap<>();
+        // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
+        double startAmount = Double.parseDouble(request.getFund());
+        QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()));
+            if (CollectionUtils.isEmpty(adjustCards)) {
+                resultMap.put("total", 0);
+                resultMap.put("result", new ArrayList<>());
+                return resultMap;
+            }
+            request.setCardNums(adjustCards);
+            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
+            return convergenceAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
+        }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);
@@ -378,11 +381,14 @@ public class TransactionConvergenceAnalysisImpl implements ITransactionConvergen
      */
     private List<TradeConvergenceAnalysisResult> getTradeConvergenceAnalysisHits(List<String> mergeCards, String caseId) {
 
+        if (CollectionUtils.isEmpty(mergeCards)) {
+            return new ArrayList<>();
+        }
         // 构建查询参数
         QuerySpecialParams condition = queryRequestParamFactory.buildTradeConvergenceAnalysisHitsQuery(mergeCards, caseId);
         // 构建聚合参数
         AggregationParams agg = aggregationRequestParamFactory.buildTradeConvergenceAnalysisHitsAgg(mergeCards.size());
-        Map<String, String> map = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
+        Map<String, String> map = entityMappingFactory.buildShowFieldsAggMapping();
         agg.setMapping(map);
         agg.setResultName("hits");
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(condition, agg, BankTransactionRecord.class, caseId);

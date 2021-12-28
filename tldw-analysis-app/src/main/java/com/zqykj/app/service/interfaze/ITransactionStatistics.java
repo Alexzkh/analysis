@@ -4,12 +4,9 @@ import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
-import com.zqykj.common.request.TransactionStatisticsRequest;
 import com.zqykj.common.response.HistogramStatisticResponse;
-import com.zqykj.common.response.TransactionStatisticsResponse;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.bank.BankTransactionFlow;
-import com.zqykj.parameters.query.QuerySpecialParams;
 
 import java.util.concurrent.ExecutionException;
 
@@ -31,23 +28,13 @@ public interface ITransactionStatistics {
      **/
     HistogramStatisticResponse getHistogramStatistics(String caseId, FundTacticsPartGeneralPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs);
 
-
+    /**
+     * <h2> 获取按时间类型汇总金额的折线图结果 </h2>
+     */
     TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundDateRequest request);
 
     /**
-     * @param caseId:  案件编号.
-     * @param request: 前置查询条件请求体.
-     * @return: com.zqykj.parameters.query.QuerySpecialParams
-     **/
-    QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, FundTacticsPartGeneralPreRequest request);
-
-
-    /**
-     * 获取交易统计分析结果(主要是直方图数据、折线图数据以及行列数据).
-     *
-     * @param caseId:       案件编号.
-     * @param queryRequest: 交易统计分析查询请求体.
-     * @return: com.zqykj.common.core.ServerResponse
+     * <h2> 获取交易统计分析结果 </h2>
      **/
     ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws ExecutionException, InterruptedException;
 

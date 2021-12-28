@@ -28,9 +28,9 @@ public class ThreadPoolConfig {
     public ThreadPoolTaskExecutor commonThreadPool() {
         executor = new ThreadPoolTaskExecutor();
         // 核心线程数量
-        executor.setCorePoolSize(15);
+        executor.setCorePoolSize(12);
         // 最大线程数量
-        executor.setMaxPoolSize(25);
+        executor.setMaxPoolSize(20);
         // 队列中最大任务数
         executor.setQueueCapacity(10);
         // 线程名称前缀

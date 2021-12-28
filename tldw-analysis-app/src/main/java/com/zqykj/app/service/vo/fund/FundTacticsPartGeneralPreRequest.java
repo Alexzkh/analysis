@@ -5,6 +5,8 @@ package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
+import com.zqykj.parameters.query.DateRange;
+import com.zqykj.parameters.query.QueryOperator;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -49,8 +51,15 @@ public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequ
      */
     private String fund = "0";
 
-    /**
-     * 搜索类型 1: 全部   0: 卡号集合
-     */
-    private int searchType = 1;
+    public static DateRange getDateRange(DateRangeRequest dateRangeRequest) {
+
+        String start = dateRangeRequest.getStart() + dateRangeRequest.getTimeStart();
+        String end = dateRangeRequest.getEnd() + dateRangeRequest.getTimeEnd();
+        return new DateRange(start, end);
+    }
+
+    public static QueryOperator getOperator(AmountOperationSymbol operator) {
+
+        return QueryOperator.of(operator.name());
+    }
 }

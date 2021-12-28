@@ -113,6 +113,8 @@ public interface FundTacticsAnalysisField {
     String LOAN_FLAG_IN = "进";
     String LOAN_FLAG_IN_EN = "credits";
 
+    String TRANSACTION_TYPE = "transaction_type";
+
 
     String FLOW_ID = "flow_id";
 
@@ -188,11 +190,6 @@ public interface FundTacticsAnalysisField {
     String MULTI_IDENTITY_TERMS = "multi_identity_terms";
 
     /**
-     * 交易类型
-     */
-    String TRANSACTION_TYPE = "transaction_type";
-
-    /**
      * 交易摘要
      */
     String TRANSACTION_SUMMARY = "transaction_summary";
@@ -202,6 +199,9 @@ public interface FundTacticsAnalysisField {
      * 主键id
      */
     String ID = "id";
+
+    // es 数据唯一标识id
+    String _ID = "_id";
 
 
     /**
@@ -216,7 +216,38 @@ public interface FundTacticsAnalysisField {
         String OUTFLOW_AMOUNT = "outflowAmount";
     }
 
-    // 快进快出需要展示的字段(针对 表 BankTransactionRecord})
+    /**
+     * 交易区间筛选字段
+     */
+    interface TradeRangeScreening {
+
+        // 调单卡号
+        String ADJUST_CARD = "adjust_card";
+        // 最小金额
+        String MIN_AMOUNT = "min_amount";
+        // 最大金额
+        String MAX_AMOUNT = "max_amount";
+        // 数据类别
+        String DATA_CATEGORY = "data_cateGory";
+        // 个体银行卡数量
+        String INDIVIDUAL_BANKCARDS_NUMBER = "individual_bankCards_number";
+        int CREDIT_AMOUNT = 2;
+        int PAYOUT_AMOUNT = 1;
+    }
+
+    // 交易区间筛选操作记录查询字段(针对表 )
+    static String[] tradeRangeScreeningQueryFields() {
+        return new String[]{"id", "case_id", "operation_date", "operation_people", "min_amount", "max_amount", "account_name", "account_id_number",
+                "individual_bankCards_number", "data_cateGory", "remark"};
+    }
+
+    // 交易区间筛选操作记录查询字段(针对表 )
+    static String[] tradeRangeOperationDetailQueryFields() {
+        return new String[]{QUERY_CARD, CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME,
+                OPPOSITE_BANK, TRADING_TIME, CHANGE_MONEY, LOAN_FLAG, TRANSACTION_TYPE, TRANSACTION_SUMMARY};
+    }
+
+    // 快进快出需要展示的字段(针对 表 TradeRangeOperationRecord})
     static String[] fastInFastOutQueryFields() {
         return new String[]{QUERY_CARD, CUSTOMER_NAME, TRADING_TIME, CHANGE_MONEY, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME};
     }
