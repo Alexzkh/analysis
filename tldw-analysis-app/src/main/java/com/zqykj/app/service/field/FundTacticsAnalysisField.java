@@ -231,8 +231,8 @@ public interface FundTacticsAnalysisField {
         String DATA_CATEGORY = "data_cateGory";
         // 个体银行卡数量
         String INDIVIDUAL_BANKCARDS_NUMBER = "individual_bankCards_number";
-        String CREDIT_AMOUNT = "入账金额";
-        String PAYOUT_AMOUNT = "出账金额";
+        int CREDIT_AMOUNT = 2;
+        int PAYOUT_AMOUNT = 1;
     }
 
     // 交易区间筛选操作记录查询字段(针对表 )

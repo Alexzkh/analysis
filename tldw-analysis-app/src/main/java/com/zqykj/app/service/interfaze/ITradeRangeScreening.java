@@ -37,7 +37,7 @@ public interface ITradeRangeScreening {
     /**
      * <h2> 查看交易区间筛选操作记录详细列表数据 </h2>
      */
-    ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(TradeRangeOperationDetailSeeRequest request);
+    ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(FundTacticsPartGeneralRequest request);
 
     /**
      * <h2> 查看操作记录中个体银行卡的部分统计结果 </h2>

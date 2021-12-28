@@ -53,35 +53,46 @@ public class TradeRangeScreeningQueryBuilder extends FundTacticsCommonQueryBuild
         return query;
     }
 
-    public QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, String dateType) {
+    public QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
 
         QuerySpecialParams query = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, adjustCards));
+        CombinationQueryParams filter = queryCardsAndCase(caseId, adjustCards);
+        // 可选条件参数过滤
+        addOperationRecordCondition(minAmount, maxAmount, dateType, filter);
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    public QuerySpecialParams queryByCaseIdAndAdjustCards(String caseId, List<String> adjustCards) {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = queryCardsAndCase(caseId, adjustCards);
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    /**
+     * <h2> 当点击查看个体银行卡统计分析结果时、查看详情数据 </h2>
+     * <p>
+     * 应该是要根据当前保存的操作记录 的金额范围 以及 数据类别去筛选的(如果是需求就是查询/统计当前调单卡号下的全部数据 就去除这个方法)
+     */
+    private void addOperationRecordCondition(Double minAmount, Double maxAmount, int dateType, CombinationQueryParams filter) {
         if (null != minAmount) {
             filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, minAmount, QueryOperator.gte));
         }
         if (null != maxAmount) {
             filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, maxAmount, QueryOperator.lte));
         }
-        if (FundTacticsAnalysisField.TradeRangeScreening.CREDIT_AMOUNT.equals(dateType)) {
+        if (FundTacticsAnalysisField.TradeRangeScreening.CREDIT_AMOUNT == dateType) {
             filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        } else if (FundTacticsAnalysisField.TradeRangeScreening.PAYOUT_AMOUNT.equals(dateType)) {
+        } else if (FundTacticsAnalysisField.TradeRangeScreening.PAYOUT_AMOUNT == dateType) {
             filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
         }
-        query.addCombiningQueryParams(filter);
-        // 设置queryFields
-        query.setIncludeFields(FundTacticsAnalysisField.tradeRangeOperationDetailQueryFields());
-        return query;
     }
 
-    public QuerySpecialParams queryIndividualBankCardsStatistical(String caseId, List<String> adjustCards) {
+    public QuerySpecialParams queryIndividualBankCardsStatistical(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
 
-        QuerySpecialParams query = new QuerySpecialParams();
-        query.addCombiningQueryParams(queryCardsAndCase(caseId, adjustCards));
-        return query;
+        return queryAdjustCardsTradeRecord(caseId, adjustCards, minAmount, maxAmount, dateType);
     }
 
     /**

@@ -88,8 +88,8 @@ public class TradeRangeOperationRecord {
     /**
      * 数据类别
      */
-    @Field(type = FieldType.Keyword, name = "data_cateGory")
-    private String dataCategory;
+    @Field(type = FieldType.Integer, name = "data_cateGory")
+    private int dataCategory;
 
     /**
      * 备注

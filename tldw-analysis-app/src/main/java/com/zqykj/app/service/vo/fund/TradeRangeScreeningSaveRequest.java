@@ -50,9 +50,9 @@ public class TradeRangeScreeningSaveRequest {
     private String accountOpeningNumber;
 
     /**
-     * 数据类别
+     * 数据类别  1: 出账金额 2: 入账金额 3: 交易金额
      */
-    private String saveType;
+    private int saveType = 3;
 
     /**
      * 备注
