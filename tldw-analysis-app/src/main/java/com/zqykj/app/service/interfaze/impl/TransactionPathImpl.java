@@ -13,13 +13,14 @@ import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.request.PathRequest;
-import com.zqykj.domain.response.TransactionPathDetailResponse;
 import com.zqykj.domain.response.TransactionPathResponse;
 import com.zqykj.domain.vo.TransactionPathResultVO;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -86,7 +87,7 @@ public class TransactionPathImpl implements ITransactionPath {
                     , request.getQueryRequest().getSorting().getOrder().toString()
             );
 
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error(" transaction path analysis error {}", e);
             throw new RuntimeException(" transaction path analysis error");
         }
@@ -97,13 +98,13 @@ public class TransactionPathImpl implements ITransactionPath {
     @Override
     public Page<BankTransactionFlow> accessPathAnalysisDetailResult(TransactionPathDetailRequest request, String caseId) {
 
-        QuerySpecialParams querySpecialParams = iTransactionPathQueryRequestFactory.accessTransactionPathDetailRequest(request,caseId);
+        QuerySpecialParams querySpecialParams = iTransactionPathQueryRequestFactory.accessTransactionPathDetailRequest(request, caseId);
         PageRequest destPageRequest = new PageRequest(request.getQueryRequest().getPaging().getPage()
                 , request.getQueryRequest().getPaging().getPageSize()
                 , Sort.by(request.getQueryRequest().getSorting().getOrder().isDescending()
-                        ?Sort.Direction.DESC: Sort.Direction.ASC
+                        ? Sort.Direction.DESC : Sort.Direction.ASC
                 , request.getQueryRequest().getSorting().getProperty()));
-        Page<BankTransactionFlow> result = entranceRepository.findAll(destPageRequest,caseId,BankTransactionFlow.class,querySpecialParams);
+        Page<BankTransactionFlow> result = entranceRepository.findAll(destPageRequest, caseId, BankTransactionFlow.class, querySpecialParams);
         return result;
     }
 
@@ -117,9 +118,14 @@ public class TransactionPathImpl implements ITransactionPath {
      * @return: java.util.List<com.zqykj.domain.vo.TransactionPathResultVO>
      **/
     private List<TransactionPathResultVO> parseAthenaGdbResult(Map<String, Object> result, TransactionPathRequest request, String caseId) {
-        LinkedHashMap<String, Object> dataResult = (LinkedHashMap) result.get(Constants.AthenaGdbConstants.DATA);
+        ObjectMapper mapper = new ObjectMapper();
+
+        LinkedHashMap<String, Object> dataResult = new LinkedHashMap<>();
+        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
         List<TransactionPathResultVO> results = new ArrayList<>();
-        try{
+        try {
+            dataResult = mapper.readValue((String) result.get(Constants.AthenaGdbConstants.DATA), new org.codehaus.jackson.type.TypeReference<LinkedHashMap<String, Object>>() {
+            });
             for (Map.Entry<String, Object> entry : dataResult.entrySet()) {
                 List<List<LinkedHashMap<String, Object>>> path = (List<List<LinkedHashMap<String, Object>>>) entry.getValue();
                 path.stream().forEach(pat -> {
@@ -157,14 +163,14 @@ public class TransactionPathImpl implements ITransactionPath {
                     Page<BankTransactionFlow> sourceFlow = entranceRepository.findAll(sourcePageRequest, caseId, BankTransactionFlow.class, source);
                     Page<BankTransactionFlow> destFlow = entranceRepository.findAll(destPageRequest, caseId, BankTransactionFlow.class, dest);
                     if (!ObjectUtils.isEmpty(sourceFlow.getContent().get(0)) && !ObjectUtils.isEmpty(destFlow.getContent().get(0))) {
-                        long timeSpan = Math.abs( DateTimeCalculatorUtil.betweenTotalDays(sourceFlow.getContent().get(0).getTradingTime(), destFlow.getContent().get(0).getTradingTime()));
+                        long timeSpan = Math.abs(DateTimeCalculatorUtil.betweenTotalDays(sourceFlow.getContent().get(0).getTradingTime(), destFlow.getContent().get(0).getTradingTime()));
                         TransactionPathResultVO transactionPathResultVO = this.builder(sourceFlow.getContent().get(0), destFlow.getContent().get(0), timeSpan, rowIdsResult);
                         results.add(transactionPathResultVO);
                     }
                 });
             }
-        }catch (Exception e){
-            log.error("parse athenaGdb result error {}",e);
+        } catch (Exception e) {
+            log.error("parse athenaGdb result error {}", e);
             throw new RuntimeException("parse athenaGdb result error");
         }
 
@@ -183,20 +189,20 @@ public class TransactionPathImpl implements ITransactionPath {
     public TransactionPathResultVO builder(BankTransactionFlow source, BankTransactionFlow dest, long timeSpan, List<String> rowIdResults) {
 
         return TransactionPathResultVO.builder()
-                .destAccount(dest.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT)?dest.getTransactionOppositeAccount()
-                        :dest.getQueryAccount())
+                .destAccount(dest.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT) ? dest.getTransactionOppositeAccount()
+                        : dest.getQueryAccount())
                 .destTransactionTime(dest.getTradingTime())
-                .destIdentityCard(dest.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT)?dest.getTransactionOppositeCertificateNumber()
-                        :dest.getCustomerIdentityCard())
-                .destName(dest.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT)?dest.getTransactionOppositeName()
-                        :dest.getCustomerName())
+                .destIdentityCard(dest.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT) ? dest.getTransactionOppositeCertificateNumber()
+                        : dest.getCustomerIdentityCard())
+                .destName(dest.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT) ? dest.getTransactionOppositeName()
+                        : dest.getCustomerName())
                 .destTransactionMoney(new BigDecimal(dest.getTransactionMoney()).setScale(2, RoundingMode.HALF_UP))
-                .sourceAccount(source.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT)?source.getQueryAccount()
-                        :source.getTransactionOppositeAccount())
-                .sourceIdentityCard(source.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT)?source.getCustomerIdentityCard()
-                        :source.getTransactionOppositeCertificateNumber())
-                .sourceName(source.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT)?source.getCustomerName()
-                        :source.getTransactionOppositeName())
+                .sourceAccount(source.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT) ? source.getQueryAccount()
+                        : source.getTransactionOppositeAccount())
+                .sourceIdentityCard(source.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT) ? source.getCustomerIdentityCard()
+                        : source.getTransactionOppositeCertificateNumber())
+                .sourceName(source.getLoanFlag().equals(FundTacticsAnalysisField.LOAN_FLAG_OUT) ? source.getCustomerName()
+                        : source.getTransactionOppositeName())
                 .sourceTransactionMoney(new BigDecimal(source.getTransactionMoney()).setScale(2, RoundingMode.HALF_UP))
                 .sourceTransactionTime(source.getTradingTime())
                 .timeSpan(timeSpan)

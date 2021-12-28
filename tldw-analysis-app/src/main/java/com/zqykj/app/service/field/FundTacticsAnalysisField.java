@@ -200,7 +200,7 @@ public interface FundTacticsAnalysisField {
 
     /**
      * 主键id
-     * */
+     */
     String ID = "id";
 
 
@@ -250,6 +250,13 @@ public interface FundTacticsAnalysisField {
     static String[] fundSourceAndDestinationAnalysisOppositeShowField() {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
+    }
+
+
+    // 调单账号特征分析结果本方需要展示的字段
+    static String[] transferAccountAnalysisShowField() {
+
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD};
     }
 
 
