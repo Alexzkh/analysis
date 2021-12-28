@@ -214,7 +214,7 @@ public class OriginEsOperationTest {
                 "60138216660044814",
                 "60138216660046214",
                 "60138216660047614"));
-        request.setDateRange(new DateRangeRequest("", ""));
+        request.setDateRange(new DateRangeRequest("", "","",""));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
         request.setPaging(new PagingRequest(0, 25));
@@ -537,7 +537,7 @@ public class OriginEsOperationTest {
         fastInFastOutRequest.setSingleQuota(1);
         fastInFastOutRequest.setCharacteristicRatio(100);
         com.zqykj.common.vo.PageRequest pageRequest = new com.zqykj.common.vo.PageRequest(0, 25,
-                new SortRequest("", Direction.DESC, "outflowAmount"));
+                new SortRequest("", Direction.DESC));
         fastInFastOutRequest.setPageRequest(pageRequest);
         iFastInFastOut.fastInFastOutAnalysis(fastInFastOutRequest);
     }

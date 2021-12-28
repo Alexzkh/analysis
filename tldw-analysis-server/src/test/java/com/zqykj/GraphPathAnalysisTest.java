@@ -118,7 +118,7 @@ public class GraphPathAnalysisTest {
         requestParam.put("graphId", "7746113266265363756");
         LinkedHashMap<String, Object> re = (LinkedHashMap) objectMap.get("data");
         TransactionPathRequest request = TransactionPathRequest.builder()
-                .dateRange(new DateRangeRequest("", ""))
+                .dateRange(new DateRangeRequest("", "","",""))
                 .fund("0")
                 .operator(AmountOperationSymbol.gte)
                 .build();
