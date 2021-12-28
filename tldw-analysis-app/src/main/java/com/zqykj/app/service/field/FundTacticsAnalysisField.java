@@ -284,4 +284,11 @@ public interface FundTacticsAnalysisField {
     }
 
 
+    // 调单账号特征分析结果本方需要展示的字段
+    static String[] transferAccountAnalysisShowField() {
+
+        return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_CARD};
+    }
+
+
 }

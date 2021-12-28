@@ -1,8 +1,10 @@
 package com.zqykj.domain.vo;
 
 import com.zqykj.infrastructure.compare.BaseCompareBean;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 /**
@@ -12,6 +14,8 @@ import java.util.Date;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransactionPathDetailResultVO implements BaseCompareBean {
 
     /**
