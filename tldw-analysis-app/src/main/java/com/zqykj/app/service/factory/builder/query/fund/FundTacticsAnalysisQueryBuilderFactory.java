@@ -43,12 +43,10 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         // 指定caseId
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 指定本方开户证件号码 与 对方开户证件号码
-        if (request.getSearchType() == 0) {
-            if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNums())) {
-                combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.multiMatch(request.getIdentityCard(),
-                        FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
-                        FundTacticsAnalysisField.OPPOSITE_IDENTITY_CARD));
-            }
+        if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNums())) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.multiMatch(request.getIdentityCard(),
+                    FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
+                    FundTacticsAnalysisField.OPPOSITE_IDENTITY_CARD));
         }
         // 指定日期范围
         if (null != request.getDateRange() && StringUtils.isNotBlank(request.getDateRange().getStart())
@@ -77,10 +75,8 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
             combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
         }
         // 指定证件号码
-        if (request.getSearchType() == 0) {
-            if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNums())) {
-                combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, request.getIdentityCard()));
-            }
+        if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNums())) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, request.getIdentityCard()));
         }
         // 指定日期范围
         if (null != request.getDateRange() && StringUtils.isNotBlank(request.getDateRange().getStart())
@@ -339,7 +335,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
 
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.ID, id));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField._ID, id));
         query.addCombiningQueryParams(filter);
         return query;
     }

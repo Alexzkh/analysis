@@ -130,7 +130,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T> Page<T> findAll(Pageable pageable, String routing, @NonNull Class<T> entityClass) {
 
-        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withPageable(pageable).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withTrackTotalHits(true).withPageable(pageable).build();
 
         SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
@@ -144,7 +144,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
             QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
             NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder)
-                    .withFields(condition.getIncludeFields()).withExcludeFields(condition.getExcludeFields())
+                    .withFields(condition.getIncludeFields()).withExcludeFields(condition.getExcludeFields()).withTrackTotalHits(true)
                     .withPageable(pageable).build();
             SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
 
@@ -211,7 +211,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     public <T> long count(String routing, @NonNull Class<T> entityClass) {
 
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery())
-                .withRoute(routing)
+                .withRoute(routing).withTrackTotalHits(true)
                 .build();
         // noinspection ConstantConditions
         return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
@@ -270,7 +270,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     public <T, ID> void deleteById(ID id, String routing, @NonNull Class<T> entityClass) {
 
         Assert.notNull(id, "Cannot delete entity with id 'null'.");
-        doDelete(id, getIndexCoordinates(entityClass), routing, entityClass);
+        doDelete(id, routing, getIndexCoordinates(entityClass), entityClass);
     }
 
     private <T, ID> void doDelete(@Nullable ID id, @Nullable String routing, String indexCoordinates, Class<T> entityClass) {

@@ -51,6 +51,7 @@ public class NativeSearchQueryBuilder {
     private List<IndexBoost> indicesBoost;
     private float minScore;
     private boolean trackScores;
+    private boolean trackTotalHits;
     @Nullable
     private Collection<String> ids;
     @Nullable
@@ -152,6 +153,11 @@ public class NativeSearchQueryBuilder {
         return this;
     }
 
+    public NativeSearchQueryBuilder withTrackTotalHits(boolean trackTotalHits) {
+        this.trackTotalHits = trackTotalHits;
+        return this;
+    }
+
     public NativeSearchQueryBuilder withIds(Collection<String> ids) {
         this.ids = ids;
         return this;
@@ -184,6 +190,7 @@ public class NativeSearchQueryBuilder {
 
         nativeSearchQuery.setPageable(pageable);
         nativeSearchQuery.setTrackScores(trackScores);
+        nativeSearchQuery.setTrackTotalHits(trackTotalHits);
 
         if (fields != null) {
             nativeSearchQuery.addFields(fields);

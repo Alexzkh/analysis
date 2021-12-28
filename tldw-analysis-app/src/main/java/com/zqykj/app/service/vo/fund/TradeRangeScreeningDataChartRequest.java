@@ -29,12 +29,6 @@ public class TradeRangeScreeningDataChartRequest extends FundTacticsPartGeneralR
     private DateRangeRequest dateRange;
 
     /**
-     * 时间范围
-     */
-    private String timeStart = " 00:00:00";
-    private String timeEnd = " 23:59:59";
-
-    /**
      * 选中查看的起始 交易笔数
      */
     private int startNumberOfTrade = 1;

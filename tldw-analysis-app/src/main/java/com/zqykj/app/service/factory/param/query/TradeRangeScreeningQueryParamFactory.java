@@ -26,5 +26,10 @@ public interface TradeRangeScreeningQueryParamFactory {
     /**
      * <h2> 根据条件查询调单卡号的交易记录 </h2>
      */
-    QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, double minAmount, double maxAmount);
+    QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, String dateType);
+
+    /**
+     * <h2> 个体银行卡统计查询 </h2>
+     */
+    QuerySpecialParams queryIndividualBankCardsStatistical(String caseId, List<String> adjustCards);
 }

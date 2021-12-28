@@ -32,12 +32,12 @@ public class TradeRangeScreeningSaveRequest {
     /**
      * 最小金额
      */
-    private double minAmount;
+    private double fundMin;
 
     /**
      * 最大金额
      */
-    private double maxAmount;
+    private double fundMax;
 
     /**
      * 账户开户名称
@@ -52,7 +52,7 @@ public class TradeRangeScreeningSaveRequest {
     /**
      * 数据类别
      */
-    private String saveCateGory;
+    private String saveType;
 
     /**
      * 备注

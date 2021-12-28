@@ -77,7 +77,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
 
     public ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
 
-        if (request.getType() == 1) {
+        if (CollectionUtils.isEmpty(request.getCardNum())) {
             // 全部查询
             return fastInFastOutViaAllQuery(request);
         } else {

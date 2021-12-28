@@ -35,7 +35,7 @@ public class TradeRangeOperationRecord {
     /**
      * 调单卡号
      */
-    @Field(name = "adjust_card", type = FieldType.Object)
+    @Field(name = "adjust_card", type = FieldType.Keyword)
     private List<String> adjustCards;
 
     /**
@@ -80,7 +80,7 @@ public class TradeRangeOperationRecord {
     private String accountOpeningIDNumber;
 
     /**
-     * 个体银行卡数量 (当查询全部调单卡号的时候, 默认设置为int的最大值)
+     * 个体银行卡数量 (当查询全部调单卡号的时候, 默认设置为-1)
      */
     @Field(type = FieldType.Integer, name = "individual_bankCards_number")
     private int individualBankCardsNumber;

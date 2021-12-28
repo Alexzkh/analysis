@@ -79,7 +79,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         HistogramStatisticResponse histogramStatisticResponse = new HistogramStatisticResponse();
 
         // 构建查询参数
-        QuerySpecialParams query = this.preQueryTransactionStatisticsAnalysis(caseId, request);
+        QuerySpecialParams query = queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
         /**
          * 根据查询条件计算出当前数据中最大值.
          * */
@@ -130,16 +130,10 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     }
 
     @Override
-    public QuerySpecialParams preQueryTransactionStatisticsAnalysis(String caseId, FundTacticsPartGeneralPreRequest request) {
-        // 构建查询参数
-        return queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
-    }
-
-    @Override
     public TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundDateRequest request) {
 
         // 构建查询参数
-        QuerySpecialParams query = this.preQueryTransactionStatisticsAnalysis(caseId, request);
+        QuerySpecialParams query = queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
 
         // 构建日期聚合参数
         AggregationParams dateAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisFundByTimeType(request);
@@ -197,7 +191,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
 
         FundAnalysisResultResponse<TradeStatisticalAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
-        if (request.getSearchType() == 0 && !CollectionUtils.isEmpty(request.getCardNums())) {
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
 
             com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
             int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
@@ -517,6 +511,9 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
      */
     private List<TradeStatisticalAnalysisResult> getTradeStatisticalAnalysisHits(List<String> queryCards, String caseId) {
 
+        if (CollectionUtils.isEmpty(queryCards)) {
+            return new ArrayList<>();
+        }
         // 构建查询参数
         QuerySpecialParams condition = queryRequestParamFactory.buildTradeStatisticalAnalysisHitsQuery(queryCards, caseId);
         // 构建聚合参数

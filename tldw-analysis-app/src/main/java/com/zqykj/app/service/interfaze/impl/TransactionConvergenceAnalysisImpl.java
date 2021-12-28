@@ -19,7 +19,6 @@ import com.zqykj.common.core.ServerResponse;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
-import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.util.JacksonUtils;
@@ -63,7 +62,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
 
         FundAnalysisResultResponse<TradeConvergenceAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
-        if (request.getSearchType() == 0 && !CollectionUtils.isEmpty(request.getCardNums())) {
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
 
             com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
             int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
@@ -128,11 +127,11 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         // 一组实体属性集合 与 聚合名称顺序是一一对应的( 所以聚合返回的结果每一列值的属性 与 实体属性也是对应的, 处理聚合展示字段需要特殊处理)
         List<String> entityTitles = new ArrayList<>(entityMapping.keySet());
         // 实体属性值映射
-        List<Map<String, Object>> entityPropertyMapping = aggregationResultEntityParseFactory.convertEntity(returnResults, entityTitles, TradeConvergenceAnalysisResult.class);
+        List<Map<String, Object>> entityPropertyValueMapping = aggregationResultEntityParseFactory.convertEntity(returnResults, entityTitles, TradeConvergenceAnalysisResult.class);
         // 反序列化实体
-        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyMapping), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
+        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyValueMapping), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
         });
-        // 将金额保留2位小数
+        // 将金额保留2位小数,转化科学计算方式的金额
         tradeConvergenceAnalysisResults.forEach(TradeConvergenceAnalysisResult::amountReservedTwo);
         // 补齐聚合需要展示的字段
         List<String> mergeCards = tradeConvergenceAnalysisResults.stream().map(e -> e.getMergeCardKey()).collect(Collectors.toList());
@@ -382,6 +381,9 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      */
     private List<TradeConvergenceAnalysisResult> getTradeConvergenceAnalysisHits(List<String> mergeCards, String caseId) {
 
+        if (CollectionUtils.isEmpty(mergeCards)) {
+            return new ArrayList<>();
+        }
         // 构建查询参数
         QuerySpecialParams condition = queryRequestParamFactory.buildTradeConvergenceAnalysisHitsQuery(mergeCards, caseId);
         // 构建聚合参数

@@ -37,7 +37,7 @@ public class TradeConvergenceAnalysisAggBuilderBuilder extends FundTacticsCommon
 
         AggregationParams cardTerms = AggregationParamsBuilders.terms("local_card_terms", FundTacticsAnalysisField.MERGE_CARD);
         cardTerms.setSize(convergenceRequest.getGroupInitSize());
-        cardTerms.setCollectMode("DEPTH_FIRST");
+        cardTerms.setCollectMode("BREADTH_FIRST");
         // 交易总次数
         AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
                 FundTacticsAnalysisField.MERGE_CARD, null);
@@ -59,7 +59,7 @@ public class TradeConvergenceAnalysisAggBuilderBuilder extends FundTacticsCommon
 
         AggregationParams cardTerms = AggregationParamsBuilders.terms("groupBy_" + FundTacticsAnalysisField.MERGE_CARD, FundTacticsAnalysisField.MERGE_CARD);
         cardTerms.setSize(convergenceRequest.getGroupInitSize());
-        cardTerms.setCollectMode("DEPTH_FIRST");
+        cardTerms.setCollectMode("BREADTH_FIRST");
         // 交易总次数
         AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total",
                 FundTacticsAnalysisField.MERGE_CARD, null);

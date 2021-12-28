@@ -51,11 +51,6 @@ public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequ
      */
     private String fund = "0";
 
-    /**
-     * 搜索类型 1: 全部   0: 卡号集合
-     */
-    private int searchType = 1;
-
     public static DateRange getDateRange(DateRangeRequest dateRangeRequest) {
 
         String start = dateRangeRequest.getStart() + dateRangeRequest.getTimeStart();

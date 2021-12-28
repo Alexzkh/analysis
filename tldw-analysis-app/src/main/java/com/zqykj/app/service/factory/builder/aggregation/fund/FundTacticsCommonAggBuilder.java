@@ -82,10 +82,30 @@ public abstract class FundTacticsCommonAggBuilder {
     }
 
     /**
+     * <h2> 聚合排序 </h2>
+     */
+    protected PipelineAggregationParams fundTacticsPartUniversalAggSort(int from, int size) {
+
+        // 获取真实的聚合排序字段(开户名称、开户证件号码、开户银行、账号、交易卡号 不做排序,按照交易总金额排序处理)
+        return fundTacticsPartUniversalAggSort(null, from, size);
+    }
+
+    /**
      * <h2> 聚合展示字段 </h2>
+     * <p>
+     * 默认只取出一条
      */
     protected AggregationParams fundTacticsPartUniversalAggShowFields(String[] fields, String hitsAggName, @Nullable FieldSort sort) {
-        FetchSource fetchSource = new FetchSource(fields, 0, 1);
+        return fundTacticsPartUniversalAggShowFields(fields, hitsAggName, 0, 1, sort);
+    }
+
+    /**
+     * <h2> 聚合展示字段 </h2>
+     * <p>
+     * 自定义需要展示的字段记录的条数
+     */
+    protected AggregationParams fundTacticsPartUniversalAggShowFields(String[] fields, String hitsAggName, int from, int size, @Nullable FieldSort sort) {
+        FetchSource fetchSource = new FetchSource(fields, from, size);
         if (null != sort) {
             fetchSource.setSort(sort);
         }
