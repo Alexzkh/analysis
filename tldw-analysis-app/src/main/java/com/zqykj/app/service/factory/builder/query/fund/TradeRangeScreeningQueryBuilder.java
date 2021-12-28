@@ -22,8 +22,7 @@ import java.util.List;
  * <h1> 交易区间筛选查询请求参数构建 </h1>
  */
 @Service
-public class TradeRangeScreeningQueryBuilder implements TradeRangeScreeningQueryParamFactory {
-
+public class TradeRangeScreeningQueryBuilder extends FundTacticsCommonQueryBuilder implements TradeRangeScreeningQueryParamFactory {
 
 
     public QuerySpecialParams queryTradeAmount(TradeRangeScreeningDataChartRequest request) {
@@ -54,19 +53,46 @@ public class TradeRangeScreeningQueryBuilder implements TradeRangeScreeningQuery
         return query;
     }
 
-    public QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, double minAmount, double maxAmount) {
+    public QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
 
         QuerySpecialParams query = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        // 案件Id
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, adjustCards));
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, minAmount, QueryOperator.gte));
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, maxAmount, QueryOperator.lte));
+        CombinationQueryParams filter = queryCardsAndCase(caseId, adjustCards);
+        // 可选条件参数过滤
+        addOperationRecordCondition(minAmount, maxAmount, dateType, filter);
         query.addCombiningQueryParams(filter);
-        // 设置queryFields
-        query.setIncludeFields(FundTacticsAnalysisField.tradeRangeOperationDetailQueryFields());
         return query;
+    }
+
+    public QuerySpecialParams queryByCaseIdAndAdjustCards(String caseId, List<String> adjustCards) {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = queryCardsAndCase(caseId, adjustCards);
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    /**
+     * <h2> 当点击查看个体银行卡统计分析结果时、查看详情数据 </h2>
+     * <p>
+     * 应该是要根据当前保存的操作记录 的金额范围 以及 数据类别去筛选的(如果是需求就是查询/统计当前调单卡号下的全部数据 就去除这个方法)
+     */
+    private void addOperationRecordCondition(Double minAmount, Double maxAmount, int dateType, CombinationQueryParams filter) {
+        if (null != minAmount) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, minAmount, QueryOperator.gte));
+        }
+        if (null != maxAmount) {
+            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, maxAmount, QueryOperator.lte));
+        }
+        if (FundTacticsAnalysisField.TradeRangeScreening.CREDIT_AMOUNT == dateType) {
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
+        } else if (FundTacticsAnalysisField.TradeRangeScreening.PAYOUT_AMOUNT == dateType) {
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
+        }
+    }
+
+    public QuerySpecialParams queryIndividualBankCardsStatistical(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
+
+        return queryAdjustCardsTradeRecord(caseId, adjustCards, minAmount, maxAmount, dateType);
     }
 
     /**
@@ -91,11 +117,11 @@ public class TradeRangeScreeningQueryBuilder implements TradeRangeScreeningQuery
         if (null != dateRange) {
             String start = null;
             if (StringUtils.isNotBlank(dateRange.getStart())) {
-                start = dateRange.getStart() + request.getTimeStart();
+                start = dateRange.getStart() + dateRange.getTimeStart();
             }
             String end = null;
             if (StringUtils.isNotBlank(dateRange.getEnd())) {
-                end = dateRange.getEnd() + request.getTimeStart();
+                end = dateRange.getEnd() + dateRange.getTimeStart();
             }
             filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRADING_TIME, new DateRange(start, end)));
         }

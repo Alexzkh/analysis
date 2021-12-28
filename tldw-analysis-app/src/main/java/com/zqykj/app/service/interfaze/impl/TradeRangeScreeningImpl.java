@@ -3,6 +3,8 @@
  */
 package com.zqykj.app.service.interfaze.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.zqykj.app.service.factory.param.agg.TradeRangeScreeningAggParamFactory;
 import com.zqykj.app.service.factory.param.query.TradeRangeScreeningQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITradeRangeScreening;
@@ -15,10 +17,12 @@ import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.TradeRangeOperationRecord;
+import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.util.BigDecimalUtil;
+import com.zqykj.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -28,8 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -41,18 +44,59 @@ import java.util.stream.Collectors;
 public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements ITradeRangeScreening {
 
     private final TradeRangeScreeningQueryParamFactory queryParamFactory;
+    private final TradeRangeScreeningAggParamFactory aggParamFactory;
 
     @Override
     public ServerResponse<TradeRangeScreeningDataChartResult> getDataChartResult(TradeRangeScreeningDataChartRequest request) {
 
         // 分为全部查询与选择个体查询(实际就是一组固定数量的调单卡号集合作为条件)
-        if (CollectionUtils.isEmpty(request.getCardNums())) {
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
             // 个体 / 一组调单卡号集合查询
             return ServerResponse.createBySuccess(selectIndividualQuery(request));
         } else {
             // 全部查询
             return ServerResponse.createBySuccess(selectAllQuery(request));
         }
+    }
+
+    /**
+     * <h2> 选择个体/一组调单卡号集合作为条件 </h2>
+     */
+    private TradeRangeScreeningDataChartResult selectIndividualQuery(TradeRangeScreeningDataChartRequest request) {
+
+        int from = request.getStartNumberOfTrade() - 1;
+        int size = (request.getEndNumberOfTrade() - request.getStartNumberOfTrade()) + 1;
+
+        // 查询固定交易笔数的 交易金额集合
+        List<BigDecimal> tradeAmounts = queryTradeAmounts(request, from, size);
+        // 查询固定交易笔数的 入账金额集合
+        List<BigDecimal> creditAmounts = queryCreditAmounts(request, from, size);
+        // 查询固定交易笔数的 出账金额集合
+        List<BigDecimal> payoutAmounts = queryPayoutAmounts(request, from, size);
+        return new TradeRangeScreeningDataChartResult(payoutAmounts, creditAmounts, tradeAmounts);
+    }
+
+    /**
+     * <h2> 全部查询 </h2>
+     */
+    private TradeRangeScreeningDataChartResult selectAllQuery(TradeRangeScreeningDataChartRequest request) {
+
+        // 检查调单卡号的数量
+        DateRangeRequest dateRange = request.getDateRange();
+        String start = dateRange.getStart() + dateRange.getTimeEnd();
+        String end = dateRange.getEnd() + dateRange.getTimeStart();
+        if (checkAdjustCardCountByDate(request.getCaseId(), new DateRange(start, end))) {
+            // 查询固定最大调单卡号
+            List<String> maxAdjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), new DateRange(start, end));
+            if (!CollectionUtils.isEmpty(maxAdjustCards)) {
+                request.setCardNums(maxAdjustCards);
+                return selectIndividualQuery(request);
+            }
+        } else {
+            // TODO
+
+        }
+        return new TradeRangeScreeningDataChartResult();
     }
 
     public ServerResponse<String> saveOperationRecord(TradeRangeScreeningSaveRequest request) {
@@ -96,7 +140,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         return ServerResponse.createBySuccess(content);
     }
 
-    public ServerResponse<List<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(TradeRangeOperationDetailSeeRequest request) {
+    public ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(FundTacticsPartGeneralRequest request) {
 
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         SortRequest sortRequest = request.getSortRequest();
@@ -107,8 +151,9 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         }
         Double minAmount = tradeRangeOperationRecord.getMinAmount();
         Double maxAmount = tradeRangeOperationRecord.getMaxAmount();
+        int dateType = tradeRangeOperationRecord.getDataCategory();
         List<String> adjustCards;
-        if (request.isQueryAllFlag()) {
+        if (tradeRangeOperationRecord.getIndividualBankCardsNumber() == -1) {
 
             // 检查调单卡号的数量
             if (checkAdjustCardCount(request.getCaseId(), minAmount, QueryOperator.gte, maxAmount, QueryOperator.lte, null)) {
@@ -125,38 +170,70 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         if (CollectionUtils.isEmpty(adjustCards)) {
             return ServerResponse.createByErrorMessage("未查询到符合的记录!");
         }
-        QuerySpecialParams query = queryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), adjustCards, minAmount, maxAmount);
+        QuerySpecialParams query = queryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        // 设置queryFields
+        query.setIncludeFields(FundTacticsAnalysisField.tradeRangeOperationDetailQueryFields());
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
                 Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), BankTransactionRecord.class, query);
         if (CollectionUtils.isEmpty(page.getContent())) {
-            return ServerResponse.createBySuccess();
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<BankTransactionRecord> content = page.getContent();
         List<TradeRangeOperationDetailSeeResult> newContent = content.stream().map(this::convertFromTradeRangeOperationDetailSeeResult).collect(Collectors.toList());
-        return ServerResponse.createBySuccess(newContent);
+        FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult> resultResponse = new FundAnalysisResultResponse<>();
+        resultResponse.setContent(newContent);
+        resultResponse.setTotalPages(PageRequest.getTotalPages(page.getTotalElements(), pageRequest.getPageSize()));
+        resultResponse.setSize(pageRequest.getPageSize());
+        resultResponse.setTotal(page.getTotalElements());
+        return ServerResponse.createBySuccess(resultResponse);
     }
 
-    /**
-     * <h2> 全部查询 </h2>
-     */
-    private TradeRangeScreeningDataChartResult selectAllQuery(TradeRangeScreeningDataChartRequest request) {
+    public ServerResponse<List<TradeOperationIndividualBankCardsStatistical>> seeIndividualBankCardsStatisticalResult(FundTacticsPartGeneralRequest request) {
 
-        // 检查调单卡号的数量
-        DateRangeRequest dateRange = request.getDateRange();
-        String start = dateRange.getStart() + request.getTimeEnd();
-        String end = dateRange.getEnd() + request.getTimeStart();
-        if (checkAdjustCardCountByDate(request.getCaseId(), new DateRange(start, end))) {
-            // 查询固定最大调单卡号
-            List<String> maxAdjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), new DateRange(start, end));
-            if (!CollectionUtils.isEmpty(maxAdjustCards)) {
-                request.setCardNums(maxAdjustCards);
-                return selectIndividualQuery(request);
-            }
-        } else {
-            // TODO
-
+        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
+        int offset = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
+        SortRequest sortRequest = request.getSortRequest();
+        // 查询唯一标识id的数据,取出保存的调单卡号
+        QuerySpecialParams queryAdjustCards = queryRequestParamFactory.queryByIdAndCaseId(request.getCaseId(), request.getId());
+        String[] queryFields = new String[]{FundTacticsAnalysisField.TradeRangeScreening.ADJUST_CARD, FundTacticsAnalysisField.TradeRangeScreening.MIN_AMOUNT,
+                FundTacticsAnalysisField.TradeRangeScreening.MAX_AMOUNT, FundTacticsAnalysisField.TradeRangeScreening.INDIVIDUAL_BANKCARDS_NUMBER, FundTacticsAnalysisField.TradeRangeScreening.DATA_CATEGORY};
+        queryAdjustCards.setIncludeFields(queryFields);
+        Page<TradeRangeOperationRecord> page = entranceRepository.findAll(PageRequest.of(0, 1), request.getCaseId(), TradeRangeOperationRecord.class, queryAdjustCards);
+        if (CollectionUtils.isEmpty(page.getContent())) {
+            return ServerResponse.createBySuccess(new ArrayList<>());
         }
-        return new TradeRangeScreeningDataChartResult();
+        if (page.getContent().get(0).getIndividualBankCardsNumber() == -1) {
+            return ServerResponse.createBySuccess("全部查询暂不支持分析个体银行卡统计结果", new ArrayList<>());
+        }
+        // 该条操作记录保存的调单卡号集合
+        List<String> adjustCards = page.getContent().get(0).getAdjustCards();
+        // 查询个体银行卡统计
+        // TODO 如果需求就是查询的全部,就去除操作记录的条件
+        Double minAmount = page.getContent().get(0).getMinAmount();
+        Double maxAmount = page.getContent().get(0).getMaxAmount();
+        int dateType = page.getContent().get(0).getDataCategory();
+        QuerySpecialParams query = queryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        // 设置queryFields
+        query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK});
+        AggregationParams agg = aggParamFactory.individualBankCardsStatisticalAgg(offset, pageRequest.getPageSize(), sortRequest.getProperty(),
+                sortRequest.getOrder().name(), adjustCards.size());
+        agg.setResultName("individualBankCardsStatistical");
+        Map<String, String> aggKeyMapping = new LinkedHashMap<>();
+        Map<String, String> entityAggKeyMapping = new LinkedHashMap<>();
+        entityMappingFactory.buildTradeAnalysisResultAggMapping(aggKeyMapping, entityAggKeyMapping, TradeOperationIndividualBankCardsStatistical.class);
+        agg.setMapping(aggKeyMapping);
+        Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, request.getCaseId());
+        if (CollectionUtils.isEmpty(results) || CollectionUtils.isEmpty(results.get(agg.getResultName()))) {
+            return ServerResponse.createBySuccess(new ArrayList<>());
+        }
+        List<List<Object>> result = results.get(agg.getResultName());
+        List<String> entityTitles = new ArrayList<>(entityAggKeyMapping.keySet());
+        List<Map<String, Object>> entityPropertyValueMapping = parseFactory.convertEntity(result, entityTitles, TradeConvergenceAnalysisResult.class);
+        List<TradeOperationIndividualBankCardsStatistical> statisticalResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyValueMapping), new TypeReference<List<TradeOperationIndividualBankCardsStatistical>>() {
+        });
+        // 保留2位小数,转化科学计算方式的金额
+        statisticalResults.forEach(TradeOperationIndividualBankCardsStatistical::amountReservedTwo);
+        return ServerResponse.createBySuccess(statisticalResults);
     }
 
     /**
@@ -164,7 +241,8 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
      */
     private TradeRangeOperationRecord getOperationRecordsAdjustCardsById(String caseId, String id) {
 
-        String[] queryFields = new String[]{FundTacticsAnalysisField.TradeRangeScreening.ADJUST_CARD, FundTacticsAnalysisField.TradeRangeScreening.MIN_AMOUNT, FundTacticsAnalysisField.TradeRangeScreening.MAX_AMOUNT};
+        String[] queryFields = new String[]{FundTacticsAnalysisField.TradeRangeScreening.ADJUST_CARD, FundTacticsAnalysisField.TradeRangeScreening.MIN_AMOUNT,
+                FundTacticsAnalysisField.TradeRangeScreening.MAX_AMOUNT, FundTacticsAnalysisField.TradeRangeScreening.INDIVIDUAL_BANKCARDS_NUMBER, FundTacticsAnalysisField.TradeRangeScreening.DATA_CATEGORY};
         QuerySpecialParams query = queryRequestParamFactory.queryByIdAndCaseId(caseId, id);
         query.setIncludeFields(queryFields);
         Page<TradeRangeOperationRecord> page = entranceRepository.findAll(PageRequest.of(0, 1), caseId, TradeRangeOperationRecord.class, query);
@@ -173,23 +251,6 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
             return null;
         }
         return content.get(0);
-    }
-
-    /**
-     * <h2> 选择个体/一组调单卡号集合作为条件 </h2>
-     */
-    private TradeRangeScreeningDataChartResult selectIndividualQuery(TradeRangeScreeningDataChartRequest request) {
-
-        int from = request.getStartNumberOfTrade() - 1;
-        int size = (request.getEndNumberOfTrade() - request.getStartNumberOfTrade()) + 1;
-
-        // 查询固定交易笔数的 交易金额集合
-        List<BigDecimal> tradeAmounts = queryTradeAmounts(request, from, size);
-        // 查询固定交易笔数的 入账金额集合
-        List<BigDecimal> creditAmounts = queryCreditAmounts(request, from, size);
-        // 查询固定交易笔数的 出账金额集合
-        List<BigDecimal> payoutAmounts = queryPayoutAmounts(request, from, size);
-        return new TradeRangeScreeningDataChartResult(payoutAmounts, creditAmounts, tradeAmounts);
     }
 
 
@@ -239,6 +300,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
     private TradeRangeOperationRecord convertTradeRangeOperationRecordFromSaveRequest(TradeRangeScreeningSaveRequest request) {
 
         TradeRangeOperationRecord operationRecord = new TradeRangeOperationRecord();
+        operationRecord.setCaseId(request.getCaseId());
         operationRecord.setAccountOpeningIDNumber(request.getAccountOpeningNumber());
         operationRecord.setAccountOpeningName(request.getAccountOpeningName());
         if (!CollectionUtils.isEmpty(request.getCardNum())) {
@@ -246,12 +308,13 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
             operationRecord.setIndividualBankCardsNumber(request.getCardNum().size());
         } else {
             // 代表全部查询
-            operationRecord.setIndividualBankCardsNumber(Integer.MAX_VALUE - 1);
+            operationRecord.setIndividualBankCardsNumber(-1);
         }
-        operationRecord.setDataCategory(request.getSaveCateGory());
+        operationRecord.setDataCategory(request.getSaveType());
+        // 操作人是当前登录用户
         operationRecord.setOperationPeople(request.getOperationPeople());
-        operationRecord.setMinAmount(request.getMinAmount());
-        operationRecord.setMaxAmount(request.getMaxAmount());
+        operationRecord.setMinAmount(request.getFundMin());
+        operationRecord.setMaxAmount(request.getFundMax());
         operationRecord.setRemark(request.getRemark());
         operationRecord.setOperationDate(new Date());
         return operationRecord;

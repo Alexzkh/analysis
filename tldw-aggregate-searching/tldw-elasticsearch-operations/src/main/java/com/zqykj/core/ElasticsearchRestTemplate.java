@@ -209,7 +209,6 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         Assert.notNull(query, "query must not be null");
         Assert.notNull(index, "index must not be null");
 
-        query.setTrackTotalHits(true);
         SearchRequest searchRequest = requestFactory.searchRequest(query, clazz, index);
 
         searchRequest.source().size(0);

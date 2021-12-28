@@ -41,14 +41,13 @@ public class AbstractQuery implements Query {
     @Nullable
     protected IndicesOptions indicesOptions;
     protected boolean trackScores;
+    protected boolean trackTotalHits;
     @Nullable
     protected String preference;
     @Nullable
     protected Integer maxResults;
     @Nullable
     protected HighlightQuery highlightQuery;
-    @Nullable
-    private Boolean trackTotalHits;
     @Nullable
     private Integer trackTotalHitsUpTo;
     @Nullable
@@ -198,14 +197,22 @@ public class AbstractQuery implements Query {
         return trackScores;
     }
 
+    @Override
+    public boolean getTrackTotalHits() {
+        return trackTotalHits;
+    }
+
     /**
      * Configures whether to track scores.
      *
-     * @param trackScores
      * @since 3.1
      */
     public void setTrackScores(boolean trackScores) {
         this.trackScores = trackScores;
+    }
+
+    public void setTrackTotalHits(boolean trackTotalHits) {
+        this.trackTotalHits = trackTotalHits;
     }
 
     @Nullable
@@ -215,7 +222,7 @@ public class AbstractQuery implements Query {
     }
 
     @Override
-    public void setPreference(String preference) {
+    public void setPreference(@Nullable String preference) {
         this.preference = preference;
     }
 
@@ -230,29 +237,18 @@ public class AbstractQuery implements Query {
         return maxResults;
     }
 
-    public void setMaxResults(Integer maxResults) {
+    public void setMaxResults(@Nullable Integer maxResults) {
         this.maxResults = maxResults;
     }
 
     @Override
-    public void setHighlightQuery(HighlightQuery highlightQuery) {
+    public void setHighlightQuery(@Nullable HighlightQuery highlightQuery) {
         this.highlightQuery = highlightQuery;
     }
 
     @Override
     public Optional<HighlightQuery> getHighlightQuery() {
         return Optional.ofNullable(highlightQuery);
-    }
-
-    @Override
-    public void setTrackTotalHits(@Nullable Boolean trackTotalHits) {
-        this.trackTotalHits = trackTotalHits;
-    }
-
-    @Override
-    @Nullable
-    public Boolean getTrackTotalHits() {
-        return trackTotalHits;
     }
 
     @Override

@@ -200,6 +200,9 @@ public interface FundTacticsAnalysisField {
      */
     String ID = "id";
 
+    // es 数据唯一标识id
+    String _ID = "_id";
+
 
     /**
      * 快进快出排序字段
@@ -224,18 +227,24 @@ public interface FundTacticsAnalysisField {
         String MIN_AMOUNT = "min_amount";
         // 最大金额
         String MAX_AMOUNT = "max_amount";
+        // 数据类别
+        String DATA_CATEGORY = "data_cateGory";
+        // 个体银行卡数量
+        String INDIVIDUAL_BANKCARDS_NUMBER = "individual_bankCards_number";
+        int CREDIT_AMOUNT = 2;
+        int PAYOUT_AMOUNT = 1;
     }
 
     // 交易区间筛选操作记录查询字段(针对表 )
     static String[] tradeRangeScreeningQueryFields() {
-        return new String[]{"id", "operation_date", "operation_people", "min_amount", "max_amount", "account_name", "account_id_number",
+        return new String[]{"id", "case_id", "operation_date", "operation_people", "min_amount", "max_amount", "account_name", "account_id_number",
                 "individual_bankCards_number", "data_cateGory", "remark"};
     }
 
     // 交易区间筛选操作记录查询字段(针对表 )
     static String[] tradeRangeOperationDetailQueryFields() {
         return new String[]{QUERY_CARD, CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME,
-                OPPOSITE_BANK, TRADING_TIME, TRANSACTION_MONEY, LOAN_FLAG_IN, TRANSACTION_TYPE, TRANSACTION_SUMMARY};
+                OPPOSITE_BANK, TRADING_TIME, CHANGE_MONEY, LOAN_FLAG, TRANSACTION_TYPE, TRANSACTION_SUMMARY};
     }
 
     // 快进快出需要展示的字段(针对 表 TradeRangeOperationRecord})

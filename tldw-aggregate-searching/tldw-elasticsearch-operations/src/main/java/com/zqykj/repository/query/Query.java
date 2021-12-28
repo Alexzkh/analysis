@@ -72,6 +72,8 @@ public interface Query {
 
     boolean getTrackScores();
 
+    boolean getTrackTotalHits();
+
     @Nullable
     String getPreference();
 
@@ -83,8 +85,6 @@ public interface Query {
         return Optional.empty();
     }
 
-    void setTrackTotalHits(@Nullable Boolean trackTotalHits);
-
     @Nullable
     Collection<String> getIds();
 
@@ -92,9 +92,6 @@ public interface Query {
 
     @Nullable
     IndicesOptions getIndicesOptions();
-
-    @Nullable
-    Boolean getTrackTotalHits();
 
     void setTrackTotalHitsUpTo(@Nullable Integer trackTotalHitsUpTo);
 

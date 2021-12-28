@@ -5,6 +5,7 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
+import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.domain.bank.BankTransactionFlow;
@@ -33,6 +34,8 @@ public abstract class FundTacticsCommonImpl {
     protected AggregationRequestParamFactory aggParamFactory;
     @Autowired
     protected QueryRequestParamFactory queryRequestParamFactory;
+    @Autowired
+    protected AggregationResultEntityParseFactory parseFactory;
     // 最大查询调单卡号数量
     @Value("${fundTactics.queryAll.max_adjustCard_query_count}")
     protected int maxAdjustCardQueryCount;
