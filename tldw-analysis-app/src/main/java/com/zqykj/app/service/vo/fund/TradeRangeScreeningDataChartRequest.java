@@ -3,7 +3,6 @@
  */
 package com.zqykj.app.service.vo.fund;
 
-import com.zqykj.common.vo.DateRangeRequest;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,11 +21,6 @@ public class TradeRangeScreeningDataChartRequest extends FundTacticsPartGeneralR
      * 卡号集合
      */
     private List<String> cardNums;
-
-    /**
-     * 日期范围
-     */
-    private DateRangeRequest dateRange;
 
     /**
      * 选中查看的起始 交易笔数

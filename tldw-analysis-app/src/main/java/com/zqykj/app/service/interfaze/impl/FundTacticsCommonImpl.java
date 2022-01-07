@@ -39,6 +39,21 @@ public abstract class FundTacticsCommonImpl {
     // 最大查询调单卡号数量
     @Value("${fundTactics.queryAll.max_adjustCard_query_count}")
     protected int maxAdjustCardQueryCount;
+    // group by 分组数量限制
+    @Value("${fundTactics.bucketSize}")
+    protected int initGroupSize;
+    // 最大未调单卡号数量查询限制
+    @Value("${fundTactics.queryAll.max_unadjustedCard_query_count}")
+    protected int maxUnadjustedCardQueryCount;
+    // 外层查询数量限制
+    @Value("${fundTactics.queryAll.chunkSize}")
+    protected int globalChunkSize;
+    // 内层查询数量限制
+    @Value("${fundTactics.chunkSize}")
+    protected int chunkSize;
+    // 卡号批量查询数量限制
+    @Value("${fundTactics.cardSize}")
+    protected int queryCardSize;
 
     protected static final String CARDINALITY_TOTAL = "cardinality_total";
 

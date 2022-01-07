@@ -1,4 +1,4 @@
-package com.zqykj.app.service.factory.requestparam.query;
+package com.zqykj.app.service.factory.param.query;
 
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.common.enums.ConditionType;

@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -63,15 +62,6 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     private final AggregationResultEntityParseFactory aggregationResultEntityParseFactory;
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
-
-    @Value("${fundTactics.bucket_size}")
-    private int initGroupSize;
-
-    @Value("${fundTactics.queryAll.chunkSize}")
-    private int globalChunkSize;
-
-    @Value("${fundTactics.chunkSize}")
-    private int chunkSize;
 
     @Override
     public HistogramStatisticResponse getHistogramStatistics(String caseId, FundTacticsPartGeneralPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs) {
@@ -164,8 +154,8 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
                     String date = dates.get(i).toString();
                     String curTradeAmount = tradeAmounts.get(i).toString();
                     if (map.containsKey(date)) {
-                        String OldTradeAmount = map.get(date).toString();
-                        map.put(date, BigDecimalUtil.add(OldTradeAmount, curTradeAmount));
+                        String oldTradeAmount = map.get(date).toString();
+                        map.put(date, BigDecimalUtil.add(oldTradeAmount, curTradeAmount));
                     } else {
                         map.put(date, BigDecimalUtil.value(curTradeAmount));
                     }
@@ -321,8 +311,8 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         double startAmount = Double.parseDouble(request.getFund());
         QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
         // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
-        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()))) {
-            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()));
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (CollectionUtils.isEmpty(adjustCards)) {
                 resultMap.put("total", 0);
                 resultMap.put("result", new ArrayList<>());

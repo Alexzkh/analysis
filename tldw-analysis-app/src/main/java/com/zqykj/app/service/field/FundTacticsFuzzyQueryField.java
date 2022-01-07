@@ -26,4 +26,6 @@ public interface FundTacticsFuzzyQueryField {
             "transaction_opposite_name.opposite_name_wildcard", "transaction_opposite_certificate_number.opposite_certificate_number_wildcard",
             "transaction_opposite_card.opposite_card_wildcard", "transaction_opposite_account_open_bank.opposite_bank_wildcard"
     };
+
+    String[] unadjustAnalysisFuzzyFields = new String[]{"query_card.query_card_wildcard", "", "customer_name.customer_name_wildcard", "bank.bank_wildcard"};
 }

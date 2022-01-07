@@ -77,8 +77,9 @@ public abstract class FundTacticsCommonAggBuilder {
             // 获取真实的聚合排序字段(开户名称、开户证件号码、开户银行、账号、交易卡号 不做排序,按照交易总金额排序处理)
             fieldSorts.add(new FieldSort(property, order.name()));
             return AggregationParamsBuilders.sort("sort", fieldSorts, from, size);
+        } else {
+            return AggregationParamsBuilders.sort("sort", from, size);
         }
-        return null;
     }
 
     /**
@@ -88,6 +89,15 @@ public abstract class FundTacticsCommonAggBuilder {
 
         // 获取真实的聚合排序字段(开户名称、开户证件号码、开户银行、账号、交易卡号 不做排序,按照交易总金额排序处理)
         return fundTacticsPartUniversalAggSort(null, from, size);
+    }
+
+    /**
+     * <h2> 聚合展示字段 </h2>
+     * <p>
+     * 默认只取出一条
+     */
+    protected AggregationParams fundTacticsPartUniversalAggShowFields(String[] fields, String hitsAggName) {
+        return fundTacticsPartUniversalAggShowFields(fields, hitsAggName, 0, 1, null);
     }
 
     /**

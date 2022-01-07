@@ -3,8 +3,11 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.PageRequest;
 import com.zqykj.common.vo.SortRequest;
+import com.zqykj.infrastructure.util.StringUtils;
+import com.zqykj.parameters.query.DateRange;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,6 +36,11 @@ public class FundTacticsPartGeneralRequest {
     private String keyword;
 
     /**
+     * 日期范围
+     */
+    private DateRangeRequest dateRange;
+
+    /**
      * 分页
      */
     private PageRequest pageRequest;
@@ -43,7 +51,20 @@ public class FundTacticsPartGeneralRequest {
     private SortRequest sortRequest;
 
 
-    private int groupInitPage = 0;
+    private int groupInitFrom = 0;
 
     private int groupInitSize = 60000;
+
+    public static DateRange getDateRange(DateRangeRequest dateRangeRequest) {
+
+        if (null == dateRangeRequest) {
+            return null;
+        }
+        if (StringUtils.isBlank(dateRangeRequest.getStart()) || StringUtils.isBlank(dateRangeRequest.getEnd())) {
+            return null;
+        }
+        String start = dateRangeRequest.getStart() + dateRangeRequest.getTimeStart();
+        String end = dateRangeRequest.getEnd() + dateRangeRequest.getTimeEnd();
+        return new DateRange(start, end);
+    }
 }

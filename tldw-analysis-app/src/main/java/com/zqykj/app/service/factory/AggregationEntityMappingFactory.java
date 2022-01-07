@@ -61,6 +61,11 @@ public interface AggregationEntityMappingFactory {
     Map<String, String> buildShowFieldsAggMapping();
 
     /**
+     * <h2> 构建单个聚合映射 </h2>
+     */
+    Map<String, String> buildSingleAggKeyMapping(String aggName, String key);
+
+    /**
      * 构建单卡画像分析结果,聚合和实体属性映射
      *
      * @param aggKeyMapping       聚合名称-聚合属性Map
@@ -81,9 +86,14 @@ public interface AggregationEntityMappingFactory {
     /**
      * 构建个人画像-名下卡交易统计，查询聚合名称-聚合属性映射
      *
-     * @param aggKeyMapping aggKeyMapping
-     * @param  entityAggKeyMapping entityAggKeyMapping
-     * @param mappingEntity mappingEntity
+     * @param aggKeyMapping       aggKeyMapping
+     * @param entityAggKeyMapping entityAggKeyMapping
+     * @param mappingEntity       mappingEntity
      */
     void buildIndividualCardTransactionStatisticsAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * <h2> 构建未调单账户分析聚合映射 </h2>
+     */
+    void buildUnadjustedAccountAnalysisAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping);
 }

@@ -1,7 +1,7 @@
 package com.zqykj.app.service.factory.builder.query.fund;
 
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
-import com.zqykj.app.service.factory.requestparam.query.TransferAccountQueryRequestFactory;
+import com.zqykj.app.service.factory.param.query.TransferAccountQueryRequestFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.request.TransferAccountAnalysisRequest;

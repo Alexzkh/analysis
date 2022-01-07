@@ -4,8 +4,6 @@
 package com.zqykj.app.service.vo.fund;
 
 import com.zqykj.common.enums.AmountOperationSymbol;
-import com.zqykj.common.vo.DateRangeRequest;
-import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QueryOperator;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,11 +35,6 @@ public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequ
     private List<String> cardNums;
 
     /**
-     * 日期范围   (时间范围固定是:  00:00:00-23:59:59)
-     */
-    private DateRangeRequest dateRange;
-
-    /**
      * 比较符  大于、大于等于、小于、小于等于、等于   (默认是大于等于0)
      */
     private AmountOperationSymbol operator = AmountOperationSymbol.gte;
@@ -50,13 +43,6 @@ public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequ
      * 交易金额
      */
     private String fund = "0";
-
-    public static DateRange getDateRange(DateRangeRequest dateRangeRequest) {
-
-        String start = dateRangeRequest.getStart() + dateRangeRequest.getTimeStart();
-        String end = dateRangeRequest.getEnd() + dateRangeRequest.getTimeEnd();
-        return new DateRange(start, end);
-    }
 
     public static QueryOperator getOperator(AmountOperationSymbol operator) {
 

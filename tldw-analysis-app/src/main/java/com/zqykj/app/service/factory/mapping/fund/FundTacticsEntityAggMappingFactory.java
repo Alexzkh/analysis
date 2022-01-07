@@ -138,6 +138,13 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
         return aggMapping;
     }
 
+    public Map<String, String> buildSingleAggKeyMapping(String aggName, String key) {
+
+        Map<String, String> mapping = new HashMap<>();
+        mapping.put(aggName, key);
+        return mapping;
+    }
+
     @Override
     public void buildSingleCardPortraitResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity) {
         // 查询卡号分桶后的聚合结果map(聚合名称:聚合值属性名称)
@@ -171,5 +178,15 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
         if (null != entityAgg) {
             aggKeyMapping.put(entityAgg.name(), entityKey.name());
         }
+    }
+
+    public void buildUnadjustedAccountAnalysisAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping) {
+
+        aggKeyMapping.put("queryCardGroup", "keyAsString");
+        aggKeyMapping.put("hits", "hits");
+        aggKeyMapping.put("linkedAccountTimes", "value");
+        entityAggKeyMapping.put("oppositeCard", "hits");
+        entityAggKeyMapping.put("customerName", "hits");
+        entityAggKeyMapping.put("numberOfLinkedAccounts", "linkedAccountTimes");
     }
 }
