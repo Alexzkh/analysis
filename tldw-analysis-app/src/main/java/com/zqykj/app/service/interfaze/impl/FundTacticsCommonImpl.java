@@ -15,6 +15,8 @@ import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
+import org.apache.commons.lang3.time.DateParser;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
@@ -56,6 +58,7 @@ public abstract class FundTacticsCommonImpl {
     protected int queryCardSize;
 
     protected static final String CARDINALITY_TOTAL = "cardinality_total";
+    protected static final DateParser DATE_PARSER = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
 
     /**
      * <h2> 检查调单卡号数量 </h2>

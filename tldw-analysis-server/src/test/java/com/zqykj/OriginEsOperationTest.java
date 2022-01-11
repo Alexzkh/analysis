@@ -7,8 +7,6 @@ package com.zqykj;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.chain.TransferAccountAnalysisResultHandlerChain;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
-import com.zqykj.app.service.factory.requestparam.agg.TransferAccountAggRequestParamFactory;
-import com.zqykj.app.service.factory.requestparam.query.TransferAccountQueryRequestFactory;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
@@ -17,7 +15,6 @@ import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.interfaze.ITransferAccountAnalysis;
 import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
-import com.zqykj.app.service.vo.fund.TransferAccountAnalysisResult;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.common.enums.ConditionType;
@@ -32,11 +29,9 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.archive.PeopleCardInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
-import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.PeopleArea;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
-import com.zqykj.domain.response.TransferAccountAnlysisResultResponse;
 import com.zqykj.domain.vo.TransferAccountAnalysisResultVO;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.CombinationQueryParams;
@@ -47,17 +42,14 @@ import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.StopWatch;
 
-import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 @SpringBootTest
 @Slf4j
@@ -67,13 +59,7 @@ public class OriginEsOperationTest {
     private EntranceRepository entranceRepository;
 
     @Autowired
-    private ITransactionStatistics iTransactionStatistics;
-
-    @Autowired
     private IAssetTrendsTactics iAssetTrendsTactics;
-
-    @Autowired
-    private AggregateResultConversionAccessor aggregateResultConversionAccessor;
 
     @Autowired
     QueryRequestParamFactory queryRequestParamFactory;
@@ -406,12 +392,6 @@ public class OriginEsOperationTest {
     }
 
     @Autowired
-    private TransferAccountQueryRequestFactory transferAccountQueryRequestFactory;
-
-    @Autowired
-    private TransferAccountAggRequestParamFactory transferAccountAggRequestParamFactory;
-
-    @Autowired
     private AggregationResultEntityParseFactory aggregationResultEntityParseFactory;
 
     @Autowired
@@ -435,69 +415,6 @@ public class OriginEsOperationTest {
         FundAnalysisResultResponse<TransferAccountAnalysisResultVO> response11 = iTransferAccountAnalysis.accessTransferAccountAnalysis(request,caseId);
 
     }
-
-    @Test
-    public void testTransferAccountAnalysisAccessAllAdjustCards() {
-
-        String caseId = "ffe471270eb6429ebfcc9dba92e06cf5";
-        TransferAccountAnalysisRequest request = new TransferAccountAnalysisRequest();
-        request.setCharacteristicRatio(new CharacteristicRatio(80, 5, 80));
-        request.setOther(true);
-        request.setPrecipitate(true);
-        request.setTransfer(true);
-        request.setSource(true);
-        request.setQueryRequest(new QueryRequest(null, new PagingRequest(1, 25), new SortingRequest("tradeTotalAmount", SortingRequest.Direction.DESC)));
-        QuerySpecialParams allAdjustCardsQuery = transferAccountQueryRequestFactory.buildTransaferAccountQueryRequest(request, caseId);
-        AggregationParams aggregationParams = transferAccountAggRequestParamFactory.buildAccessAllAdjustCardsAgg();
-        Map<String, List<List<Object>>> result = entranceRepository.compoundQueryAndAgg(allAdjustCardsQuery, aggregationParams, BankTransactionFlow.class, caseId);
-        List<List<Object>> lists = result.get(aggregationParams.getResultName());
-        List<String> res = lists.stream().map(m -> m.stream().findFirst().get().toString()).collect(Collectors.toList());
-        QuerySpecialParams querySpecialParams = transferAccountQueryRequestFactory.buildTransferAccountAnalysisQueryRequest(request, caseId, res);
-        AggregationParams aggregationParams1 = transferAccountAggRequestParamFactory.buildTransferAccountAgg(request);
-        Map<String, List<List<Object>>> result1 = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams1, BankTransactionRecord.class, caseId);
-        List<String> resultListTitles = new ArrayList<>(aggregationParams1.getEntityAggColMapping().keySet());
-        List<Map<String, Object>> resultListEntityMapping = aggregationResultEntityParseFactory.convertEntity(
-                result1.get(aggregationParams1.getResultName()), resultListTitles, TransferAccountAnalysisResult.class
-        );
-        // 来源实体数据组装
-        List<TransferAccountAnalysisResult> fundsResultList = JacksonUtils.parse(JacksonUtils.toJson(resultListEntityMapping), new TypeReference<List<TransferAccountAnalysisResult>>() {
-        });
-        System.out.println();
-        List<TransferAccountAnalysisResultVO> voList = new ArrayList<>();
-        fundsResultList.stream().forEach(fund -> {
-            TransferAccountAnalysisResultVO vo = new TransferAccountAnalysisResultVO();
-            BeanUtils.copyProperties(fund, vo);
-            voList.add(vo);
-        });
-        System.out.println();
-        voList.stream().forEach(v -> {
-           v.setCreditsAmount(v.getCreditsAmount().setScale(2, RoundingMode.HALF_UP));
-            v.setCreditsAmount(v.getCreditsAmount().setScale(2, RoundingMode.HALF_UP));
-            v.setPayOutAmount(v.getPayOutAmount().setScale(2,RoundingMode.HALF_UP));
-            v.setTradeNet(v.getTradeNet().setScale(2,RoundingMode.HALF_UP));
-            v.setTradeTotalAmount(v.getTradeTotalAmount().setScale(2,RoundingMode.HALF_UP));
-            chain.handle(v, request);
-            System.out.println("current customer name :" + v.getCustomerName() + " account characteristics " + v.getAccountCharacteristics());
-
-        });
-
-        TransferAccountAnlysisResultResponse resultResponse = TransferAccountAnlysisResultResponse.builder()
-                .results(voList)
-                .build();
-        Integer size = request.getQueryRequest().getPaging().getPageSize();
-        Integer page = request.getQueryRequest().getPaging().getPage();
-        Integer total = fundsResultList.size();
-        resultResponse.doOrderOrPaging(page, size
-                , request.getQueryRequest().getSorting().getProperty()
-                , request.getQueryRequest().getSorting().getOrder().toString());
-        FundAnalysisResultResponse<TransferAccountAnalysisResultVO> response = new FundAnalysisResultResponse<>();
-        response.setContent(resultResponse.provideSortList());
-        response.setSize(size);
-        response.setTotal(total);
-        response.setTotalPages(PageRequest.getTotalPages(total, size));
-        System.out.println();
-    }
-
 
     @Test
     public void deleteAllByCondition() {
@@ -525,20 +442,5 @@ public class OriginEsOperationTest {
         long afterCount = entranceRepository.count("61e9e22a-a6b1-4838-8cea-df8995bc2d8g", BankTransactionFlow.class, condition);
 
         System.out.println("删除后总数量: " + afterCount);
-    }
-
-    @Test
-    public void fastInFastOutTest() throws ExecutionException, InterruptedException {
-
-        FastInFastOutRequest fastInFastOutRequest = new FastInFastOutRequest();
-        fastInFastOutRequest.setCaseId("b3048cdbc6094d0f83889f9665a440c6");
-        fastInFastOutRequest.setCardNum(Arrays.asList("60138216660037818", "520112198702200011", "520112198702200012"));
-        fastInFastOutRequest.setTimeInterval(1000000000);
-        fastInFastOutRequest.setSingleQuota(1);
-        fastInFastOutRequest.setCharacteristicRatio(100);
-        com.zqykj.common.vo.PageRequest pageRequest = new com.zqykj.common.vo.PageRequest(0, 25,
-                new SortRequest("", Direction.DESC));
-        fastInFastOutRequest.setPageRequest(pageRequest);
-        iFastInFastOut.fastInFastOutAnalysis(fastInFastOutRequest);
     }
 }

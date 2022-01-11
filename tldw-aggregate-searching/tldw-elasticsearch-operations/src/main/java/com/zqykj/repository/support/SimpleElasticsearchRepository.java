@@ -281,6 +281,22 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Override
+    public <T> void delete(@Nullable String routing, @NonNull Class<T> entityClass, @Nullable QuerySpecialParams condition) {
+
+        // 生成es 的查询条件
+        if (null != condition) {
+
+            QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
+            Query query = new NativeSearchQueryBuilder().withQuery(queryBuilder).build();
+            String indexCoordinates = getIndexCoordinates(entityClass);
+            executeAndRefresh((OperationsCallback<Void>) operations -> {
+                operations.delete(query, entityClass, indexCoordinates);
+                return null;
+            }, entityClass);
+        }
+    }
+
+    @Override
     public <T, ID> void deleteAll(Iterable<ID> ids, String routing, @NonNull Class<T> entityClass) {
 
         Assert.notNull(ids, "Cannot delete 'null' list.");

@@ -14,7 +14,7 @@ public interface UnadjustedAccountAggParamFactory {
     /**
      * <h2> 获取未调单账户分析结果 </h2>
      */
-    AggregationParams unadjustedAccountAnalysis(UnadjustedAccountAnalysisRequest request, int groupSize);
+    AggregationParams unadjustedAccountAnalysis(UnadjustedAccountAnalysisRequest request, int from, int size, int groupSize);
 
     /**
      * <h2> 单独获取(分页参数大小的卡号数量) 的聚合展示字段(开户账户名称、对方开户行) 、关联账户数</h2>

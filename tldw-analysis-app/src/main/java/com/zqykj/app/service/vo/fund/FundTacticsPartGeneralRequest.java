@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * 资金战法部分通用请求参数
  */
@@ -24,6 +26,11 @@ public class FundTacticsPartGeneralRequest {
      * 数据标识唯一id
      */
     private String id;
+
+    /**
+     * 数据标识唯一id集合
+     */
+    private List<String> ids;
 
     /**
      * 案件Id

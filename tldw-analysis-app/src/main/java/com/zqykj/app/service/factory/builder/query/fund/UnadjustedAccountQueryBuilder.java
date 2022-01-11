@@ -6,6 +6,7 @@ package com.zqykj.app.service.factory.builder.query.fund;
 import com.zqykj.app.service.factory.param.query.UnadjustedAccountQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralRequest;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
@@ -40,7 +41,7 @@ public class UnadjustedAccountQueryBuilder implements UnadjustedAccountQueryPara
         filter.addCombinationQueryParams(mustNot);
         // 增加模糊查询
         if (StringUtils.isNotBlank(keyword)) {
-            CombinationQueryParams fuzzyQuery = fuzzyQuery(keyword);
+            CombinationQueryParams fuzzyQuery = unadjustedFuzzyQuery(keyword);
             filter.addCombinationQueryParams(fuzzyQuery);
         }
         query.addCombiningQueryParams(filter);
@@ -48,13 +49,26 @@ public class UnadjustedAccountQueryBuilder implements UnadjustedAccountQueryPara
     }
 
     /**
-     * <h2> 模糊查询 </h2>
+     * <h2> 未调单分析模糊查询 </h2>
      */
-    public CombinationQueryParams fuzzyQuery(String keyword) {
+    private CombinationQueryParams unadjustedFuzzyQuery(String keyword) {
 
         CombinationQueryParams localFuzzy = new CombinationQueryParams();
         localFuzzy.setType(ConditionType.should);
-        for (String fuzzyField : FundTacticsFuzzyQueryField.unadjustAnalysisFuzzyFields) {
+        for (String fuzzyField : FundTacticsFuzzyQueryField.unadjustedAnalysisFuzzyFields) {
+
+            localFuzzy.addCommonQueryParams(new CommonQueryParams(QueryType.wildcard, fuzzyField, keyword));
+        }
+        return localFuzzy;
+    }
+
+    /**
+     * <h2> 建议调单模糊查询 </h2>
+     */
+    private CombinationQueryParams suggestAdjustedFuzzyQuery(String keyword) {
+        CombinationQueryParams localFuzzy = new CombinationQueryParams();
+        localFuzzy.setType(ConditionType.should);
+        for (String fuzzyField : FundTacticsFuzzyQueryField.suggestAdjustedFuzzyFields) {
 
             localFuzzy.addCommonQueryParams(new CommonQueryParams(QueryType.wildcard, fuzzyField, keyword));
         }
@@ -67,6 +81,29 @@ public class UnadjustedAccountQueryBuilder implements UnadjustedAccountQueryPara
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, unAdjustedCards));
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    public QuerySpecialParams querySuggestAdjustAccount(FundTacticsPartGeneralRequest request) {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
+        // 增加模糊查询
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+            filter.addCombinationQueryParams(suggestAdjustedFuzzyQuery(request.getKeyword()));
+        }
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
+
+    public QuerySpecialParams deleteSuggestAdjustAccount(FundTacticsPartGeneralRequest request) {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField._ID, request.getIds()));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
         query.addCombiningQueryParams(filter);
         return query;
     }

@@ -184,9 +184,9 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
 
         aggKeyMapping.put("queryCardGroup", "keyAsString");
         aggKeyMapping.put("hits", "hits");
-        aggKeyMapping.put("linkedAccountTimes", "value");
+        aggKeyMapping.put("linked_account_times", "value");
         entityAggKeyMapping.put("oppositeCard", "hits");
-        entityAggKeyMapping.put("customerName", "hits");
-        entityAggKeyMapping.put("numberOfLinkedAccounts", "linkedAccountTimes");
+        entityAggKeyMapping.put("accountName", "hits");
+        entityAggKeyMapping.put("numberOfLinkedAccounts", "linked_account_times");
     }
 }

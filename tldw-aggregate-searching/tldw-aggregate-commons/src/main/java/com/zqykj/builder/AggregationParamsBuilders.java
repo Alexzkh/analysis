@@ -10,6 +10,7 @@ import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.FetchSource;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
@@ -210,6 +211,15 @@ public class AggregationParamsBuilders {
         return new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
     }
 
+    public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script, String format) {
+
+        PipelineAggregationParams pipelineBucketScript = new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
+        if (StringUtils.isNotBlank(format)) {
+            pipelineBucketScript.setFormat(format);
+        }
+        return pipelineBucketScript;
+    }
+
     /**
      * <h2> 管道聚合筛选 </h2>
      * <p>
@@ -222,6 +232,15 @@ public class AggregationParamsBuilders {
     public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script) {
 
         return new PipelineAggregationParams(aggName, AggsType.bucket_selector.name(), bucketPath, script);
+    }
+
+    public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script, String format) {
+
+        PipelineAggregationParams selector = new PipelineAggregationParams(aggName, AggsType.bucket_selector.name(), bucketPath, script);
+        if (StringUtils.isNotBlank(format)) {
+            selector.setFormat(format);
+        }
+        return selector;
     }
 
     /**

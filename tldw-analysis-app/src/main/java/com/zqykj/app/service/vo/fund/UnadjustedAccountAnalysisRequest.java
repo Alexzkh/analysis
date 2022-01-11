@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.util.ReflectionUtils;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -23,18 +25,23 @@ import java.util.List;
 @NoArgsConstructor
 public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequest {
 
-    /**
-     * 需要展示的账户特征  来源、中转、沉淀、其他
-     */
+    /** 需要展示的账户特征  来源、中转、沉淀、其他 */
+    @NotNull(message = "请至少选择一个过滤条件")
     private List<String> accountCharacteristics;
 
-    /**
-     * 特征比值
-     */
+    /** 特征比值 */
+    @NotNull(message = "请设置特征比")
     private FeatureRatioValue ratioValue;
+
+    /** 选择范围: top */
+    private Integer topRange;
+
+    /** 选择范围: 账号数量前 百分比 eg. 符合条件的未调单数量: 1000, 设置20%, 相当于取200个 */
+    private Double percentageOfAccountNumber;
 
     /**
      * <h2> 重新设置前端传递的特征比 </h2>
+     * 放在controller中判断的 <br>
      */
     public void changeRatioValue() {
         this.ratioValue.setSourceRatio(this.ratioValue.getSourceRatio() / 100);
@@ -52,15 +59,15 @@ public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequ
         /**
          * 来源特征比阈值
          */
-        private double sourceRatio;
+        private double sourceRatio = 80.0;
         /**
          * 中转特征比阈值
          */
-        private double transitRatio;
+        private double transitRatio = 5.0;
         /**
          * 沉淀特征比阈值
          */
-        private double depositRatio;
+        private double depositRatio = 80.0;
     }
 
     /**

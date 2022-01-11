@@ -167,6 +167,15 @@ public interface CrudRepository extends Repository {
     <T, ID> void deleteAll(Iterable<ID> ids, @Nullable String routing, @NonNull Class<T> entityClass);
 
     /**
+     * <h2> 根据条件删除 </h2>
+     *
+     * @param routing     路由
+     * @param entityClass 索引类
+     * @param condition   删除条件
+     */
+    <T> void delete(@Nullable String routing, @NonNull Class<T> entityClass, @Nullable QuerySpecialParams condition);
+
+    /**
      * <h2> 删除数据 </h2>
      * <p>
      *

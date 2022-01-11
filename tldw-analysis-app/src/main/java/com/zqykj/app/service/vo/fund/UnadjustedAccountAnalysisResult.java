@@ -26,10 +26,10 @@ public class UnadjustedAccountAnalysisResult {
     @Key(name = "keyAsString")
     private String oppositeCard;
 
-    // 账户名称
+    // 账户开户名称
     @Agg(name = "customer_name", showField = true)
     @Key(name = "customer_name")
-    private String customerName;
+    private String accountName;
 
     // 对方开户行
     @Agg(name = "bank", showField = true)
@@ -37,39 +37,39 @@ public class UnadjustedAccountAnalysisResult {
     private String bank;
 
     // 关联账户数
-    @Agg(name = "linkedAccountTimes")
+    @Agg(name = "linked_account_times")
     @Key(name = "value")
-    @Sort(name = "linkedAccountTimes")
+    @Sort(name = "linked_account_times")
     private int numberOfLinkedAccounts;
 
     // 交易总次数
-    @Agg(name = "tradeTotalTimes")
+    @Agg(name = "trade_total_times")
     @Key(name = "value")
-    @Sort(name = "tradeTotalTimes")
+    @Sort(name = "trade_total_times")
     private int tradeTotalTimes;
 
     // 交易总金额
-    @Agg(name = "tradeTotalAmount")
+    @Agg(name = "trade_total_amount")
     @Key(name = "value")
-    @Sort(name = "tradeTotalAmount")
+    @Sort(name = "trade_total_amount")
     private BigDecimal tradeTotalAmount;
 
-    // 入账金额
-    @Agg(name = "creditSum")
+    // 入账总金额
+    @Agg(name = "credits_total_amount")
     @Key(name = "value")
-    @Sort(name = "filterCredit>creditSum")
-    private BigDecimal creditsAmount;
+    @Sort(name = "filterCredit>credits_total_amount")
+    private BigDecimal creditsTotalAmount;
 
-    // 出账金额
-    @Agg(name = "payoutSum")
+    // 出账总金额
+    @Agg(name = "payout_total_amount")
     @Key(name = "value")
-    @Sort(name = "filterPayout>payoutSum")
-    private BigDecimal payOutAmount;
+    @Sort(name = "filterPayout>payout_total_amount")
+    private BigDecimal payoutTotalAmount;
 
-    // 交易净和
-    @Agg(name = "tradeNetSum")
+    // 交易总净和
+    @Agg(name = "trade_net")
     @Key(name = "value")
-    @Sort(name = "tradeNetSum")
+    @Sort(name = "trade_net")
     private BigDecimal tradeNet;
 
     // 计算出的来源特征比
@@ -95,8 +95,8 @@ public class UnadjustedAccountAnalysisResult {
 
     public static void amountReservedTwo(UnadjustedAccountAnalysisResult result) {
         result.setTradeTotalAmount(BigDecimalUtil.value(result.getTradeTotalAmount()));
-        result.setCreditsAmount(BigDecimalUtil.value(result.getCreditsAmount()));
-        result.setPayOutAmount(BigDecimalUtil.value(result.getPayOutAmount()));
+        result.setCreditsTotalAmount(BigDecimalUtil.value(result.getCreditsTotalAmount()));
+        result.setPayoutTotalAmount(BigDecimalUtil.value(result.getPayoutTotalAmount()));
         result.setTradeNet(BigDecimalUtil.value(result.getTradeNet()));
     }
 }

@@ -3,6 +3,8 @@
  */
 package com.zqykj.app.service.interfaze.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.HashUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.agg.UnadjustedAccountAggParamFactory;
@@ -11,13 +13,18 @@ import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IUnadjustedAccountsAnalysis;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.vo.SortRequest;
+import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
+import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.BankTransactionRecord;
+import com.zqykj.domain.bank.SuggestAdjusted;
 import com.zqykj.infrastructure.util.StringUtils;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +38,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +61,8 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
     private final static String DEPOSIT_LOGO = "沉淀";
     private final static String OTHER_LOGO = "其他";
 
-    public ServerResponse<FundAnalysisResultResponse<UnadjustedAccountAnalysisResult>> unAdjustedAnalysis(UnadjustedAccountAnalysisRequest request) throws ExecutionException, InterruptedException {
+    @Override
+    public ServerResponse<FundAnalysisResultResponse<UnadjustedAccountAnalysisResult>> unAdjustedAnalysis(UnadjustedAccountAnalysisRequest request) throws Exception {
 
         request.setGroupInitSize(initGroupSize);
         // 查询调单卡号(最大8000个)
@@ -66,7 +72,10 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
             // 查询排除这些调单的未调单卡号数据分析结果
             if (!CollectionUtils.isEmpty(adjustCards)) {
                 // 结果 与 总量同时查询
-                CompletableFuture<List<UnadjustedAccountAnalysisResult>> resultFuture = CompletableFuture.supplyAsync(() -> getAnalysisResult(request, adjustCards), ThreadPoolConfig.getExecutor());
+                com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
+                int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
+                CompletableFuture<List<UnadjustedAccountAnalysisResult>> resultFuture = CompletableFuture.supplyAsync(() -> getAnalysisResult(request, from, pageRequest.getPageSize(), adjustCards),
+                        ThreadPoolConfig.getExecutor());
                 CompletableFuture<Long> totalFuture = CompletableFuture.supplyAsync(() -> {
                     try {
                         return asyncComputeTotal(request, adjustCards);
@@ -95,14 +104,183 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
     }
 
+    @Override
+    public ServerResponse<FundAnalysisResultResponse<SuggestAdjustedAccountResult>> suggestAdjustedAccounts(FundTacticsPartGeneralRequest request) {
+
+        QuerySpecialParams query = unadjustedAccountQueryParamFactory.querySuggestAdjustAccount(request);
+        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
+        SortRequest sortRequest = request.getSortRequest();
+        Page<SuggestAdjusted> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
+                Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), SuggestAdjusted.class, query);
+        List<SuggestAdjusted> content = page.getContent();
+        List<SuggestAdjustedAccountResult> results = convertFromSuggestAdjusted(content);
+        FundAnalysisResultResponse<SuggestAdjustedAccountResult> resultResponse = new FundAnalysisResultResponse<>();
+        long total = computeSuggestAdjustedAccountsCount(request);
+        resultResponse.setContent(results);
+        resultResponse.setTotal(total);
+        resultResponse.setSize(pageRequest.getPageSize());
+        resultResponse.setTotalPages(PageRequest.getTotalPages(total, pageRequest.getPageSize()));
+        return ServerResponse.createBySuccess(resultResponse);
+    }
+
+    @Override
+    public ServerResponse<String> deleteSuggestAdjusted(FundTacticsPartGeneralRequest request) {
+
+        try {
+            entranceRepository.deleteAll(request.getIds(), request.getCaseId(), SuggestAdjusted.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("刪除建议调单账号失败!");
+            return ServerResponse.createByErrorMessage("删除失败!");
+        }
+        return ServerResponse.createBySuccess("刪除成功!");
+    }
+
+    public ServerResponse<String> suggestAdjustedAccountManualSave(SuggestAdjustedAccountAddRequest request) {
+        try {
+            handleSuggestAdjustedAccountRequestContent(request);
+            entranceRepository.saveAll(request.getSuggestAdjusted(), request.getCaseId(), SuggestAdjusted.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("添加建议调单账号失败!");
+            return ServerResponse.createByErrorMessage("添加建议调单账号失败!");
+        }
+        return ServerResponse.createBySuccess("添加建议调单账号成功!");
+    }
+
+    /**
+     * <h2> 添加建议调单账号(自动保存) </h2>
+     */
+    @SuppressWarnings("all")
+    public ServerResponse<String> suggestAdjustedAccountAutoSave(UnadjustedAccountAnalysisRequest request) throws Exception {
+
+        // 首先获取的是数据总量
+        // 查询结果(分批量保存,每次保存数量根据阈值处理)
+        request.setGroupInitSize(initGroupSize);
+        // 查询调单卡号(最大8000个)
+        if (checkAdjustCardCountByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
+            //
+            List<String> adjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+            if (CollectionUtils.isEmpty(adjustCards)) {
+                return ServerResponse.createByErrorMessage("案件数据不存在!");
+            }
+            long total = asyncComputeTotal(request, adjustCards);
+            int size;
+            if (request.getTopRange() != null) {
+                size = request.getTopRange();
+            } else if (request.getPercentageOfAccountNumber() != null) {
+                size = BigDecimalUtil.mul(String.valueOf(total), BigDecimalUtil.div(request.getPercentageOfAccountNumber(), 100).toString()).intValue();
+            } else {
+                return ServerResponse.createByErrorMessage("请设置选择范围!");
+            }
+            // 查询排除这些调单的未调单卡号数据分析结果
+            List<Future<Boolean>> futures = new ArrayList<>();
+            int position = 0;
+            while (position < size) {
+                int next = Math.min(position + queryCardSize, size);
+                int finalPosition = position;
+                CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+                    List<UnadjustedAccountAnalysisResult> analysisResults = getAnalysisResult(request, finalPosition, next - finalPosition, adjustCards);
+                    if (!CollectionUtils.isEmpty(analysisResults)) {
+                        return saveSuggestAdjustedAccountOfAuto(request.getCaseId(), analysisResults);
+                    }
+                    return false;
+                }, ThreadPoolConfig.getExecutor());
+                position = next;
+                futures.add(future);
+            }
+            for (Future<Boolean> future : futures) {
+                future.get();
+            }
+            return ServerResponse.createBySuccess("自动保存成功!");
+        } else {
+            // TODO 调单数量大于阈值的时候,数据量会很大,处理时间会很长(暂时不处理)
+            return ServerResponse.createByErrorMessage("数据太大,暂不支持处理");
+        }
+    }
+
+    /**
+     * <h2> 保存自动保存的建议调单账号 </h2>
+     */
+    private boolean saveSuggestAdjustedAccountOfAuto(String caseId, List<UnadjustedAccountAnalysisResult> results) {
+
+        List<Map<String, ?>> maps = new ArrayList<>();
+        results.forEach(result -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", HashUtil.fnvHash(caseId + "_" + result.getOppositeCard()));
+            map.put("case_id", caseId);
+            map.put("opposite_card", result.getOppositeCard());
+            map.put("account_name", result.getAccountName());
+            map.put("bank", result.getBank());
+            map.put("linked_accounts_number", result.getNumberOfLinkedAccounts());
+            map.put("trade_total_times", result.getTradeTotalTimes());
+            map.put("trade_total_amount", result.getTradeTotalAmount());
+            map.put("credits_total_amount", result.getCreditsTotalAmount());
+            map.put("payout_total_amount", result.getPayoutTotalAmount());
+            map.put("trade_net", result.getTradeNet());
+            map.put("account_feature", result.getAccountFeature());
+            map.put("add_type", 2);
+            // TODO 这里需要动态获取
+            map.put("add_account", "MCJ");
+            map.put("add_datetime", new Date());
+            maps.add(map);
+        });
+        try {
+            entranceRepository.saveAll(maps, caseId, SuggestAdjusted.class);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("suggest adjusted account auto save error!");
+            throw e;
+        }
+    }
+
+
+    private void handleSuggestAdjustedAccountRequestContent(SuggestAdjustedAccountAddRequest request) {
+
+        List<SuggestAdjusted> suggestAdjusted = request.getSuggestAdjusted();
+        for (SuggestAdjusted adjusted : suggestAdjusted) {
+            // TODO 获取当前session持有的用户(账号)
+            adjusted.setAddAccount("");
+            adjusted.setAddDateTime(new Date());
+            adjusted.setCaseId(request.getCaseId());
+            adjusted.setId(HashUtil.fnvHash(request.getCaseId() + "_" + adjusted.getOppositeCard()));
+        }
+    }
+
+    /**
+     * <h2> 计算调单账号总量 </h2>
+     */
+    private long computeSuggestAdjustedAccountsCount(FundTacticsPartGeneralRequest request) {
+
+        QuerySpecialParams query = unadjustedAccountQueryParamFactory.querySuggestAdjustAccount(request);
+        return entranceRepository.count(request.getCaseId(), SuggestAdjusted.class, query);
+    }
+
+    private List<SuggestAdjustedAccountResult> convertFromSuggestAdjusted(List<SuggestAdjusted> suggestAdjusted) {
+
+        List<SuggestAdjustedAccountResult> results = new ArrayList<>();
+        suggestAdjusted.forEach(e -> {
+            SuggestAdjustedAccountResult result = new SuggestAdjustedAccountResult();
+            BeanUtil.copyProperties(e, result);
+            result.setCreditsTotalAmount(BigDecimalUtil.value(e.getCreditsTotalAmount()));
+            result.setPayoutTotalAmount(BigDecimalUtil.value(e.getPayoutTotalAmount()));
+            result.setTradeTotalAmount(BigDecimalUtil.value(e.getTradeTotalAmount()));
+            result.setTradeNet(BigDecimalUtil.value(e.getTradeNet()));
+            results.add(result);
+        });
+        return results;
+    }
+
     /**
      * <h2> 查询排除这些调单的未调单卡号数据分析结果 </h2>
      */
-    private List<UnadjustedAccountAnalysisResult> getAnalysisResult(UnadjustedAccountAnalysisRequest request, List<String> adjustCards) {
+    private List<UnadjustedAccountAnalysisResult> getAnalysisResult(UnadjustedAccountAnalysisRequest request,
+                                                                    int from, int size, List<String> adjustCards) {
 
         DateRange dateRange = FundTacticsPartGeneralRequest.getDateRange(request.getDateRange());
         QuerySpecialParams queryUnadjusted = unadjustedAccountQueryParamFactory.queryUnadjusted(request.getCaseId(), adjustCards, request.getKeyword(), dateRange);
-        AggregationParams aggUnadjusted = unadjustedAccountAggParamFactory.unadjustedAccountAnalysis(request, request.getGroupInitSize());
+        AggregationParams aggUnadjusted = unadjustedAccountAggParamFactory.unadjustedAccountAnalysis(request, from, size, request.getGroupInitSize());
         Map<String, String> aggKeyMapping = new LinkedHashMap<>();
         Map<String, String> entityKeyMapping = new LinkedHashMap<>();
         entityMappingFactory.buildTradeAnalysisResultAggMapping(aggKeyMapping, entityKeyMapping, UnadjustedAccountAnalysisResult.class);
@@ -124,7 +302,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
             handleChain.doHandle(result, request.getRatioValue(), 1);
             // 填充账户开户名称、对方开户行、账户关联数
             UnadjustedAccountAnalysisResult partAnalysisResult = aggShowField.get(result.getOppositeCard());
-            result.setCustomerName(partAnalysisResult.getCustomerName());
+            result.setAccountName(partAnalysisResult.getAccountName());
             result.setBank(partAnalysisResult.getBank());
             result.setNumberOfLinkedAccounts(partAnalysisResult.getNumberOfLinkedAccounts());
         }
@@ -188,7 +366,8 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
      * <p>
      * 查询固定数据量的符合条件的未调单卡号,然后计算这些调单卡号是否满足用户设置的特征比(目的降低groupBy的数量,从而加快查询速度)
      */
-    private long asyncComputeTotal(UnadjustedAccountAnalysisRequest request, List<String> adjustCards) throws ExecutionException, InterruptedException {
+    private long asyncComputeTotal(UnadjustedAccountAnalysisRequest request, List<String> adjustCards) throws
+            ExecutionException, InterruptedException {
 
         long total = 0L;
         int unadjustedCardCount = getUnadjustedCardCount(request, adjustCards);
@@ -239,8 +418,8 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
      * <h2> 获取映射UnadjustedAccountAnalysisResult 结果 </h2>
      */
     @Nullable
-
-    private List<UnadjustedAccountAnalysisResult> getUnadjustedAccountAnalysisResults(UnadjustedAccountAnalysisRequest request, QuerySpecialParams query, AggregationParams agg, Map<String, String> entityKeyMapping) {
+    private List<UnadjustedAccountAnalysisResult> getUnadjustedAccountAnalysisResults(UnadjustedAccountAnalysisRequest request, QuerySpecialParams query,
+                                                                                      AggregationParams agg, Map<String, String> entityKeyMapping) {
         Map<String, List<List<Object>>> resultMaps = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, request.getCaseId());
         if (CollectionUtils.isEmpty(resultMaps) || CollectionUtils.isEmpty(resultMaps.get(agg.getResultName()))) {
             return null;
@@ -377,6 +556,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
                 setAccountFeature(result, OTHER_LOGO);
             }
         }
+
     }
 
     public static void setAccountFeature(UnadjustedAccountAnalysisResult result, String logo) {

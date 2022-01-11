@@ -45,7 +45,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
     @Override
-    public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
+    public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception {
 
         FundAnalysisResultResponse<TradeConvergenceAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
@@ -178,7 +178,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
     @SuppressWarnings("all")
-    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
+    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception {
 
         // 前台分页
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
@@ -390,29 +390,28 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      */
     private void addTradeConvergenceAnalysisShowFields(List<TradeConvergenceAnalysisResult> convergenceAnalysisResults,
                                                        List<TradeConvergenceAnalysisResult> hits) {
-
+        // 把一方生成map(避免双层for循环,时间复杂度降低)
+        Map<String, TradeConvergenceAnalysisResult> hitsMap = hits.stream().collect(Collectors.toMap(TradeConvergenceAnalysisResult::getMergeCard, e -> e, (v1, v2) -> v1));
         for (TradeConvergenceAnalysisResult convergenceAnalysisResult : convergenceAnalysisResults) {
 
-            for (TradeConvergenceAnalysisResult hit : hits) {
-
-                if (convergenceAnalysisResult.getMergeCardKey().equals(hit.getMergeCard())) {
-                    // 开户名称
-                    convergenceAnalysisResult.setCustomerName(hit.getCustomerName());
-                    // 开户证件号码
-                    convergenceAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
-                    // 开户银行
-                    convergenceAnalysisResult.setBank(hit.getBank());
-                    // 交易卡号
-                    convergenceAnalysisResult.setTradeCard(hit.getTradeCard());
-                    // 对方开户名称
-                    convergenceAnalysisResult.setOppositeCustomerName(hit.getOppositeCustomerName());
-                    // 对方开户证件号码
-                    convergenceAnalysisResult.setOppositeIdentityCard(hit.getOppositeIdentityCard());
-                    // 对方开户银行
-                    convergenceAnalysisResult.setOppositeBank(hit.getOppositeBank());
-                    // 对方卡号
-                    convergenceAnalysisResult.setOppositeTradeCard(hit.getOppositeTradeCard());
-                }
+            TradeConvergenceAnalysisResult hit = hitsMap.get(convergenceAnalysisResult.getMergeCardKey());
+            if (null != hit) {
+                // 开户名称
+                convergenceAnalysisResult.setCustomerName(hit.getCustomerName());
+                // 开户证件号码
+                convergenceAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
+                // 开户银行
+                convergenceAnalysisResult.setBank(hit.getBank());
+                // 交易卡号
+                convergenceAnalysisResult.setTradeCard(hit.getTradeCard());
+                // 对方开户名称
+                convergenceAnalysisResult.setOppositeCustomerName(hit.getOppositeCustomerName());
+                // 对方开户证件号码
+                convergenceAnalysisResult.setOppositeIdentityCard(hit.getOppositeIdentityCard());
+                // 对方开户银行
+                convergenceAnalysisResult.setOppositeBank(hit.getOppositeBank());
+                // 对方卡号
+                convergenceAnalysisResult.setOppositeTradeCard(hit.getOppositeTradeCard());
             }
         }
     }
