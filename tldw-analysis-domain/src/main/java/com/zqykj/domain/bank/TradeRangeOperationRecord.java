@@ -83,13 +83,13 @@ public class TradeRangeOperationRecord {
      * 个体银行卡数量 (当查询全部调单卡号的时候, 默认设置为-1)
      */
     @Field(type = FieldType.Integer, name = "individual_bankCards_number")
-    private int individualBankCardsNumber;
+    private Integer individualBankCardsNumber;
 
     /**
      * 数据类别
      */
     @Field(type = FieldType.Integer, name = "data_cateGory")
-    private int dataCategory;
+    private Integer dataCategory;
 
     /**
      * 备注

@@ -18,5 +18,5 @@ public interface IFastInFastOut {
     /**
      * <h2> 快进快出分析 </h2>
      */
-    ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException;
+    ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws Exception;
 }

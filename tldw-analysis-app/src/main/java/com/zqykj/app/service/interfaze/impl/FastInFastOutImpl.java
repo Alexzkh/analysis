@@ -17,7 +17,6 @@ import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.BankTransactionRecord;
-import com.zqykj.domain.bank.FastInFastOutRecord;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QueryOperator;
@@ -73,9 +72,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     @Value("${fastInout.transit_card_count}")
     private int transitCardCount;
 
-    private static final DateParser DATE_PARSER = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
-
-    public ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
+    public ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws Exception {
 
         if (CollectionUtils.isEmpty(request.getCardNum())) {
             // 全部查询
@@ -89,7 +86,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     /**
      * <h2> 全部查询 </h2>
      */
-    private ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutViaAllQuery(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
+    private ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutViaAllQuery(FastInFastOutRequest request) throws Exception {
 
         // 直接查询调单卡号的数量,批量获取 maxAdjustCardQueryCount 数量的调单卡号
         // 查询出前 maxAdjustCardQueryCount 个调单卡号
@@ -110,7 +107,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     /**
      * <h2> 选择个体查询 </h2>
      */
-    private ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutViaChosenIndividual(FastInFastOutRequest request) throws ExecutionException, InterruptedException {
+    private ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutViaChosenIndividual(FastInFastOutRequest request) throws Exception {
         // 需要返回的数量
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         String property = request.getSortRequest().getProperty();
@@ -496,7 +493,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     }
 
     /**
-     * <h2> 生成快进快出结果 {@link FastInFastOutRecord} </h2>
+     * <h2> 生成快进快出结果  </h2>
      * <p>
      * 调单卡号作为中转卡号的情况 (流入和流出排序不同,生成的结果也不同)
      *

@@ -19,6 +19,7 @@ public class PageRequest {
 
     private Integer page = 1;
     private Integer pageSize = 25;
+    private Integer start = 0;
 
     private SortRequest sortRequest;
 

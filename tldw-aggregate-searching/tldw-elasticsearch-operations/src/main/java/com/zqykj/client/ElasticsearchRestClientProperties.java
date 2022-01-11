@@ -3,10 +3,8 @@
  */
 package com.zqykj.client;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -15,10 +13,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @Author zhangkehou
  * @Date 2021/8/6
  */
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@Setter
+@Getter
 @ConfigurationProperties(prefix = "elasticsearch.data.source")
 @ConditionalOnProperty(name = "enable.datasource.type", havingValue = "elasticsearch")
 public class ElasticsearchRestClientProperties {
@@ -41,27 +37,27 @@ public class ElasticsearchRestClientProperties {
     /**
      * The maximum number of connections in the connection pool.
      */
-    private Integer maxConnectTotal = 100;
+    private int maxConnectTotal = 800;
 
     /**
      * The number of requests that a service can receive in parallel each time.
      */
-    private Integer maxConnectPerRoute = 100;
+    private int maxConnectPerRoute = 300;
 
     /**
      * Get a connection timeout from the connection pool in http client.
      */
-    private Integer connectionRequestTimeoutMillis = 5000;
+    private int connectionRequestTimeoutMillis = 8000;
 
     /**
      * Response timeout, after which the response will not be read.
      */
-    private Integer socketTimeoutMillis = 5000;
+    private int socketTimeoutMillis = 60000;
 
     /**
      * Timeout for connection establishment.
      */
-    private Integer connectTimeoutMillis = 5000;
+    private int connectTimeoutMillis = 8000;
 
     /**
      * 是否自动创建索引与mapping

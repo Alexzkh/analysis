@@ -36,7 +36,7 @@ public interface ITransactionStatistics {
     /**
      * <h2> 获取交易统计分析结果 </h2>
      **/
-    ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws ExecutionException, InterruptedException;
+    ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws Exception;
 
     /**
      * @param caseId:                             案件编号.

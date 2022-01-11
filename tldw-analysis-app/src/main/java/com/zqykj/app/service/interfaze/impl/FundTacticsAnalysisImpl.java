@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
+public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IFundTacticsAnalysis {
 
     private final EntranceRepository entranceRepository;
 
@@ -44,12 +44,6 @@ public class FundTacticsAnalysisImpl implements IFundTacticsAnalysis {
     private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
 
     private final FundTacticsAggResultParseFactory parseFactory;
-
-    @Value("${fundTactics.bucket_size}")
-    private int initGroupSize;
-
-    @Value("${fundTactics.chunkSize}")
-    private int chunkSize;
 
     /**
      * <h2> 批量获取调单卡号集合 </h2>
