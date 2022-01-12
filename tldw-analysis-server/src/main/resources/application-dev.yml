@@ -69,9 +69,7 @@ fastInout:
   order_chunkSize: 2000
   per_query_count: 5000
   transit_card_count: 10_000
-## 资金追踪条数默认1000
-global:
-  chunkSize: 1000
+
 athena:
   gdb:
     uri: http://172.30.4.55:8089
