@@ -43,25 +43,36 @@ enable:
     type: elasticsearch
 
 
-buckets:
-  page:
-    initSize: 100_000
-chunkSize: 1000
-## 资金追踪条数默认1000
-global:
+## 资金战法配置
+fundTactics:
+  ## 全部查询
+  queryAll:
+    ## 最大调单卡号数量限制
+    max_adjustCard_query_count: 8000
+    ## 最大未调单卡号数量限制
+    max_unadjustedCard_query_count: 20_0000
+    ## 全部查询 批量查询阈值
+    chunkSize: 2200
+  ## 普通查询 批量查询阈值
   chunkSize: 1000
+  ## group by size 限制
+  bucketSize: 20_0000
+  ## 查询的卡号返回数量限制
+  cardSize: 6800
+
+## 快进快出调单卡号作为来源/中转/沉淀生成的快进快出统计表
+## 按照排序生成(流入金额、流出金额、流出日期) 共计 6种排序规则,每种规则若生成5w数据
+## 如果满的话,调单卡号作为来源共计生成30w数据,依次类推 调单卡号作为来源、中转、沉淀情况都满足的话共计90w数据(然后基于这90w 需要继续过滤特征比和时间间隔等)
+## 数据已经足够大(阈值尽量不调整)
+fastInout:
+  result_chunkSize: 10_0000
+  order_chunkSize: 2000
+  per_query_count: 5000
+  transit_card_count: 10_000
+
 athena:
   gdb:
     uri: http://172.30.4.55:8089
-
-fastInout:
-  result_chunkSize: 5_0000
-  order_chunkSize: 1000
-  per_query_count: 5000
-  transit_card_count: 10_000
-  max_adjustCard_query_count: 8000
-
-
 
 ## **********************************************************
 ##   Plugins Settings (插件其他相关配置 详见tldw-analysis-plugins/README.md 参考文档)

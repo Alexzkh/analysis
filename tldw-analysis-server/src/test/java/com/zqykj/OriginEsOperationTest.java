@@ -7,6 +7,8 @@ package com.zqykj;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.chain.TransferAccountAnalysisResultHandlerChain;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
+import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
 import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
@@ -27,8 +29,10 @@ import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
+import com.zqykj.domain.Sort;
 import com.zqykj.domain.archive.PeopleCardInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.PeopleArea;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
@@ -200,7 +204,7 @@ public class OriginEsOperationTest {
                 "60138216660044814",
                 "60138216660046214",
                 "60138216660047614"));
-        request.setDateRange(new DateRangeRequest("", "","",""));
+        request.setDateRange(new DateRangeRequest("", "", "", ""));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
         request.setPaging(new PagingRequest(0, 25));
@@ -412,7 +416,7 @@ public class OriginEsOperationTest {
         request.setTransfer(true);
         request.setSource(true);
         request.setQueryRequest(new QueryRequest(null, new PagingRequest(1, 25), new SortingRequest("tradeTotalAmount", SortingRequest.Direction.DESC)));
-        FundAnalysisResultResponse<TransferAccountAnalysisResultVO> response11 = iTransferAccountAnalysis.accessTransferAccountAnalysis(request,caseId);
+        FundAnalysisResultResponse<TransferAccountAnalysisResultVO> response11 = iTransferAccountAnalysis.accessTransferAccountAnalysis(request, caseId);
 
     }
 
@@ -442,5 +446,20 @@ public class OriginEsOperationTest {
         long afterCount = entranceRepository.count("61e9e22a-a6b1-4838-8cea-df8995bc2d8g", BankTransactionFlow.class, condition);
 
         System.out.println("删除后总数量: " + afterCount);
+    }
+
+    @Test
+    public void scriptQuery() {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, "d5a1a617103a4a61a809dd5b142b931e"));
+        filter.addCommonQueryParams(QueryParamsBuilders.script("doc['trading_time'].value.get(ChronoField.ALIGNED_WEEK_OF_YEAR)== 47"));
+        query.addCombiningQueryParams(filter);
+        Page<BankTransactionRecord> page =
+                entranceRepository.findAll(PageRequest.of(0, 10, Sort.Direction.ASC, FundTacticsAnalysisField.TRADING_TIME),
+                        "d5a1a617103a4a61a809dd5b142b931e", BankTransactionRecord.class, query);
+        System.out.println(page.getTotalElements());
     }
 }

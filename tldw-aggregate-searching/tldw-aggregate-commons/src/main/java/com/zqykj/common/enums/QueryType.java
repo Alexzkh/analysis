@@ -43,7 +43,12 @@ public enum QueryType {
     /**
      * 多字段 单值匹配
      */
-    multi_match;
+    multi_match,
+
+    /**
+     * 脚本查询(不同数据源有不同的支持,有的数据源可能没有)
+     */
+    script;
 
     public static QueryType of(String type) {
 

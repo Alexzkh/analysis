@@ -4,14 +4,18 @@
 package com.zqykj.parameters.query;
 
 import com.zqykj.common.enums.QueryType;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.elasticsearch.index.query.TermsQueryBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <h1> 查询的通用参数 </h1>
@@ -42,6 +46,11 @@ public class CommonQueryParams {
     private Object value;
 
     /**
+     * 脚本参数
+     */
+    private Script script;
+
+    /**
      * 日期范围
      */
     private DateRange dateRange;
@@ -53,6 +62,57 @@ public class CommonQueryParams {
 
     // 内部依然可以是组合查询  (eg. a = 1 and (b = 1 or c = 2) 等等)
     private CombinationQueryParams compoundQueries;
+
+    /**
+     * <h2> 脚本参数查询 </h2>
+     */
+    @Setter
+    @Getter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Script {
+
+        // 脚本类型: 每种数据源有不同的支持(请参照数据源)
+        private String scriptType;
+
+        // 脚本使用语言
+        private String lang;
+
+        // 脚本值
+        private String idOrCode;
+
+        // 编译参数设置
+        private Map<String, String> options;
+
+        // 为脚本执行绑定的用户定义参数
+        private Map<String, Object> params;
+
+        public Script(String idOrCode) {
+            this.idOrCode = idOrCode;
+        }
+
+        public Script(String idOrCode, String scriptType) {
+            this.idOrCode = idOrCode;
+            this.scriptType = scriptType;
+        }
+
+        public Script(String idOrCode, Map<String, Object> params) {
+            this.idOrCode = idOrCode;
+            this.params = params;
+        }
+
+        public Script(String idOrCode, Map<String, Object> params, Map<String, String> options) {
+            this.idOrCode = idOrCode;
+            this.params = params;
+            this.options = options;
+        }
+    }
+
+    public CommonQueryParams(QueryType type, Script script) {
+
+        this.type = type;
+        this.script = script;
+    }
 
     // 嵌套组合查询
     public CommonQueryParams(CombinationQueryParams compoundQueries) {
