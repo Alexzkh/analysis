@@ -60,6 +60,18 @@ fastInout:
   per_query_count: 5000
   transit_card_count: 10_000
   max_adjustCard_query_count: 8000
+## 资金战法配置
+fundTactics:
+  ## 全部查询
+  queryAll:
+    ## 最大调单卡号数量限制
+    max_adjustCard_query_count: 8000
+    ## 全部查询 批量查询阈值
+    chunkSize: 2200
+  ## 普通查询 批量查询阈值
+  chunkSize: 1000
+  ## group by size 限制
+  bucket_size: 20_0000
 
 
 
