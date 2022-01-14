@@ -4,9 +4,13 @@
 package com.zqykj.app.service.factory.builder.query.fund;
 
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
+import com.zqykj.common.enums.QueryType;
 import com.zqykj.parameters.query.CombinationQueryParams;
+import com.zqykj.parameters.query.CommonQueryParams;
+import com.zqykj.parameters.query.QuerySpecialParams;
 
 import java.util.List;
 

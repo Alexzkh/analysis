@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.zqykj.domain.PageRequest;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -32,6 +33,15 @@ public class FundAnalysisResultResponse<T> {
     public static <T> FundAnalysisResultResponse<T> empty() {
         FundAnalysisResultResponse<T> fundAnalysisResultResponse = new FundAnalysisResultResponse<>();
         fundAnalysisResultResponse.setContent(new ArrayList<>());
+        return fundAnalysisResultResponse;
+    }
+
+    public static <T> FundAnalysisResultResponse<T> build(List<T> content, long total, int pageSize) {
+        FundAnalysisResultResponse<T> fundAnalysisResultResponse = new FundAnalysisResultResponse<>();
+        fundAnalysisResultResponse.setContent(content);
+        fundAnalysisResultResponse.setTotalPages(PageRequest.getTotalPages(total, pageSize));
+        fundAnalysisResultResponse.setTotal(total);
+        fundAnalysisResultResponse.setSize(pageSize);
         return fundAnalysisResultResponse;
     }
 }

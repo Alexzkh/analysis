@@ -3,24 +3,37 @@
  */
 package com.zqykj.app.service.interfaze.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralRequest;
+import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
+import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.vo.SortRequest;
+import com.zqykj.domain.Page;
+import com.zqykj.domain.PageRequest;
+import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
+import com.zqykj.util.BigDecimalUtil;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateParser;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -135,5 +148,46 @@ public abstract class FundTacticsCommonImpl {
         }
         long count = Long.parseLong(total.get(0).get(0).toString());
         return count <= maxAdjustCardQueryCount;
+    }
+
+    protected ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> detail(FundTacticsPartGeneralRequest request, String... fuzzyFields) {
+        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
+        SortRequest sortRequest = request.getSortRequest();
+        QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request.getCaseId(), request.getQueryCard(), request.getOppositeCard(), request.getKeyword(), fuzzyFields);
+        // 设置需要查询的字段
+        query.setIncludeFields(FundTacticsAnalysisField.detailShowField());
+        Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
+                Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), BankTransactionRecord.class, query);
+        if (page == null || CollectionUtils.isEmpty(page.getContent())) {
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
+        }
+        List<TradeAnalysisDetailResult> detailResults = getTradeAnalysisDetailResults(page);
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(detailResults, page.getTotalElements(), pageRequest.getPageSize()));
+    }
+
+    protected List<TradeAnalysisDetailResult> getTradeAnalysisDetailResults(Page<BankTransactionRecord> page) {
+        List<TradeAnalysisDetailResult> detailResults = new ArrayList<>();
+        List<BankTransactionRecord> content = page.getContent();
+        content.forEach(e -> {
+            TradeAnalysisDetailResult detailResult = new TradeAnalysisDetailResult();
+            BeanUtil.copyProperties(e, detailResult, FundTacticsAnalysisField.CHANGE_MONEY, FundTacticsAnalysisField.TRADING_TIME);
+            detailResult.setChangeAmount(BigDecimalUtil.value(e.getChangeAmount()));
+            detailResult.setTradeTime(DateFormatUtils.format(e.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
+            detailResults.add(detailResult);
+        });
+        return detailResults;
+    }
+
+    protected List<TradeAnalysisDetailResult> getTradeAnalysisDetailResultsByFlow(Page<BankTransactionFlow> page) {
+        List<TradeAnalysisDetailResult> detailResults = new ArrayList<>();
+        List<BankTransactionFlow> content = page.getContent();
+        content.forEach(e -> {
+            TradeAnalysisDetailResult detailResult = new TradeAnalysisDetailResult();
+            BeanUtil.copyProperties(e, detailResult, FundTacticsAnalysisField.TRADING_TIME);
+            detailResult.setChangeAmount(BigDecimalUtil.value(e.getTransactionMoney()));
+            detailResult.setTradeTime(DateFormatUtils.format(e.getTradingTime(), "yyyy-MM-dd HH:mm:ss"));
+            detailResults.add(detailResult);
+        });
+        return detailResults;
     }
 }

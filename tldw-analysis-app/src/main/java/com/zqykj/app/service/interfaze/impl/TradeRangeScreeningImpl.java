@@ -43,8 +43,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements ITradeRangeScreening {
 
-    private final TradeRangeScreeningQueryParamFactory queryParamFactory;
-    private final TradeRangeScreeningAggParamFactory aggParamFactory;
+    private final TradeRangeScreeningQueryParamFactory tradeRangeScreeningQueryParamFactory;
+    private final TradeRangeScreeningAggParamFactory tradeRangeScreeningAggParamFactory;
 
     @Override
     public ServerResponse<TradeRangeScreeningDataChartResult> getDataChartResult(TradeRangeScreeningDataChartRequest request) {
@@ -93,7 +93,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
                 return selectIndividualQuery(request);
             }
         } else {
-            // TODO
+            // TODO 超过最大调单数量暂不处理(数据量太大)
 
         }
         return new TradeRangeScreeningDataChartResult();
@@ -170,22 +170,17 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         if (CollectionUtils.isEmpty(adjustCards)) {
             return ServerResponse.createByErrorMessage("未查询到符合的记录!");
         }
-        QuerySpecialParams query = queryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
         // 设置queryFields
         query.setIncludeFields(FundTacticsAnalysisField.tradeRangeOperationDetailQueryFields());
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
                 Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), BankTransactionRecord.class, query);
-        if (CollectionUtils.isEmpty(page.getContent())) {
+        if (null == page) {
             return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<BankTransactionRecord> content = page.getContent();
         List<TradeRangeOperationDetailSeeResult> newContent = content.stream().map(this::convertFromTradeRangeOperationDetailSeeResult).collect(Collectors.toList());
-        FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult> resultResponse = new FundAnalysisResultResponse<>();
-        resultResponse.setContent(newContent);
-        resultResponse.setTotalPages(PageRequest.getTotalPages(page.getTotalElements(), pageRequest.getPageSize()));
-        resultResponse.setSize(pageRequest.getPageSize());
-        resultResponse.setTotal(page.getTotalElements());
-        return ServerResponse.createBySuccess(resultResponse);
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(newContent, page.getTotalElements(), page.getSize()));
     }
 
     public ServerResponse<List<TradeOperationIndividualBankCardsStatistical>> seeIndividualBankCardsStatisticalResult(FundTacticsPartGeneralRequest request) {
@@ -212,10 +207,10 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         Double minAmount = page.getContent().get(0).getMinAmount();
         Double maxAmount = page.getContent().get(0).getMaxAmount();
         int dateType = page.getContent().get(0).getDataCategory();
-        QuerySpecialParams query = queryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
         // 设置queryFields
         query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK});
-        AggregationParams agg = aggParamFactory.individualBankCardsStatisticalAgg(offset, pageRequest.getPageSize(), sortRequest.getProperty(),
+        AggregationParams agg = tradeRangeScreeningAggParamFactory.individualBankCardsStatisticalAgg(offset, pageRequest.getPageSize(), sortRequest.getProperty(),
                 sortRequest.getOrder().name(), adjustCards.size());
         agg.setResultName("individualBankCardsStatistical");
         Map<String, String> aggKeyMapping = new LinkedHashMap<>();
@@ -259,7 +254,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
      */
     private List<BigDecimal> queryTradeAmounts(TradeRangeScreeningDataChartRequest request, int from, int size) {
 
-        QuerySpecialParams queryTradeAmount = queryParamFactory.queryTradeAmount(request);
+        QuerySpecialParams queryTradeAmount = tradeRangeScreeningQueryParamFactory.queryTradeAmount(request);
         String property = FundTacticsAnalysisField.CHANGE_MONEY;
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.ASC, property),
                 request.getCaseId(), BankTransactionRecord.class, queryTradeAmount);
@@ -271,7 +266,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
      */
     private List<BigDecimal> queryCreditAmounts(TradeRangeScreeningDataChartRequest request, int from, int size) {
 
-        QuerySpecialParams queryTradeAmount = queryParamFactory.queryCreditOrPayoutAmount(request, true);
+        QuerySpecialParams queryTradeAmount = tradeRangeScreeningQueryParamFactory.queryCreditOrPayoutAmount(request, true);
         String property = FundTacticsAnalysisField.CHANGE_MONEY;
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.ASC, property),
                 request.getCaseId(), BankTransactionRecord.class, queryTradeAmount);
@@ -283,7 +278,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
      */
     private List<BigDecimal> queryPayoutAmounts(TradeRangeScreeningDataChartRequest request, int from, int size) {
 
-        QuerySpecialParams queryTradeAmount = queryParamFactory.queryCreditOrPayoutAmount(request, false);
+        QuerySpecialParams queryTradeAmount = tradeRangeScreeningQueryParamFactory.queryCreditOrPayoutAmount(request, false);
         String property = FundTacticsAnalysisField.CHANGE_MONEY;
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.ASC, property),
                 request.getCaseId(), BankTransactionRecord.class, queryTradeAmount);

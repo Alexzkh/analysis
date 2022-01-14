@@ -41,7 +41,7 @@ public enum QueryType {
     exists,
 
     /**
-     * 多字段 单值匹配
+     * 单个值,多字段匹配
      */
     multi_match,
 

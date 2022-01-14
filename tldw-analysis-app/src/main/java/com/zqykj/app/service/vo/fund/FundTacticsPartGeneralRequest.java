@@ -28,6 +28,16 @@ public class FundTacticsPartGeneralRequest {
     private String id;
 
     /**
+     * 查询卡号
+     */
+    private String queryCard;
+
+    /**
+     * 对方卡号
+     */
+    private String oppositeCard;
+
+    /**
      * 数据标识唯一id集合
      */
     private List<String> ids;

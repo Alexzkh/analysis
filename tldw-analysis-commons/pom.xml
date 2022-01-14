@@ -26,8 +26,8 @@
     <dependencies>
         <dependency>
             <groupId>cn.hutool</groupId>
-            <artifactId>hutool-crypto</artifactId>
-            <version>5.7.16</version>
+            <artifactId>hutool-all</artifactId>
+            <version>5.7.18</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

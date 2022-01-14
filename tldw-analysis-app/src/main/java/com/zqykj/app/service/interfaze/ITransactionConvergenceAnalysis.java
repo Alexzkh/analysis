@@ -3,17 +3,22 @@
  */
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
+import com.zqykj.app.service.vo.fund.*;
+import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.core.ServerResponse;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  * <h1> 战法交易汇聚分析 业务层 </h1>
  */
 public interface ITransactionConvergenceAnalysis {
 
+    /**
+     * <h2> 交易汇聚分析结果 </h2>
+     */
     ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception;
+
+    /**
+     * <h2> 交易汇聚分析结果详情 </h2>
+     */
+    ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request);
 }

@@ -117,4 +117,9 @@ public interface QueryRequestParamFactory {
     QuerySpecialParams queryAdjustNumberByAmountAndDate(String caseId, Double startAmount, QueryOperator startOperator, DateRange dateRange);
 
     QuerySpecialParams queryAdjustNumberByDate(String caseId, DateRange dateRange);
+
+    /**
+     * <h2> 查询资金交易详情 </h2>
+     */
+    QuerySpecialParams queryTradeAnalysisDetail(String caseId, String queryCard, String oppositeCard, String keyword, String... detailFuzzyFields);
 }

@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.factory.param.query;
 
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
 
 import java.util.List;

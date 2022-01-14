@@ -63,19 +63,19 @@ public class QueryParamsBuilders {
     }
 
     /**
-     * <h2> 单个字段,多值匹配 </h2>
+     * <h2> 单个值,多字段匹配 </h2>
      */
-    public static CommonQueryParams multiMatch(String field, String... value) {
+    public static CommonQueryParams multiMatch(String value, String... fields) {
 
-        return new CommonQueryParams(QueryType.multi_match, field, value);
+        return new CommonQueryParams(QueryType.multi_match, value, fields);
     }
 
     /**
-     * <h2> 单个字段,多值匹配 </h2>
+     * <h2> 单个值,多字段匹配 </h2>
      */
-    public static CommonQueryParams multiMatch(String field, Object... value) {
+    public static CommonQueryParams multiMatch(Object value, String... fields) {
 
-        return new CommonQueryParams(QueryType.multi_match, field, value);
+        return new CommonQueryParams(QueryType.multi_match, value, fields);
     }
 
     /**

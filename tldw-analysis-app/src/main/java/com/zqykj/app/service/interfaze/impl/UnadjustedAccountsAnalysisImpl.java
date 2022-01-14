@@ -112,15 +112,12 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         SortRequest sortRequest = request.getSortRequest();
         Page<SuggestAdjusted> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
                 Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), SuggestAdjusted.class, query);
+        if (null == page) {
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
+        }
         List<SuggestAdjusted> content = page.getContent();
         List<SuggestAdjustedAccountResult> results = convertFromSuggestAdjusted(content);
-        FundAnalysisResultResponse<SuggestAdjustedAccountResult> resultResponse = new FundAnalysisResultResponse<>();
-        long total = computeSuggestAdjustedAccountsCount(request);
-        resultResponse.setContent(results);
-        resultResponse.setTotal(total);
-        resultResponse.setSize(pageRequest.getPageSize());
-        resultResponse.setTotalPages(PageRequest.getTotalPages(total, pageRequest.getPageSize()));
-        return ServerResponse.createBySuccess(resultResponse);
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(results, page.getTotalElements(), page.getSize()));
     }
 
     @Override
@@ -246,15 +243,6 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
             adjusted.setCaseId(request.getCaseId());
             adjusted.setId(HashUtil.fnvHash(request.getCaseId() + "_" + adjusted.getOppositeCard()));
         }
-    }
-
-    /**
-     * <h2> 计算调单账号总量 </h2>
-     */
-    private long computeSuggestAdjustedAccountsCount(FundTacticsPartGeneralRequest request) {
-
-        QuerySpecialParams query = unadjustedAccountQueryParamFactory.querySuggestAdjustAccount(request);
-        return entranceRepository.count(request.getCaseId(), SuggestAdjusted.class, query);
     }
 
     private List<SuggestAdjustedAccountResult> convertFromSuggestAdjusted(List<SuggestAdjusted> suggestAdjusted) {

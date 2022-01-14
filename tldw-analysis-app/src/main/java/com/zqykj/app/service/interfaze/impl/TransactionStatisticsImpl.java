@@ -5,25 +5,23 @@ import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.agg.TradeStatisticalAnalysisAggParamFactory;
 import com.zqykj.app.service.factory.param.query.TradeStatisticalAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionStatistics;
 import com.zqykj.app.service.transform.NumericalConversion;
 import com.zqykj.app.service.vo.fund.*;
+import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.constant.Constants;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.enums.HistogramStatistic;
-import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.response.*;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
-import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
-import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QueryOperator;
-import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -50,16 +48,9 @@ import java.util.Map;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements ITransactionStatistics {
 
+    private final TradeStatisticalAnalysisAggParamFactory tradeStatisticalAnalysisAggParamFactory;
 
-    private final EntranceRepository entranceRepository;
-
-    private final TradeStatisticalAnalysisAggParamFactory aggregationRequestParamFactory;
-
-    private final TradeStatisticalAnalysisQueryParamFactory queryRequestParamFactory;
-
-    private final AggregationEntityMappingFactory aggregationEntityMappingFactory;
-
-    private final AggregationResultEntityParseFactory aggregationResultEntityParseFactory;
+    private final TradeStatisticalAnalysisQueryParamFactory tradeStatisticalAnalysisQueryParamFactory;
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
@@ -69,7 +60,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         HistogramStatisticResponse histogramStatisticResponse = new HistogramStatisticResponse();
 
         // 构建查询参数
-        QuerySpecialParams query = queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
+        QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeAmountByTimeQuery(request, caseId);
         /**
          * 根据查询条件计算出当前数据中最大值.
          * */
@@ -106,31 +97,17 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     }
 
     @Override
-    public Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) {
-
-
-        PageRequest pageRequest = PageRequest.of(transactionStatisticsDetailRequest.getQueryRequest().getPaging().getPage(),
-                transactionStatisticsDetailRequest.getQueryRequest().getPaging().getPageSize(),
-                transactionStatisticsDetailRequest.getQueryRequest().getSorting().getOrder().isAscending() ? Sort.Direction.ASC : Sort.Direction.DESC,
-                transactionStatisticsDetailRequest.getQueryRequest().getSorting().getProperty());
-        Page<BankTransactionFlow> page = entranceRepository.findByCondition(pageRequest, caseId, BankTransactionFlow.class
-                , transactionStatisticsDetailRequest.getCardNumber(), caseId, transactionStatisticsDetailRequest.getQueryRequest().getKeyword());
-        return page;
-
-    }
-
-    @Override
     public TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundDateRequest request) {
 
         // 构建查询参数
-        QuerySpecialParams query = queryRequestParamFactory.createTradeAmountByTimeQuery(request, caseId);
+        QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeAmountByTimeQuery(request, caseId);
 
         // 构建日期聚合参数
-        AggregationParams dateAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisFundByTimeType(request);
+        AggregationParams dateAgg = tradeStatisticalAnalysisAggParamFactory.buildTradeStatisticsAnalysisFundByTimeType(request);
 
         Map<String, String> mapping = new LinkedHashMap<>();
 
-        aggregationEntityMappingFactory.buildTradeAnalysisResultAggMapping(mapping, TradeStatisticalAnalysisFundSumByDate.class);
+        entityMappingFactory.buildTradeAnalysisResultAggMapping(mapping, TradeStatisticalAnalysisFundSumByDate.class);
 
         dateAgg.setMapping(mapping);
 
@@ -211,6 +188,11 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         return ServerResponse.createBySuccess(resultResponse);
     }
 
+    public ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request) {
+
+        return detail(request, FundTacticsFuzzyQueryField.detailFuzzyFields);
+    }
+
     /**
      * <h2> 选择个体 / 选择部分调单卡号集合 </h2>
      */
@@ -218,14 +200,14 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     private Map<String, Object> statisticsAnalysisResultViaChosenMainCards(TradeStatisticalAnalysisQueryRequest request, int from, int size, String caseId, boolean isComputeTotal) {
 
         // 构建 交易统计分析查询请求
-        QuerySpecialParams tradeStatisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
+        QuerySpecialParams tradeStatisticsQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
         // 构建 交易统计分析聚合查询请求
-        AggregationParams tradeStatisticsAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisByMainCards(request, from, size);
+        AggregationParams tradeStatisticsAgg = tradeStatisticalAnalysisAggParamFactory.buildTradeStatisticsAnalysisByMainCards(request, from, size);
 
         // 构建 mapping (聚合名称 -> 聚合属性)  , (实体属性 -> 聚合名称)
         Map<String, String> aggMapping = new LinkedHashMap<>();
         Map<String, String> entityMapping = new LinkedHashMap<>();
-        aggregationEntityMappingFactory.buildTradeAnalysisResultAggMapping(aggMapping, entityMapping, TradeStatisticalAnalysisResult.class);
+        entityMappingFactory.buildTradeAnalysisResultAggMapping(aggMapping, entityMapping, TradeStatisticalAnalysisResult.class);
         tradeStatisticsAgg.setMapping(aggMapping);
         tradeStatisticsAgg.setEntityAggColMapping(entityMapping);
         tradeStatisticsAgg.setResultName("chosen_main_cards");
@@ -236,7 +218,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         if (isComputeTotal) {
             AggregationParams totalAgg = total(request);
             // 获取交易统计查询结果总量
-            QuerySpecialParams totalQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+            QuerySpecialParams totalQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
             totalResults = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionFlow.class, caseId);
         }
         // 获取交易统计查询结果
@@ -253,7 +235,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         List<String> entityTitles = new ArrayList<>(entityMapping.keySet());
 
         // 实体属性值映射
-        List<Map<String, Object>> entityPropertyMapping = aggregationResultEntityParseFactory.convertEntity(returnResults, entityTitles, TradeStatisticalAnalysisResult.class);
+        List<Map<String, Object>> entityPropertyMapping = parseFactory.convertEntity(returnResults, entityTitles, TradeStatisticalAnalysisResult.class);
 
         // 反序列化实体
         List<TradeStatisticalAnalysisResult> tradeStatisticalAnalysisResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyMapping), new TypeReference<List<TradeStatisticalAnalysisResult>>() {
@@ -289,8 +271,8 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         if (null == request) {
             return null;
         }
-        AggregationParams totalAgg = aggregationRequestParamFactory.buildTradeStatisticsAnalysisTotalAgg(request);
-        totalAgg.setMapping(aggregationEntityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.QUERY_CARD));
+        AggregationParams totalAgg = tradeStatisticalAnalysisAggParamFactory.buildTradeStatisticsAnalysisTotalAgg(request);
+        totalAgg.setMapping(entityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.QUERY_CARD));
         totalAgg.setResultName(CARDINALITY_TOTAL);
         return totalAgg;
     }
@@ -326,7 +308,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);
         // 构建 交易统计分析查询请求
-        QuerySpecialParams statisticsQuery = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+        QuerySpecialParams statisticsQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
         Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(statisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
         long total = 0;
         if (!CollectionUtils.isEmpty(totalResults)) {
@@ -393,11 +375,11 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     private List<String> getQueryCards(TradeStatisticalAnalysisQueryRequest request, int from, int size, String caseId) {
 
         // 构建查询请求参数
-        QuerySpecialParams query = queryRequestParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
+        QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
         // 构建 交易汇聚分析聚合请求
-        AggregationParams agg = aggregationRequestParamFactory.buildTradeStatisticalQueryCardsAgg(request, from, size);
+        AggregationParams agg = tradeStatisticalAnalysisAggParamFactory.buildTradeStatisticalQueryCardsAgg(request, from, size);
         // 构建 mapping (聚合名称 -> 聚合属性)
-        Map<String, String> mapping = aggregationEntityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD);
+        Map<String, String> mapping = entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD);
         agg.setMapping(mapping);
         agg.setResultName("queryCards");
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
@@ -505,14 +487,14 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
             return new ArrayList<>();
         }
         // 构建查询参数
-        QuerySpecialParams condition = queryRequestParamFactory.buildTradeStatisticalAnalysisHitsQuery(queryCards, caseId);
+        QuerySpecialParams condition = tradeStatisticalAnalysisQueryParamFactory.buildTradeStatisticalAnalysisHitsQuery(queryCards, caseId);
         // 构建聚合参数
-        AggregationParams agg = aggregationRequestParamFactory.buildTradeStatisticalAnalysisHitsAgg(queryCards.size());
-        Map<String, String> map = aggregationEntityMappingFactory.buildShowFieldsAggMapping();
+        AggregationParams agg = tradeStatisticalAnalysisAggParamFactory.buildTradeStatisticalAnalysisHitsAgg(queryCards.size());
+        Map<String, String> map = entityMappingFactory.buildShowFieldsAggMapping();
         agg.setMapping(map);
         agg.setResultName("hits");
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(condition, agg, BankTransactionRecord.class, caseId);
-        List<Map<String, Object>> results = aggregationResultEntityParseFactory.convertEntity(resultMap.get(agg.getResultName()),
+        List<Map<String, Object>> results = parseFactory.convertEntity(resultMap.get(agg.getResultName()),
                 new ArrayList<>(), TradeStatisticalAnalysisResult.class);
         return JacksonUtils.parse(JacksonUtils.toJson(results), new TypeReference<List<TradeStatisticalAnalysisResult>>() {
         });

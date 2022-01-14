@@ -52,6 +52,9 @@ import org.springframework.util.StopWatch;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -461,5 +464,34 @@ public class OriginEsOperationTest {
                 entranceRepository.findAll(PageRequest.of(0, 10, Sort.Direction.ASC, FundTacticsAnalysisField.TRADING_TIME),
                         "d5a1a617103a4a61a809dd5b142b931e", BankTransactionRecord.class, query);
         System.out.println(page.getTotalElements());
+    }
+
+    @Test
+    public void scriptQuery2() {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, "d5a1a617103a4a61a809dd5b142b931e"));
+        filter.addCommonQueryParams(QueryParamsBuilders.script("doc['trading_time'].value.get(ChronoField.HOUR_OF_DAY) == " + 00));
+        query.addCombiningQueryParams(filter);
+        Page<BankTransactionRecord> page =
+                entranceRepository.findAll(PageRequest.of(0, 10, Sort.Direction.ASC, FundTacticsAnalysisField.TRADING_TIME),
+                        "d5a1a617103a4a61a809dd5b142b931e", BankTransactionRecord.class, query);
+        System.out.println(page.getTotalElements());
+    }
+
+    @Test
+    public void testTime() {
+        LocalDateTime today = LocalDateTime.now();
+        int day;
+        day = today.get(ChronoField.DAY_OF_MONTH);
+        System.out.println("今天是本月的第" + day + "天");
+        int month;
+        month = today.get(ChronoField.MONTH_OF_YEAR);
+        System.out.println("今天是本年的第" + month + "月");
+        int h;
+        h = today.get(ChronoField.HOUR_OF_DAY);
+        System.out.println("当天时间点(小时): " + h);
     }
 }

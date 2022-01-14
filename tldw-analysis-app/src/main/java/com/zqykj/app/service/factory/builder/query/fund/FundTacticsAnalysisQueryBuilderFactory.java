@@ -391,4 +391,27 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         query.addCombiningQueryParams(filter);
         return query;
     }
+
+    public QuerySpecialParams queryTradeAnalysisDetail(String caseId, String queryCard, String oppositeCard, String keyword, String... detailFuzzyFields) {
+        QuerySpecialParams query = new QuerySpecialParams();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        if (StringUtils.isNotBlank(queryCard)) {
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.QUERY_CARD, queryCard));
+        }
+        if (StringUtils.isNotBlank(oppositeCard)) {
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, oppositeCard));
+        }
+        // 增加模糊查询
+        if (StringUtils.isNotBlank(keyword)) {
+            CombinationQueryParams detailFuzzy = new CombinationQueryParams();
+            detailFuzzy.setType(ConditionType.should);
+            for (String fuzzyField : detailFuzzyFields) {
+                detailFuzzy.addCommonQueryParams(new CommonQueryParams(QueryType.wildcard, fuzzyField, keyword));
+            }
+            filter.addCombinationQueryParams(detailFuzzy);
+        }
+        query.addCombiningQueryParams(filter);
+        return query;
+    }
 }

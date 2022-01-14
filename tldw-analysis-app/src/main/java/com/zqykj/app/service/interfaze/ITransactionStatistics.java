@@ -1,14 +1,10 @@
 package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.fund.*;
+import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.core.ServerResponse;
-import com.zqykj.common.request.TransactionStatisticsDetailRequest;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.response.HistogramStatisticResponse;
-import com.zqykj.domain.Page;
-import com.zqykj.domain.bank.BankTransactionFlow;
-
-import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -39,10 +35,7 @@ public interface ITransactionStatistics {
     ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws Exception;
 
     /**
-     * @param caseId:                             案件编号.
-     * @param transactionStatisticsDetailRequest: 交易统计详情页请求体
-     * @return: com.zqykj.domain.Page
-     **/
-    Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) throws Exception;
-
+     * <h2> 获取交易统计分析结果详情 </h2>
+     */
+    ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request);
 }

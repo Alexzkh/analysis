@@ -5,6 +5,8 @@ package com.zqykj.app.service.factory.builder.query.fund;
 
 import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
+import com.zqykj.app.service.vo.fund.middle.FastInFastOutDetailRequest;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.parameters.query.CombinationQueryParams;
@@ -76,6 +78,31 @@ public class FastInFastOutQueryBuilder implements FastInFastOutQueryParamFactory
         // 设置source
         querySpecialParams.setIncludeFields(FundTacticsAnalysisField.fastInFastOutQueryFields());
         return querySpecialParams;
+    }
+
+    public QuerySpecialParams getResultDetail(FastInFastOutDetailRequest request) {
+
+        QuerySpecialParams query = new QuerySpecialParams();
+        // filter
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
+        CombinationQueryParams should = new CombinationQueryParams(ConditionType.should);
+        // 第一个should 过滤条件
+        CombinationQueryParams shouldFilter1 = new CombinationQueryParams(ConditionType.filter);
+        shouldFilter1.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getFundSourceCard(), request.getFundTransitCard()));
+        shouldFilter1.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRADING_TIME, request.getFlowInDateTime()));
+        shouldFilter1.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRANSACTION_MONEY, request.getFlowInAmount()));
+        shouldFilter1.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getFundSourceCard(), request.getFundTransitCard()));
+        should.addCombinationQueryParams(shouldFilter1);
+        CombinationQueryParams shouldFilter2 = new CombinationQueryParams(ConditionType.filter);
+        shouldFilter2.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getFundTransitCard(), request.getDepositCard()));
+        shouldFilter2.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRADING_TIME, request.getFlowOutDateTime()));
+        shouldFilter2.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRANSACTION_MONEY, request.getFlowOutAmount()));
+        shouldFilter2.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getFundTransitCard(), request.getDepositCard()));
+        should.addCombinationQueryParams(shouldFilter2);
+        filter.addCombinationQueryParams(should);
+        query.addCombiningQueryParams(filter);
+        return query;
     }
 
 }
