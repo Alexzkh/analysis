@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.interfaze.impl;
 
+import cn.hutool.core.util.HashUtil;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
@@ -120,6 +121,10 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             // TODO 处理超过 maxAdjustCardQueryCount 数量的调单卡号逻辑
             return null;
         }
+    }
+
+    public static void main(String[] args) {
+
     }
 
     /**
@@ -763,7 +768,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (computeFeatureRatio > characteristicRatio) {
             return null;
         }
-        source.setHashId(FastInFastOutResult.hashString(source).hashCode());
+        // FNV1算法
+        source.setHashId(HashUtil.fnvHash(FastInFastOutResult.hashString(source)));
         // 设置特征比
         source.setCharacteristicRatio(computeFeatureRatio);
         return source;
@@ -806,7 +812,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (computeFeatureRatio > characteristicRatio) {
             return null;
         }
-        transit.setHashId(FastInFastOutResult.hashString(transit).hashCode());
+        // FNV1算法
+        transit.setHashId(HashUtil.fnvHash(FastInFastOutResult.hashString(transit)));
         // 设置特征比
         transit.setCharacteristicRatio(computeFeatureRatio);
         return transit;
@@ -847,7 +854,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (computeFeatureRatio > characteristicRatio) {
             return null;
         }
-        deposit.setHashId(FastInFastOutResult.hashString(deposit).hashCode());
+        // FNV1算法
+        deposit.setHashId(HashUtil.fnvHash(FastInFastOutResult.hashString(deposit)));
         // 设置特征比
         deposit.setCharacteristicRatio(computeFeatureRatio);
         return deposit;
@@ -888,8 +896,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (computeFeatureRatio > characteristicRatio) {
             return null;
         }
-        // 后续使用雪花算法
-        return value.hashCode();
+        // FNV1算法
+        return HashUtil.fnvHash(value);
     }
 
     private Integer computeResultHashFromTransit(int characteristicRatio, long timeInterval,
@@ -925,8 +933,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (computeFeatureRatio > characteristicRatio) {
             return null;
         }
-        // 后续使用雪花算法
-        return value.hashCode();
+        // FNV1算法
+        return HashUtil.fnvHash(value);
     }
 
     public Integer computeResultHashFromDeposit(int characteristicRatio, long timeInterval,
@@ -963,8 +971,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (computeFeatureRatio > characteristicRatio) {
             return null;
         }
-        // 后续使用雪花算法
-        return value.hashCode();
+        // FNV1算法
+        return HashUtil.fnvHash(value);
     }
 
     /**
