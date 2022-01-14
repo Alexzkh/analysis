@@ -51,9 +51,12 @@ public class FundDateRequest extends FundTacticsPartGeneralPreRequest {
         switch (timeType) {
             case "s":
                 return "yyyy-MM-dd HH:mm:ss";
+            case "h":
+                return "yyyy-MM-dd HH";
+            case "M":
+            case "w":
             case "d":
                 return "yyyy-MM-dd";
-            case "M":
             case "q":
                 return "yyyy-MM";
             case "y":
