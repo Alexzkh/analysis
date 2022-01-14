@@ -25,9 +25,10 @@ public interface BaseCompareBean {
         if (value instanceof String) {
             //有一些数值在响应报文里用的String，为了避免String.compare的影响，尝试转BigDecimal进行比较，若value不是数值，则依旧用原值比较
             try {
-                return new BigDecimal(value.toString().trim().replaceAll(",", "").replaceAll("%", ""));
+                return new BigDecimal(value.toString().trim().replaceAll(",", "").replaceAll("%", "").replaceAll("第","")
+                .replaceAll("天",""). replaceAll("周","").replaceAll("月", "").replaceAll("年",""));
             } catch (Exception e) {
-                logger.error("排序时String类型转换为BigDecimal类型失败 原始值 {}", value);
+                logger.error("排序时String类型转换为BigDecimal类型失败 原始值 {}-{}", value,e);
             }
         }
         return value;

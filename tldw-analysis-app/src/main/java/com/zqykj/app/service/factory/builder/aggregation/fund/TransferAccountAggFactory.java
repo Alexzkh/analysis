@@ -1,7 +1,7 @@
 package com.zqykj.app.service.factory.builder.aggregation.fund;
 
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
-import com.zqykj.app.service.factory.requestparam.agg.TransferAccountAggRequestParamFactory;
+import com.zqykj.app.service.factory.param.agg.TransferAccountAggRequestParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.vo.fund.TransferAccountAnalysisResult;
 import com.zqykj.builder.AggregationParamsBuilders;

@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -63,15 +62,6 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     private final AggregationResultEntityParseFactory aggregationResultEntityParseFactory;
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
-
-    @Value("${fundTactics.bucket_size}")
-    private int initGroupSize;
-
-    @Value("${fundTactics.queryAll.chunkSize}")
-    private int globalChunkSize;
-
-    @Value("${fundTactics.chunkSize}")
-    private int chunkSize;
 
     @Override
     public HistogramStatisticResponse getHistogramStatistics(String caseId, FundTacticsPartGeneralPreRequest request, TransactionStatisticsAggs transactionStatisticsAggs) {
@@ -116,7 +106,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     }
 
     @Override
-    public Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) throws Exception {
+    public Page<BankTransactionFlow> accessTransactionStatisticDetail(String caseId, TransactionStatisticsDetailRequest transactionStatisticsDetailRequest) {
 
 
         PageRequest pageRequest = PageRequest.of(transactionStatisticsDetailRequest.getQueryRequest().getPaging().getPage(),
@@ -164,8 +154,8 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
                     String date = dates.get(i).toString();
                     String curTradeAmount = tradeAmounts.get(i).toString();
                     if (map.containsKey(date)) {
-                        String OldTradeAmount = map.get(date).toString();
-                        map.put(date, BigDecimalUtil.add(OldTradeAmount, curTradeAmount));
+                        String oldTradeAmount = map.get(date).toString();
+                        map.put(date, BigDecimalUtil.add(oldTradeAmount, curTradeAmount));
                     } else {
                         map.put(date, BigDecimalUtil.value(curTradeAmount));
                     }
@@ -187,7 +177,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         return groupTradeAmountSum;
     }
 
-    public ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest request) throws ExecutionException, InterruptedException {
+    public ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest request) throws Exception {
 
         FundAnalysisResultResponse<TradeStatisticalAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
@@ -311,7 +301,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
     @SuppressWarnings("all")
-    protected Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
+    protected Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, String caseId) throws Exception {
 
         // 前台分页
         Map<String, Object> resultMap = new HashMap<>();
@@ -321,8 +311,8 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         double startAmount = Double.parseDouble(request.getFund());
         QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
         // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
-        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()))) {
-            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()));
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (CollectionUtils.isEmpty(adjustCards)) {
                 resultMap.put("total", 0);
                 resultMap.put("result", new ArrayList<>());
@@ -534,22 +524,22 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     private void addTradeStatisticalAnalysisShowFields(List<TradeStatisticalAnalysisResult> statisticalAnalysisResults,
                                                        List<TradeStatisticalAnalysisResult> hits) {
 
+        // 把一方生成map(避免双层for循环,时间复杂度降低)
+        Map<String, TradeStatisticalAnalysisResult> hitsMap = hits.stream().collect(Collectors.toMap(TradeStatisticalAnalysisResult::getTradeCard, e -> e, (v1, v2) -> v1));
         for (TradeStatisticalAnalysisResult statisticalAnalysisResult : statisticalAnalysisResults) {
 
-            for (TradeStatisticalAnalysisResult hit : hits) {
-
-                if (statisticalAnalysisResult.getQueryCardKey().equals(hit.getTradeCard())) {
-                    // 开户名称
-                    statisticalAnalysisResult.setCustomerName(hit.getCustomerName());
-                    // 开户证件号码
-                    statisticalAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
-                    // 开户银行
-                    statisticalAnalysisResult.setBank(hit.getBank());
-                    // 账号
-                    statisticalAnalysisResult.setQueryAccount(hit.getQueryAccount());
-                    // 交易卡号
-                    statisticalAnalysisResult.setTradeCard(hit.getTradeCard());
-                }
+            TradeStatisticalAnalysisResult hit = hitsMap.get(statisticalAnalysisResult.getQueryCardKey());
+            if (null != hit) {
+                // 开户名称
+                statisticalAnalysisResult.setCustomerName(hit.getCustomerName());
+                // 开户证件号码
+                statisticalAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
+                // 开户银行
+                statisticalAnalysisResult.setBank(hit.getBank());
+                // 账号
+                statisticalAnalysisResult.setQueryAccount(hit.getQueryAccount());
+                // 交易卡号
+                statisticalAnalysisResult.setTradeCard(hit.getTradeCard());
             }
         }
     }

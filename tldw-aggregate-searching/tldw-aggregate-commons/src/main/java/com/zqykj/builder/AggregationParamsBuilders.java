@@ -10,6 +10,7 @@ import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.FetchSource;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
@@ -198,6 +199,8 @@ public class AggregationParamsBuilders {
 
     /**
      * <h2> 管道脚本聚合 </h2>
+     * <p>
+     * 对已经存在定义的聚合结果度量值 进行二次的计算生成一个新的聚合结果度量值
      *
      * @param aggName    聚合名称
      * @param bucketPath 聚合路径
@@ -206,6 +209,48 @@ public class AggregationParamsBuilders {
     public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script) {
 
         return new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
+    }
+
+    public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script, String format) {
+
+        PipelineAggregationParams pipelineBucketScript = new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
+        if (StringUtils.isNotBlank(format)) {
+            pipelineBucketScript.setFormat(format);
+        }
+        return pipelineBucketScript;
+    }
+
+    /**
+     * <h2> 管道聚合筛选 </h2>
+     * <p>
+     * 对已经存在定义的聚合结果度量值 进行过滤筛选(留下符合条件的统计结果)
+     *
+     * @param aggName    聚合名称
+     * @param bucketPath 聚合路径
+     * @param script     聚合脚本
+     */
+    public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script) {
+
+        return new PipelineAggregationParams(aggName, AggsType.bucket_selector.name(), bucketPath, script);
+    }
+
+    public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script, String format) {
+
+        PipelineAggregationParams selector = new PipelineAggregationParams(aggName, AggsType.bucket_selector.name(), bucketPath, script);
+        if (StringUtils.isNotBlank(format)) {
+            selector.setFormat(format);
+        }
+        return selector;
+    }
+
+    /**
+     * <h2> 管道聚合再次求和 </h2>
+     * <p>
+     * 对第一次的统计结果再次求和 (eg. 对卡号分组然后对金额求和, 使用此方法可以求和所用卡的交易总金额)
+     */
+    public static PipelineAggregationParams pipelineBucketSum(String aggName, String path) {
+
+        return new PipelineAggregationParams(aggName, AggsType.sum_bucket.name(), path, null);
     }
 
     /**

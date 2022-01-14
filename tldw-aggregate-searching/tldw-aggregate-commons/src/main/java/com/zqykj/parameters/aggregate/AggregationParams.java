@@ -280,7 +280,7 @@ public class AggregationParams {
         addSiblingAggregation(pipelineParams);
     }
 
-    // 添加一个同级管道聚合的时候 设置mapping、结果名称
+    // 添加一个同级管道聚合的时候 设置mapping、结果名称(适用于当前聚合查询只是管道聚合,不存在其他聚合)
     public void addSiblingAggregation(PipelineAggregationParams sibling, Map<String, String> mapping, String resultName) {
 
         AggregationParams pipelineParams = new AggregationParams();

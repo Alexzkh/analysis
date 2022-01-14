@@ -104,6 +104,7 @@ public class AggregationMappingBuilder {
         Object aggregationInstance = AggregationMappingBuilder.buildAggregationInstance(null, parameters);
 
         if (log.isDebugEnabled()) {
+            assert aggregationInstance != null;
             log.debug("aggregation = {} ", aggregationInstance.toString());
         }
         return aggregationInstance;
@@ -284,6 +285,13 @@ public class AggregationMappingBuilder {
                     return buildSpecialPipelineAggregation(aggregationClass, parameters);
                 }
             }
+            // 可选参数处理
+//            List<Field> fields = ReflectionUtils.getTheSpecifiedAnnotationFields(parameters.getClass(), OptionalParam.class);
+//            if (!CollectionUtils.isEmpty(fields)) {
+//                for (Field field : fields) {
+//                    applyDefaultField(target, aggregationClass, field, parameters);
+//                }
+//            }
             return target;
         } catch (Exception e) {
             log.error("could not build pipeline aggregation, error msg = {}", e.getMessage());
@@ -333,6 +341,9 @@ public class AggregationMappingBuilder {
         });
     }
 
+    /**
+     * <h2> 可选参数处理 </h2>
+     */
     private static void addOptionalParameterMapping(Object target, Class<?> aggregationClass,
                                                     Field field, Object parameters) {
 

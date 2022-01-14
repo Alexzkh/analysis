@@ -367,5 +367,17 @@ public final class ReflectionUtils {
         return methods;
     }
 
+    /**
+     * <h2> 获取指定类中所有fields 存在该注解annotationClass的field </h2>
+     */
+    public static List<Field> getTheSpecifiedAnnotationFields(Class<?> clazz, Class<? extends Annotation> annotationClass) {
 
+        Field[] declaredFields = getDeclaredFields(clazz);
+        return Arrays.stream(declaredFields).filter(field -> findAnnotation(field, annotationClass)).collect(Collectors.toList());
+    }
+
+    public static boolean findAnnotation(Field field, Class<? extends Annotation> annotationClass) {
+
+        return field.isAnnotationPresent(annotationClass);
+    }
 }

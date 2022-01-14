@@ -12,6 +12,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation.Bucket;
 
+import org.elasticsearch.search.aggregations.pipeline.ParsedSimpleValue;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -29,6 +30,8 @@ public class AggregationParser {
     private final static String AGG_TERMS = "terms";
     private final static String AGG_METHOD_PREFIX = "get";
     private final static String AGG_DATE_HISTOGRAM = "date_histogram";
+    private final static String GET_VALUE_METHOD = "getValue";
+    private final static String VALUE_METHOD = "value";
 
     /**
      * <h2> 解析多组聚合结果 </h2>
@@ -162,7 +165,13 @@ public class AggregationParser {
 
 
         } else if (aggregation.getName().equals(aggregationName) && !type.endsWith(AGG_TERMS)) {
-            Optional<Method> optionalMethod = getAggregationMethod(aggMethodKey, methods);
+            String newKey = aggMethodKey;
+            // ParsedSimpleValue 只有 getValueAsString() 方法,没有getValue方法,而是value() 方法. 由于一开始我们给 aggMethodKey 统一加上了get前缀
+            // 导致调用的方法不存在
+            if (ParsedSimpleValue.class.isAssignableFrom(aClass) && aggMethodKey.equals(GET_VALUE_METHOD)) {
+                newKey = VALUE_METHOD;
+            }
+            Optional<Method> optionalMethod = getAggregationMethod(newKey, methods);
 
             if (optionalMethod.isPresent()) {
 

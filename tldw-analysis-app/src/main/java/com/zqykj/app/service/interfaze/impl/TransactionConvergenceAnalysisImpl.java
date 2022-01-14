@@ -11,10 +11,7 @@ import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionConvergenceAnalysis;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
-import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
-import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResult;
+import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionRecord;
@@ -26,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -48,17 +44,8 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
 
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
-    @Value("${fundTactics.bucket_size}")
-    private int initGroupSize;
-
-    @Value("${fundTactics.queryAll.chunkSize}")
-    private int globalChunkSize;
-
-    @Value("${fundTactics.chunkSize}")
-    private int chunkSize;
-
     @Override
-    public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
+    public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception {
 
         FundAnalysisResultResponse<TradeConvergenceAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
@@ -191,7 +178,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
     @SuppressWarnings("all")
-    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException {
+    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception {
 
         // 前台分页
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
@@ -201,8 +188,8 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
         double startAmount = Double.parseDouble(request.getFund());
         QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
-        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()))) {
-            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralPreRequest.getDateRange(request.getDateRange()));
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (CollectionUtils.isEmpty(adjustCards)) {
                 resultMap.put("total", 0);
                 resultMap.put("result", new ArrayList<>());
@@ -403,29 +390,28 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      */
     private void addTradeConvergenceAnalysisShowFields(List<TradeConvergenceAnalysisResult> convergenceAnalysisResults,
                                                        List<TradeConvergenceAnalysisResult> hits) {
-
+        // 把一方生成map(避免双层for循环,时间复杂度降低)
+        Map<String, TradeConvergenceAnalysisResult> hitsMap = hits.stream().collect(Collectors.toMap(TradeConvergenceAnalysisResult::getMergeCard, e -> e, (v1, v2) -> v1));
         for (TradeConvergenceAnalysisResult convergenceAnalysisResult : convergenceAnalysisResults) {
 
-            for (TradeConvergenceAnalysisResult hit : hits) {
-
-                if (convergenceAnalysisResult.getMergeCardKey().equals(hit.getMergeCard())) {
-                    // 开户名称
-                    convergenceAnalysisResult.setCustomerName(hit.getCustomerName());
-                    // 开户证件号码
-                    convergenceAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
-                    // 开户银行
-                    convergenceAnalysisResult.setBank(hit.getBank());
-                    // 交易卡号
-                    convergenceAnalysisResult.setTradeCard(hit.getTradeCard());
-                    // 对方开户名称
-                    convergenceAnalysisResult.setOppositeCustomerName(hit.getOppositeCustomerName());
-                    // 对方开户证件号码
-                    convergenceAnalysisResult.setOppositeIdentityCard(hit.getOppositeIdentityCard());
-                    // 对方开户银行
-                    convergenceAnalysisResult.setOppositeBank(hit.getOppositeBank());
-                    // 对方卡号
-                    convergenceAnalysisResult.setOppositeTradeCard(hit.getOppositeTradeCard());
-                }
+            TradeConvergenceAnalysisResult hit = hitsMap.get(convergenceAnalysisResult.getMergeCardKey());
+            if (null != hit) {
+                // 开户名称
+                convergenceAnalysisResult.setCustomerName(hit.getCustomerName());
+                // 开户证件号码
+                convergenceAnalysisResult.setCustomerIdentityCard(hit.getCustomerIdentityCard());
+                // 开户银行
+                convergenceAnalysisResult.setBank(hit.getBank());
+                // 交易卡号
+                convergenceAnalysisResult.setTradeCard(hit.getTradeCard());
+                // 对方开户名称
+                convergenceAnalysisResult.setOppositeCustomerName(hit.getOppositeCustomerName());
+                // 对方开户证件号码
+                convergenceAnalysisResult.setOppositeIdentityCard(hit.getOppositeIdentityCard());
+                // 对方开户银行
+                convergenceAnalysisResult.setOppositeBank(hit.getOppositeBank());
+                // 对方卡号
+                convergenceAnalysisResult.setOppositeTradeCard(hit.getOppositeTradeCard());
             }
         }
     }
