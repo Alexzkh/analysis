@@ -106,7 +106,8 @@ public class TimeRuleAnalysisStatisticsImpl implements ITimeRuleAnalysisStatisti
 
             return result;
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.error("查询详情时失败：{}",e);
+            throw new RuntimeException(e);
         }
 
     }
