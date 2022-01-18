@@ -20,7 +20,7 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.domain.*;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.*;

@@ -2,9 +2,10 @@ package com.zqykj.infrastructure.compare;
 
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.beans.Transient;
 import java.util.Comparator;
 import java.util.List;
@@ -79,7 +80,7 @@ public abstract class AbstractMultiLevelSortVO<T extends BaseCompareBean> {
             Comparable v2 = o2.tryBestToFindCompareValue(orderField);
             return compareThinkAboutNull(v1, v2, asc);
         } catch (Exception e) {
-            logger.error("获取指定比较字段失败，放弃比较。 orderField {} e {}", orderField, ExceptionUtils.getFullStackTrace(e));
+            logger.error("获取指定比较字段失败，放弃比较。 orderField {} e {}", orderField, ExceptionUtils.getRootCause(e));
             //若仍有意外发生，也先往后放
             return thisValuePutBehind(asc);
         }
