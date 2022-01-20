@@ -4,6 +4,7 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.zqykj.app.service.config.FundTacticsThresholdConfigProperties;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
@@ -30,7 +31,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateParser;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -51,24 +51,10 @@ public abstract class FundTacticsCommonImpl {
     protected QueryRequestParamFactory queryRequestParamFactory;
     @Autowired
     protected AggregationResultEntityParseFactory parseFactory;
-    // 最大查询调单卡号数量
-    @Value("${fundTactics.queryAll.max_adjustCard_query_count}")
-    protected int maxAdjustCardQueryCount;
-    // group by 分组数量限制
-    @Value("${fundTactics.bucketSize}")
-    protected int initGroupSize;
-    // 最大未调单卡号数量查询限制
-    @Value("${fundTactics.queryAll.max_unadjustedCard_query_count}")
-    protected int maxUnadjustedCardQueryCount;
-    // 外层查询数量限制
-    @Value("${fundTactics.queryAll.chunkSize}")
-    protected int globalChunkSize;
-    // 内层查询数量限制
-    @Value("${fundTactics.chunkSize}")
-    protected int chunkSize;
-    // 卡号批量查询数量限制
-    @Value("${fundTactics.cardSize}")
-    protected int queryCardSize;
+    @Autowired
+    protected FundTacticsThresholdConfigProperties fundThresholdConfig;
+    @Autowired
+    protected FundTacticsThresholdConfigProperties.Export exportThresholdConfig;
 
     protected static final String CARDINALITY_TOTAL = "cardinality_total";
     protected static final DateParser DATE_PARSER = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
@@ -126,7 +112,8 @@ public abstract class FundTacticsCommonImpl {
     }
 
     private List<String> getGroupAgg(String caseId, QuerySpecialParams querySpecialParams) {
-        AggregationParams aggregationParams = aggParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, maxAdjustCardQueryCount, new Pagination(0, maxAdjustCardQueryCount));
+        int maxAdjustCardCount = fundThresholdConfig.getMaxAdjustCardCount();
+        AggregationParams aggregationParams = aggParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, maxAdjustCardCount, new Pagination(0, maxAdjustCardCount));
         aggregationParams.setMapping(entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
         aggregationParams.setResultName("adjustCards");
         Map<String, List<List<Object>>> compoundQueryAndAgg = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, BankTransactionFlow.class, caseId);
@@ -147,7 +134,7 @@ public abstract class FundTacticsCommonImpl {
             return true;
         }
         long count = Long.parseLong(total.get(0).get(0).toString());
-        return count <= maxAdjustCardQueryCount;
+        return count <= fundThresholdConfig.getMaxAdjustCardCount();
     }
 
     protected ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> detail(FundTacticsPartGeneralRequest request, String... fuzzyFields) {
@@ -189,5 +176,19 @@ public abstract class FundTacticsCommonImpl {
             detailResults.add(detailResult);
         });
         return detailResults;
+    }
+
+    /**
+     * <h2> 检查调单卡号数量是否超过了 设置的最大值 maxAdjustCardQueryCount </h2>
+     */
+    protected boolean checkMaxAdjustCards(FundTacticsPartGeneralRequest request) {
+        return checkAdjustCardCountByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+    }
+
+    /**
+     * <h2> 获取最大数量的调单卡号 </h2>
+     */
+    protected List<String> getMaxAdjustCards(FundTacticsPartGeneralRequest request) {
+        return queryMaxAdjustCardsByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
     }
 }

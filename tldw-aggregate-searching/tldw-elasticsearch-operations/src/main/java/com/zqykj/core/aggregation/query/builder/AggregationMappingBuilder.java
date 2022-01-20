@@ -286,12 +286,12 @@ public class AggregationMappingBuilder {
                 }
             }
             // 可选参数处理
-//            List<Field> fields = ReflectionUtils.getTheSpecifiedAnnotationFields(parameters.getClass(), OptionalParam.class);
-//            if (!CollectionUtils.isEmpty(fields)) {
-//                for (Field field : fields) {
-//                    applyDefaultField(target, aggregationClass, field, parameters);
-//                }
-//            }
+            List<Field> fields = ReflectionUtils.getTheSpecifiedAnnotationFields(parameters.getClass(), OptionalParam.class);
+            if (!CollectionUtils.isEmpty(fields)) {
+                for (Field field : fields) {
+                    applyDefaultField(target, aggregationClass, field, parameters);
+                }
+            }
             return target;
         } catch (Exception e) {
             log.error("could not build pipeline aggregation, error msg = {}", e.getMessage());

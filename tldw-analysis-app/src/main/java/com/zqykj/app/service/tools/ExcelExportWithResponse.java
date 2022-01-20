@@ -38,7 +38,7 @@ public class ExcelExportWithResponse {
         // 这里URLEncoder.encode可以防止中文乱码 当然和easyexcel没有关系
         try {
             String name = URLEncoder.encode(fileName, enc).replaceAll("\\+", "%20");
-            response.setHeader("Content-disposition", "attachment;filename*=" + enc + "''" + name + ".xlsx");
+            response.setHeader("Content-disposition", "attachment;filename=" + name + ".xlsx");
         } catch (UnsupportedEncodingException ex) {
             ex.printStackTrace();
             log.error("This encoding is not supported!");

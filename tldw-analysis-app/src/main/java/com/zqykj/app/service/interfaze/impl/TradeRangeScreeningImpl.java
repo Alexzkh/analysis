@@ -224,7 +224,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         List<List<Object>> result = results.get(agg.getResultName());
         List<String> entityTitles = new ArrayList<>(entityAggKeyMapping.keySet());
         List<Map<String, Object>> entityPropertyValueMapping = parseFactory.convertEntity(result, entityTitles, TradeConvergenceAnalysisResult.class);
-        List<TradeOperationIndividualBankCardsStatistical> statisticalResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyValueMapping), new TypeReference<List<TradeOperationIndividualBankCardsStatistical>>() {
+        List<TradeOperationIndividualBankCardsStatistical> statisticalResults = JacksonUtils.parse(entityPropertyValueMapping, new TypeReference<List<TradeOperationIndividualBankCardsStatistical>>() {
         });
         // 保留2位小数,转化科学计算方式的金额
         statisticalResults.forEach(TradeOperationIndividualBankCardsStatistical::amountReservedTwo);

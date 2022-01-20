@@ -5,7 +5,6 @@ package com.zqykj.app.service.interfaze.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
-import com.zqykj.app.service.factory.parse.fund.FundTacticsAggResultParseFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.vo.fund.*;
@@ -82,7 +81,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         List<CompletableFuture<Map<String, String>>> futures = new ArrayList<>();
 
         while (position < size) {
-            int next = Math.min(position + chunkSize, size);
+            int next = Math.min(position + fundThresholdConfig.getPerQueryCount(), size);
             int finalPosition = position;
             CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(() ->
                     filterMainCards(caseId, cards.subList(finalPosition, next)), ThreadPoolConfig.getExecutor());
@@ -130,7 +129,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
     public ServerResponse getAdjustIndividuals(AdjustIndividualRequest request) {
 
         // 设置分组最大返回数量
-        request.setGroupInitSize(initGroupSize);
+        request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
         // 构建选择个体查询参数
         QuerySpecialParams query = queryRequestParamFactory.buildAdjustIndividualQuery(request);
         // 构建选择个体聚合参数
@@ -159,7 +158,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         // 实体属性与聚合值映射
         List<Map<String, Object>> entityMapping = parseFactory.convertEntity(results, titles, AdjustIndividualAnalysisResult.class);
         // 反序列化
-        List<AdjustIndividualAnalysisResult> adjustIndividualResults = JacksonUtils.parse(JacksonUtils.toJson(entityMapping), new TypeReference<List<AdjustIndividualAnalysisResult>>() {
+        List<AdjustIndividualAnalysisResult> adjustIndividualResults = JacksonUtils.parse(entityMapping, new TypeReference<List<AdjustIndividualAnalysisResult>>() {
         });
         // 获取总量
         List<List<Object>> totalResults = resultMap.get(totalAgg.getResultName());
@@ -183,7 +182,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
     public ServerResponse getAdjustCardsViaIndividual(AdjustIndividualRequest request) {
 
         // 设置分组最大返回数量
-        request.setGroupInitSize(initGroupSize);
+        request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
         // 构建调单卡号查询
         QuerySpecialParams query = queryRequestParamFactory.buildAdjustIndividualQuery(request);
         // 构建调单卡号聚合
@@ -206,7 +205,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         // 实体属性与聚合值映射
         List<Map<String, Object>> entityMapping = parseFactory.convertEntity(results, titles, AdjustCardAnalysisResult.class);
         // 反序列化
-        List<AdjustCardAnalysisResult> adjustCardsResults = JacksonUtils.parse(JacksonUtils.toJson(entityMapping), new TypeReference<List<AdjustCardAnalysisResult>>() {
+        List<AdjustCardAnalysisResult> adjustCardsResults = JacksonUtils.parse(entityMapping, new TypeReference<List<AdjustCardAnalysisResult>>() {
         });
         return ServerResponse.createBySuccess(adjustCardsResults);
     }

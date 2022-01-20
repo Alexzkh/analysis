@@ -62,16 +62,18 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     // 你需要从中筛选出符合时间间隔、特征比的记录数...
     // 实际数据量可能更奇葩(可能导入文件数据才20W,全部查询的时候会出现300多万的快进快出数据量(如果算满的话)
     // 因此只能设置 阈值取出排序的一部分数据构建快进快出记录
-    @Value("${fastInout.result_chunkSize}")
-    private int resultChunkSize;
+    @Value("${fast_inout.per_result_threshold}")
+    private int resultThreshold;
     // 按照进或者出排序后需要取出的数据量
-    @Value("${fastInout.order_chunkSize}")
-    private int orderChunkSize;
+    @Value("${fast_inout.per_sort_threshold}")
+    private int sortThreshold;
     // 每次批量查询数量
-    @Value("${fastInout.per_query_count}")
-    private int perQueryCount;
-    // 中转卡号最大基数
-    @Value("${fastInout.transit_card_count}")
+    @Value("${fast_inout.per_agg_threshold}")
+    private int perAggThreshold;
+    // eg. 调单卡号作为来源, 此时需要你按照流出金额排序,( 来源卡号 - 中转卡号 - 沉淀卡号),也就是要你按照 中转 - 沉淀记录的交易金额排序,
+    // 属于 间接的, 只有拿全量的中转卡号查询出账的,才能排序(问题在于数据量大的时候, 通过来源卡号找到的中转卡号数据量可能很大,不可能一次性查询出来,速度会很慢)
+    // 即便查询出来,你还要拿着查询出来的中转卡号 继续查询出账的(参数太大,不合理),因此需要设置临界值
+    @Value("${fast_inout.two_hop_sort_threshold}")
     private int transitCardCount;
 
     public ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws Exception {
@@ -280,7 +282,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         int characteristicRatio = request.getCharacteristicRatio();
         boolean isInFlow = isInFlow(request.getSortRequest());
         // 获取调单卡号(来源卡号)查询的是出帐、调单卡号(沉淀卡号)查询的是进账
-        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(adjustCards, request.getCaseId(), singleQuota, !isInFlow, sortProperty, direction, orderChunkSize);
+        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(adjustCards, request.getCaseId(), singleQuota, !isInFlow, sortProperty, direction, sortThreshold);
         if (CollectionUtils.isEmpty(sortRecords)) {
             return null;
         }
@@ -296,7 +298,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         Map<String, Integer> requireQueryInOutCards = new HashMap<>();
         List<BankTransactionRecord> orderRecords = new ArrayList<>();
         for (BankTransactionRecord record : sortRecords) {
-            if (computeTotal >= resultChunkSize) {
+            if (computeTotal >= resultThreshold) {
                 break;
             }
             Integer inOutTimes = oppositeCardInOutTimes.get(record.getTransactionOppositeCard());
@@ -338,7 +340,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             return null;
         }
         //  以twoHopSortQueryCards 作为查询卡号, 查询排序的记录
-        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(twoHopSortQueryCards, request.getCaseId(), singleQuota, !isInFlow, sortProperty, direction, orderChunkSize);
+        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(twoHopSortQueryCards, request.getCaseId(), singleQuota, !isInFlow, sortProperty, direction, sortThreshold);
         if (CollectionUtils.isEmpty(sortRecords)) {
             return null;
         }
@@ -371,7 +373,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
                                                             Map<String, Integer> queryCardInOutTimes, List<BankTransactionRecord> orderRecords) {
         int computeTotal = 0;
         for (BankTransactionRecord record : sortRecords) {
-            if (computeTotal >= resultChunkSize) {
+            if (computeTotal >= resultThreshold) {
                 break;
             }
             Integer inOutTimes = queryCardInOutTimes.get(record.getQueryCard());
@@ -406,7 +408,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
                 // 继续检查这些对方卡号(以它作为查询卡号) 是否有进账或者出账(有的话,记录当前的查询卡号)
                 List<String> conditionCards = asyncQueryOppositeAndLocalCards(oppositeCards, caseId, singleQuota, !inFlow, true);
                 // 最多取一部分卡号
-                return conditionCards.stream().limit(maxAdjustCardQueryCount).collect(Collectors.toList());
+                return conditionCards.stream().limit(fundThresholdConfig.getMaxAdjustCardCount()).collect(Collectors.toList());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -427,7 +429,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         int singleQuota = request.getSingleQuota(); // 单笔限额
         long timeInterval = request.getTimeInterval(); // 时间间隔
         int characteristicRatio = request.getCharacteristicRatio();
-        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(request.getCardNum(), caseId, singleQuota, isInflow, sortProperty, direction, orderChunkSize);
+        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(request.getCardNum(), caseId, singleQuota, isInflow, sortProperty, direction, sortThreshold);
         if (CollectionUtils.isEmpty(sortRecords)) {
             return new HashMap<>();
         }
@@ -463,7 +465,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         int position = 0;
         List<CompletableFuture<List<String>>> futures = new ArrayList<>();
         while (position < transitCardCount) {
-            int next = Math.min(position + perQueryCount, transitCardCount);
+            int next = Math.min(position + perAggThreshold, transitCardCount);
             int finalPosition = position;
             CompletableFuture<List<String>> future = CompletableFuture.supplyAsync(() ->
                     getDistinctOppositeCardOrQueryCard(cards, caseId, singleQuota, isInflow, isLocal, finalPosition, next), ThreadPoolConfig.getExecutor());
@@ -491,11 +493,11 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         int page = 0;
         while (position < computeTotal) {
             // 查询这些卡号的进账/出账(批量查询,每次查询 perQueryCount)
-            int next = Math.min(position + perQueryCount, computeTotal);
+            int next = Math.min(position + perAggThreshold, computeTotal);
             // 批量查询这些卡号的进账/出账记录
             int finalPage = page;
             CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() ->
-                    getInOutRecordViaQueryCards(requireQueryInOutCards, oppositeCards, caseId, singleQuota, !isInflow, finalPage, perQueryCount));
+                    getInOutRecordViaQueryCards(requireQueryInOutCards, oppositeCards, caseId, singleQuota, !isInflow, finalPage, perAggThreshold));
             futures.add(future);
             position = next;
             page++;

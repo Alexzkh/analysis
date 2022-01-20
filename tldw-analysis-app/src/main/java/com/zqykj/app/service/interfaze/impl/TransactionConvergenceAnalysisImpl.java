@@ -54,7 +54,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
             int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
             int size = pageRequest.getPageSize();
             // 设置分组桶的大小
-            request.setGroupInitSize(initGroupSize);
+            request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
         } else {
             map = convergenceAnalysisResultViaAllMainCards(request, caseId);
@@ -120,7 +120,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         // 实体属性值映射
         List<Map<String, Object>> entityPropertyValueMapping = parseFactory.convertEntity(returnResults, entityTitles, TradeConvergenceAnalysisResult.class);
         // 反序列化实体
-        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyValueMapping), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
+        List<TradeConvergenceAnalysisResult> tradeConvergenceAnalysisResults = JacksonUtils.parse(entityPropertyValueMapping, new TypeReference<List<TradeConvergenceAnalysisResult>>() {
         });
         // 将金额保留2位小数,转化科学计算方式的金额
         tradeConvergenceAnalysisResults.forEach(TradeConvergenceAnalysisResult::amountReservedTwo);
@@ -223,13 +223,13 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
         long computeTotal = total + total / 100;
         // 设置分组数量
-        request.setGroupInitSize(initGroupSize);
+        request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
         // 异步任务查询起始位置
         int position = 0;
         // 异步任务查询总量
         int size = Integer.parseInt(String.valueOf(computeTotal));
         // 异步任务查询批处理阈值
-        int chunkSize = globalChunkSize;
+        int chunkSize = fundThresholdConfig.getPerTotalSplitCount();
         ThreadPoolTaskExecutor executor = ThreadPoolConfig.getExecutor();
         // 需要返回的数量
         int skip = com.zqykj.common.vo.PageRequest.getOffset(page, pageSize);
@@ -331,6 +331,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         int position = from;
         List<String> cards = new ArrayList<>(size);
         List<CompletableFuture<List<String>>> futures = new ArrayList<>();
+        int chunkSize = fundThresholdConfig.getPerTotalSplitQueryCount();
         while (position < size) {
             int next = Math.min(position + chunkSize, size);
             int finalPosition = position;
@@ -383,9 +384,8 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         agg.setMapping(map);
         agg.setResultName("hits");
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(condition, agg, BankTransactionRecord.class, caseId);
-        List<Map<String, Object>> results = parseFactory.convertEntity(resultMap.get(agg.getResultName()),
-                new ArrayList<>(), TradeConvergenceAnalysisResult.class);
-        return JacksonUtils.parse(JacksonUtils.toJson(results), new TypeReference<List<TradeConvergenceAnalysisResult>>() {
+        List<Map<String, Object>> results = parseFactory.convertEntity(resultMap.get(agg.getResultName()), new ArrayList<>(), TradeConvergenceAnalysisResult.class);
+        return JacksonUtils.parse(results, new TypeReference<List<TradeConvergenceAnalysisResult>>() {
         });
     }
 

@@ -64,11 +64,10 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
     @Override
     public ServerResponse<FundAnalysisResultResponse<UnadjustedAccountAnalysisResult>> unAdjustedAnalysis(UnadjustedAccountAnalysisRequest request) throws Exception {
 
-        request.setGroupInitSize(initGroupSize);
-        // 查询调单卡号(最大8000个)
-        if (checkAdjustCardCountByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
-            //
-            List<String> adjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+        request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
+        // 查询调单卡号(最大 maxAdjustCardQueryCount 个)
+        if (checkMaxAdjustCards(request)) {
+            List<String> adjustCards = getMaxAdjustCards(request);
             // 查询排除这些调单的未调单卡号数据分析结果
             if (!CollectionUtils.isEmpty(adjustCards)) {
                 // 结果 与 总量同时查询
@@ -100,6 +99,8 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
                     return ServerResponse.createBySuccess(resultResponse);
                 }
             }
+        } else {
+            // TODO 数据量太大
         }
         return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
     }
@@ -153,7 +154,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
 
         // 首先获取的是数据总量
         // 查询结果(分批量保存,每次保存数量根据阈值处理)
-        request.setGroupInitSize(initGroupSize);
+        request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
         // 查询调单卡号(最大8000个)
         if (checkAdjustCardCountByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
             //
@@ -174,7 +175,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
             List<Future<Boolean>> futures = new ArrayList<>();
             int position = 0;
             while (position < size) {
-                int next = Math.min(position + queryCardSize, size);
+                int next = Math.min(position + fundThresholdConfig.getPerAggCount(), size);
                 int finalPosition = position;
                 CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
                     List<UnadjustedAccountAnalysisResult> analysisResults = getAnalysisResult(request, finalPosition, next - finalPosition, adjustCards);
@@ -195,6 +196,20 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
             return ServerResponse.createByErrorMessage("数据太大,暂不支持处理");
         }
     }
+
+    public ServerResponse<String> unAdjustedAnalysisDownload(UnadjustedAccountAnalysisRequest request) throws Exception {
+
+        // 首选计算总量
+        long total = 0;
+        if (checkMaxAdjustCards(request)) {
+            List<String> adjustCards = getMaxAdjustCards(request);
+            total = asyncComputeTotal(request, adjustCards);
+        }
+        // 分单个sheet 页处理、多个sheet 页处理
+
+        return ServerResponse.createBySuccess();
+    }
+
 
     /**
      * <h2> 保存自动保存的建议调单账号 </h2>
@@ -359,7 +374,8 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
 
         long total = 0L;
         int unadjustedCardCount = getUnadjustedCardCount(request, adjustCards);
-        int size = maxAdjustCardQueryCount;
+        int maxUnadjustedCardQueryCount = fundThresholdConfig.getMaxUnadjustedCardCount();
+        int size = maxUnadjustedCardQueryCount;
         if (unadjustedCardCount < maxUnadjustedCardQueryCount) {
             size = unadjustedCardCount;
         }
@@ -367,7 +383,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         int position = 0;
         List<CompletableFuture<Long>> futures = new ArrayList<>();
         while (position < size) {
-            int next = Math.min(position + queryCardSize, size);
+            int next = Math.min(position + fundThresholdConfig.getPerAggCount(), size);
             int finalPosition = position;
             CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> {
                 List<String> queryCards = batchGetQueryCards(request.getCaseId(), adjustCards, request.getKeyword(), dateRange, finalPosition, next - finalPosition);
@@ -392,7 +408,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
     private List<String> batchGetQueryCards(String caseId, List<String> adjustCards, String keyword, DateRange dateRange, int from, int size) {
 
         QuerySpecialParams query = unadjustedAccountQueryParamFactory.queryUnadjusted(caseId, adjustCards, keyword, dateRange);
-        AggregationParams agg = aggParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, initGroupSize, new Pagination(from, size));
+        AggregationParams agg = aggParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, fundThresholdConfig.getGroupByThreshold(), new Pagination(from, size));
         agg.setMapping(entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
         agg.setResultName("getQueryCard");
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
@@ -415,7 +431,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         List<List<Object>> results = resultMaps.get(agg.getResultName());
         List<String> titles = new ArrayList<>(entityKeyMapping.keySet());
         List<Map<String, Object>> keyValueMapping = parseFactory.convertEntity(results, titles, UnadjustedAccountAnalysisResult.class);
-        List<UnadjustedAccountAnalysisResult> unadjustedAccountAnalysisResults = JacksonUtils.parse(JacksonUtils.toJson(keyValueMapping), new TypeReference<List<UnadjustedAccountAnalysisResult>>() {
+        List<UnadjustedAccountAnalysisResult> unadjustedAccountAnalysisResults = JacksonUtils.parse(keyValueMapping, new TypeReference<List<UnadjustedAccountAnalysisResult>>() {
         });
         if (CollectionUtils.isEmpty(unadjustedAccountAnalysisResults)) {
             return null;

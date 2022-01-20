@@ -63,10 +63,10 @@ public class PipelineAggregationParams {
     private Pagination pagination;
 
     /**
-     * 金额格式化(处理小数点) 默认保留整数部位一位, 小数保留4位
+     * 金额格式化(处理小数点) 默认保留所有整数部位, 小数保留4位
      */
     @OptionalParam
-    private String format = "0.0000";
+    private String format;
 
     public void setPerFieldSort(FieldSort fieldSort) {
         if (CollectionUtils.isEmpty(this.fieldSort)) {

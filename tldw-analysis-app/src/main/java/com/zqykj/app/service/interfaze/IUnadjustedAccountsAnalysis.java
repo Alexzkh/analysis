@@ -35,4 +35,9 @@ public interface IUnadjustedAccountsAnalysis {
      * <h2> 添加建议调单账号(自动保存) </h2>
      */
     ServerResponse<String> suggestAdjustedAccountAutoSave(UnadjustedAccountAnalysisRequest request) throws Exception;
+
+    /**
+     * <h2> 未调单账户分析数据导出 </h2>
+     */
+    ServerResponse<String> unAdjustedAnalysisDownload(UnadjustedAccountAnalysisRequest request) throws Exception;
 }

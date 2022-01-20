@@ -125,14 +125,17 @@ public class UnadjustedAccountAggBuilder extends FundTacticsCommonAggBuilder imp
         bucketPath.put("tradeAmountTotal", "trade_total_amount");
         String sourceScript = "params.payoutAmountTotal / params.tradeAmountTotal";
         PipelineAggregationParams sourceFeatureRatio = AggregationParamsBuilders.pipelineBucketScript("sourceFeatureRatio", bucketPath, sourceScript);
+        sourceFeatureRatio.setFormat("#.####");
         queryCardGroup.setPerSubAggregation(sourceFeatureRatio);
         // 中转特征比
         String transitScript = "Math.abs(params.creditAmountTotal - params.payoutAmountTotal) / params.tradeAmountTotal";
         PipelineAggregationParams transitFeatureRatio = AggregationParamsBuilders.pipelineBucketScript("transitFeatureRatio", bucketPath, transitScript);
+        transitFeatureRatio.setFormat("#.####");
         queryCardGroup.setPerSubAggregation(transitFeatureRatio);
         // 沉淀特征比
         String depositScript = "params.creditAmountTotal / params.tradeAmountTotal";
         PipelineAggregationParams depositFeatureRatio = AggregationParamsBuilders.pipelineBucketScript("depositFeatureRatio", bucketPath, depositScript);
+        depositFeatureRatio.setFormat("#.####");
         queryCardGroup.setPerSubAggregation(depositFeatureRatio);
         // 特征比筛选
         Map<String, String> selectorPath = new HashMap<>();

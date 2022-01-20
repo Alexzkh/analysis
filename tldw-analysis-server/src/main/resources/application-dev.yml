@@ -59,6 +59,12 @@ fundTactics:
   bucketSize: 20_0000
   ## 查询的卡号返回数量限制
   cardSize: 6800
+  ## 下载列表(export 阈值,达到阈值,会分sheet页)
+  export:
+    ## 开关(若为false,则不会生成多sheet页,会将所有数据放在一个sheet页中)
+    enable: true
+    chunkSize: 5_0000
+
 
 ## 快进快出调单卡号作为来源/中转/沉淀生成的快进快出统计表
 ## 按照排序生成(流入金额、流出金额、流出日期) 共计 6种排序规则,每种规则若生成5w数据

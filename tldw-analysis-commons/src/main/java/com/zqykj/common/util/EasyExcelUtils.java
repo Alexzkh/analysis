@@ -41,10 +41,11 @@ public class EasyExcelUtils {
      * 这样外层定义好ExcelWriter 就可以写多个 WriteSheet了 <br>
      */
     public static WriteSheet generateWriteSheet(Integer sheetNo, String sheetName) {
-        WriteSheet sheet = new WriteSheet();
-        sheet.setSheetNo(sheetNo);
-        sheet.setSheetName(sheetName);
-        return sheet;
+        return EasyExcel.writerSheet(sheetNo, sheetName).build();
+    }
+
+    public static WriteSheet generateWriteSheet(String sheetName) {
+        return EasyExcel.writerSheet(sheetName).build();
     }
 
     /**
