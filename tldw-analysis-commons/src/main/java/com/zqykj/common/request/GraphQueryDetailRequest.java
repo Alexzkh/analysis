@@ -16,7 +16,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransactionPathDetailRequest {
+public class GraphQueryDetailRequest {
 
     /**
      * 交易路径每一条路径所包含总表的id的集合

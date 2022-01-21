@@ -1,13 +1,15 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import com.xkzhangsan.time.calculator.DateTimeCalculatorUtil;
+import com.zqykj.app.service.common.service.GraphCycleAndPathCommonService;
 import com.zqykj.app.service.factory.ITransactionPathQueryRequestFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITransactionPath;
-import com.zqykj.app.service.strategy.analysis.proxy.QueryTransactionPathProxy;
+import com.zqykj.app.service.strategy.analysis.proxy.AthenaGraphOperatorProxy;
 import com.zqykj.common.constant.Constants;
-import com.zqykj.common.request.TransactionPathDetailRequest;
+import com.zqykj.common.request.GraphQueryDetailRequest;
 import com.zqykj.common.request.TransactionPathRequest;
+import com.zqykj.common.vo.GraphCycleAndPathCommonParamVO;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
@@ -22,14 +24,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @Description: 交易路径分析业务
@@ -41,26 +41,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TransactionPathImpl implements ITransactionPath {
 
-
-    @Value("${athena.gdb.uri:http://172.30.4.55:8089}")
-    private String URI;
-
-    private final QueryTransactionPathProxy queryTransactionPathProxy;
+    private final AthenaGraphOperatorProxy athenaGraphOperatorProxy;
 
     private final ITransactionPathQueryRequestFactory iTransactionPathQueryRequestFactory;
 
     private final EntranceRepository entranceRepository;
+
+    private final GraphCycleAndPathCommonService graphCycleAndPathCommonService;
 
     @Override
     public TransactionPathResponse accessPathAnalysisResult(TransactionPathRequest request, String caseId) {
         TransactionPathResponse transactionPathResponse = new TransactionPathResponse();
         try {
             // 1、获取图id。
-            String url = URI.concat(String.format(Constants.AthenaGdbConstants.GRAPH_ID_API,
-                    Constants.AthenaGdbConstants.SCHEMA, caseId));
-            Map<String, Object> accessGraphIdRep = queryTransactionPathProxy.accessGraphId(url);
-            LinkedHashMap linkedHashMap = (LinkedHashMap) accessGraphIdRep.get("data");
-            long graphId = (long) linkedHashMap.get("graphId");
+            long graphId = athenaGraphOperatorProxy.accessGraphId(caseId);
 
             // 2、构建左右顶点集合id
             List<String> left = convertCardToKeyId(graphId, request.getLeft());
@@ -76,8 +70,7 @@ public class TransactionPathImpl implements ITransactionPath {
                     .build();
 
             // 4、获取图路径结果
-            String pathUrl = URI.concat(String.format(Constants.AthenaGdbConstants.Path_API, graphId));
-            Map<String, Object> accessPathResult = queryTransactionPathProxy.accessTransactionPathResult(pathUrl, pathRequest);
+            Map<String, Object> accessPathResult = athenaGraphOperatorProxy.accessTransactionPathResult(graphId, pathRequest);
             List<TransactionPathResultVO> results = parseAthenaGdbResult(accessPathResult, request, caseId);
             // 需要对数据进行内存排序和分页
             transactionPathResponse.setResults(results);
@@ -96,8 +89,7 @@ public class TransactionPathImpl implements ITransactionPath {
     }
 
     @Override
-    public Page<BankTransactionFlow> accessPathAnalysisDetailResult(TransactionPathDetailRequest request, String caseId) {
-
+    public Page<BankTransactionFlow> accessPathAnalysisDetailResult(GraphQueryDetailRequest request, String caseId) {
         QuerySpecialParams querySpecialParams = iTransactionPathQueryRequestFactory.accessTransactionPathDetailRequest(request, caseId);
         PageRequest destPageRequest = new PageRequest(request.getQueryRequest().getPaging().getPage()
                 , request.getQueryRequest().getPaging().getPageSize()
@@ -120,11 +112,10 @@ public class TransactionPathImpl implements ITransactionPath {
     private List<TransactionPathResultVO> parseAthenaGdbResult(Map<String, Object> result, TransactionPathRequest request, String caseId) {
         ObjectMapper mapper = new ObjectMapper();
 
-        LinkedHashMap<String, Object> dataResult = new LinkedHashMap<>();
         mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
         List<TransactionPathResultVO> results = new ArrayList<>();
         try {
-            dataResult = mapper.readValue((String) result.get(Constants.AthenaGdbConstants.DATA), new org.codehaus.jackson.type.TypeReference<LinkedHashMap<String, Object>>() {
+            LinkedHashMap<String, Object> dataResult = mapper.readValue((String) result.get(Constants.AthenaGdbConstants.DATA), new org.codehaus.jackson.type.TypeReference<LinkedHashMap<String, Object>>() {
             });
             for (Map.Entry<String, Object> entry : dataResult.entrySet()) {
                 List<List<LinkedHashMap<String, Object>>> path = (List<List<LinkedHashMap<String, Object>>>) entry.getValue();
@@ -132,15 +123,7 @@ public class TransactionPathImpl implements ITransactionPath {
                     /**
                      * 获取每一条路径下的对应总表数据的id,用于查找路径详情使用
                      * */
-                    List list = pat.stream().map(dataRows -> dataRows.get(Constants.AthenaGdbConstants.DATA_ROWS)).collect(Collectors.toList());
-                    List<String> rowIdsResult = new ArrayList<>();
-                    list.stream().forEach(rowIds -> {
-                        List<LinkedHashMap<String, Object>> row = (List<LinkedHashMap<String, Object>>) rowIds;
-                        row.stream().forEach(rowId -> {
-                            String id = String.valueOf((long) rowId.get(Constants.AthenaGdbConstants.DATA_ROWS_ID));
-                            rowIdsResult.add(id);
-                        });
-                    });
+                    List<String> rowIdsResult = graphCycleAndPathCommonService.getRowIds(pat);
                     /**
                      * 交易路径分析需要展示的结果是路径上起始节点和结束节点的相关数据，因此此时就需要拿到返回的结果中的第一个元素和最后一个元素。
                      * 由于返回的图路径结果是逆序的。所以起始节点为列表中最后一个元素，而结束节点为列表中第一个元素。
@@ -148,20 +131,9 @@ public class TransactionPathImpl implements ITransactionPath {
                      * */
                     LinkedHashMap<String, Object> firstNode = pat.stream().findFirst().orElse(pat.get(pat.size() - 1));
                     LinkedHashMap<String, Object> lastNode = pat.stream().skip(pat.size() - 1).findFirst().orElse(null);
-                    // 获取头尾节点的数据集合
-                    List<LinkedHashMap<String, Object>> dataRows = (List<LinkedHashMap<String, Object>>) firstNode.get(Constants.AthenaGdbConstants.DATA_ROWS);
-                    List<String> endRowIds = dataRows.stream().map(m -> String.valueOf((long) m.get(Constants.AthenaGdbConstants.DATA_ROWS_ID))).collect(Collectors.toList());
-                    // 获取边上所有对应总表id的集合
-                    List<LinkedHashMap<String, Object>> startDataRows = (List<LinkedHashMap<String, Object>>) lastNode.get(Constants.AthenaGdbConstants.DATA_ROWS);
-                    List<String> startRowIds = startDataRows.stream().map(m -> String.valueOf((long) m.get(Constants.AthenaGdbConstants.DATA_ROWS_ID))).collect(Collectors.toList());
-                    // 根据获取到的总表id的集合构建查询总表的参数
-                    QuerySpecialParams source = iTransactionPathQueryRequestFactory.accessTransactionPathDataByCondition(request, caseId, startRowIds);
-                    QuerySpecialParams dest = iTransactionPathQueryRequestFactory.accessTransactionPathDataByCondition(request, caseId, endRowIds);
-                    PageRequest sourcePageRequest = new PageRequest(0, 1, Sort.by(Sort.Direction.ASC, FundTacticsAnalysisField.TRADING_TIME));
-                    PageRequest destPageRequest = new PageRequest(0, 1, Sort.by(Sort.Direction.DESC, FundTacticsAnalysisField.TRADING_TIME));
-                    // 执行查询操作，并获取到分页结果
-                    Page<BankTransactionFlow> sourceFlow = entranceRepository.findAll(sourcePageRequest, caseId, BankTransactionFlow.class, source);
-                    Page<BankTransactionFlow> destFlow = entranceRepository.findAll(destPageRequest, caseId, BankTransactionFlow.class, dest);
+                    GraphCycleAndPathCommonParamVO graphCycleAndPathCommonParamVO = new GraphCycleAndPathCommonParamVO();
+                    Page<BankTransactionFlow> sourceFlow = graphCycleAndPathCommonService.getHeadAndTailNode(firstNode, graphCycleAndPathCommonParamVO.build(request), caseId);
+                    Page<BankTransactionFlow> destFlow = graphCycleAndPathCommonService.getHeadAndTailNode(lastNode, graphCycleAndPathCommonParamVO.build(request), caseId);
                     if (!ObjectUtils.isEmpty(sourceFlow.getContent().get(0)) && !ObjectUtils.isEmpty(destFlow.getContent().get(0))) {
                         long timeSpan = Math.abs(DateTimeCalculatorUtil.betweenTotalDays(sourceFlow.getContent().get(0).getTradingTime(), destFlow.getContent().get(0).getTradingTime()));
                         TransactionPathResultVO transactionPathResultVO = this.builder(sourceFlow.getContent().get(0), destFlow.getContent().get(0), timeSpan, rowIdsResult);

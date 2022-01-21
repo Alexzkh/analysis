@@ -2,7 +2,7 @@ package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.tools.AthenaGdbOperations;
 import com.zqykj.common.constant.Constants;
-import com.zqykj.common.request.TransactionPathDetailRequest;
+import com.zqykj.common.request.GraphQueryDetailRequest;
 import com.zqykj.common.request.TransactionPathRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.bank.BankTransactionFlow;
@@ -35,7 +35,7 @@ public interface ITransactionPath {
      * @param caseId:  案件编号
      * @return: com.zqykj.domain.response.TransactionPathDetailResponse
      **/
-    Page<BankTransactionFlow> accessPathAnalysisDetailResult(TransactionPathDetailRequest request, String caseId);
+    Page<BankTransactionFlow> accessPathAnalysisDetailResult(GraphQueryDetailRequest request, String caseId);
 
     /**
      * 将选择的卡号集合转换为图实体的keyid 即获取hash后的结果值.
