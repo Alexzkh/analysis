@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.interfaze;
 
+import com.alibaba.excel.ExcelWriter;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.domain.bank.TradeRangeOperationRecord;
@@ -37,7 +38,12 @@ public interface ITradeRangeScreening {
     /**
      * <h2> 查看交易区间筛选操作记录详细列表数据 </h2>
      */
-    ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(FundTacticsPartGeneralRequest request);
+    ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(FundTacticsPartGeneralRequest request, int from, int size);
+
+    /**
+     * <h2> 交易区间筛选操作记录详细列表数据导出 </h2>
+     */
+    ServerResponse<String> operationRecordsDetailListExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception;
 
     /**
      * <h2> 查看操作记录中个体银行卡的部分统计结果 </h2>

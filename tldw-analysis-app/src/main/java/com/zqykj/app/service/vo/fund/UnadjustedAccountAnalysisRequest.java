@@ -47,6 +47,8 @@ public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequ
      */
     private Double percentageOfAccountNumber;
 
+    private String exportFileName = "未调单账号";
+
     /**
      * <h2> 重新设置前端传递的特征比 </h2>
      * 放在controller中判断的 <br>

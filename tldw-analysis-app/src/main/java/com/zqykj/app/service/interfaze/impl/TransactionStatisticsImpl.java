@@ -1,5 +1,6 @@
 package com.zqykj.app.service.interfaze.impl;
 
+import com.alibaba.excel.ExcelWriter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.agg.TradeStatisticalAnalysisAggParamFactory;
@@ -25,6 +26,7 @@ import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
@@ -190,7 +192,18 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
 
     public ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request) {
 
-        return detail(request, FundTacticsFuzzyQueryField.detailFuzzyFields);
+        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
+        return detail(request, pageRequest.getPage(), pageRequest.getPageSize(), FundTacticsFuzzyQueryField.detailFuzzyFields);
+    }
+
+    public ServerResponse<String> detailExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception {
+
+        int total = Integer.parseInt(String.valueOf(detailTotal(request)));
+        if (StringUtils.isBlank(request.getExportFileName())) {
+            request.setExportFileName("交易统计分析");
+        }
+        writeSheet(excelWriter, total, request);
+        return ServerResponse.createBySuccess();
     }
 
     /**

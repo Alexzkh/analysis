@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.interfaze;
 
+import com.alibaba.excel.ExcelWriter;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
 
@@ -39,5 +40,5 @@ public interface IUnadjustedAccountsAnalysis {
     /**
      * <h2> 未调单账户分析数据导出 </h2>
      */
-    ServerResponse<String> unAdjustedAnalysisDownload(UnadjustedAccountAnalysisRequest request) throws Exception;
+    ServerResponse<String> unAdjustedAnalysisDownload(ExcelWriter writer, UnadjustedAccountAnalysisRequest request) throws Exception;
 }

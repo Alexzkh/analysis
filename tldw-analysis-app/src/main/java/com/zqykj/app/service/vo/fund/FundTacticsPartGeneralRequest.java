@@ -67,6 +67,10 @@ public class FundTacticsPartGeneralRequest {
      */
     private SortRequest sortRequest;
 
+    /**
+     * excel导出名称
+     */
+    private String exportFileName;
 
     private int groupInitFrom = 0;
 

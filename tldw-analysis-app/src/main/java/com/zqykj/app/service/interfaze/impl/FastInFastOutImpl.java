@@ -4,6 +4,8 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import cn.hutool.core.util.HashUtil;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
@@ -14,6 +16,7 @@ import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.middle.FastInFastOutDetailRequest;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
@@ -62,7 +65,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     // 你需要从中筛选出符合时间间隔、特征比的记录数...
     // 实际数据量可能更奇葩(可能导入文件数据才20W,全部查询的时候会出现300多万的快进快出数据量(如果算满的话)
     // 因此只能设置 阈值取出排序的一部分数据构建快进快出记录
-    @Value("${fast_inout.per_result_threshold}")
+    @Value("${fast_inout.per_unsorted_threshold}")
     private int resultThreshold;
     // 按照进或者出排序后需要取出的数据量
     @Value("${fast_inout.per_sort_threshold}")
@@ -104,6 +107,56 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(detailResults, page.getTotalElements(), page.getSize()));
     }
 
+    public ServerResponse<String> fastInoutAnalysisResultExport(ExcelWriter excelWriter, FastInFastOutRequest request) throws Exception {
+
+        // 导出总量
+        int total = exportThresholdConfig.getExcelExportThreshold();
+        request.getPageRequest().setPageSize(total);
+        ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> response = fastInFastOutAnalysis(request);
+        if (!response.isSuccess()) {
+            return ServerResponse.createByErrorMessage("导出失败,系统内部错误!");
+        }
+        List<FastInFastOutResult> dataList = response.getData().getContent();
+        int perRowSheetCount = exportThresholdConfig.getPerSheetRowCount();
+        if (dataList.size() <= perRowSheetCount) {
+            // 生成一个sheet
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            excelWriter.write(dataList, sheet);
+        } else {
+            // 多sheet 生成
+            int position = 0;
+            int sheetNo = 0;
+            while (position < total) {
+                int next = Math.min(position + perRowSheetCount, total);
+                WriteSheet sheet;
+                if (sheetNo == 0) {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
+                } else {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
+                }
+                excelWriter.write(dataList.subList(position, next), sheet);
+                position = next;
+                sheetNo++;
+            }
+        }
+        return ServerResponse.createBySuccess();
+    }
+
+    public ServerResponse<String> detailResultExport(ExcelWriter excelWriter, FastInFastOutDetailRequest request) {
+
+        // 详情数据没有多少,一个sheet页足够
+        request.getPageRequest().setPageSize(exportThresholdConfig.getPerSheetRowCount());
+        ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> response = detailResult(request);
+        if (!response.isSuccess()) {
+            return ServerResponse.createByErrorMessage("导出失败,系统内部错误!");
+        }
+        List<TradeAnalysisDetailResult> content = response.getData().getContent();
+        WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+        excelWriter.write(content, sheet);
+        return ServerResponse.createBySuccess();
+    }
+
+
     /**
      * <h2> 全部查询 </h2>
      */
@@ -111,18 +164,15 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
 
         // 直接查询调单卡号的数量,批量获取 maxAdjustCardQueryCount 数量的调单卡号
         // 查询出前 maxAdjustCardQueryCount 个调单卡号
+        // TODO 超过此最大调单卡号限制的阈值的话,即便查询出来,还需要作为参数传递给es(不可能将所有的调单的卡号查询出来作为参数),查询很慢
+        // TODO 可以参考交易汇聚和交易统计使用的查询全部方法
         double startAmount = Double.parseDouble(String.valueOf(request.getSingleQuota()));
-        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, QueryOperator.gte, null)) {
-            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, QueryOperator.gte, null);
-            if (CollectionUtils.isEmpty(adjustCards)) {
-                return null;
-            }
-            request.setCardNum(adjustCards);
-            return fastInFastOutViaChosenIndividual(request);
-        } else {
-            // TODO 处理超过 maxAdjustCardQueryCount 数量的调单卡号逻辑
+        List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, QueryOperator.gte, null);
+        if (CollectionUtils.isEmpty(adjustCards)) {
             return null;
         }
+        request.setCardNum(adjustCards);
+        return fastInFastOutViaChosenIndividual(request);
     }
 
     public static void main(String[] args) {
@@ -290,7 +340,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         List<String> distinctOppositeCard = sortRecords.stream().map(BankTransactionRecord::getTransactionOppositeCard).distinct().collect(Collectors.toList());
         // 获取这些卡号的进账/出账次数
         Map<String, Integer> oppositeCardInOutTimes = getInOutTotalTimesViaLocalAndOppositeCards(distinctOppositeCard, null, request.getCaseId(), singleQuota, !isInFlow);
-        // 取出满足 resultChunkSize 数量的对方卡号
+        // 取出满足 resultThreshold 数量的对方卡号
         if (CollectionUtils.isEmpty(oppositeCardInOutTimes)) {
             return null;
         }
@@ -351,7 +401,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (CollectionUtils.isEmpty(queryCardInOutTimes)) {
             return null;
         }
-        // 取出满足 resultChunkSize 数量的查询卡号
+        // 取出满足 resultThreshold 数量的查询卡号
         Map<String, Integer> requireQueryInOutCards = new HashMap<>();
         List<BankTransactionRecord> orderRecords = new ArrayList<>();
         // 满足条件的卡号总量
@@ -439,9 +489,9 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         if (CollectionUtils.isEmpty(queryCardInOutTimes)) {
             return new HashMap<>();
         }
-        // 计算 inOutflowOrder 记录 的查询卡号的进账/出账总次数是否 == resultChunkSize
-        // 当大于 resultChunkSize 的时候截止,或者 queryCardOutTimes 的 size 扫描结束为止
-        // 为了取出满足 resultChunkSize 数量的 中转 到 沉淀数据
+        // 计算 inOutflowOrder 记录 的查询卡号的进账/出账总次数是否 == resultThreshold
+        // 当大于 resultThreshold 的时候截止,或者 queryCardOutTimes 的 size 扫描结束为止
+        // 为了取出满足 resultThreshold 数量的 中转 到 沉淀数据
         // 需要查询出账的卡集合
         Map<String, Integer> requireQueryInOutCards = new HashMap<>();
         List<BankTransactionRecord> orderRecords = new ArrayList<>();

@@ -34,4 +34,6 @@ public class FastInFastOutDetailRequest extends FundTacticsPartGeneralRequest {
 
     /** 沉淀卡号 */
     private String depositCard;
+
+    private String exportFileName = "快进快出分析";
 }

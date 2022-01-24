@@ -79,9 +79,8 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         int size = cards.size();
         Map<String, String> mainCards = new HashMap<>(size);
         List<CompletableFuture<Map<String, String>>> futures = new ArrayList<>();
-
         while (position < size) {
-            int next = Math.min(position + fundThresholdConfig.getPerQueryCount(), size);
+            int next = Math.min(position + fundThresholdConfig.getPerTotalSplitQueryCount(), size);
             int finalPosition = position;
             CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(() ->
                     filterMainCards(caseId, cards.subList(finalPosition, next)), ThreadPoolConfig.getExecutor());

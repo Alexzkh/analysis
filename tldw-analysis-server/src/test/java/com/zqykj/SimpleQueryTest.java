@@ -20,7 +20,7 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;

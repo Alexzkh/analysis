@@ -44,10 +44,10 @@ public class FundTacticsThresholdConfigProperties {
     @Component
     public static class Export {
         // 每个sheet页存储的记录数( 若查询的数据量超过,则开始拆分多sheet页)
-        private int perSheetRowCount = 50_0000;
+        private int perSheetRowCount = 20_0000;
         // 每次向EXCEL写入的记录数(查询每页数据大小)
-        private int perWriteRowCount = 10_000;
+        private int perWriteRowCount = 8_000;
         // 导出Excel 的临界值 (超过这个值,不再导出)
-        private int excelExportThreshold = 200_0000;
+        private int excelExportThreshold = 100_0000;
     }
 }

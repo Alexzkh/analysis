@@ -5,6 +5,8 @@ package com.zqykj.app.service.interfaze.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.HashUtil;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.agg.UnadjustedAccountAggParamFactory;
@@ -13,6 +15,7 @@ import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IUnadjustedAccountsAnalysis;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -156,60 +159,123 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         // 查询结果(分批量保存,每次保存数量根据阈值处理)
         request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
         // 查询调单卡号(最大8000个)
-        if (checkAdjustCardCountByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
-            //
-            List<String> adjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
-            if (CollectionUtils.isEmpty(adjustCards)) {
-                return ServerResponse.createByErrorMessage("案件数据不存在!");
-            }
-            long total = asyncComputeTotal(request, adjustCards);
-            int size;
-            if (request.getTopRange() != null) {
-                size = request.getTopRange();
-            } else if (request.getPercentageOfAccountNumber() != null) {
-                size = BigDecimalUtil.mul(String.valueOf(total), BigDecimalUtil.div(request.getPercentageOfAccountNumber(), 100).toString()).intValue();
-            } else {
-                return ServerResponse.createByErrorMessage("请设置选择范围!");
-            }
-            // 查询排除这些调单的未调单卡号数据分析结果
-            List<Future<Boolean>> futures = new ArrayList<>();
-            int position = 0;
-            while (position < size) {
-                int next = Math.min(position + fundThresholdConfig.getPerAggCount(), size);
-                int finalPosition = position;
-                CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
-                    List<UnadjustedAccountAnalysisResult> analysisResults = getAnalysisResult(request, finalPosition, next - finalPosition, adjustCards);
-                    if (!CollectionUtils.isEmpty(analysisResults)) {
-                        return saveSuggestAdjustedAccountOfAuto(request.getCaseId(), analysisResults);
-                    }
-                    return false;
-                }, ThreadPoolConfig.getExecutor());
-                position = next;
-                futures.add(future);
-            }
-            for (Future<Boolean> future : futures) {
-                future.get();
-            }
-            return ServerResponse.createBySuccess("自动保存成功!");
-        } else {
-            // TODO 调单数量大于阈值的时候,数据量会很大,处理时间会很长(暂时不处理)
-            return ServerResponse.createByErrorMessage("数据太大,暂不支持处理");
+        // TODO 超过此最大调单卡号限制的阈值的话,即便查询出来,还需要作为参数传递给es(不可能将所有的调单的卡号查询出来作为参数),查询很慢
+        // TODO 可以参考交易汇聚和交易统计使用的查询全部方法
+        List<String> adjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+        if (CollectionUtils.isEmpty(adjustCards)) {
+            return ServerResponse.createByErrorMessage("案件数据不存在!");
         }
+        long total = asyncComputeTotal(request, adjustCards);
+        int size;
+        if (request.getTopRange() != null) {
+            size = request.getTopRange();
+        } else if (request.getPercentageOfAccountNumber() != null) {
+            size = BigDecimalUtil.mul(String.valueOf(total), BigDecimalUtil.div(request.getPercentageOfAccountNumber(), 100).toString()).intValue();
+        } else {
+            return ServerResponse.createByErrorMessage("请设置选择范围!");
+        }
+        // 查询排除这些调单的未调单卡号数据分析结果
+        List<Future<Boolean>> futures = new ArrayList<>();
+        int position = 0;
+        while (position < size) {
+            int next = Math.min(position + fundThresholdConfig.getPerAggCount(), size);
+            int finalPosition = position;
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+                List<UnadjustedAccountAnalysisResult> analysisResults = getAnalysisResult(request, finalPosition, next - finalPosition, adjustCards);
+                if (!CollectionUtils.isEmpty(analysisResults)) {
+                    return saveSuggestAdjustedAccountOfAuto(request.getCaseId(), analysisResults);
+                }
+                return false;
+            }, ThreadPoolConfig.getExecutor());
+            position = next;
+            futures.add(future);
+        }
+        for (Future<Boolean> future : futures) {
+            future.get();
+        }
+        return ServerResponse.createBySuccess("自动保存成功!");
     }
 
-    public ServerResponse<String> unAdjustedAnalysisDownload(UnadjustedAccountAnalysisRequest request) throws Exception {
+    public ServerResponse<String> unAdjustedAnalysisDownload(ExcelWriter excelWriter, UnadjustedAccountAnalysisRequest request) throws Exception {
 
-        // 首选计算总量
-        long total = 0;
-        if (checkMaxAdjustCards(request)) {
-            List<String> adjustCards = getMaxAdjustCards(request);
-            total = asyncComputeTotal(request, adjustCards);
+        // TODO 超过此最大调单卡号限制的阈值的话,即便查询出来,还需要作为参数传递给es(不可能将所有的调单的卡号查询出来作为参数),查询很慢
+        // TODO 可以参考交易汇聚和交易统计使用的查询全部方法
+        List<String> adjustCards = getMaxAdjustCards(request);
+        int limit;
+        // 如果是快捷选择入口,limit 需要重新计算
+        if (request.getTopRange() != null) {
+            limit = request.getTopRange();
+        } else if (request.getPercentageOfAccountNumber() != null) {
+            long total = asyncComputeTotal(request, adjustCards);
+            limit = BigDecimalUtil.mul(String.valueOf(total), BigDecimalUtil.div(request.getPercentageOfAccountNumber(), 100).toString()).intValue();
+        } else {
+            long total = asyncComputeTotal(request, adjustCards);
+            limit = Integer.parseInt(String.valueOf(total));
         }
-        // 分单个sheet 页处理、多个sheet 页处理
-
+        export(excelWriter, limit, adjustCards, request);
         return ServerResponse.createBySuccess();
     }
 
+    private void export(ExcelWriter excelWriter, int total, List<String> cards, UnadjustedAccountAnalysisRequest request) throws Exception {
+
+        if (total == 0) {
+            excelWriter.write(new ArrayList<>(), EasyExcelUtils.generateWriteSheet(request.getExportFileName()));
+        }
+        // 判断处理sheet 页的个数
+        if (total < exportThresholdConfig.getPerSheetRowCount()) {
+            // 单个sheet页即可
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            addSheetData(0, total, cards, excelWriter, sheet, request);
+        } else {
+            // 多个sheet页处理
+            Integer sheetNo = 0;
+            int limit = total;
+            if (total > exportThresholdConfig.getExcelExportThreshold()) {
+                limit = exportThresholdConfig.getExcelExportThreshold();
+            }
+            int position = 0;
+            int perSheetRowCount = exportThresholdConfig.getPerSheetRowCount();
+            // 这里就没必要在多线程了(一个sheet页假设50W,内部分批次查询,每次查询1W,就要查詢50次,若这里再开多线程分批次,ThreadPoolConfig.getExecutor()
+            // 的最大线程就这么多,剩下的只能在队列中等待)
+            while (position < limit) {
+                int next = Math.min(position + perSheetRowCount, limit);
+                WriteSheet sheet;
+                if (sheetNo == 0) {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
+                } else {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
+                }
+                addSheetData(position, next, cards, excelWriter, sheet, request);
+                position = next;
+                sheetNo++;
+            }
+        }
+    }
+
+    /**
+     * <h2> 添加一个sheet的数据 </h2>
+     */
+    private void addSheetData(int position, int limit, List<String> cards, ExcelWriter writer, WriteSheet sheet, UnadjustedAccountAnalysisRequest request) throws ExecutionException, InterruptedException {
+
+        if (limit == 0) {
+            return;
+        }
+        int chunkSize = exportThresholdConfig.getPerWriteRowCount();
+        List<Future<List<UnadjustedAccountAnalysisResult>>> futures = new ArrayList<>();
+        while (position < limit) {
+            int next = Math.min(position + chunkSize, limit);
+            int finalPosition = position;
+            Future<List<UnadjustedAccountAnalysisResult>> future = CompletableFuture.supplyAsync(() -> getAnalysisResult(request, finalPosition, next - finalPosition, cards),
+                    ThreadPoolConfig.getExecutor());
+            position = next;
+            futures.add(future);
+        }
+        for (Future<List<UnadjustedAccountAnalysisResult>> future : futures) {
+            List<UnadjustedAccountAnalysisResult> dataList = future.get();
+            // 添加sheet
+            writer.write(dataList, sheet);
+        }
+    }
 
     /**
      * <h2> 保存自动保存的建议调单账号 </h2>
@@ -283,7 +349,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
 
         DateRange dateRange = FundTacticsPartGeneralRequest.getDateRange(request.getDateRange());
         QuerySpecialParams queryUnadjusted = unadjustedAccountQueryParamFactory.queryUnadjusted(request.getCaseId(), adjustCards, request.getKeyword(), dateRange);
-        AggregationParams aggUnadjusted = unadjustedAccountAggParamFactory.unadjustedAccountAnalysis(request, from, size, request.getGroupInitSize());
+        AggregationParams aggUnadjusted = unadjustedAccountAggParamFactory.unadjustedAccountAnalysis(request, from, size, fundThresholdConfig.getGroupByThreshold());
         Map<String, String> aggKeyMapping = new LinkedHashMap<>();
         Map<String, String> entityKeyMapping = new LinkedHashMap<>();
         entityMappingFactory.buildTradeAnalysisResultAggMapping(aggKeyMapping, entityKeyMapping, UnadjustedAccountAnalysisResult.class);

@@ -4,16 +4,21 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.zqykj.app.service.config.FundTacticsThresholdConfigProperties;
+import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralRequest;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
@@ -36,6 +41,9 @@ import org.springframework.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public abstract class FundTacticsCommonImpl {
@@ -137,19 +145,28 @@ public abstract class FundTacticsCommonImpl {
         return count <= fundThresholdConfig.getMaxAdjustCardCount();
     }
 
-    protected ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> detail(FundTacticsPartGeneralRequest request, String... fuzzyFields) {
+    protected ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> detail(FundTacticsPartGeneralRequest request, int from, int size, String... fuzzyFields) {
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         SortRequest sortRequest = request.getSortRequest();
         QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request.getCaseId(), request.getQueryCard(), request.getOppositeCard(), request.getKeyword(), fuzzyFields);
         // 设置需要查询的字段
-        query.setIncludeFields(FundTacticsAnalysisField.detailShowField());
-        Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
-                Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), BankTransactionRecord.class, query);
+        if (from == 0 && size == 0) {
+            query.setIncludeFields(new String[0]);
+        } else {
+            query.setIncludeFields(FundTacticsAnalysisField.detailShowField());
+        }
+        Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()),
+                request.getCaseId(), BankTransactionRecord.class, query);
         if (page == null || CollectionUtils.isEmpty(page.getContent())) {
             return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<TradeAnalysisDetailResult> detailResults = getTradeAnalysisDetailResults(page);
         return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(detailResults, page.getTotalElements(), pageRequest.getPageSize()));
+    }
+
+    protected long detailTotal(FundTacticsPartGeneralRequest request) {
+        QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request.getCaseId(), request.getQueryCard(), request.getOppositeCard(), request.getKeyword(), FundTacticsFuzzyQueryField.detailFuzzyFields);
+        return entranceRepository.count(request.getCaseId(), BankTransactionRecord.class, query);
     }
 
     protected List<TradeAnalysisDetailResult> getTradeAnalysisDetailResults(Page<BankTransactionRecord> page) {
@@ -190,5 +207,68 @@ public abstract class FundTacticsCommonImpl {
      */
     protected List<String> getMaxAdjustCards(FundTacticsPartGeneralRequest request) {
         return queryMaxAdjustCardsByDate(request.getCaseId(), FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+    }
+
+
+    protected void writeSheet(ExcelWriter excelWriter, int total, FundTacticsPartGeneralRequest request) throws Exception {
+
+        if (total == 0) {
+            excelWriter.write(new ArrayList<>(), EasyExcelUtils.generateWriteSheet(request.getExportFileName()));
+        }
+        // 判断处理sheet 页的个数
+        if (total < exportThresholdConfig.getPerSheetRowCount()) {
+            // 单个sheet页即可
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            writeSheetData(0, total, request, excelWriter, sheet);
+        } else {
+            // 多个sheet页处理
+            Integer sheetNo = 0;
+            int limit = total;
+            if (total > exportThresholdConfig.getExcelExportThreshold()) {
+                limit = exportThresholdConfig.getExcelExportThreshold();
+            }
+            int position = 0;
+            int perSheetRowCount = exportThresholdConfig.getPerSheetRowCount();
+            // 这里就没必要在多线程了(一个sheet页假设50W,内部分批次查询,每次查询1W,就要查詢50次,若这里再开多线程分批次,ThreadPoolConfig.getExecutor()
+            // 的最大线程就这么多,剩下的只能在队列中等待)
+            while (position < limit) {
+                int next = Math.min(position + perSheetRowCount, limit);
+                WriteSheet sheet;
+                if (sheetNo == 0) {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
+                } else {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
+                }
+                writeSheetData(position, next, request, excelWriter, sheet);
+                position = next;
+                sheetNo++;
+            }
+        }
+    }
+
+    private void writeSheetData(int position, int limit, FundTacticsPartGeneralRequest request, ExcelWriter writer, WriteSheet sheet) throws ExecutionException, InterruptedException {
+
+        if (limit == 0) {
+            return;
+        }
+        int chunkSize = exportThresholdConfig.getPerWriteRowCount();
+        List<Future<List<TradeAnalysisDetailResult>>> futures = new ArrayList<>();
+        String[] detailFuzzyFields = FundTacticsFuzzyQueryField.detailFuzzyFields;
+        if (limit <= exportThresholdConfig.getPerSheetRowCount()) {
+            while (position < limit) {
+                int next = Math.min(position + chunkSize, limit);
+                int finalPosition = position;
+                CompletableFuture<List<TradeAnalysisDetailResult>> future =
+                        CompletableFuture.supplyAsync(() -> detail(request, finalPosition, next - finalPosition, detailFuzzyFields).getData().getContent(),
+                                ThreadPoolConfig.getExecutor());
+                position = next;
+                futures.add(future);
+            }
+            for (Future<List<TradeAnalysisDetailResult>> future : futures) {
+                List<TradeAnalysisDetailResult> dataList = future.get();
+                // 添加sheet
+                writer.write(dataList, sheet);
+            }
+        }
     }
 }

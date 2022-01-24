@@ -1,5 +1,6 @@
 package com.zqykj.app.service.interfaze;
 
+import com.alibaba.excel.ExcelWriter;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.core.ServerResponse;
@@ -38,4 +39,9 @@ public interface ITransactionStatistics {
      * <h2> 获取交易统计分析结果详情 </h2>
      */
     ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request);
+
+    /**
+     * <h2> 交易统计分析结果详情导出 </h2>
+     */
+    ServerResponse<String> detailExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception;
 }

@@ -9,12 +9,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * <h1> Excel导出 web HttpServletResponse 设置 </h1>
  */
 @Slf4j
-public class ExcelExportWithResponse {
+public class ExcelExport {
 
     /**
      * <h2> HttpServletResponse设置 </h2>
@@ -43,5 +45,15 @@ public class ExcelExportWithResponse {
             ex.printStackTrace();
             log.error("This encoding is not supported!");
         }
+    }
+
+    /**
+     * <h2> 获取导出文件名称 </h2>
+     * 原天网设置如此 <br>
+     */
+    public static String getExcelFileName(String originName) {
+        String format = LocalDateTime.now().format(DateTimeFormatter.ofPattern("_yyyyMMdd_HHmmss"));
+        // SimpleDateFormat sdf = new SimpleDateFormat(PATTERN);
+        return originName + format;
     }
 }
