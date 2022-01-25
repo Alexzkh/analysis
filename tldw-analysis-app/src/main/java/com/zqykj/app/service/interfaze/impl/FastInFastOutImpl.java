@@ -111,6 +111,12 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
 
         // 导出总量
         int total = exportThresholdConfig.getExcelExportThreshold();
+        if (total == 0) {
+            // 生成一个sheet
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            excelWriter.write(new ArrayList<>(), sheet);
+            return ServerResponse.createBySuccess();
+        }
         request.getPageRequest().setPageSize(total);
         ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> response = fastInFastOutAnalysis(request);
         if (!response.isSuccess()) {

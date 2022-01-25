@@ -62,8 +62,7 @@ public class TradeStatisticalAnalysisQueryBuilder extends FundTacticsCommonQuery
     }
 
     @Override
-    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other,
-                                                                                           Class<?> queryTable) {
+    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other, Class<?> queryTable) {
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) requestParam;

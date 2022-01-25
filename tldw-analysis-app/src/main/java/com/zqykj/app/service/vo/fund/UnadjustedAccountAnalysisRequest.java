@@ -37,16 +37,6 @@ public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequ
     @NotNull(message = "请设置特征比")
     private FeatureRatioValue ratioValue;
 
-    /**
-     * 选择范围: top
-     */
-    private Integer topRange;
-
-    /**
-     * 选择范围: 账号数量前 百分比 eg. 符合条件的未调单数量: 1000, 设置20%, 相当于取200个
-     */
-    private Double percentageOfAccountNumber;
-
     private String exportFileName = "未调单账号";
 
     /**

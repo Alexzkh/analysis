@@ -68,6 +68,16 @@ public class FundTacticsPartGeneralRequest {
     private SortRequest sortRequest;
 
     /**
+     * 选择范围: top
+     */
+    private Integer topRange;
+
+    /**
+     * 选择范围: 账号数量前 百分比 eg. 符合条件的未调单数量: 1000, 设置20%, 相当于取200个
+     */
+    private Double percentageOfAccountNumber;
+
+    /**
      * excel导出名称
      */
     private String exportFileName;

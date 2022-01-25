@@ -1099,42 +1099,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return result;
     }
 
-    @Override
-    public <T> Page<T> compoundQueryWithoutAgg(Pageable pageable, QuerySpecialParams querySpecialParams, Class<T> clazz, String routing) {
-        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
-        String indexName = entity.getIndexName();
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-
-        // 构建搜索请求
-        SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
-        // 构建查询对象
-        Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(querySpecialParams);
-        // 查询起始值
-        int from = querySpecialParams.getPagination().getFrom();
-        // 查询的size值
-        int size = querySpecialParams.getPagination().getSize();
-        // 升序or降序
-        String direction = querySpecialParams.getSort().getDirection();
-        // 排序字段
-        String property = querySpecialParams.getSort().getField();
-        // 普通查询
-        if (null != queryTarget) {
-            sourceBuilder.query((QueryBuilder) queryTarget);
-            sourceBuilder.size(size);
-            sourceBuilder.from(from);
-            sourceBuilder.sort(property, direction.equals("DESC") ? SortOrder.DESC : SortOrder.ASC);
-        }
-        searchRequest.source(sourceBuilder);
-        if (StringUtils.isNotEmpty(routing)) {
-            searchRequest.routing(routing);
-        }
-        PageRequest pageRequest = PageRequest.of(from, size, Sort.by(direction, property));
-        SearchHits<T> searchHits = execute(operations -> operations.search(searchRequest, clazz, getIndexCoordinates(clazz)));
-        AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, pageRequest);
-        return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
-
-    }
-
     /**
      * @param value: 模糊查询的值
      * @Description: 构建模糊查询参数

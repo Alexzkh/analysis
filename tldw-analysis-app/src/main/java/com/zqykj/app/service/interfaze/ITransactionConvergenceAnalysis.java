@@ -16,7 +16,8 @@ public interface ITransactionConvergenceAnalysis {
     /**
      * <h2> 交易汇聚分析结果 </h2>
      */
-    ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception;
+    ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, int from, int size,
+                                                                                                         boolean isComputeTotal) throws Exception;
 
     /**
      * <h2> 交易汇聚分析结果详情 </h2>
@@ -27,4 +28,9 @@ public interface ITransactionConvergenceAnalysis {
      * <h2> 交易汇聚分析结果详情导出 </h2>
      */
     ServerResponse<String> detailExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception;
+
+    /**
+     * <h2> 交易汇聚分析结果导出 </h2>
+     */
+    ServerResponse<String> convergenceAnalysisResultExport(ExcelWriter excelWriter, TradeConvergenceAnalysisQueryRequest request) throws Exception;
 }

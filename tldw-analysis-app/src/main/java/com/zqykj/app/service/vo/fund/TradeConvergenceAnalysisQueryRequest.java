@@ -23,6 +23,8 @@ public class TradeConvergenceAnalysisQueryRequest extends FundTacticsPartGeneral
      */
     private List<String> mergeCards;
 
+    private String exportFileName = "交易汇聚分析";
+
     public FundTacticsPartGeneralPreRequest convertFrom(TradeConvergenceAnalysisQueryRequest from) {
 
         FundTacticsPartGeneralPreRequest to = new FundTacticsPartGeneralPreRequest();

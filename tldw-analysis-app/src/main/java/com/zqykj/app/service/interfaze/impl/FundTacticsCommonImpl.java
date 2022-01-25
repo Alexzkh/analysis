@@ -237,7 +237,7 @@ public abstract class FundTacticsCommonImpl {
                 if (sheetNo == 0) {
                     sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
                 } else {
-                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "_" + sheetNo);
                 }
                 writeSheetData(position, next, request, excelWriter, sheet);
                 position = next;
@@ -254,19 +254,19 @@ public abstract class FundTacticsCommonImpl {
         int chunkSize = exportThresholdConfig.getPerWriteRowCount();
         List<Future<List<TradeAnalysisDetailResult>>> futures = new ArrayList<>();
         String[] detailFuzzyFields = FundTacticsFuzzyQueryField.detailFuzzyFields;
-        if (limit <= exportThresholdConfig.getPerSheetRowCount()) {
-            while (position < limit) {
-                int next = Math.min(position + chunkSize, limit);
-                int finalPosition = position;
-                CompletableFuture<List<TradeAnalysisDetailResult>> future =
-                        CompletableFuture.supplyAsync(() -> detail(request, finalPosition, next - finalPosition, detailFuzzyFields).getData().getContent(),
-                                ThreadPoolConfig.getExecutor());
-                position = next;
-                futures.add(future);
-            }
-            for (Future<List<TradeAnalysisDetailResult>> future : futures) {
-                List<TradeAnalysisDetailResult> dataList = future.get();
-                // 添加sheet
+        while (position < limit) {
+            int next = Math.min(position + chunkSize, limit);
+            int finalPosition = position;
+            CompletableFuture<List<TradeAnalysisDetailResult>> future =
+                    CompletableFuture.supplyAsync(() -> detail(request, finalPosition, next - finalPosition, detailFuzzyFields).getData().getContent(),
+                            ThreadPoolConfig.getExecutor());
+            position = next;
+            futures.add(future);
+        }
+        for (Future<List<TradeAnalysisDetailResult>> future : futures) {
+            List<TradeAnalysisDetailResult> dataList = future.get();
+            // 添加sheet
+            if (!CollectionUtils.isEmpty(dataList)) {
                 writer.write(dataList, sheet);
             }
         }

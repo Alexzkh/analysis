@@ -109,19 +109,91 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
     }
 
     @Override
-    public ServerResponse<FundAnalysisResultResponse<SuggestAdjustedAccountResult>> suggestAdjustedAccounts(FundTacticsPartGeneralRequest request) {
+    public ServerResponse<FundAnalysisResultResponse<SuggestAdjustedAccountResult>> suggestAdjustedAccounts(FundTacticsPartGeneralRequest request, int from, int size) {
 
         QuerySpecialParams query = unadjustedAccountQueryParamFactory.querySuggestAdjustAccount(request);
-        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         SortRequest sortRequest = request.getSortRequest();
-        Page<SuggestAdjusted> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
-                Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), SuggestAdjusted.class, query);
+        Page<SuggestAdjusted> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()),
+                request.getCaseId(), SuggestAdjusted.class, query);
         if (null == page) {
             return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<SuggestAdjusted> content = page.getContent();
         List<SuggestAdjustedAccountResult> results = convertFromSuggestAdjusted(content);
         return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(results, page.getTotalElements(), page.getSize()));
+    }
+
+    public ServerResponse<String> suggestAdjustedAccountDownload(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws ExecutionException, InterruptedException {
+
+        if (StringUtils.isBlank(request.getExportFileName())) {
+            request.setExportFileName("未调单账号");
+        }
+        int total = Integer.parseInt(String.valueOf(suggestAdjustedAccountsTotal(request)));
+        int perRowSheetCount = exportThresholdConfig.getPerSheetRowCount();
+        if (total == 0) {
+            excelWriter.write(new ArrayList<>(), EasyExcelUtils.generateWriteSheet(request.getExportFileName()));
+        }
+        if (total <= perRowSheetCount) {
+            // 生成一个sheet
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            writeSheet(0, total, request, excelWriter, sheet);
+        } else {
+            // 多个sheet页处理
+            Integer sheetNo = 0;
+            int limit = total;
+            if (total > exportThresholdConfig.getExcelExportThreshold()) {
+                limit = exportThresholdConfig.getExcelExportThreshold();
+            }
+            int position = 0;
+            int perSheetRowCount = exportThresholdConfig.getPerSheetRowCount();
+            // 这里就没必要在多线程了(一个sheet页假设50W,内部分批次查询,每次查询1W,就要查詢50次,若这里再开多线程分批次,ThreadPoolConfig.getExecutor()
+            // 的最大线程就这么多,剩下的只能在队列中等待)
+            while (position < limit) {
+                int next = Math.min(position + perSheetRowCount, limit);
+                WriteSheet sheet;
+                if (sheetNo == 0) {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
+                } else {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
+                }
+                writeSheet(position, next, request, excelWriter, sheet);
+                position = next;
+                sheetNo++;
+            }
+        }
+        return ServerResponse.createBySuccess();
+    }
+
+    private void writeSheet(int position, int limit, FundTacticsPartGeneralRequest request, ExcelWriter writer, WriteSheet sheet) throws ExecutionException, InterruptedException {
+
+        if (limit == 0) {
+            return;
+        }
+        int chunkSize = exportThresholdConfig.getPerWriteRowCount();
+        List<Future<List<SuggestAdjustedAccountResult>>> futures = new ArrayList<>();
+        while (position < limit) {
+            int next = Math.min(position + chunkSize, limit);
+            int finalPosition = position;
+            CompletableFuture<List<SuggestAdjustedAccountResult>> future =
+                    CompletableFuture.supplyAsync(() -> suggestAdjustedAccounts(request, finalPosition, next - finalPosition).getData().getContent(),
+                            ThreadPoolConfig.getExecutor());
+            position = next;
+            futures.add(future);
+        }
+        for (Future<List<SuggestAdjustedAccountResult>> future : futures) {
+            List<SuggestAdjustedAccountResult> dataList = future.get();
+            // 添加sheet
+            writer.write(dataList, sheet);
+        }
+    }
+
+    /**
+     * <h2> 建议调单账号总量 </h2>
+     */
+    private long suggestAdjustedAccountsTotal(FundTacticsPartGeneralRequest request) {
+
+        QuerySpecialParams query = unadjustedAccountQueryParamFactory.querySuggestAdjustAccount(request);
+        return entranceRepository.count(request.getCaseId(), SuggestAdjusted.class, query);
     }
 
     @Override
@@ -205,12 +277,15 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         // 如果是快捷选择入口,limit 需要重新计算
         if (request.getTopRange() != null) {
             limit = request.getTopRange();
-        } else if (request.getPercentageOfAccountNumber() != null) {
-            long total = asyncComputeTotal(request, adjustCards);
-            limit = BigDecimalUtil.mul(String.valueOf(total), BigDecimalUtil.div(request.getPercentageOfAccountNumber(), 100).toString()).intValue();
         } else {
             long total = asyncComputeTotal(request, adjustCards);
             limit = Integer.parseInt(String.valueOf(total));
+            if (request.getPercentageOfAccountNumber() != null) {
+                limit = BigDecimalUtil.mul(String.valueOf(limit), BigDecimalUtil.div(request.getPercentageOfAccountNumber(), 100).toString()).intValue();
+            }
+        }
+        if (org.apache.commons.lang3.StringUtils.isBlank(request.getExportFileName())) {
+            request.setExportFileName("交易汇聚分析");
         }
         export(excelWriter, limit, adjustCards, request);
         return ServerResponse.createBySuccess();
@@ -243,7 +318,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
                 if (sheetNo == 0) {
                     sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
                 } else {
-                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "_" + sheetNo);
                 }
                 addSheetData(position, next, cards, excelWriter, sheet, request);
                 position = next;
@@ -273,7 +348,9 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         for (Future<List<UnadjustedAccountAnalysisResult>> future : futures) {
             List<UnadjustedAccountAnalysisResult> dataList = future.get();
             // 添加sheet
-            writer.write(dataList, sheet);
+            if (!CollectionUtils.isEmpty(dataList)) {
+                writer.write(dataList, sheet);
+            }
         }
     }
 

@@ -4,6 +4,7 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.agg.TradeConvergenceAnalysisAggParamFactory;
@@ -15,6 +16,7 @@ import com.zqykj.app.service.interfaze.ITransactionConvergenceAnalysis;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
@@ -46,20 +48,18 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
     private final IFundTacticsAnalysis fundTacticsAnalysis;
 
     @Override
-    public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception {
+    public ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, int from, int size,
+                                                                                                                boolean isComputeTotal) throws Exception {
 
+        String caseId = request.getCaseId();
         FundAnalysisResultResponse<TradeConvergenceAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
         if (!CollectionUtils.isEmpty(request.getCardNums())) {
-
-            com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
-            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
-            int size = pageRequest.getPageSize();
             // 设置分组桶的大小
             request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
-            map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, true);
+            map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, isComputeTotal);
         } else {
-            map = convergenceAnalysisResultViaAllMainCards(request, caseId);
+            map = convergenceAnalysisResultViaAllMainCards(request, from, size, caseId);
         }
         List<TradeConvergenceAnalysisResult> results = (List<TradeConvergenceAnalysisResult>) map.get("result");
         long total = (long) map.get("total");
@@ -73,6 +73,27 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         // 总页数
         resultResponse.setTotalPages(PageRequest.getTotalPages(total, pageSize));
         return ServerResponse.createBySuccess(resultResponse);
+    }
+
+    /**
+     * <h2> 获取交易汇聚分析结果总量 </h2>
+     */
+    private long getConvergenceAnalysisResultTotal(TradeConvergenceAnalysisQueryRequest request) {
+        // 构建 交易汇聚分析查询请求
+        String caseId = request.getCaseId();
+        AggregationParams totalAgg = total(request);
+        Map<String, List<List<Object>>> resultMap;
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+            QuerySpecialParams totalQuery = tradeConvergenceAnalysisQueryParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, request.getCaseId());
+            resultMap = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionRecord.class, request.getCaseId());
+        } else {
+            QuerySpecialParams convergenceQuery = tradeConvergenceAnalysisQueryParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, caseId);
+            resultMap = entranceRepository.compoundQueryAndAgg(convergenceQuery, totalAgg, BankTransactionRecord.class, caseId);
+        }
+        if (CollectionUtils.isEmpty(resultMap) || CollectionUtils.isEmpty(resultMap.get(CARDINALITY_TOTAL))) {
+            return 0L;
+        }
+        return (long) resultMap.get(CARDINALITY_TOTAL).get(0).get(0);
     }
 
     public ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request) {
@@ -89,6 +110,81 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         }
         writeSheet(excelWriter, total, request);
         return ServerResponse.createBySuccess();
+    }
+
+    public ServerResponse<String> convergenceAnalysisResultExport(ExcelWriter excelWriter, TradeConvergenceAnalysisQueryRequest request) throws Exception {
+
+        int total = Integer.parseInt(String.valueOf(getConvergenceAnalysisResultTotal(request)));
+        if (total == 0) {
+            // 生成一个sheet
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            excelWriter.write(new ArrayList<>(), sheet);
+            return ServerResponse.createBySuccess();
+        }
+        int perRowSheetCount = exportThresholdConfig.getPerSheetRowCount();
+        if (total <= perRowSheetCount) {
+            // 单个sheet页即可
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            writeSheetData(0, total, excelWriter, sheet, request);
+        } else {
+            // 多个sheet页处理
+            int limit = total;
+            if (total > exportThresholdConfig.getExcelExportThreshold()) {
+                limit = exportThresholdConfig.getExcelExportThreshold();
+            }
+            int position = 0;
+            int perSheetRowCount = exportThresholdConfig.getPerSheetRowCount();
+            // 这里就没必要在多线程了(一个sheet页假设50W,内部分批次查询,每次查询1W,就要查詢50次,若这里再开多线程分批次,ThreadPoolConfig.getExecutor()
+            // 的最大线程就这么多,剩下的只能在队列中等待)
+            int sheetNo = 0;
+            while (position < limit) {
+                int next = Math.min(position + perSheetRowCount, limit);
+                WriteSheet sheet;
+                if (sheetNo == 0) {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
+                } else {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "_" + sheetNo);
+                }
+                writeSheetData(position, next, excelWriter, sheet, request);
+                position = next;
+                sheetNo++;
+            }
+        }
+        return ServerResponse.createBySuccess();
+    }
+
+    /**
+     * <h2> 批量将交易汇聚结果写入到Excel中 </h2>
+     */
+    private void writeSheetData(int position, int limit, ExcelWriter writer, WriteSheet sheet, TradeConvergenceAnalysisQueryRequest request) throws Exception {
+
+        if (limit == 0) {
+            return;
+        }
+        int chunkSize = exportThresholdConfig.getPerWriteRowCount();
+        List<Future<List<TradeConvergenceAnalysisResult>>> futures = new ArrayList<>();
+        while (position < limit) {
+            int next = Math.min(position + chunkSize, limit);
+            int finalPosition = position;
+            Future<List<TradeConvergenceAnalysisResult>> future = CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return convergenceAnalysisResult(request, finalPosition, next - finalPosition, false).getData().getContent();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    },
+                    ThreadPoolConfig.getExecutor());
+            position = next;
+            futures.add(future);
+        }
+        for (Future<List<TradeConvergenceAnalysisResult>> future : futures) {
+            List<TradeConvergenceAnalysisResult> dataList = future.get();
+            // 添加sheet
+            if (!CollectionUtils.isEmpty(dataList)) {
+                writer.write(dataList, sheet);
+            }
+        }
     }
 
     /**
@@ -195,12 +291,8 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
     @SuppressWarnings("all")
-    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, String caseId) throws Exception {
+    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, int from, int pageSize, String caseId) throws Exception {
 
-        // 前台分页
-        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
-        int page = pageRequest.getPage();
-        int pageSize = pageRequest.getPageSize();
         Map<String, Object> resultMap = new HashMap<>();
         // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
         double startAmount = Double.parseDouble(request.getFund());
@@ -213,7 +305,6 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
                 return resultMap;
             }
             request.setCardNums(adjustCards);
-            int from = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
             return convergenceAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
         }
         // 异步执行 全部查询任务
@@ -245,7 +336,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         int chunkSize = fundThresholdConfig.getPerTotalSplitCount();
         ThreadPoolTaskExecutor executor = ThreadPoolConfig.getExecutor();
         // 需要返回的数量
-        int skip = com.zqykj.common.vo.PageRequest.getOffset(page, pageSize);
+        int skip = from;
         int limit = pageSize;
         List<String> mergeCards = new ArrayList<>();
         StopWatch stopWatch = StopWatch.createStarted();

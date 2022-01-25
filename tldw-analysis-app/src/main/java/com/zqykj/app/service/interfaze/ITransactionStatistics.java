@@ -33,7 +33,8 @@ public interface ITransactionStatistics {
     /**
      * <h2> 获取交易统计分析结果 </h2>
      **/
-    ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> getTransactionStatisticsAnalysisResult(String caseId, TradeStatisticalAnalysisQueryRequest queryRequest) throws Exception;
+    ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> tradeStatisticsAnalysisResult(TradeStatisticalAnalysisQueryRequest queryRequest, int from, int size,
+                                                                                                             boolean isComputeTotal) throws Exception;
 
     /**
      * <h2> 获取交易统计分析结果详情 </h2>
@@ -44,4 +45,9 @@ public interface ITransactionStatistics {
      * <h2> 交易统计分析结果详情导出 </h2>
      */
     ServerResponse<String> detailExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception;
+
+    /**
+     * <h2> 交易统计分析结果导出 </h2>
+     */
+    ServerResponse<String> transactionStatisticsAnalysisResultExport(ExcelWriter excelWriter, TradeStatisticalAnalysisQueryRequest request) throws Exception;
 }
