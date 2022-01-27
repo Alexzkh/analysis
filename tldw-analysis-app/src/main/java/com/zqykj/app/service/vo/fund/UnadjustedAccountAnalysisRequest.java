@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.util.ReflectionUtils;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <h1> 未调单账户分析请求 </h1>
@@ -25,19 +25,19 @@ import java.util.List;
 @NoArgsConstructor
 public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequest {
 
-    /** 需要展示的账户特征  来源、中转、沉淀、其他 */
+    /**
+     * 需要展示的账户特征  来源、中转、沉淀、其他
+     */
     @NotNull(message = "请至少选择一个过滤条件")
     private List<String> accountCharacteristics;
 
-    /** 特征比值 */
+    /**
+     * 特征比值
+     */
     @NotNull(message = "请设置特征比")
     private FeatureRatioValue ratioValue;
 
-    /** 选择范围: top */
-    private Integer topRange;
-
-    /** 选择范围: 账号数量前 百分比 eg. 符合条件的未调单数量: 1000, 设置20%, 相当于取200个 */
-    private Double percentageOfAccountNumber;
+    private String exportFileName = "未调单账号";
 
     /**
      * <h2> 重新设置前端传递的特征比 </h2>
@@ -91,6 +91,8 @@ public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequ
     private static final String TRANSIT_SELECTOR = "params.transitRatio";
     // 沉淀特征比筛选过滤
     private static final String DEPOSIT_SELECTOR = "params.depositRatio";
+    // 脚本参数缓存
+    private static final ConcurrentHashMap<String, String> selectorScriptMap = new ConcurrentHashMap<>();
 
     /**
      * <h2> 根据用户选择的账户特征(需要筛选特定数据), 生成对应过滤脚本参数 </h2>
@@ -99,20 +101,28 @@ public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequ
         StringBuilder sb = new StringBuilder();
         Method[] declaredMethods = ReflectionUtils.getDeclaredMethods(UnadjustedAccountAnalysisRequest.class);
         for (String e : this.accountCharacteristics) {
-            Method findMethod = Arrays.stream(declaredMethods).filter(method -> {
-                if (Modifier.isPrivate(method.getModifiers())) {
-                    FeatureRatio featureRatio = method.getAnnotation(FeatureRatio.class);
-                    if (null != featureRatio) {
-                        return e.equals(featureRatio.value().getValue());
+            String scriptParam;
+            if (!selectorScriptMap.contains(e)) {
+                Method findMethod = Arrays.stream(declaredMethods).filter(method -> {
+                    if (Modifier.isPrivate(method.getModifiers())) {
+                        FeatureRatio featureRatio = method.getAnnotation(FeatureRatio.class);
+                        if (null != featureRatio) {
+                            return e.equals(featureRatio.value().getValue());
+                        }
                     }
+                    return false;
+                }).findFirst().orElse(null);
+                if (null == findMethod) {
+                    continue;
                 }
-                return false;
-            }).findFirst().orElse(null);
-            if (null == findMethod) {
-                continue;
+                ReflectionUtils.makeAccessible(findMethod);
+                scriptParam = (String) ReflectionUtils.invokeMethod(findMethod, this, this.ratioValue);
+                assert scriptParam != null;
+                selectorScriptMap.put(e, scriptParam);
+            } else {
+                scriptParam = selectorScriptMap.get(e);
             }
-            ReflectionUtils.makeAccessible(findMethod);
-            String scriptParam = (String) ReflectionUtils.invokeMethod(findMethod, this, this.ratioValue);
+            // 可以加入缓存使用,这样只需要反射一次
             if (sb.length() > 0) {
                 sb.append(" || ");
             }

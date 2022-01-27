@@ -3,6 +3,8 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,16 +17,24 @@ import java.math.BigDecimal;
 @Setter
 @Getter
 @NoArgsConstructor
+@ExcelIgnoreUnannotated
 public class TradeRangeOperationDetailSeeResult {
+
+    /**
+     * 交易流水id
+     */
+    private String id;
 
     /**
      * 交易卡号
      */
+    @ExcelProperty("卡号")
     private String queryCard;
 
     /**
      * 开户名称
      */
+    @ExcelProperty("客户名称")
     private String customerName;
 
     /**
@@ -40,11 +50,13 @@ public class TradeRangeOperationDetailSeeResult {
     /**
      * 对方卡号
      */
+    @ExcelProperty("对方卡号")
     private String transactionOppositeCard;
 
     /**
      * 对方开户名称
      */
+    @ExcelProperty("对方名称")
     private String transactionOppositeName;
 
     /**
@@ -60,25 +72,30 @@ public class TradeRangeOperationDetailSeeResult {
     /**
      * 交易时间
      */
+    @ExcelProperty("交易时间")
     private String tradingTime;
 
     /**
      * 交易金额
      */
+    @ExcelProperty("交易金额")
     private BigDecimal tradingAmount;
 
     /**
      * 借贷标志
      */
+    @ExcelProperty("借贷标志")
     private String loanFlag;
 
     /**
      * 交易类型
      */
+    @ExcelProperty("交易类型")
     private String transactionType;
 
     /**
      * 交易摘要
      */
+    @ExcelProperty("交易摘要")
     private String transactionSummary;
 }

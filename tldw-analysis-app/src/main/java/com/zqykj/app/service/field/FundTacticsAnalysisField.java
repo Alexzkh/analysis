@@ -253,7 +253,7 @@ public interface FundTacticsAnalysisField {
 
     // 交易区间筛选操作记录查询字段(针对表 )
     static String[] tradeRangeOperationDetailQueryFields() {
-        return new String[]{QUERY_CARD, CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME,
+        return new String[]{_ID, QUERY_CARD, CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME,
                 OPPOSITE_BANK, TRADING_TIME, CHANGE_MONEY, LOAN_FLAG, TRANSACTION_TYPE, TRANSACTION_SUMMARY};
     }
 
@@ -266,6 +266,13 @@ public interface FundTacticsAnalysisField {
     static String[] tradeStatisticalAnalysisLocalShowField() {
 
         return new String[]{CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, QUERY_ACCOUNT, QUERY_CARD};
+    }
+
+    // 详情需要展示的字段
+    static String[] detailShowField() {
+
+        return new String[]{QUERY_CARD, CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME,
+                OPPOSITE_IDENTITY_CARD, OPPOSITE_BANK, CHANGE_MONEY, TRADING_TIME, LOAN_FLAG, TRANSACTION_TYPE, TRANSACTION_SUMMARY};
     }
 
     // 交易统计分析结果本方需要展示的字段

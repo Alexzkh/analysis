@@ -5,12 +5,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
@@ -107,9 +102,13 @@ public abstract class SingleSheetExcelFileExportTask<T> extends FileExportTask {
     private SXSSFSheet createExcelSheetWithFixedHeader(final SXSSFWorkbook workbook, List<String> headerNames,
                                                        String sheetName) {
         Font titleFont = workbook.createFont();
-        titleFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        // 字体加粗 (poi 版本从3.14 升级到 4.1.2) 部分api废弃
+        titleFont.setBold(true);
+//        titleFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
         CellStyle titleCellStyle = workbook.createCellStyle();
-        titleCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        // 设置单元格内容水中居中
+        titleCellStyle.setAlignment(HorizontalAlignment.CENTER);
+//        titleCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
         titleCellStyle.setFont(titleFont);
 
         SXSSFSheet sheet = workbook.createSheet(sheetName);

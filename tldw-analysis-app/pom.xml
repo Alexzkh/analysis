@@ -39,21 +39,9 @@
             <artifactId>tldw-analysis-domain</artifactId>
             <version>${project.version}</version>
             <exclusions>
-                   <exclusion>
-                       <groupId>com.zqykj</groupId>
-                       <artifactId>tldw-aggregate-commons</artifactId>
-                   </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>3.14</version>
-            <exclusions>
                 <exclusion>
-                    <groupId>stax</groupId>
-                    <artifactId>stax-api</artifactId>
+                    <groupId>com.zqykj</groupId>
+                    <artifactId>tldw-aggregate-commons</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

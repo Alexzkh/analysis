@@ -17,6 +17,8 @@ import org.springframework.beans.BeanUtils;
 @NoArgsConstructor
 public class TradeStatisticalAnalysisQueryRequest extends FundTacticsPartGeneralPreRequest {
 
+    private String exportFileName = "交易统计分析";
+
     public FundTacticsPartGeneralPreRequest convertFrom(TradeStatisticalAnalysisQueryRequest from) {
 
         FundTacticsPartGeneralPreRequest to = new FundTacticsPartGeneralPreRequest();

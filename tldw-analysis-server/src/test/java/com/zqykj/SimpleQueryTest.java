@@ -20,7 +20,7 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
@@ -280,37 +280,6 @@ public class SimpleQueryTest {
         } catch (IOException e) {
             log.error("e:", e);
         }
-    }
-
-    @Test
-    public void specialQuery() {
-        String routing = "3eeeab0b01a541eda6268a9370393cf5";
-        String termField = "case_id";
-        String termValue = "3eeeab0b01a541eda6268a9370393cf5";
-        String multiMatchQuery = "60138216660047600";
-        String[] multiMatchFields = {"query_card", "transaction_opposite_card"};
-
-        QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.filter);
-
-        // case_id="3eeeab0b01a541eda6268a9370393cf5"
-        CommonQueryParams termCaseIdCommonQueryParams = QueryParamsBuilders.term(termField, termValue);
-        combinationQueryParams.addCommonQueryParams(termCaseIdCommonQueryParams);
-
-        // query_card="60138216660047600" OR transaction_opposite_card="60138216660047600"
-//        CommonQueryParams multiMatchCommonQueryParams = new CommonQueryParams(QueryType.multi_match,multiMatchQuery,multiMatchFields);
-        CommonQueryParams multiMatchCommonQueryParams = QueryParamsBuilders.multiMatch(multiMatchQuery, multiMatchFields);
-        combinationQueryParams.addCommonQueryParams(multiMatchCommonQueryParams);
-
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
-        querySpecialParams.setPagination(new Pagination(0, 1));
-        querySpecialParams.setSort(new FieldSort("trading_time", "desc"));
-
-        Page<BankTransactionFlow> bankTransactionFlows = entranceRepository.compoundQueryWithoutAgg(null, querySpecialParams,
-                BankTransactionFlow.class, routing);
-        List<BankTransactionFlow> content = bankTransactionFlows.getContent();
     }
 
     @Test

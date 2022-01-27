@@ -390,7 +390,7 @@ public class FundTacticsAnalysisAggBuilderBuilderFactory extends FundTacticsComm
         // 统计入账笔数、入账金额、出账笔数、出账金额、交易净额、交易总金额、最早交易时间、最晚交易时间
         fundTacticsPartUniversalAgg(queryCardTerms, null);
 
-        // 设置聚合展示字
+        // 设置聚合展示字段
         String[] showFields = new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK,
                 FundTacticsAnalysisField.CUSTOMER_NAME, FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD};
         AggregationParams aggShowFields = fundTacticsPartUniversalAggShowFields(showFields, "local_hits", null);

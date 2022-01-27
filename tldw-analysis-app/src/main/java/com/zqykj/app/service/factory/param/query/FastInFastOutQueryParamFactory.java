@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.factory.param.query;
 
+import com.zqykj.app.service.vo.fund.middle.FastInFastOutDetailRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.lang.Nullable;
 
@@ -26,4 +27,10 @@ public interface FastInFastOutQueryParamFactory {
      * 其中cards 卡号作为查询卡号
      */
     QuerySpecialParams getInoutRecordsViaQueryAndOpposite(List<String> cards, @Nullable List<String> oppositeCards, String caseId, int singleQuota, boolean isIn);
+
+
+    /**
+     * <h2> 快进快出结果详情 </h2>
+     */
+    QuerySpecialParams getResultDetail(FastInFastOutDetailRequest request);
 }

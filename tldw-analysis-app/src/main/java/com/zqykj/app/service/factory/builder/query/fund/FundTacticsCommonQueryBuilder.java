@@ -4,9 +4,14 @@
 package com.zqykj.app.service.factory.builder.query.fund;
 
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
+import com.zqykj.common.enums.QueryType;
 import com.zqykj.parameters.query.CombinationQueryParams;
+import com.zqykj.parameters.query.CommonQueryParams;
+import com.zqykj.parameters.query.QuerySpecialParams;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -19,7 +24,9 @@ public abstract class FundTacticsCommonQueryBuilder {
 
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
+        if (!CollectionUtils.isEmpty(cards)) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
+        }
         return filter;
     }
 }

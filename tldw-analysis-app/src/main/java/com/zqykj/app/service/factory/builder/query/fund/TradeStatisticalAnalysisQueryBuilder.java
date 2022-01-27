@@ -6,6 +6,7 @@ package com.zqykj.app.service.factory.builder.query.fund;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.factory.param.query.TradeStatisticalAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
+import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.vo.fund.FundDateRequest;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
@@ -30,7 +31,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class TradeStatisticalAnalysisQueryBuilder implements TradeStatisticalAnalysisQueryParamFactory {
+public class TradeStatisticalAnalysisQueryBuilder extends FundTacticsCommonQueryBuilder implements TradeStatisticalAnalysisQueryParamFactory {
 
     private final QueryRequestParamFactory queryRequestParamFactory;
 
@@ -61,8 +62,7 @@ public class TradeStatisticalAnalysisQueryBuilder implements TradeStatisticalAna
     }
 
     @Override
-    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other,
-                                                                                           Class<?> queryTable) {
+    public <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T requestParam, V other, Class<?> queryTable) {
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         TradeStatisticalAnalysisQueryRequest request = (TradeStatisticalAnalysisQueryRequest) requestParam;

@@ -20,7 +20,7 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.domain.*;
 import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.*;
@@ -95,10 +95,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T, ID> Optional<T> findById(ID id, String routing, @NonNull Class<T> entityClass) throws Exception {
 
-        return Optional.ofNullable(
-                execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(entityClass), routing),
-                        entityClass
-                ));
+        return Optional.ofNullable(execute(operations -> operations.get(stringIdRepresentation(id), entityClass, getIndexCoordinates(entityClass), routing)));
     }
 
     @Override
@@ -132,7 +129,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
 
         NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withTrackTotalHits(true).withPageable(pageable).build();
 
-        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
+        SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)));
 
         AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
         return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
@@ -146,7 +143,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder)
                     .withFields(condition.getIncludeFields()).withExcludeFields(condition.getExcludeFields()).withTrackTotalHits(true)
                     .withPageable(pageable).build();
-            SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
+            SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)));
 
             AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
             return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
@@ -167,7 +164,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         }
 
         NativeSearchQuery query = new NativeSearchQueryBuilder().withIds(stringIds).withRoute(routing).build();
-        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
+        List<T> multiGetEntities = execute(operations -> operations.multiGet(query, entityClass, getIndexCoordinates(entityClass)));
 
         if (multiGetEntities != null) {
             multiGetEntities.forEach(entity -> {
@@ -191,7 +188,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 .withPageable(PageRequest.of(0, 1))
                 .build();
         String indexCoordinates = getIndexCoordinates(entityClass);
-        return execute(operations -> operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)), entityClass) != null ? operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)).getContent() : null;
+        return execute(operations -> operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass))) != null ? operations.searchOne(nativeSearchQuery, entityClass, getIndexCoordinates(entityClass)).getContent() : null;
     }
 
     private <ID> List<String> stringIdsRepresentation(Iterable<ID> ids) {
@@ -214,7 +211,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
                 .withRoute(routing).withTrackTotalHits(true)
                 .build();
         // noinspection ConstantConditions
-        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)), entityClass);
+        return execute(operations -> operations.count(query, entityClass, getIndexCoordinates(entityClass)));
     }
 
     @Override
@@ -373,8 +370,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         searchSourceBuilder.size(pageable.getPageSize());
         searchRequest.source(searchSourceBuilder);
         searchRequest.routing(routing);
-        SearchHits<T> searchHits = execute(operations -> operations.search(searchRequest, entityClass,
-                getIndexCoordinates(entityClass)), entityClass);
+        SearchHits<T> searchHits = execute(operations -> operations.search(searchRequest, entityClass, getIndexCoordinates(entityClass)));
         AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, pageable);
         return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
     }
@@ -1103,42 +1099,6 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return result;
     }
 
-    @Override
-    public <T> Page<T> compoundQueryWithoutAgg(Pageable pageable, QuerySpecialParams querySpecialParams, Class<T> clazz, String routing) {
-        ElasticsearchPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(clazz);
-        String indexName = entity.getIndexName();
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-
-        // 构建搜索请求
-        SearchRequest searchRequest = new SearchRequest(getIndexCoordinates(clazz));
-        // 构建查询对象
-        Object queryTarget = QueryMappingBuilder.buildDslQueryBuilderMapping(querySpecialParams);
-        // 查询起始值
-        int from = querySpecialParams.getPagination().getFrom();
-        // 查询的size值
-        int size = querySpecialParams.getPagination().getSize();
-        // 升序or降序
-        String direction = querySpecialParams.getSort().getDirection();
-        // 排序字段
-        String property = querySpecialParams.getSort().getField();
-        // 普通查询
-        if (null != queryTarget) {
-            sourceBuilder.query((QueryBuilder) queryTarget);
-            sourceBuilder.size(size);
-            sourceBuilder.from(from);
-            sourceBuilder.sort(property, direction.equals("DESC") ? SortOrder.DESC : SortOrder.ASC);
-        }
-        searchRequest.source(sourceBuilder);
-        if (StringUtils.isNotEmpty(routing)) {
-            searchRequest.routing(routing);
-        }
-        PageRequest pageRequest = PageRequest.of(from, size, Sort.by(direction, property));
-        SearchHits<T> searchHits = execute(operations -> operations.search(searchRequest, clazz, getIndexCoordinates(clazz)), clazz);
-        AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, pageRequest);
-        return (Page<T>) SearchHitSupport.unwrapSearchHits(page);
-
-    }
-
     /**
      * @param value: 模糊查询的值
      * @Description: 构建模糊查询参数
@@ -1162,7 +1122,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     }
 
     @Nullable
-    public <R, T> R execute(OperationsCallback<R> callback, Class<T> entityClass) {
+    public <R, T> R execute(OperationsCallback<R> callback) {
 //        createIndexAndMapping(entityClass);
         return callback.doWithOperations(operations);
     }

@@ -3,13 +3,17 @@
  */
 package com.zqykj.app.service.interfaze.impl;
 
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.zqykj.app.service.config.ThreadPoolConfig;
 import com.zqykj.app.service.factory.param.agg.TradeRangeScreeningAggParamFactory;
 import com.zqykj.app.service.factory.param.query.TradeRangeScreeningQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITradeRangeScreening;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.common.core.ServerResponse;
+import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.SortRequest;
 import com.zqykj.domain.Page;
@@ -25,6 +29,7 @@ import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +38,9 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -43,8 +51,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements ITradeRangeScreening {
 
-    private final TradeRangeScreeningQueryParamFactory queryParamFactory;
-    private final TradeRangeScreeningAggParamFactory aggParamFactory;
+    private final TradeRangeScreeningQueryParamFactory tradeRangeScreeningQueryParamFactory;
+    private final TradeRangeScreeningAggParamFactory tradeRangeScreeningAggParamFactory;
 
     @Override
     public ServerResponse<TradeRangeScreeningDataChartResult> getDataChartResult(TradeRangeScreeningDataChartRequest request) {
@@ -85,17 +93,19 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         DateRangeRequest dateRange = request.getDateRange();
         String start = dateRange.getStart() + dateRange.getTimeEnd();
         String end = dateRange.getEnd() + dateRange.getTimeStart();
-        if (checkAdjustCardCountByDate(request.getCaseId(), new DateRange(start, end))) {
-            // 查询固定最大调单卡号
-            List<String> maxAdjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), new DateRange(start, end));
-            if (!CollectionUtils.isEmpty(maxAdjustCards)) {
-                request.setCardNums(maxAdjustCards);
-                return selectIndividualQuery(request);
-            }
-        } else {
-            // TODO
-
+        // TODO 超过此最大调单卡号限制的阈值的话,即便查询出来,还需要作为参数传递给es(不可能将所有的调单的卡号查询出来作为参数),查询很慢
+        // TODO 可以参考交易汇聚和交易统计使用的查询全部方法
+//        if (checkAdjustCardCountByDate(request.getCaseId(), new DateRange(start, end))) {
+        // 查询固定最大调单卡号
+        List<String> maxAdjustCards = queryMaxAdjustCardsByDate(request.getCaseId(), new DateRange(start, end));
+        if (!CollectionUtils.isEmpty(maxAdjustCards)) {
+            request.setCardNums(maxAdjustCards);
+            return selectIndividualQuery(request);
         }
+//        } else {
+//            // TODO 超过最大调单数量暂不处理(数据量太大)
+//
+//        }
         return new TradeRangeScreeningDataChartResult();
     }
 
@@ -140,9 +150,8 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         return ServerResponse.createBySuccess(content);
     }
 
-    public ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(FundTacticsPartGeneralRequest request) {
+    public ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(FundTacticsPartGeneralRequest request, int from, int size) {
 
-        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         SortRequest sortRequest = request.getSortRequest();
         // 根据操作记录id 查询对应的操作记录
         TradeRangeOperationRecord tradeRangeOperationRecord = getOperationRecordsAdjustCardsById(request.getCaseId(), request.getId());
@@ -152,40 +161,120 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         Double minAmount = tradeRangeOperationRecord.getMinAmount();
         Double maxAmount = tradeRangeOperationRecord.getMaxAmount();
         int dateType = tradeRangeOperationRecord.getDataCategory();
-        List<String> adjustCards;
-        if (tradeRangeOperationRecord.getIndividualBankCardsNumber() == -1) {
-
-            // 检查调单卡号的数量
-            if (checkAdjustCardCount(request.getCaseId(), minAmount, QueryOperator.gte, maxAmount, QueryOperator.lte, null)) {
+        List<String> adjustCards = null;
+        if (CollectionUtils.isEmpty(request.getExportIds())) {
+            if (tradeRangeOperationRecord.getIndividualBankCardsNumber() == -1) {
                 // 查询最大调单卡号
+                // TODO 不可能全部查询出来作为参数,当然你可以去 表 BankTransactionRecord 查询,然后查询的记录, 去看它的查询卡号 在 表 BankTransactionFlow 的查询卡号中是否存在
                 adjustCards = queryMaxAdjustCards(request.getCaseId(), minAmount, QueryOperator.gte, maxAmount, QueryOperator.lte, null);
             } else {
-                // TODO 大于最大查询调单卡号数量
-                adjustCards = null;
+                // 查询卡号的进账、出账记录
+                adjustCards = tradeRangeOperationRecord.getAdjustCards();
             }
-        } else {
-            // 查询卡号的进账、出账记录
-            adjustCards = tradeRangeOperationRecord.getAdjustCards();
+            if (CollectionUtils.isEmpty(adjustCards)) {
+                return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
+            }
         }
-        if (CollectionUtils.isEmpty(adjustCards)) {
-            return ServerResponse.createByErrorMessage("未查询到符合的记录!");
-        }
-        QuerySpecialParams query = queryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), request.getExportIds(), adjustCards, minAmount, maxAmount, dateType);
         // 设置queryFields
-        query.setIncludeFields(FundTacticsAnalysisField.tradeRangeOperationDetailQueryFields());
-        Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
-                Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), BankTransactionRecord.class, query);
-        if (CollectionUtils.isEmpty(page.getContent())) {
+        if (from == 0 && size == 0) {
+            query.setIncludeFields(new String[0]);
+        } else {
+            query.setIncludeFields(FundTacticsAnalysisField.tradeRangeOperationDetailQueryFields());
+        }
+        Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()),
+                request.getCaseId(), BankTransactionRecord.class, query);
+        if (null == page) {
             return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<BankTransactionRecord> content = page.getContent();
         List<TradeRangeOperationDetailSeeResult> newContent = content.stream().map(this::convertFromTradeRangeOperationDetailSeeResult).collect(Collectors.toList());
-        FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult> resultResponse = new FundAnalysisResultResponse<>();
-        resultResponse.setContent(newContent);
-        resultResponse.setTotalPages(PageRequest.getTotalPages(page.getTotalElements(), pageRequest.getPageSize()));
-        resultResponse.setSize(pageRequest.getPageSize());
-        resultResponse.setTotal(page.getTotalElements());
-        return ServerResponse.createBySuccess(resultResponse);
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(newContent, page.getTotalElements(), page.getSize()));
+    }
+
+    public ServerResponse<String> operationRecordsDetailListExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception {
+
+        // 获取总量
+        ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> response = seeOperationRecordsDetailList(request, 0, 1);
+        if (!response.isSuccess()) {
+            return ServerResponse.createByErrorMessage("导出失败,系统内部错误!");
+        }
+        int total = Integer.parseInt(String.valueOf(response.getData().getTotal()));
+        if (StringUtils.isBlank(request.getExportFileName())) {
+            request.setExportFileName("交易区间筛选交易流水");
+        }
+        export(excelWriter, total, request);
+        return ServerResponse.createBySuccess();
+    }
+
+
+    private void export(ExcelWriter excelWriter, int total, FundTacticsPartGeneralRequest request) throws Exception {
+
+        if (total == 0) {
+            excelWriter.write(new ArrayList<>(), EasyExcelUtils.generateWriteSheet(request.getExportFileName()));
+        }
+        // 判断处理sheet 页的个数
+        if (total < exportThresholdConfig.getPerSheetRowCount()) {
+            // 单个sheet页即可
+            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+            addSheetData(0, total, request, excelWriter, sheet);
+        } else {
+            // 多个sheet页处理
+            Integer sheetNo = 0;
+            int limit = total;
+            if (total > exportThresholdConfig.getExcelExportThreshold()) {
+                limit = exportThresholdConfig.getExcelExportThreshold();
+            }
+            int position = 0;
+            int perSheetRowCount = exportThresholdConfig.getPerSheetRowCount();
+            // 这里就没必要在多线程了(一个sheet页假设50W,内部分批次查询,每次查询1W,就要查詢50次,若这里再开多线程分批次,ThreadPoolConfig.getExecutor()
+            // 的最大线程就这么多,剩下的只能在队列中等待)
+            while (position < limit) {
+                int next = Math.min(position + perSheetRowCount, limit);
+                WriteSheet sheet;
+                if (sheetNo == 0) {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
+                } else {
+                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
+                }
+                addSheetData(position, next, request, excelWriter, sheet);
+                position = next;
+                sheetNo++;
+            }
+        }
+    }
+
+    private void addSheetData(int position, int limit, FundTacticsPartGeneralRequest request, ExcelWriter writer, WriteSheet sheet) throws ExecutionException, InterruptedException {
+
+        if (limit == 0) {
+            return;
+        }
+        int chunkSize = exportThresholdConfig.getPerWriteRowCount();
+        List<Future<List<TradeRangeOperationDetailSeeResult>>> futures = new ArrayList<>();
+        if (limit <= exportThresholdConfig.getPerSheetRowCount()) {
+            while (position < limit) {
+                int next = Math.min(position + chunkSize, limit);
+                int finalPosition = position;
+                CompletableFuture<List<TradeRangeOperationDetailSeeResult>> future =
+                        CompletableFuture.supplyAsync(() -> queryDetail(request, finalPosition, next - finalPosition), ThreadPoolConfig.getExecutor());
+                position = next;
+                futures.add(future);
+            }
+            for (Future<List<TradeRangeOperationDetailSeeResult>> future : futures) {
+                List<TradeRangeOperationDetailSeeResult> dataList = future.get();
+                // 添加sheet
+                writer.write(dataList, sheet);
+            }
+        }
+    }
+
+    private List<TradeRangeOperationDetailSeeResult> queryDetail(FundTacticsPartGeneralRequest request, int from, int size) {
+
+        ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> response = seeOperationRecordsDetailList(request, from, size);
+        if (!response.isSuccess()) {
+            throw new RuntimeException("导出操作记录失败,查询出错!");
+        }
+        return response.getData().getContent();
     }
 
     public ServerResponse<List<TradeOperationIndividualBankCardsStatistical>> seeIndividualBankCardsStatisticalResult(FundTacticsPartGeneralRequest request) {
@@ -212,10 +301,10 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         Double minAmount = page.getContent().get(0).getMinAmount();
         Double maxAmount = page.getContent().get(0).getMaxAmount();
         int dateType = page.getContent().get(0).getDataCategory();
-        QuerySpecialParams query = queryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), null, adjustCards, minAmount, maxAmount, dateType);
         // 设置queryFields
         query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK});
-        AggregationParams agg = aggParamFactory.individualBankCardsStatisticalAgg(offset, pageRequest.getPageSize(), sortRequest.getProperty(),
+        AggregationParams agg = tradeRangeScreeningAggParamFactory.individualBankCardsStatisticalAgg(offset, pageRequest.getPageSize(), sortRequest.getProperty(),
                 sortRequest.getOrder().name(), adjustCards.size());
         agg.setResultName("individualBankCardsStatistical");
         Map<String, String> aggKeyMapping = new LinkedHashMap<>();
@@ -229,7 +318,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         List<List<Object>> result = results.get(agg.getResultName());
         List<String> entityTitles = new ArrayList<>(entityAggKeyMapping.keySet());
         List<Map<String, Object>> entityPropertyValueMapping = parseFactory.convertEntity(result, entityTitles, TradeConvergenceAnalysisResult.class);
-        List<TradeOperationIndividualBankCardsStatistical> statisticalResults = JacksonUtils.parse(JacksonUtils.toJson(entityPropertyValueMapping), new TypeReference<List<TradeOperationIndividualBankCardsStatistical>>() {
+        List<TradeOperationIndividualBankCardsStatistical> statisticalResults = JacksonUtils.parse(entityPropertyValueMapping, new TypeReference<List<TradeOperationIndividualBankCardsStatistical>>() {
         });
         // 保留2位小数,转化科学计算方式的金额
         statisticalResults.forEach(TradeOperationIndividualBankCardsStatistical::amountReservedTwo);
@@ -259,7 +348,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
      */
     private List<BigDecimal> queryTradeAmounts(TradeRangeScreeningDataChartRequest request, int from, int size) {
 
-        QuerySpecialParams queryTradeAmount = queryParamFactory.queryTradeAmount(request);
+        QuerySpecialParams queryTradeAmount = tradeRangeScreeningQueryParamFactory.queryTradeAmount(request);
         String property = FundTacticsAnalysisField.CHANGE_MONEY;
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.ASC, property),
                 request.getCaseId(), BankTransactionRecord.class, queryTradeAmount);
@@ -271,7 +360,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
      */
     private List<BigDecimal> queryCreditAmounts(TradeRangeScreeningDataChartRequest request, int from, int size) {
 
-        QuerySpecialParams queryTradeAmount = queryParamFactory.queryCreditOrPayoutAmount(request, true);
+        QuerySpecialParams queryTradeAmount = tradeRangeScreeningQueryParamFactory.queryCreditOrPayoutAmount(request, true);
         String property = FundTacticsAnalysisField.CHANGE_MONEY;
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.ASC, property),
                 request.getCaseId(), BankTransactionRecord.class, queryTradeAmount);
@@ -283,7 +372,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
      */
     private List<BigDecimal> queryPayoutAmounts(TradeRangeScreeningDataChartRequest request, int from, int size) {
 
-        QuerySpecialParams queryTradeAmount = queryParamFactory.queryCreditOrPayoutAmount(request, false);
+        QuerySpecialParams queryTradeAmount = tradeRangeScreeningQueryParamFactory.queryCreditOrPayoutAmount(request, false);
         String property = FundTacticsAnalysisField.CHANGE_MONEY;
         Page<BankTransactionRecord> page = entranceRepository.findAll(PageRequest.of(from, size, Sort.Direction.ASC, property),
                 request.getCaseId(), BankTransactionRecord.class, queryTradeAmount);

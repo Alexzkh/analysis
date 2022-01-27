@@ -36,4 +36,11 @@ public interface FundTacticsFuzzyQueryField {
      * <h2> 建议调单模糊字段 </h2>
      */
     String[] suggestAdjustedFuzzyFields = new String[]{"opposite_card.opposite_card_wildcard", "account_name.account_name_wildcard", "bank.bank_wildcard"};
+
+    /**
+     * <h2> 详情模糊字段 </h2>
+     */
+    String[] detailFuzzyFields = new String[]{"customer_name.customer_name_wildcard", "customer_identity_card.customer_identity_card_wildcard",
+            "bank.bank_wildcard", "query_card.query_card_wildcard", "transaction_opposite_name.opposite_name_wildcard", "transaction_opposite_certificate_number.opposite_certificate_number_wildcard",
+            "transaction_opposite_card.opposite_card_wildcard", "transaction_opposite_account_open_bank.opposite_bank_wildcard"};
 }

@@ -37,4 +37,5 @@ public class FastInFastOutRequest extends FundTacticsPartGeneralRequest {
      */
     private long timeInterval;
 
+    private String exportFileName = "快进快出";
 }

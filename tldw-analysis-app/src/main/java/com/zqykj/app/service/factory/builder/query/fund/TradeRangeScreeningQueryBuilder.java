@@ -15,6 +15,7 @@ import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -53,12 +54,12 @@ public class TradeRangeScreeningQueryBuilder extends FundTacticsCommonQueryBuild
         return query;
     }
 
-    public QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
+    public QuerySpecialParams queryAdjustCardsTradeRecord(String caseId, List<String> exportIds, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
 
         QuerySpecialParams query = new QuerySpecialParams();
         CombinationQueryParams filter = queryCardsAndCase(caseId, adjustCards);
         // 可选条件参数过滤
-        addOperationRecordCondition(minAmount, maxAmount, dateType, filter);
+        addOperationRecordCondition(minAmount, maxAmount, dateType, filter, exportIds);
         query.addCombiningQueryParams(filter);
         return query;
     }
@@ -76,23 +77,27 @@ public class TradeRangeScreeningQueryBuilder extends FundTacticsCommonQueryBuild
      * <p>
      * 应该是要根据当前保存的操作记录 的金额范围 以及 数据类别去筛选的(如果是需求就是查询/统计当前调单卡号下的全部数据 就去除这个方法)
      */
-    private void addOperationRecordCondition(Double minAmount, Double maxAmount, int dateType, CombinationQueryParams filter) {
-        if (null != minAmount) {
-            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, minAmount, QueryOperator.gte));
-        }
-        if (null != maxAmount) {
-            filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, maxAmount, QueryOperator.lte));
-        }
-        if (FundTacticsAnalysisField.TradeRangeScreening.CREDIT_AMOUNT == dateType) {
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
-        } else if (FundTacticsAnalysisField.TradeRangeScreening.PAYOUT_AMOUNT == dateType) {
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
+    private void addOperationRecordCondition(Double minAmount, Double maxAmount, int dateType, CombinationQueryParams filter, List<String> exportIds) {
+        if (!CollectionUtils.isEmpty(exportIds)) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField._ID, exportIds));
+        } else {
+            if (null != minAmount) {
+                filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, minAmount, QueryOperator.gte));
+            }
+            if (null != maxAmount) {
+                filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, maxAmount, QueryOperator.lte));
+            }
+            if (FundTacticsAnalysisField.TradeRangeScreening.CREDIT_AMOUNT == dateType) {
+                filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_IN));
+            } else if (FundTacticsAnalysisField.TradeRangeScreening.PAYOUT_AMOUNT == dateType) {
+                filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.LOAN_FLAG, FundTacticsAnalysisField.LOAN_FLAG_OUT));
+            }
         }
     }
 
-    public QuerySpecialParams queryIndividualBankCardsStatistical(String caseId, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
+    public QuerySpecialParams queryIndividualBankCardsStatistical(String caseId, List<String> ids, List<String> adjustCards, Double minAmount, Double maxAmount, int dateType) {
 
-        return queryAdjustCardsTradeRecord(caseId, adjustCards, minAmount, maxAmount, dateType);
+        return queryAdjustCardsTradeRecord(caseId, ids, adjustCards, minAmount, maxAmount, dateType);
     }
 
     /**

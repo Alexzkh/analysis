@@ -32,7 +32,7 @@ public class ThreadPoolConfig {
         // 最大线程数量
         executor.setMaxPoolSize(20);
         // 队列中最大任务数
-        executor.setQueueCapacity(10);
+        executor.setQueueCapacity(1000);
         // 线程名称前缀
         executor.setThreadNamePrefix("ThreadPool-Tactics-");
         // 当达到最大线程数时如何处理新任务

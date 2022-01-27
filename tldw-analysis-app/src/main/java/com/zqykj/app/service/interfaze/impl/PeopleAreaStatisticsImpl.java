@@ -79,7 +79,7 @@ public class PeopleAreaStatisticsImpl implements IPeopleAreaStatistics {
                 peopleAreaDetailRequest.getQueryRequest().getPaging().getPageSize(),
                 peopleAreaDetailRequest.getQueryRequest().getSorting().getOrder().isAscending() ? Sort.Direction.ASC : Sort.Direction.DESC,
                 peopleAreaDetailRequest.getQueryRequest().getSorting().getProperty());
-        Page<PeopleArea> result = (Page<PeopleArea>) entranceRepository.compoundQueryWithoutAgg(pageRequest, querySpecialParams, PeopleArea.class, caseId);
+        Page<PeopleArea> result = entranceRepository.findAll(pageRequest, caseId, PeopleArea.class, querySpecialParams);
         return result;
     }
 }

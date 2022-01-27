@@ -7,6 +7,7 @@ import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.factory.param.query.TradeConvergenceAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralRequest;
 import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;

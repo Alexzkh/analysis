@@ -28,9 +28,24 @@ public class FundTacticsPartGeneralRequest {
     private String id;
 
     /**
+     * 查询卡号
+     */
+    private String queryCard;
+
+    /**
+     * 对方卡号
+     */
+    private String oppositeCard;
+
+    /**
      * 数据标识唯一id集合
      */
     private List<String> ids;
+
+    /**
+     * 数据标识唯一id集合(数据下载导出的时候会选择某几条数据,直接根据id即可)
+     */
+    private List<String> exportIds;
 
     /**
      * 案件Id
@@ -57,6 +72,20 @@ public class FundTacticsPartGeneralRequest {
      */
     private SortRequest sortRequest;
 
+    /**
+     * 选择范围: top
+     */
+    private Integer topRange;
+
+    /**
+     * 选择范围: 账号数量前 百分比 eg. 符合条件的未调单数量: 1000, 设置20%, 相当于取200个
+     */
+    private Double percentageOfAccountNumber;
+
+    /**
+     * excel导出名称
+     */
+    private String exportFileName;
 
     private int groupInitFrom = 0;
 
