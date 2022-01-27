@@ -3,23 +3,15 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
+import com.alibaba.excel.annotation.ExcelProperty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
-import com.zqykj.common.vo.Direction;
-import com.zqykj.common.vo.PageRequest;
-import com.zqykj.common.vo.SortRequest;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.*;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * <h1> 交易汇聚结果查询实体 </h1>
@@ -28,6 +20,7 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@ExcelIgnoreUnannotated
 public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
 
     // 合并卡号
@@ -38,16 +31,19 @@ public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
     // 开户名称
     @Agg(name = "customer_name", showField = true)
     @Key(name = "customer_name")
+    @ExcelProperty(value = "开户名称")
     private String customerName;
 
     // 开户证件号码
     @Agg(name = "customer_identity_card", showField = true)
     @Key(name = "customer_identity_card")
+    @ExcelProperty(value = "开户证件号码")
     private String customerIdentityCard;
 
     // 开户银行
     @Agg(name = "bank", showField = true)
     @Key(name = "bank")
+    @ExcelProperty(value = "开户银行")
     private String bank;
 
     // 账号
@@ -59,26 +55,31 @@ public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
     // 交易卡号
     @Agg(name = "query_card", showField = true)
     @Key(name = "query_card")
+    @ExcelProperty(value = "交易卡号")
     private String tradeCard;
 
     // 对方开户名称
     @Agg(name = "transaction_opposite_name", showField = true)
     @Key(name = "transaction_opposite_name")
+    @ExcelProperty(value = "对方开户名称")
     private String oppositeCustomerName;
 
     // 对方开户证件号码
     @Agg(name = "transaction_opposite_certificate_number", showField = true)
     @Key(name = "transaction_opposite_certificate_number")
+    @ExcelProperty(value = "对方开户证件号码")
     private String oppositeIdentityCard;
 
     // 对方开户银行
     @Agg(name = "transaction_opposite_account_open_bank", showField = true)
     @Key(name = "transaction_opposite_account_open_bank")
+    @ExcelProperty(value = "对方开户银行")
     private String oppositeBank;
 
     // 对方卡号
     @Agg(name = "transaction_opposite_card", showField = true)
     @Key(name = "transaction_opposite_card")
+    @ExcelProperty(value = "对方卡号")
     private String oppositeTradeCard;
 
     // 合并卡号

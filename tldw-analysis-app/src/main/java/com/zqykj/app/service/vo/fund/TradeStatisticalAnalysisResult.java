@@ -3,20 +3,12 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
+import com.alibaba.excel.annotation.ExcelProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zqykj.app.service.annotation.*;
-import com.zqykj.common.vo.Direction;
-import com.zqykj.common.vo.PageRequest;
-import com.zqykj.common.vo.SortRequest;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.*;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * <h1> 交易统计分析结果查询实体 </h1>
@@ -30,6 +22,7 @@ import java.util.stream.Collectors;
 @Agg(name = "local_hits")
 @Key
 @JsonIgnoreProperties(ignoreUnknown = true)
+@ExcelIgnoreUnannotated
 public class TradeStatisticalAnalysisResult extends FundPartAnalysisResult {
 
     // 合并卡号
@@ -40,26 +33,31 @@ public class TradeStatisticalAnalysisResult extends FundPartAnalysisResult {
     // 开户名称
     @Agg(name = "customer_name", showField = true)
     @Key(name = "customer_name")
+    @ExcelProperty(value = "开户名称", order = 0)
     private String customerName;
 
     // 开户证件号码
     @Agg(name = "customer_identity_card", showField = true)
     @Key(name = "customer_identity_card")
+    @ExcelProperty(value = "开户证件号码", order = 1)
     private String customerIdentityCard;
 
     // 开户银行
     @Agg(name = "bank", showField = true)
     @Key(name = "bank")
+    @ExcelProperty(value = "开户银行", order = 2)
     private String bank;
 
     // 账号
     @Agg(name = "query_account", showField = true)
     @Key(name = "query_account")
+    @ExcelProperty(value = "账号", order = 3)
     private String queryAccount;
 
     // 交易卡号
     @Agg(name = "query_card", showField = true)
     @Key(name = "query_card")
+    @ExcelProperty(value = "交易卡号", order = 4)
     private String tradeCard;
 
     public static void amountReservedTwo(TradeStatisticalAnalysisResult bankFlow) {

@@ -64,6 +64,8 @@ tactics:
     per_query_count: 2000
     # 每次聚合查询数量(普通批量查询)
     per_agg_count: 5000
+    # 分页查询上限
+    pagination_threshold: 1000
     ## Excel导出阈值设置
     export:
       # 每个sheet页存储的记录数( 若查询的数据量超过,则开始拆分多sheet页)
@@ -79,9 +81,10 @@ tactics:
 ## 如果满的话,调单卡号作为来源共计生成30w数据,依次类推 调单卡号作为来源、中转、沉淀情况都满足的话共计90w数据(然后基于这90w 需要继续过滤特征比和时间间隔等)
 ## 数据基本足够大(尽量做微调)
 fast_inout:
-  ## 未排序一方取出的数据限制
+  # eg. 调单卡号作为中转卡号情况, 我按流入金额排序取了1000条记录(拿到了来源-中转(借贷标志为进))
+  # 还差中转-沉淀 (借贷标志为出) 这部分数据也可能会很多, 就是 unsortedThreshold
   per_unsorted_threshold: 10_0000
-  ## 排序一方取出的数据限制(eg. 按流入金额排序,这里取出的就是资金来源 到 资金中转的数据量, per_unsorted_threshold 取值就是相反,需要拿出中转-沉淀的数据量)
+  # eg. 调单卡号作为中转卡号情况, 我按流入金额排序取了 sortThreshold 条记录(拿到了来源-中转(借贷标志为进)),这部分数据可能会很多
   per_sort_threshold: 2000
   per_agg_threshold: 5000
   two_hop_sort_threshold: 10_000

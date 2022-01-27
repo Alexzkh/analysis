@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 @Setter
 @Getter
 @NoArgsConstructor
+@ExcelIgnoreUnannotated
 public class FastInFastOutResult {
 
 
@@ -94,8 +96,13 @@ public class FastInFastOutResult {
     /**
      * 特征比: (流入金额 - 流出金额) / 流入金额
      */
-    @ExcelProperty(value = "特征比", index = 10)
     private double characteristicRatio;
+
+    /**
+     * 特征比: (流入金额 - 流出金额) / 流入金额 (带 % 号)
+     */
+    @ExcelProperty(value = "特征比", index = 10)
+    private String exportCharacteristicRatio;
 
     public static String hashString(FastInFastOutResult result) {
 

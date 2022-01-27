@@ -17,7 +17,6 @@ import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.util.EasyExcelUtils;
-import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QueryOperator;
@@ -25,7 +24,6 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -52,7 +50,6 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
                                                                                                                 boolean isComputeTotal) throws Exception {
 
         String caseId = request.getCaseId();
-        FundAnalysisResultResponse<TradeConvergenceAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
         if (!CollectionUtils.isEmpty(request.getCardNums())) {
             // 设置分组桶的大小
@@ -61,18 +58,12 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         } else {
             map = convergenceAnalysisResultViaAllMainCards(request, from, size, caseId);
         }
+        if (CollectionUtils.isEmpty(map)) {
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
+        }
         List<TradeConvergenceAnalysisResult> results = (List<TradeConvergenceAnalysisResult>) map.get("result");
-        long total = (long) map.get("total");
-        Integer pageSize = request.getPageRequest().getPageSize();
-        // 结果集
-        resultResponse.setContent(results);
-        // 每页显示条数
-        resultResponse.setSize(pageSize);
-        // 总数据量
-        resultResponse.setTotal(total);
-        // 总页数
-        resultResponse.setTotalPages(PageRequest.getTotalPages(total, pageSize));
-        return ServerResponse.createBySuccess(resultResponse);
+        long total = Long.parseLong(String.valueOf(map.get("total")));
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(results, total, size));
     }
 
     /**
@@ -80,20 +71,22 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      */
     private long getConvergenceAnalysisResultTotal(TradeConvergenceAnalysisQueryRequest request) {
         // 构建 交易汇聚分析查询请求
-        String caseId = request.getCaseId();
         AggregationParams totalAgg = total(request);
-        Map<String, List<List<Object>>> resultMap;
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
-            QuerySpecialParams totalQuery = tradeConvergenceAnalysisQueryParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, request.getCaseId());
-            resultMap = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionRecord.class, request.getCaseId());
-        } else {
-            QuerySpecialParams convergenceQuery = tradeConvergenceAnalysisQueryParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, caseId);
-            resultMap = entranceRepository.compoundQueryAndAgg(convergenceQuery, totalAgg, BankTransactionRecord.class, caseId);
+        // 查询总量
+        // 如果是全部查询,需要以全部调单卡号作为 查询卡号条件去查询
+        if (CollectionUtils.isEmpty(request.getCardNums())) {
+            QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+            if (!CollectionUtils.isEmpty(adjustCards)) {
+                request.setCardNums(adjustCards);
+            }
         }
-        if (CollectionUtils.isEmpty(resultMap) || CollectionUtils.isEmpty(resultMap.get(CARDINALITY_TOTAL))) {
-            return 0L;
+        QuerySpecialParams totalQuery = tradeConvergenceAnalysisQueryParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, request.getCaseId());
+        Map<String, List<List<Object>>> totalMap = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionRecord.class, request.getCaseId());
+        if (CollectionUtils.isEmpty(totalMap) || CollectionUtils.isEmpty(totalMap.get(CARDINALITY_TOTAL))) {
+            return 0;
         }
-        return (long) resultMap.get(CARDINALITY_TOTAL).get(0).get(0);
+        return (long) totalMap.get(CARDINALITY_TOTAL).get(0).get(0);
     }
 
     public ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request) {
@@ -105,9 +98,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
     public ServerResponse<String> detailExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception {
 
         int total = Integer.parseInt(String.valueOf(detailTotal(request)));
-        if (StringUtils.isBlank(request.getExportFileName())) {
-            request.setExportFileName("交易汇聚分析");
-        }
+        // 详情数据不会有多少,直接一个sheet页解决
         writeSheet(excelWriter, total, request);
         return ServerResponse.createBySuccess();
     }
@@ -246,7 +237,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
 
                 map.put("total", 0);
             } else {
-                map.put("total", total.get(0).get(0));
+                map.put("total", Integer.parseInt(String.valueOf(total.get(0).get(0))));
             }
         }
         map.put("result", tradeConvergenceAnalysisResults);
@@ -291,21 +282,20 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
     @SuppressWarnings("all")
-    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, int from, int pageSize, String caseId) throws Exception {
+    protected Map<String, Object> convergenceAnalysisResultViaAllMainCards(TradeConvergenceAnalysisQueryRequest request, int from, int limit, String caseId) throws Exception {
 
         Map<String, Object> resultMap = new HashMap<>();
         // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
-        double startAmount = Double.parseDouble(request.getFund());
         QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
-        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
-            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (CollectionUtils.isEmpty(adjustCards)) {
                 resultMap.put("total", 0);
                 resultMap.put("result", new ArrayList<>());
                 return resultMap;
             }
             request.setCardNums(adjustCards);
-            return convergenceAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
+            return convergenceAnalysisResultViaChosenMainCards(request, from, limit, request.getCaseId(), true);
         }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
@@ -313,6 +303,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         // 构建 交易汇聚分析查询请求
         QuerySpecialParams convergenceQuery = tradeConvergenceAnalysisQueryParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, caseId);
         Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(convergenceQuery, totalAgg, BankTransactionRecord.class, caseId);
+        // 这里计算的总量其实不是正确的、但是后面拿出的分页数据是正确的
         long total = 0;
         if (CollectionUtils.isEmpty(totalResults)) {
             resultMap.put("total", 0);
@@ -324,36 +315,32 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
                 total = (long) list.get(0).get(0);
             }
         }
-        // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
-        long computeTotal = total + total / 100;
         // 设置分组数量
         request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
         // 异步任务查询起始位置
         int position = 0;
         // 异步任务查询总量
-        int size = Integer.parseInt(String.valueOf(computeTotal));
+        int size = Integer.parseInt(String.valueOf(total));
         // 异步任务查询批处理阈值
         int chunkSize = fundThresholdConfig.getPerTotalSplitCount();
         ThreadPoolTaskExecutor executor = ThreadPoolConfig.getExecutor();
         // 需要返回的数量
-        int skip = from;
-        int limit = pageSize;
         List<String> mergeCards = new ArrayList<>();
         StopWatch stopWatch = StopWatch.createStarted();
         while (position < size) {
             int next = Math.min(position + chunkSize, size);
             Future<List<String>> future = executor.submit(new ConvergenceFutureTask(position,
-                    next, skip, limit, caseId, request));
+                    next, from, limit, caseId, request));
             List<String> results = future.get();
             if (!CollectionUtils.isEmpty(results)) {
                 mergeCards.addAll(results);
             }
-            if (mergeCards.size() == pageSize) {
+            if (mergeCards.size() == limit) {
                 break;
             } else {
                 if (mergeCards.size() > 0) {
-                    skip = 0;
-                    limit = pageSize - mergeCards.size();
+                    from = 0;
+                    limit = limit - mergeCards.size();
                 }
                 position = next;
             }

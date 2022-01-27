@@ -193,7 +193,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
     public ServerResponse<String> operationRecordsDetailListExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception {
 
         // 获取总量
-        ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> response = seeOperationRecordsDetailList(request, 0, 0);
+        ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> response = seeOperationRecordsDetailList(request, 0, 1);
         if (!response.isSuccess()) {
             return ServerResponse.createByErrorMessage("导出失败,系统内部错误!");
         }

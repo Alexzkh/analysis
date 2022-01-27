@@ -52,7 +52,7 @@ public class EasyExcelUtils {
      * <h2> 获取ExcelWriter </h2>
      * 它可以写多个 WriteSheet , 即一个Excel中有多个sheet页, 适用于分页数据查询, 每一页对应一个sheet/或者一组固定数据量(10w)数据作为一个sheet <br>
      */
-    public static ExcelWriter getExcelWriter(OutputStream outputStream, ExcelTypeEnum type, List<WriteHandler> handlers, List<Converter<?>> converters, Class<?> head, List<String> headString) {
+    public static ExcelWriter getExcelWriter(OutputStream outputStream, ExcelTypeEnum type, boolean autoCloseStream, List<WriteHandler> handlers, List<Converter<?>> converters, Class<?> head, List<String> headString) {
 
         ExcelWriterBuilder excelWriterBuilder = getExcelWriterBuilder(outputStream, type, head, headString);
         if (!CollectionUtils.isEmpty(handlers)) {
@@ -61,6 +61,7 @@ public class EasyExcelUtils {
         if (!CollectionUtils.isEmpty(converters)) {
             converters.forEach(excelWriterBuilder::registerConverter);
         }
+        excelWriterBuilder.autoCloseStream(autoCloseStream);
         return excelWriterBuilder.build();
     }
 
@@ -79,33 +80,44 @@ public class EasyExcelUtils {
     /**
      * <h2> 获取ExcelWriter (需要实体对象-Excel表头需要实体类上的注解支撑)  </h2>
      */
-    public static ExcelWriter getExcelWriterEntity(OutputStream outputStream, ExcelTypeEnum type, Class<?> head) {
+    public static ExcelWriter getExcelWriterEntity(OutputStream outputStream, ExcelTypeEnum type, boolean autoCloseStream, Class<?> head) {
 
-        return getExcelWriter(outputStream, type, defaultWriteHandlers(), null, head, null);
+        return getExcelWriter(outputStream, type, autoCloseStream, defaultWriteHandlers(), null, head, null);
     }
 
-    public static ExcelWriter getExcelWriterEntity(OutputStream outputStream, ExcelTypeEnum type, List<WriteHandler> handlers, List<Converter<?>> converters, Class<?> head) {
+    public static ExcelWriter getExcelWriterEntity(OutputStream outputStream, Class<?> head) {
+
+        return getExcelWriter(outputStream, ExcelTypeEnum.XLSX, true, defaultWriteHandlers(), null, head, null);
+    }
+
+    public static ExcelWriter getExcelWriterEntity(OutputStream outputStream, ExcelTypeEnum type, boolean autoCloseStream, List<WriteHandler> handlers, List<Converter<?>> converters, Class<?> head) {
 
         if (CollectionUtils.isEmpty(handlers)) {
             handlers = defaultWriteHandlers();
         }
-        return getExcelWriter(outputStream, type, handlers, converters, head, null);
+        return getExcelWriter(outputStream, type, autoCloseStream, handlers, converters, head, null);
     }
+
 
     /**
      * <h2> 获取ExcelWriter (不需要实体对象)  </h2>
      */
-    public static ExcelWriter getExcelWriterNoEntity(OutputStream outputStream, ExcelTypeEnum type, List<String> headString) {
+    public static ExcelWriter getExcelWriterNoEntity(OutputStream outputStream, ExcelTypeEnum type, boolean autoCloseStream, List<String> headString) {
 
-        return getExcelWriter(outputStream, type, defaultWriteHandlers(), null, null, headString);
+        return getExcelWriter(outputStream, type, autoCloseStream, defaultWriteHandlers(), null, null, headString);
     }
 
-    public static ExcelWriter getExcelWriterNoEntity(OutputStream outputStream, ExcelTypeEnum type, List<WriteHandler> handlers, List<Converter<?>> converters, List<String> headString) {
+    public static ExcelWriter getExcelWriterNoEntity(OutputStream outputStream, List<String> headString) {
+
+        return getExcelWriter(outputStream, ExcelTypeEnum.XLSX, true, defaultWriteHandlers(), null, null, headString);
+    }
+
+    public static ExcelWriter getExcelWriterNoEntity(OutputStream outputStream, ExcelTypeEnum type, boolean autoCloseStream, List<WriteHandler> handlers, List<Converter<?>> converters, List<String> headString) {
 
         if (CollectionUtils.isEmpty(handlers)) {
             handlers = defaultWriteHandlers();
         }
-        return getExcelWriter(outputStream, type, handlers, converters, null, headString);
+        return getExcelWriter(outputStream, type, autoCloseStream, handlers, converters, null, headString);
     }
 
 
@@ -310,7 +322,7 @@ public class EasyExcelUtils {
      */
     private static List<WriteHandler> defaultWriteHandlers() {
         List<WriteHandler> writeHandlers = new ArrayList<>();
-        writeHandlers.add(setFontStyle(11, 11));
+        writeHandlers.add(setFontStyle(12, 11));
         writeHandlers.add(setRowHeight(16, 16));
         writeHandlers.add(setWidth(24));
         return writeHandlers;

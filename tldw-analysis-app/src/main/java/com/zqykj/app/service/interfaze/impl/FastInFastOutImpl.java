@@ -58,16 +58,20 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
 
     private final FastInFastOutQueryParamFactory fastInFastOutQueryParamFactory;
 
+    // 基本逻辑...
     // 快进快出生成结果条数(数值排序有6中规则(降序和升序),流入金额、流出金额、流出日期)
-    // 每种规则生成5W数据,比如调单卡号作为来源情况满的话,会有30w数据,可能有重复,需要去重
+    // 每种规则生成5W数据,比如调单卡号作为来源情况满的话,会有30w数据(当然这样是极端计算,实际肯定是有重复数据的)
     // 那么调单卡号作为中转、作为沉淀 数据满的情况下,3种情况共计90万数据(数据足够)
-    // 不可能不停的取,直至取满 (快进快出这个逻辑太奇葩 eg. 调单卡号作为中转卡号, 进账有1000条, 出账有1000条, 那就是1000 * 1000 条.....)
-    // 你需要从中筛选出符合时间间隔、特征比的记录数...
+    // 不可能不停的取,直至取满 (快进快出这个逻辑太奇葩 eg. 调单卡号作为中转卡号, 进账有1000条, 出账有1000条,
+    // 那就是你要计算 1000 * 1000 次 ..... 你需要从中筛选出符合时间间隔、特征比的记录数), 目前看来没办法通过es 一次查询出来,只能查询出相关数据在内存中计算
     // 实际数据量可能更奇葩(可能导入文件数据才20W,全部查询的时候会出现300多万的快进快出数据量(如果算满的话)
-    // 因此只能设置 阈值取出排序的一部分数据构建快进快出记录
+    // 因此只能设置 阈值 取出排序的一部分数据构建快进快出记录
+
+    // eg. 调单卡号作为中转卡号情况, 我按流入金额排序取了1000条记录(拿到了来源-中转(借贷标志为进))
+    // 还差中转-沉淀 (借贷标志为出) 这部分数据(可能会很多), 就是 unsortedThreshold
     @Value("${fast_inout.per_unsorted_threshold}")
-    private int resultThreshold;
-    // 按照进或者出排序后需要取出的数据量
+    private int unsortedThreshold;
+    // eg. 调单卡号作为中转卡号情况, 我按流入金额排序取了 sortThreshold 条记录(拿到了来源-中转(借贷标志为进))
     @Value("${fast_inout.per_sort_threshold}")
     private int sortThreshold;
     // 每次批量查询数量
@@ -117,6 +121,11 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             excelWriter.write(new ArrayList<>(), sheet);
             return ServerResponse.createBySuccess();
         }
+        if (request.getPageRequest() == null) {
+            // 实际快进快出结果能否返回这么多, 还得看最上面定义的快进快出的配置(但也只是先弄出这么多数据,具体还得根据时间间隔,特征比等过滤,所以实际过滤后的结果数量无法计算预知)
+            com.zqykj.common.vo.PageRequest pageRequest = com.zqykj.common.vo.PageRequest.of(0, exportThresholdConfig.getExcelExportThreshold());
+            request.setPageRequest(pageRequest);
+        }
         request.getPageRequest().setPageSize(total);
         ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> response = fastInFastOutAnalysis(request);
         if (!response.isSuccess()) {
@@ -132,14 +141,19 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             // 多sheet 生成
             int position = 0;
             int sheetNo = 0;
-            while (position < total) {
-                int next = Math.min(position + perRowSheetCount, total);
+            int limit = total - 1;
+            if (dataList.size() < total) {
+                limit = dataList.size() - 1;
+            }
+            while (position < limit) {
+                int next = Math.min(position + perRowSheetCount, limit);
                 WriteSheet sheet;
                 if (sheetNo == 0) {
                     sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
                 } else {
                     sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "-" + sheetNo);
                 }
+                // TODO 这里可以不用subList(相对慢),等待优化
                 excelWriter.write(dataList.subList(position, next), sheet);
                 position = next;
                 sheetNo++;
@@ -150,8 +164,9 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
 
     public ServerResponse<String> detailResultExport(ExcelWriter excelWriter, FastInFastOutDetailRequest request) {
 
-        // 详情数据没有多少,一个sheet页足够
-        request.getPageRequest().setPageSize(exportThresholdConfig.getPerSheetRowCount());
+        // 详情数据没有多少(不会超过 exportThresholdConfig.getPerSheetRowCount() ),一个sheet页足够
+        com.zqykj.common.vo.PageRequest pageRequest = com.zqykj.common.vo.PageRequest.of(0, exportThresholdConfig.getPerSheetRowCount());
+        request.setPageRequest(pageRequest);
         ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> response = detailResult(request);
         if (!response.isSuccess()) {
             return ServerResponse.createByErrorMessage("导出失败,系统内部错误!");
@@ -181,10 +196,6 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         return fastInFastOutViaChosenIndividual(request);
     }
 
-    public static void main(String[] args) {
-
-    }
-
     /**
      * <h2> 选择个体查询 </h2>
      */
@@ -193,6 +204,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         String property = request.getSortRequest().getProperty();
         Direction order = request.getSortRequest().getOrder();
+        // 这里是每种结果的返回数量
         int limit = pageRequest.getPage() == 0 ? pageRequest.getPageSize() : (pageRequest.getPage() + 1) * pageRequest.getPageSize();
         int skip = pageRequest.getPage() * pageRequest.getPageSize();
         int size = pageRequest.getPageSize();
@@ -354,7 +366,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         Map<String, Integer> requireQueryInOutCards = new HashMap<>();
         List<BankTransactionRecord> orderRecords = new ArrayList<>();
         for (BankTransactionRecord record : sortRecords) {
-            if (computeTotal >= resultThreshold) {
+            if (computeTotal >= unsortedThreshold) {
                 break;
             }
             Integer inOutTimes = oppositeCardInOutTimes.get(record.getTransactionOppositeCard());
@@ -429,7 +441,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
                                                             Map<String, Integer> queryCardInOutTimes, List<BankTransactionRecord> orderRecords) {
         int computeTotal = 0;
         for (BankTransactionRecord record : sortRecords) {
-            if (computeTotal >= resultThreshold) {
+            if (computeTotal >= unsortedThreshold) {
                 break;
             }
             Integer inOutTimes = queryCardInOutTimes.get(record.getQueryCard());
@@ -830,6 +842,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         source.setHashId(HashUtil.fnvHash(FastInFastOutResult.hashString(source)));
         // 设置特征比
         source.setCharacteristicRatio(computeFeatureRatio);
+        // 设置用于导出的特征比(需要加上%)
+        source.setExportCharacteristicRatio(computeFeatureRatio + "%");
         return source;
     }
 
@@ -874,6 +888,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         transit.setHashId(HashUtil.fnvHash(FastInFastOutResult.hashString(transit)));
         // 设置特征比
         transit.setCharacteristicRatio(computeFeatureRatio);
+        // 设置用于导出的特征比(需要加上%)
+        transit.setExportCharacteristicRatio(computeFeatureRatio + "%");
         return transit;
     }
 
@@ -916,6 +932,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         deposit.setHashId(HashUtil.fnvHash(FastInFastOutResult.hashString(deposit)));
         // 设置特征比
         deposit.setCharacteristicRatio(computeFeatureRatio);
+        // 设置用于导出的特征比(需要加上%)
+        deposit.setExportCharacteristicRatio(computeFeatureRatio + "%");
         return deposit;
     }
 

@@ -37,6 +37,9 @@ public class FundTacticsThresholdConfigProperties {
     // 每次聚合查询数量(普通批量查询)
     private int perAggCount = 5000;
 
+    // 分页查询上限
+    private int paginationThreshold = 1000;
+
     // 导出配置
     @Setter
     @Getter

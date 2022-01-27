@@ -146,7 +146,6 @@ public abstract class FundTacticsCommonImpl {
     }
 
     protected ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> detail(FundTacticsPartGeneralRequest request, int from, int size, String... fuzzyFields) {
-        com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         SortRequest sortRequest = request.getSortRequest();
         QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request.getCaseId(), request.getQueryCard(), request.getOppositeCard(), request.getKeyword(), fuzzyFields);
         // 设置需要查询的字段
@@ -161,7 +160,7 @@ public abstract class FundTacticsCommonImpl {
             return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<TradeAnalysisDetailResult> detailResults = getTradeAnalysisDetailResults(page);
-        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(detailResults, page.getTotalElements(), pageRequest.getPageSize()));
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(detailResults, page.getTotalElements(), size));
     }
 
     protected long detailTotal(FundTacticsPartGeneralRequest request) {
@@ -215,38 +214,12 @@ public abstract class FundTacticsCommonImpl {
         if (total == 0) {
             excelWriter.write(new ArrayList<>(), EasyExcelUtils.generateWriteSheet(request.getExportFileName()));
         }
-        // 判断处理sheet 页的个数
-        if (total < exportThresholdConfig.getPerSheetRowCount()) {
-            // 单个sheet页即可
-            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
-            writeSheetData(0, total, request, excelWriter, sheet);
-        } else {
-            // 多个sheet页处理
-            Integer sheetNo = 0;
-            int limit = total;
-            if (total > exportThresholdConfig.getExcelExportThreshold()) {
-                limit = exportThresholdConfig.getExcelExportThreshold();
-            }
-            int position = 0;
-            int perSheetRowCount = exportThresholdConfig.getPerSheetRowCount();
-            // 这里就没必要在多线程了(一个sheet页假设50W,内部分批次查询,每次查询1W,就要查詢50次,若这里再开多线程分批次,ThreadPoolConfig.getExecutor()
-            // 的最大线程就这么多,剩下的只能在队列中等待)
-            while (position < limit) {
-                int next = Math.min(position + perSheetRowCount, limit);
-                WriteSheet sheet;
-                if (sheetNo == 0) {
-                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
-                } else {
-                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "_" + sheetNo);
-                }
-                writeSheetData(position, next, request, excelWriter, sheet);
-                position = next;
-                sheetNo++;
-            }
-        }
+        // 单个sheet页即可
+        WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+        writeSheetData(total, request, excelWriter, sheet);
     }
 
-    private void writeSheetData(int position, int limit, FundTacticsPartGeneralRequest request, ExcelWriter writer, WriteSheet sheet) throws ExecutionException, InterruptedException {
+    private void writeSheetData(int limit, FundTacticsPartGeneralRequest request, ExcelWriter writer, WriteSheet sheet) throws ExecutionException, InterruptedException {
 
         if (limit == 0) {
             return;
@@ -254,14 +227,17 @@ public abstract class FundTacticsCommonImpl {
         int chunkSize = exportThresholdConfig.getPerWriteRowCount();
         List<Future<List<TradeAnalysisDetailResult>>> futures = new ArrayList<>();
         String[] detailFuzzyFields = FundTacticsFuzzyQueryField.detailFuzzyFields;
+        int page = 0;
+        int position = 0;
         while (position < limit) {
             int next = Math.min(position + chunkSize, limit);
-            int finalPosition = position;
+            int finalPage = page;
             CompletableFuture<List<TradeAnalysisDetailResult>> future =
-                    CompletableFuture.supplyAsync(() -> detail(request, finalPosition, next - finalPosition, detailFuzzyFields).getData().getContent(),
+                    CompletableFuture.supplyAsync(() -> detail(request, finalPage, chunkSize, detailFuzzyFields).getData().getContent(),
                             ThreadPoolConfig.getExecutor());
             position = next;
             futures.add(future);
+            page++;
         }
         for (Future<List<TradeAnalysisDetailResult>> future : futures) {
             List<TradeAnalysisDetailResult> dataList = future.get();

@@ -28,7 +28,6 @@ import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.util.BigDecimalUtil;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.zqykj.common.vo.TimeTypeRequest;
@@ -101,8 +100,9 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     }
 
     @Override
-    public TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundDateRequest request) {
+    public TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(FundDateRequest request) {
 
+        String caseId = request.getCaseId();
         // 构建查询参数
         QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeAmountByTimeQuery(request, caseId);
 
@@ -161,32 +161,24 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     public ServerResponse<FundAnalysisResultResponse<TradeStatisticalAnalysisResult>> tradeStatisticsAnalysisResult(TradeStatisticalAnalysisQueryRequest request, int from, int size,
                                                                                                                     boolean isComputeTotal) throws Exception {
 
-        FundAnalysisResultResponse<TradeStatisticalAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
         Map<String, Object> map;
         if (!CollectionUtils.isEmpty(request.getCardNums())) {
 
             request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
             map = statisticsAnalysisResultViaChosenMainCards(request, from, size, request.getCaseId(), isComputeTotal);
         } else {
-            // TODO  全部查询,暂定只支持查询到100页,过大不仅消耗内存 且查询速度过慢
             // 全部条件
-            if (request.getPageRequest().getPage() > 100) {
-                return ServerResponse.createBySuccess("分页上限为100页", FundAnalysisResultResponse.empty());
+            if (request.getPageRequest().getPage() > fundThresholdConfig.getPaginationThreshold()) {
+                return ServerResponse.createBySuccess("分页上限为 " + fundThresholdConfig.getPaginationThreshold() + "页", FundAnalysisResultResponse.empty());
             }
-            map = statisticsAnalysisResultViaAllMainCards(request, from, size);
+            map = statisticsAnalysisResultViaAllMainCards(request, from, size, isComputeTotal);
+        }
+        if (CollectionUtils.isEmpty(map)) {
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<TradeStatisticalAnalysisResult> results = (List<TradeStatisticalAnalysisResult>) map.get("result");
-        long total = (long) map.get("total");
-        Integer pageSize = request.getPageRequest().getPageSize();
-        // 结果集
-        resultResponse.setContent(results);
-        // 每页显示条数
-        resultResponse.setSize(pageSize);
-        // 总数据量
-        resultResponse.setTotal(total);
-        // 总页数
-        resultResponse.setTotalPages(PageRequest.getTotalPages(total, pageSize));
-        return ServerResponse.createBySuccess(resultResponse);
+        long total = Long.parseLong(String.valueOf(map.get("total")));
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(results, total, size));
     }
 
     public ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request) {
@@ -198,9 +190,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     public ServerResponse<String> detailExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception {
 
         int total = Integer.parseInt(String.valueOf(detailTotal(request)));
-        if (StringUtils.isBlank(request.getExportFileName())) {
-            request.setExportFileName("交易统计分析");
-        }
+        // 详情数据不会有多少,直接一个sheet页解决
         writeSheet(excelWriter, total, request);
         return ServerResponse.createBySuccess();
     }
@@ -294,19 +284,21 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
 
         AggregationParams totalAgg = total(request);
         String caseId = request.getCaseId();
-        Map<String, List<List<Object>>> resultMap;
+        // 查询总量
+        // 如果是全部查询,需要以全部调单卡号作为 查询卡号条件去查询
         if (CollectionUtils.isEmpty(request.getCardNums())) {
-            // 全部查询总量
-            QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
-            resultMap = entranceRepository.compoundQueryAndAgg(query, totalAgg, BankTransactionRecord.class, caseId);
-        } else {
-            QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
-            resultMap = entranceRepository.compoundQueryAndAgg(query, totalAgg, BankTransactionFlow.class, caseId);
+            QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+            if (!CollectionUtils.isEmpty(adjustCards)) {
+                request.setCardNums(adjustCards);
+            }
         }
-        if (CollectionUtils.isEmpty(resultMap) || CollectionUtils.isEmpty(resultMap.get(CARDINALITY_TOTAL))) {
-            return 0L;
+        QuerySpecialParams totalQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+        Map<String, List<List<Object>>> totalMap = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionFlow.class, caseId);
+        if (CollectionUtils.isEmpty(totalMap) || CollectionUtils.isEmpty(totalMap.get(CARDINALITY_TOTAL))) {
+            return 0;
         }
-        return (long) resultMap.get(CARDINALITY_TOTAL).get(0).get(0);
+        return (long) totalMap.get(CARDINALITY_TOTAL).get(0).get(0);
     }
 
     /**
@@ -372,7 +364,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
             if (CollectionUtils.isEmpty(total)) {
                 resultMap.put("total", 0);
             } else {
-                resultMap.put("total", total.get(0).get(0));
+                resultMap.put("total", Integer.parseInt(String.valueOf(total.get(0).get(0))));
             }
         }
         resultMap.put("result", tradeStatisticalAnalysisResults);
@@ -399,23 +391,22 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
      * 分析的结果: 其中交易卡号出现的必须是调单的(无论它原来是在本方还是对方)
      */
     @SuppressWarnings("all")
-    protected Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, int from, int pageSize) throws Exception {
+    protected Map<String, Object> statisticsAnalysisResultViaAllMainCards(TradeStatisticalAnalysisQueryRequest request, int from, int limit, boolean isComputeTotal) throws Exception {
 
         // 前台分页
         String caseId = request.getCaseId();
         Map<String, Object> resultMap = new HashMap<>();
-        double startAmount = Double.parseDouble(request.getFund());
         QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
         // 检查调单卡号数量是否超过了限制,没有的话查询最大调单卡号数量作为条件
-        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
-            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), startAmount, operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
+        if (checkAdjustCardCountBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()))) {
+            List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (CollectionUtils.isEmpty(adjustCards)) {
                 resultMap.put("total", 0);
                 resultMap.put("result", new ArrayList<>());
                 return resultMap;
             }
             request.setCardNums(adjustCards);
-            return statisticsAnalysisResultViaChosenMainCards(request, from, pageSize, request.getCaseId(), true);
+            return statisticsAnalysisResultViaChosenMainCards(request, from, limit, request.getCaseId(), isComputeTotal);
         }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
@@ -423,6 +414,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         // 构建 交易统计分析查询请求
         QuerySpecialParams statisticsQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
         Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(statisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
+        // 这里计算的总量其实不是正确的、但是后面拿出的分页数据是正确的
         long total = 0;
         if (!CollectionUtils.isEmpty(totalResults)) {
             List<List<Object>> list = totalResults.get(CARDINALITY_TOTAL);
@@ -434,36 +426,32 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
             resultMap.put("result", new ArrayList<>());
             return resultMap;
         }
-        // 因为es 计算的去重总量是一个近似值,因此可能总量会少(这里需要调整一下)
-        long computeTotal = total + total / 100;
         // 设置分组数量
         request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
         // 异步任务查询起始位置
         int position = 0;
         // 异步任务查询总量
-        int size = Integer.parseInt(String.valueOf(computeTotal));
+        int size = Integer.parseInt(String.valueOf(total));
         // 异步任务查询批处理阈值
         int chunkSize = fundThresholdConfig.getPerTotalSplitCount();
         ThreadPoolTaskExecutor executor = ThreadPoolConfig.getExecutor();
         // 需要返回的数量
-        int skip = from;
-        int limit = pageSize;
         List<String> queryCards = new ArrayList<>();
         StopWatch stopWatch = StopWatch.createStarted();
         while (position < size) {
             int next = Math.min(position + chunkSize, size);
             Future<List<String>> future = executor.submit(new StatisticalFutureTask(position,
-                    next, skip, limit, caseId, request));
+                    next, from, limit, caseId, request));
             List<String> results = future.get();
             if (!CollectionUtils.isEmpty(results)) {
                 queryCards.addAll(results);
             }
-            if (queryCards.size() == pageSize) {
+            if (queryCards.size() == limit) {
                 break;
             } else {
                 if (queryCards.size() > 0) {
-                    skip = 0;
-                    limit = pageSize - queryCards.size();
+                    from = 0;
+                    limit = limit - queryCards.size();
                 }
                 position = next;
             }

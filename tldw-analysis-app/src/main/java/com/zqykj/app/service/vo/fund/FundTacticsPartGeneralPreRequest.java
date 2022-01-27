@@ -42,7 +42,7 @@ public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequ
     /**
      * 交易金额
      */
-    private String fund = "0";
+    private double fund = 0;
 
     public static QueryOperator getOperator(AmountOperationSymbol operator) {
 

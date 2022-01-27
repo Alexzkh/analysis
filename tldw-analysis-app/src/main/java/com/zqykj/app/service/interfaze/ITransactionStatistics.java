@@ -28,7 +28,7 @@ public interface ITransactionStatistics {
     /**
      * <h2> 获取按时间类型汇总金额的折线图结果 </h2>
      */
-    TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(String caseId, FundDateRequest request);
+    TradeStatisticalAnalysisFundSumByDate getSummaryOfTradeAmountGroupedByTime(FundDateRequest request);
 
     /**
      * <h2> 获取交易统计分析结果 </h2>

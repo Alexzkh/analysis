@@ -35,12 +35,12 @@ public class ExcelExport {
     public static void setResponse(HttpServletResponse response, String fileName, String enc) {
 
         // 这里注意 有同学反应使用swagger 会导致各种问题，请直接用浏览器或者用postman
-        response.setContentType("application/vnd.ms-excel");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding(enc);
         // 这里URLEncoder.encode可以防止中文乱码 当然和easyexcel没有关系
         try {
             String name = URLEncoder.encode(fileName, enc).replaceAll("\\+", "%20");
-            response.setHeader("Content-disposition", "attachment;filename=" + name + ".xlsx");
+            response.setHeader("Content-disposition", "attachment;filename*=" + enc + "''" + name + ".xlsx");
         } catch (UnsupportedEncodingException ex) {
             ex.printStackTrace();
             log.error("This encoding is not supported!");
