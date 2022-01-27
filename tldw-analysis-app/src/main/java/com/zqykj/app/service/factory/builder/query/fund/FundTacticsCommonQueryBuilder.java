@@ -11,6 +11,7 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -23,7 +24,9 @@ public abstract class FundTacticsCommonQueryBuilder {
 
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
+        if (!CollectionUtils.isEmpty(cards)) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));
+        }
         return filter;
     }
 }

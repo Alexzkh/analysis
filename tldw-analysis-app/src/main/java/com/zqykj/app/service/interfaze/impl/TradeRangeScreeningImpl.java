@@ -161,19 +161,21 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         Double minAmount = tradeRangeOperationRecord.getMinAmount();
         Double maxAmount = tradeRangeOperationRecord.getMaxAmount();
         int dateType = tradeRangeOperationRecord.getDataCategory();
-        List<String> adjustCards;
-        if (tradeRangeOperationRecord.getIndividualBankCardsNumber() == -1) {
-            // 查询最大调单卡号
-            // TODO 不可能全部查询出来作为参数,当然你可以去 表 BankTransactionRecord 查询,然后查询的记录, 去看它的查询卡号 在 表 BankTransactionFlow 的查询卡号中是否存在
-            adjustCards = queryMaxAdjustCards(request.getCaseId(), minAmount, QueryOperator.gte, maxAmount, QueryOperator.lte, null);
-        } else {
-            // 查询卡号的进账、出账记录
-            adjustCards = tradeRangeOperationRecord.getAdjustCards();
+        List<String> adjustCards = null;
+        if (CollectionUtils.isEmpty(request.getExportIds())) {
+            if (tradeRangeOperationRecord.getIndividualBankCardsNumber() == -1) {
+                // 查询最大调单卡号
+                // TODO 不可能全部查询出来作为参数,当然你可以去 表 BankTransactionRecord 查询,然后查询的记录, 去看它的查询卡号 在 表 BankTransactionFlow 的查询卡号中是否存在
+                adjustCards = queryMaxAdjustCards(request.getCaseId(), minAmount, QueryOperator.gte, maxAmount, QueryOperator.lte, null);
+            } else {
+                // 查询卡号的进账、出账记录
+                adjustCards = tradeRangeOperationRecord.getAdjustCards();
+            }
+            if (CollectionUtils.isEmpty(adjustCards)) {
+                return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
+            }
         }
-        if (CollectionUtils.isEmpty(adjustCards)) {
-            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
-        }
-        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), request.getExportIds(), adjustCards, minAmount, maxAmount, dateType);
         // 设置queryFields
         if (from == 0 && size == 0) {
             query.setIncludeFields(new String[0]);
@@ -204,7 +206,6 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         export(excelWriter, total, request);
         return ServerResponse.createBySuccess();
     }
-
 
 
     private void export(ExcelWriter excelWriter, int total, FundTacticsPartGeneralRequest request) throws Exception {
@@ -300,7 +301,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         Double minAmount = page.getContent().get(0).getMinAmount();
         Double maxAmount = page.getContent().get(0).getMaxAmount();
         int dateType = page.getContent().get(0).getDataCategory();
-        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), adjustCards, minAmount, maxAmount, dateType);
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), null, adjustCards, minAmount, maxAmount, dateType);
         // 设置queryFields
         query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK});
         AggregationParams agg = tradeRangeScreeningAggParamFactory.individualBankCardsStatisticalAgg(offset, pageRequest.getPageSize(), sortRequest.getProperty(),

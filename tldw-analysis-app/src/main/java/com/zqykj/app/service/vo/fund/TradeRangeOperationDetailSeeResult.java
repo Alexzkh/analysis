@@ -21,6 +21,11 @@ import java.math.BigDecimal;
 public class TradeRangeOperationDetailSeeResult {
 
     /**
+     * 交易流水id
+     */
+    private String id;
+
+    /**
      * 交易卡号
      */
     @ExcelProperty("卡号")

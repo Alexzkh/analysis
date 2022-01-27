@@ -243,7 +243,7 @@ public interface FundTacticsAnalysisField {
 
     // 交易区间筛选操作记录查询字段(针对表 )
     static String[] tradeRangeOperationDetailQueryFields() {
-        return new String[]{QUERY_CARD, CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME,
+        return new String[]{_ID, QUERY_CARD, CUSTOMER_NAME, CUSTOMER_IDENTITY_CARD, BANK, TRANSACTION_OPPOSITE_CARD, TRANSACTION_OPPOSITE_NAME,
                 OPPOSITE_BANK, TRADING_TIME, CHANGE_MONEY, LOAN_FLAG, TRANSACTION_TYPE, TRANSACTION_SUMMARY};
     }
 
