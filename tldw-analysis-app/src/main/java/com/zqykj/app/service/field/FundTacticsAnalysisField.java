@@ -124,6 +124,11 @@ public interface FundTacticsAnalysisField {
     String PROVINCE_FIELD = "province.province_wildcard";
 
     /**
+     * 聚合字段名称连接符
+     */
+    String AGG_NAME_SPLIT = "_";
+
+    /**
      * 城市对应字段
      */
     String CITY_FIELD = "city.city_wildcard";
@@ -202,6 +207,11 @@ public interface FundTacticsAnalysisField {
 
     // es 数据唯一标识id
     String _ID = "_id";
+
+    /**
+     * 脚本查询前缀
+     */
+    String SCRIPT_PREFIX = "doc['trading_time'].value";
 
 
     /**

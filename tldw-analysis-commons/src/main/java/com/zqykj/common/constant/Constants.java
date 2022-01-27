@@ -109,6 +109,11 @@ public class Constants {
         String Path_API = "/graph/%s/allpaths";
 
         /**
+         * 获取回路 -->/graph/%s/cycleDetect gid:图id
+         */
+        String CYCLE_DETECT = "/graph/%s/cycleDetect";
+
+        /**
          * 图接口返回的路径数据中对应的总表的数据的主键id的key名称
          */
         String DATA_ROWS_ID = "__DATAROWID";

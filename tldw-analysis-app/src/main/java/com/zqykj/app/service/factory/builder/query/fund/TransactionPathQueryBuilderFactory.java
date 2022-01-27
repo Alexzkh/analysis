@@ -5,7 +5,7 @@ import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
-import com.zqykj.common.request.TransactionPathDetailRequest;
+import com.zqykj.common.request.GraphQueryDetailRequest;
 import com.zqykj.common.request.TransactionPathRequest;
 import com.zqykj.parameters.query.*;
 import org.apache.commons.lang3.StringUtils;
@@ -55,7 +55,7 @@ public class TransactionPathQueryBuilderFactory implements ITransactionPathQuery
     public <T, V> QuerySpecialParams accessTransactionPathDetailRequest(T t, V param) {
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        TransactionPathDetailRequest request = (TransactionPathDetailRequest) t;
+        GraphQueryDetailRequest request = (GraphQueryDetailRequest) t;
         String caseId = param.toString();
         CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
         combinationQueryParams.setType(ConditionType.must);
