@@ -145,7 +145,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         // 构建聚合名称到实体属性之间的映射
         Map<String, String> aggNameEntityMapping = new LinkedHashMap<>();
         entityMappingFactory.buildTradeAnalysisResultAggMapping(aggNameKeyMapping, aggNameEntityMapping, AdjustIndividualAnalysisResult.class);
-
+        agg.setMapping(aggNameKeyMapping);
         // 设置此聚合代表性功能名称
         agg.setResultName("selectIndividuals");
 
@@ -161,21 +161,11 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         });
         // 获取总量
         List<List<Object>> totalResults = resultMap.get(totalAgg.getResultName());
-        long total;
         if (CollectionUtils.isEmpty(totalResults)) {
             return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
-        total = (long) totalResults.get(0).get(0);
-        FundAnalysisResultResponse<AdjustIndividualAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
-        // 结果集
-        resultResponse.setContent(adjustIndividualResults);
-        // 每页显示条数
-        resultResponse.setSize(request.getPageRequest().getPageSize());
-        // 总数据量
-        resultResponse.setTotal(total);
-        // 总页数
-        resultResponse.setTotalPages(PageRequest.getTotalPages(total, request.getPageRequest().getPageSize()));
-        return ServerResponse.createBySuccess(resultResponse);
+        long total = (long) totalResults.get(0).get(0);
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(adjustIndividualResults, total, request.getPageRequest().getPageSize()));
     }
 
     public ServerResponse getAdjustCardsViaIndividual(AdjustIndividualRequest request) {

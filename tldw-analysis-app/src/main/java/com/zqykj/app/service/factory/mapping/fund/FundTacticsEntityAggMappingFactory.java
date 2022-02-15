@@ -93,7 +93,7 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
             Agg agg = field.getAnnotation(Agg.class);
 
             if (null == key) {
-                break;
+                continue;
             }
             if (null != agg) {
                 aggKeyMapping.put(agg.name(), key.name());

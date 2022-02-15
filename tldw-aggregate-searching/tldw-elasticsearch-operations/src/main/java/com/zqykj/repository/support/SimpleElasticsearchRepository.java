@@ -390,6 +390,9 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             if (operations.shouldCreateIndexAndMapping(entityClass) && !indexOperations.exists(entityClass)) {
                 indexOperations.create(entityClass);
                 indexOperations.putMapping(entityClass);
+            } else {
+                // 如果索引已经存在,需要增量更新索引(针对新增的索引字段)
+                indexOperations.putMapping(entityClass);
             }
         } catch (Exception exception) {
             exception.printStackTrace();

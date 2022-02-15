@@ -6,7 +6,6 @@ package com.zqykj.app.service.vo.fund;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.parameters.query.QueryOperator;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.List;
  */
 @Setter
 @Getter
-@NoArgsConstructor
 public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequest {
 
     /**

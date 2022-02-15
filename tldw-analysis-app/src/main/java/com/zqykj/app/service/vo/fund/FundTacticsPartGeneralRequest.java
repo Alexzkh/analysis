@@ -9,7 +9,6 @@ import com.zqykj.common.vo.SortRequest;
 import com.zqykj.infrastructure.util.StringUtils;
 import com.zqykj.parameters.query.DateRange;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -19,7 +18,6 @@ import java.util.List;
  */
 @Setter
 @Getter
-@NoArgsConstructor
 public class FundTacticsPartGeneralRequest {
 
     /**
@@ -99,8 +97,13 @@ public class FundTacticsPartGeneralRequest {
         if (StringUtils.isBlank(dateRangeRequest.getStart()) || StringUtils.isBlank(dateRangeRequest.getEnd())) {
             return null;
         }
-        String start = dateRangeRequest.getStart() + dateRangeRequest.getTimeStart();
-        String end = dateRangeRequest.getEnd() + dateRangeRequest.getTimeEnd();
-        return new DateRange(start, end);
+        DateRange dateRange = new DateRange();
+        if (StringUtils.isNotBlank(dateRangeRequest.getStart())) {
+            dateRange.setFrom(dateRangeRequest.getStart() + dateRangeRequest.getTimeStart());
+        }
+        if (StringUtils.isNotBlank(dateRangeRequest.getEnd())) {
+            dateRange.setTo(dateRangeRequest.getEnd() + dateRangeRequest.getTimeEnd());
+        }
+        return dateRange;
     }
 }

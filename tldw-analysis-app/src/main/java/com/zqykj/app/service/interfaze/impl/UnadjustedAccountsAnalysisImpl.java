@@ -94,12 +94,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
                     return ServerResponse.createByErrorMessage("get unadjusted analysis result total error!");
                 }
                 if (!CollectionUtils.isEmpty(analysisResult)) {
-                    FundAnalysisResultResponse<UnadjustedAccountAnalysisResult> resultResponse = new FundAnalysisResultResponse<>();
-                    resultResponse.setTotal(total);
-                    resultResponse.setSize(request.getPageRequest().getPageSize());
-                    resultResponse.setTotalPages(PageRequest.getTotalPages(total, request.getPageRequest().getPageSize()));
-                    resultResponse.setContent(analysisResult);
-                    return ServerResponse.createBySuccess(resultResponse);
+                    return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(analysisResult, total, request.getPageRequest().getPageSize()));
                 }
             }
         } else {
