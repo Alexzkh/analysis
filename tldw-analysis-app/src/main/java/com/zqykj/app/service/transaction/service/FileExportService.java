@@ -7,7 +7,7 @@ import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.request.PeopleAreaRequest;
 import com.zqykj.common.response.AggregationResult;
 import com.zqykj.common.response.AssetTrendsResponse;
-import com.zqykj.common.response.PeopleAreaReponse;
+import com.zqykj.common.response.PeopleAreaResponse;
 import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.infrastructure.task.Task;
 import com.zqykj.infrastructure.task.TaskManagerService;
@@ -142,13 +142,13 @@ public class FileExportService {
     public ServerResponse<String> getSingleSheetExcelFileExportTaskByAreaAnalyzeDesc(PeopleAreaRequest peopleAreaRequest, String caseId,
                                                                                       String downLoadType) throws Exception {
         ServerResponse<String> response = new ServerResponse<>();
-        List<PeopleAreaReponse> peopleAreaDetailInfos = iPeopleAreaStatistics.accessPeopleAreaStatisticsData(peopleAreaRequest, caseId);
+        List<PeopleAreaResponse> peopleAreaDetailInfos = iPeopleAreaStatistics.accessPeopleAreaStatisticsData(peopleAreaRequest, caseId);
 
 
-        SingleSheetExcelFileExportTask task = new SingleSheetExcelFileExportTask<PeopleAreaReponse>(ExcelFileNameUtil.getExcelFileName("人员地域分析"), "人员地域分析",
+        SingleSheetExcelFileExportTask task = new SingleSheetExcelFileExportTask<PeopleAreaResponse>(ExcelFileNameUtil.getExcelFileName("人员地域分析"), "人员地域分析",
                 peopleAreaDetailInfos) {
             @Override
-            protected String[] data2Array(PeopleAreaReponse data) {
+            protected String[] data2Array(PeopleAreaResponse data) {
                 String[] result = new String[2];
                 if (null != data) {
                     result[0] = data.getRegion();
