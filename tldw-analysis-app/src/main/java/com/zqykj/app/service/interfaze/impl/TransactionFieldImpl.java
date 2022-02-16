@@ -50,11 +50,13 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
 
         Future<List<TransactionFieldTypeProportionResults>> future = CompletableFuture.supplyAsync(() ->
                 tradeFieldTypeProportionQuery(request), ThreadPoolConfig.getExecutor());
-        List<TransactionFieldTypeProportionResults> results = batchCustomCollationQuery(request);
-        List<TransactionFieldTypeProportionResults> customCollationResult = future.get();
-        results.addAll(customCollationResult);
+        List<TransactionFieldTypeProportionResults> customCollationQueryResult = batchCustomCollationQuery(request);
+        List<TransactionFieldTypeProportionResults> fieldTypeProportionQueryResult = future.get();
+        if (!CollectionUtils.isEmpty(customCollationQueryResult)) {
+            fieldTypeProportionQueryResult.addAll(customCollationQueryResult);
+        }
         // 合并排序(将自定义归类查询结果 与 主要查询结果合并,重新排序)
-        List<TransactionFieldTypeProportionResults> mergeSortResult = TransactionFieldTypeProportionResults.mergeSort(request, results);
+        List<TransactionFieldTypeProportionResults> mergeSortResult = TransactionFieldTypeProportionResults.mergeSort(request, fieldTypeProportionQueryResult);
         return ServerResponse.createBySuccess(mergeSortResult);
     }
 
@@ -103,11 +105,15 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
             futures.add(future);
         }
         List<TransactionFieldTypeProportionResults> results = new ArrayList<>();
+        int i = 0;
         for (Future<List<TransactionFieldTypeProportionResults>> future : futures) {
             List<TransactionFieldTypeProportionResults> transactionFieldTypeProportionResults = future.get();
             if (!CollectionUtils.isEmpty(transactionFieldTypeProportionResults)) {
-                results.addAll(transactionFieldTypeProportionResults);
+                TransactionFieldTypeProportionResults proportionResult = transactionFieldTypeProportionResults.get(i);
+                proportionResult.setFieldGroupContent(customCollationQueryRequests.get(i).getClassificationName());
+                results.add(proportionResult);
             }
+            i++;
         }
         return results;
     }
@@ -124,16 +130,23 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
      */
     public List<TransactionFieldTypeProportionResults> tradeFieldTypeProportionCustomCollationQuery(TransactionFieldAnalysisRequest request, List<String> containFieldContent) {
         QuerySpecialParams query;
+        AggregationParams agg;
+        PageRequest pageRequest = request.getPageRequest();
         if (!CollectionUtils.isEmpty(containFieldContent)) {
             query = queryParamFactory.transactionFieldCustomCollationQuery(request, containFieldContent);
+            agg = transactionFieldAggParamFactory.fieldTypeProportionCustomCollationQuery(request, fundThresholdConfig.getGroupByThreshold());
         } else {
             query = queryParamFactory.transactionFieldType(request);
+            agg = transactionFieldAggParamFactory.transactionFieldTypeProportion(request, 0, pageRequest.getPageSize(), fundThresholdConfig.getGroupByThreshold());
         }
-        PageRequest pageRequest = request.getPageRequest();
-        AggregationParams agg = transactionFieldAggParamFactory.transactionFieldTypeProportion(request, 0, pageRequest.getPageSize(), fundThresholdConfig.getGroupByThreshold());
         Map<String, String> keyMapping = new LinkedHashMap<>();
         Map<String, String> entityMapping = new LinkedHashMap<>();
         entityMappingFactory.buildTradeAnalysisResultAggMapping(keyMapping, entityMapping, TransactionFieldTypeProportionResults.class);
+        agg.setMapping(keyMapping);
+        if (!CollectionUtils.isEmpty(containFieldContent)) {
+            keyMapping.remove("field_group");
+            entityMapping.remove("fieldGroupContent");
+        }
         agg.setResultName("transactionFieldProportionResult");
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionFlow.class, request.getCaseId());
         List<List<Object>> resultList = resultMap.get(agg.getResultName());
@@ -141,7 +154,7 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
             return new ArrayList<>();
         }
         List<String> entityTitles = new ArrayList<>(entityMapping.keySet());
-        List<Map<String, Object>> maps = parseFactory.convertEntity(resultList, entityTitles, TransactionFieldAnalysisRequest.class);
+        List<Map<String, Object>> maps = parseFactory.convertEntity(resultList, entityTitles, TransactionFieldTypeProportionResults.class);
         return JacksonUtils.parse(maps, new TypeReference<List<TransactionFieldTypeProportionResults>>() {
         });
     }
@@ -149,7 +162,7 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
 
     public AggregationParams total(String statisticsField) {
 
-        AggregationParams totalAgg = AggregationParamsBuilders.cardinality("total", statisticsField);
+        AggregationParams totalAgg = AggregationParamsBuilders.cardinality("distinct_" + statisticsField, statisticsField);
         totalAgg.setResultName(CARDINALITY_TOTAL);
         totalAgg.setMapping(entityMappingFactory.buildDistinctTotalAggMapping(statisticsField));
         return totalAgg;

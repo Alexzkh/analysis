@@ -15,4 +15,9 @@ public interface TransactionFieldAggParamFactory {
      * <h2> 交易字段类型占比 </h2>
      */
     AggregationParams transactionFieldTypeProportion(TransactionFieldAnalysisRequest request, int from, int size, int groupSize);
+
+    /**
+     * <h2> 交易字段类型占比(自定义归类查询) </h2>
+     */
+    AggregationParams fieldTypeProportionCustomCollationQuery(TransactionFieldAnalysisRequest request, int groupSize);
 }

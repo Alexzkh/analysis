@@ -27,24 +27,24 @@ public class TransactionFieldTypeProportionResults {
     /**
      * 字段分组后的结果
      */
-    @Agg(name = "field_group_content")
+    @Agg(name = "field_group")
     @Key(name = "keyAsString")
     private String fieldGroupContent;
 
     /**
      * 交易总金额
      */
-    @Agg(name = "trade_total_amount")
+    @Agg(name = "sum_trade_amount")
     @Key(name = "value")
-    @Sort(name = "trade_total_amount")
+    @Sort(name = "sum_trade_amount")
     private BigDecimal tradeTotalAmount;
 
     /**
      * 交易次数
      */
-    @Agg(name = "trade_times")
+    @Agg(name = "sum_trade_times")
     @Key(name = "value")
-    @Sort(name = "trade_times")
+    @Sort(name = "sum_trade_times")
     private int tradeTimes;
 
     /**

@@ -16,6 +16,11 @@ import java.util.List;
 public class TransactionFieldAnalysisRequest extends FundTacticsPartGeneralRequest {
 
     /**
+     * 调单卡号集合
+     */
+    private List<String> cardNum;
+
+    /**
      * 统计字段
      * {@link com.zqykj.domain.bank.BankTransactionFlow 来自于他的属性字段} <br>
      */
