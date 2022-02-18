@@ -14,17 +14,12 @@ import java.util.List;
 public interface TransactionFieldQueryParamFactory {
 
     /**
-     * <h2> 交易字段类型占比查询参数构建 </h2>
+     * <h2> 交易字段类型公共查询 </h2>
      */
-    QuerySpecialParams transactionFieldType(TransactionFieldAnalysisRequest request);
+    QuerySpecialParams transactionFieldTypeQuery(TransactionFieldAnalysisRequest request);
 
     /**
-     * <h2> 交易字段自定义归类查询 </h2>
+     * <h2> 交易字段类型占比自定义归类查询 </h2>
      */
-    QuerySpecialParams transactionFieldCustomCollationQuery(TransactionFieldAnalysisRequest request, List<String> containFieldContent);
-
-    /**
-     * <h2> 交易字段类型统计查询参数构建 </h2>
-     */
-    QuerySpecialParams transactionFieldTypeStatistics(TransactionFieldAnalysisRequest request);
+    QuerySpecialParams fieldTypeCustomCollationQuery(TransactionFieldAnalysisRequest request, List<String> containFieldContent);
 }

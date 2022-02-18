@@ -19,13 +19,13 @@
 
     <dependencies>
 
-
         <!-- 通用模块 -->
         <dependency>
             <groupId>com.zqykj</groupId>
             <artifactId>tldw-aggregate-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+
     </dependencies>
 
     <distributionManagement>

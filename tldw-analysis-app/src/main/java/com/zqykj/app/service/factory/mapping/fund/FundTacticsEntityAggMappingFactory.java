@@ -8,12 +8,11 @@ import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.util.ReflectionUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FundTacticsEntityAggMappingFactory implements AggregationEntityMappingFactory {
@@ -66,10 +65,23 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
     @Override
     public void buildTradeAnalysisResultAggMapping(Map<String, String> mapping, Class<?> entity) {
 
+        buildTradeAnalysisResultAggMapping(mapping, entity, Collections.emptyList());
+    }
+
+    public void buildTradeAnalysisResultAggMapping(Map<String, String> mapping, Class<?> entity, List<String> includeFields) {
         List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
-
+        if (CollectionUtils.isEmpty(fields)) {
+            return;
+        }
+        Map<String, String> includeFieldsMap = null;
+        if (!CollectionUtils.isEmpty(includeFields)) {
+            includeFieldsMap = includeFields.stream().collect(Collectors.toMap(e -> e, e -> e, (e1, e2) -> e1));
+        }
         for (Field field : fields) {
-
+            // 检查映射包含的字段
+            if (!CollectionUtils.isEmpty(includeFieldsMap) && !includeFieldsMap.containsKey(field.getName())) {
+                continue;
+            }
             Key key = field.getAnnotation(Key.class);
 
             Agg agg = field.getAnnotation(Agg.class);
@@ -84,10 +96,23 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
     @Override
     public void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> entity) {
 
+        buildTradeAnalysisResultAggMapping(aggKeyMapping, entityAggKeyMapping, entity, Collections.emptyList());
+    }
+
+    public void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> entity, List<String> includeFields) {
         List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
-
+        if (CollectionUtils.isEmpty(fields)) {
+            return;
+        }
+        Map<String, String> includeFieldsMap = null;
+        if (!CollectionUtils.isEmpty(includeFields)) {
+            includeFieldsMap = includeFields.stream().collect(Collectors.toMap(e -> e, e -> e, (e1, e2) -> e1));
+        }
         for (Field field : fields) {
-
+            // 检查映射包含的字段
+            if (!CollectionUtils.isEmpty(includeFieldsMap) && !includeFieldsMap.containsKey(field.getName())) {
+                continue;
+            }
             Key key = field.getAnnotation(Key.class);
 
             Agg agg = field.getAnnotation(Agg.class);

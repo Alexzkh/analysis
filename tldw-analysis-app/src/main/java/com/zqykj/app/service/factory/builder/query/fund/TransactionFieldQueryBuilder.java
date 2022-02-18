@@ -25,32 +25,31 @@ import java.util.List;
 public class TransactionFieldQueryBuilder implements TransactionFieldQueryParamFactory {
 
 
-    public QuerySpecialParams transactionFieldType(TransactionFieldAnalysisRequest request) {
+    public QuerySpecialParams transactionFieldTypeQuery(TransactionFieldAnalysisRequest request) {
 
         QuerySpecialParams query = new QuerySpecialParams();
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         addCommonParams(filter, request);
+        // 关键字查询
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(request.getStatisticsField(), request.getKeyword()));
+        }
         query.addCombiningQueryParams(filter);
         return query;
     }
 
-    public QuerySpecialParams transactionFieldCustomCollationQuery(TransactionFieldAnalysisRequest request, List<String> containFieldContent) {
+    public QuerySpecialParams fieldTypeCustomCollationQuery(TransactionFieldAnalysisRequest request, List<String> containFieldContent) {
 
         QuerySpecialParams query = new QuerySpecialParams();
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         addCommonParams(filter, request);
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(request.getStatisticsField(), containFieldContent));
-        query.addCombiningQueryParams(filter);
-        return query;
-    }
-
-    public QuerySpecialParams transactionFieldTypeStatistics(TransactionFieldAnalysisRequest request) {
-
-        QuerySpecialParams query = new QuerySpecialParams();
-        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        addCommonParams(filter, request);
-        if (StringUtils.isNotBlank(request.getStatisticsFieldContent())) {
-            filter.addCommonQueryParams(QueryParamsBuilders.term(request.getStatisticsField(), request.getStatisticsFieldContent()));
+        // 统计字段,指定内容查询
+        if (!CollectionUtils.isEmpty(containFieldContent)) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(request.getStatisticsField(), containFieldContent));
+        }
+        // 关键字查询
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(request.getStatisticsField(), request.getKeyword()));
         }
         query.addCombiningQueryParams(filter);
         return query;

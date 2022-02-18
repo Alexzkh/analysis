@@ -1,11 +1,11 @@
 package com.zqykj.app.service.vo.fund;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Sort;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  * @Description: 调单账号elastisearch返回的结果

@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.factory;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,10 +22,14 @@ public interface AggregationEntityMappingFactory {
      */
     void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Class<?> mappingEntity);
 
+    void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Class<?> mappingEntity, List<String> includeFields);
+
     /**
      * <h2> 构建资金交易分析 结果 聚合与实体属性映射 </h2>
      */
     void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity, List<String> includeFields);
 
     /**
      * <h2> 构建资金交易分析 结果(本方) 聚合与实体属性映射 </h2>

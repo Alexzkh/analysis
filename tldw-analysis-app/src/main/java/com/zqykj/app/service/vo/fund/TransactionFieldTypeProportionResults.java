@@ -3,6 +3,8 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Sort;
@@ -13,6 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,17 +37,17 @@ public class TransactionFieldTypeProportionResults {
     /**
      * 交易总金额
      */
-    @Agg(name = "sum_trade_amount")
+    @Agg(name = "trade_amount")
     @Key(name = "value")
-    @Sort(name = "sum_trade_amount")
+    @Sort(name = "trade_amount")
     private BigDecimal tradeTotalAmount;
 
     /**
      * 交易次数
      */
-    @Agg(name = "sum_trade_times")
+    @Agg(name = "trade_times")
     @Key(name = "value")
-    @Sort(name = "sum_trade_times")
+    @Sort(name = "trade_times")
     private int tradeTimes;
 
     /**
@@ -63,5 +66,21 @@ public class TransactionFieldTypeProportionResults {
                     .limit(pageRequest.getPageSize()).collect(Collectors.toList());
         }
         return newResults;
+    }
+
+    /**
+     * <h2> 将自定义归类查询结果转成占比结果 </h2>
+     */
+    public static List<TransactionFieldTypeProportionResults> convertProportionResults(List<TransactionFieldTypeCustomResults> customResults) {
+        List<TransactionFieldTypeProportionResults> fieldTypeProportionResults = new ArrayList<>();
+        CopyOptions copyOptions = new CopyOptions();
+        copyOptions.setIgnoreNullValue(true);
+        copyOptions.setIgnoreError(true);
+        customResults.forEach(e -> {
+            TransactionFieldTypeProportionResults results = new TransactionFieldTypeProportionResults();
+            BeanUtil.copyProperties(e, results, copyOptions);
+            fieldTypeProportionResults.add(results);
+        });
+        return fieldTypeProportionResults;
     }
 }

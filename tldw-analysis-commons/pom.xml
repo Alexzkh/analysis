@@ -16,31 +16,45 @@
 
     <name>tldw-analysis-commons</name>
     <properties>
-        <lombok.version>1.18.20</lombok.version>
-        <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
         <project.version>2.0-SNAPSHOT</project.version>
+        <hutool-crypto.version>5.7.18</hutool-crypto.version>
+        <guava.version>30.1.1-jre</guava.version>
+        <easyexcel.version>3.0.5</easyexcel.version>
+        <lombok.version>1.18.20</lombok.version>
+        <!-- Jackson从2.0开始改用新的包名fasterxml,1.x版本的包名是codehaus,新项目，建议直接用2x -->
+        <fasterxml.jackson.version>2.13.1</fasterxml.jackson.version>
+        <!-- 主要看spring-boot asm的版本,再取相应的cglib版本(主要easyExcel的asm与spring-boot-test的asm冲突) -->
+        <cglib.version>3.2.2</cglib.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
         <date.util.version>3.2.2</date.util.version>
     </properties>
 
 
     <dependencies>
 
+        <!-- 一个简单小巧的加密工具类库 -->
         <dependency>
             <groupId>cn.hutool</groupId>
-            <artifactId>hutool-core</artifactId>
-            <version>5.7.18</version>
+            <artifactId>hutool-crypto</artifactId>
+            <version>${hutool-crypto.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>easyexcel</artifactId>
-            <version>3.0.5</version>
+            <version>${easyexcel.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>cglib</groupId>
+                    <artifactId>cglib</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>30.1.1-jre</version>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>
@@ -50,20 +64,31 @@
         </dependency>
 
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-core-asl</artifactId>
-            <version>${codehaus.jackson.version}</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${fasterxml.jackson.version}</version>
         </dependency>
 
+        <!-- 跟随spring-boot版本 -->
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>${codehaus.jackson.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <!--
+        EasyExcel中 3.0.5 也有asm的依赖,spring boot test也有此asm依赖,降级EasyExcel的cglib依赖,这样EasyExcel依赖的asm自动变成低版本
+        这样cglib的版本定在3.2.2,asm版本都定在了5.0.4,与spring-boot-test中的asm版本保持了一致
+        -->
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+            <version>${cglib.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <artifactId>commons-collections4</artifactId>
+            <version>${commons-collections4.version}</version>
         </dependency>
 
         <dependency>

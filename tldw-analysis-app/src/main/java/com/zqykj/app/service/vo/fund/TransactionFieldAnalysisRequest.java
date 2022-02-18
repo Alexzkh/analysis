@@ -27,15 +27,14 @@ public class TransactionFieldAnalysisRequest extends FundTacticsPartGeneralReque
     private String statisticsField;
 
     /**
-     * 统计字段内容
-     */
-    private String statisticsFieldContent;
-
-    /**
      * 自定义归类查询请求
      */
     private List<CustomCollationQueryRequest> customCollationQueryRequests;
 
+    /**
+     * 定义是 交易字段类型占比聚合查询: 1 / 交易字段类型统计聚合查询: 2
+     */
+    private int AggQueryType = 1;
 
     /**
      * <h2> 自定义归类查询请求 </h2>
