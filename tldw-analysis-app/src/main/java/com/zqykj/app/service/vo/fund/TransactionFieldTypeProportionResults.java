@@ -68,7 +68,7 @@ public class TransactionFieldTypeProportionResults {
         // 根据多字段动态排序
         TransactionFieldTypeProportionResults result = new TransactionFieldTypeProportionResults();
         result.setTradeTotalAmount(new BigDecimal("1.00"));
-        result.setTradeTotalTimes(80);
+        result.setTradeTotalTimes(89);
         TransactionFieldTypeProportionResults result1 = new TransactionFieldTypeProportionResults();
         result1.setTradeTotalAmount(new BigDecimal("32.00"));
         result1.setTradeTotalTimes(50);
@@ -79,6 +79,6 @@ public class TransactionFieldTypeProportionResults {
         results.add(result);
         results.add(result1);
         results.add(result2);
-        CompareFieldUtil.sort(results, true, "tradeTotalAmount", "tradeTimes");
+        CompareFieldUtil.sort(results, true, "tradeTotalTimes", "tradeTotalAmount");
     }
 }
