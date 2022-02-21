@@ -100,7 +100,12 @@ public final class JacksonUtils {
 
     public static <T> T parse(Object fromValue, TypeReference<T> type) {
 
-        return objectMapper.convertValue(fromValue,type);
+        return objectMapper.convertValue(fromValue, type);
+    }
+
+    public static <T> T parse(Object fromValue, Class<T> clazz) {
+
+        return objectMapper.convertValue(fromValue, clazz);
     }
 
     /**

@@ -22,4 +22,9 @@ public interface TransactionFieldQueryParamFactory {
      * <h2> 交易字段类型占比自定义归类查询 </h2>
      */
     QuerySpecialParams fieldTypeCustomCollationQuery(TransactionFieldAnalysisRequest request, List<String> containFieldContent);
+
+    /**
+     * <h2> 交易字段类型统计详情数据查询 </h2>
+     */
+    QuerySpecialParams fieldTypeStatisticsDetailQuery(TransactionFieldAnalysisRequest request, String... detailFuzzyFields);
 }

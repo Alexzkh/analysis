@@ -27,6 +27,11 @@ public class TransactionFieldAnalysisRequest extends FundTacticsPartGeneralReque
     private String statisticsField;
 
     /**
+     * 统计字段内容(查询详情的时候需要)
+     */
+    private String statisticsFieldContent;
+
+    /**
      * 自定义归类查询请求
      */
     private List<CustomCollationQueryRequest> customCollationQueryRequests;

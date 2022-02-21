@@ -383,6 +383,7 @@ public class AggregationMappingBuilder {
                 Object subTarget = buildAggregationInstance(target, subParameter);
 
                 // 设置子聚合
+                assert subTarget != null;
                 applySubAggregation(target, aggregationClass, subTarget);
             }
         }

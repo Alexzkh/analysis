@@ -37,6 +37,10 @@ public class PageRequest {
         return page * pageSize;
     }
 
+    public int offset() {
+        return this.page * this.pageSize;
+    }
+
     public static PageRequest of(int page, int pageSize, SortRequest sortRequest) {
         PageRequest pageRequest = new PageRequest();
         pageRequest.setPage(page);

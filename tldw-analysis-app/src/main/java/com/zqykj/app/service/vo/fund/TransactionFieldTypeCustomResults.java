@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.vo.fund;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
  */
 @Setter
 @Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransactionFieldTypeCustomResults {
 
     /**

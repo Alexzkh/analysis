@@ -5,16 +5,16 @@ package com.zqykj.app.service.vo.fund;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.util.NumberUtil;
+import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Sort;
-import com.zqykj.common.vo.PageRequest;
-import com.zqykj.common.vo.SortRequest;
 import com.zqykj.util.BigDecimalUtil;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.beanutils.BeanComparator;
-import org.apache.commons.collections4.comparators.ComparatorChain;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -25,13 +25,17 @@ import java.util.List;
  */
 @Setter
 @Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
+//@JsonIgnoreProperties(value = {"sumTradeAmount", "sumTradeTotalTimes", "sumCreditsAmount", "sumCreditsTimes", "sumPayoutTimes", "sumPayoutAmount"})
+@ExcelIgnoreUnannotated
 public class TransactionFieldTypeStatisticsResult {
 
     /**
      * 字段分组后的结果
      */
-    @Agg(name = "field_group_content")
+    @Agg(name = "field_group")
     @Key(name = "keyAsString")
+    @ExcelProperty(value = "统计字段内容")
     private String fieldGroupContent;
 
     /**
@@ -40,6 +44,7 @@ public class TransactionFieldTypeStatisticsResult {
     @Agg(name = "trade_amount")
     @Key(name = "value")
     @Sort(name = "trade_amount")
+    @ExcelProperty(value = "交易总金额")
     private BigDecimal tradeTotalAmount;
 
     /**
@@ -54,12 +59,16 @@ public class TransactionFieldTypeStatisticsResult {
      */
     private BigDecimal totalAmountProportion;
 
+    @ExcelProperty(value = "总金额占比")
+    private String totalAmountProportionStr;
+
     /**
      * 交易次数
      */
     @Agg(name = "trade_times")
     @Key(name = "value")
     @Sort(name = "trade_times")
+    @ExcelProperty(value = "交易次数")
     private int tradeTotalTimes;
 
     /**
@@ -74,12 +83,16 @@ public class TransactionFieldTypeStatisticsResult {
      */
     private BigDecimal tradeTimesProportion;
 
+    @ExcelProperty(value = "交易次数占比")
+    private String tradeTimesProportionStr;
+
     /**
      * 入账金额
      */
     @Agg(name = "credits_amount")
     @Key(name = "value")
     @Sort(name = "filter_credit>credits_amount")
+    @ExcelProperty(value = "入账金额")
     private BigDecimal creditsAmount;
 
     /**
@@ -94,12 +107,16 @@ public class TransactionFieldTypeStatisticsResult {
      */
     private BigDecimal creditsAmountProportion;
 
+    @ExcelProperty(value = "入账金额占比")
+    private String creditsAmountProportionStr;
+
     /**
      * 入账次数
      */
     @Agg(name = "credits_times")
     @Key(name = "value")
     @Sort(name = "credits_times._count")
+    @ExcelProperty(value = "入账次数")
     private int creditsTimes;
 
     /**
@@ -114,12 +131,16 @@ public class TransactionFieldTypeStatisticsResult {
      */
     private BigDecimal creditTimesProportion;
 
+    @ExcelProperty(value = "入账次数占比")
+    private String creditTimesProportionStr;
+
     /**
      * 出账金额
      */
     @Agg(name = "payout_amount")
     @Key(name = "value")
     @Sort(name = "filter_payout>payout_amount")
+    @ExcelProperty(value = "出账金额")
     private BigDecimal payoutAmount;
 
     /**
@@ -134,12 +155,16 @@ public class TransactionFieldTypeStatisticsResult {
      */
     private BigDecimal payoutAmountProportion;
 
+    @ExcelProperty(value = "出账金额占比")
+    private String payoutAmountProportionStr;
+
     /**
      * 出账次数
      */
     @Agg(name = "payout_times")
     @Key(name = "value")
     @Sort(name = "payout_times._count")
+    @ExcelProperty(value = "出账次数")
     private int payoutTimes;
 
     @Agg(name = "sum_payout_times")
@@ -151,10 +176,14 @@ public class TransactionFieldTypeStatisticsResult {
      */
     private BigDecimal payoutTimesProportion;
 
+    @ExcelProperty(value = "出账次数占比")
+    private String payoutTimesProportionStr;
+
     /**
      * <h2> 计算占比数据(总金额占比、交易次数占比、入账金额占比、入账次数占比、出账金额占比、出账次数占比)  </h2>
      */
-    public static void calculateProportionData(List<TransactionFieldTypeStatisticsResult> statisticsResults, List<TransactionFieldTypeCustomResults> customResults) {
+    public static void calculateProportionData(List<TransactionFieldTypeStatisticsResult> statisticsResults,
+                                               List<TransactionFieldTypeCustomResults> customResults, boolean isExport) {
 
         BigDecimal sumTradeAmount = new BigDecimal(0);
         int sumTradeTimes = 0;
@@ -181,33 +210,34 @@ public class TransactionFieldTypeStatisticsResult {
         sumDataPart.setSumPayoutTimes(sumPayoutTimes + sumDataPart.getSumPayoutTimes());
         statisticsResults.forEach(e -> {
             // 总金额占比
-            BigDecimal sumTradeAmountProportion = BigDecimalUtil.mul(BigDecimalUtil.divReserveFour(e.getTradeTotalAmount(), sumDataPart.getSumTradeAmount()), 100);
+            BigDecimal sumTradeAmountProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getTradeTotalAmount(), sumDataPart.getSumTradeAmount(), 4), 100);
             e.setTotalAmountProportion(sumTradeAmountProportion);
             // 交易次数占比
-            BigDecimal tradeTimesProportion = BigDecimalUtil.mul(BigDecimalUtil.divReserveFour(e.getTradeTotalTimes(), sumDataPart.getSumTradeTotalTimes()), 100);
+            BigDecimal tradeTimesProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getTradeTotalTimes(), sumDataPart.getSumTradeTotalTimes(), 4), 100);
             e.setTradeTimesProportion(tradeTimesProportion);
             // 入账金额占比
-            BigDecimal creditsAmountProportion = BigDecimalUtil.mul(BigDecimalUtil.divReserveFour(e.getCreditsAmount(), sumDataPart.getSumCreditsAmount()), 100);
+            BigDecimal creditsAmountProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getCreditsAmount(), sumDataPart.getSumCreditsAmount(), 4), 100);
             e.setCreditsAmountProportion(creditsAmountProportion);
             // 入账次数占比
-            BigDecimal creditsTimesProportion = BigDecimalUtil.mul(BigDecimalUtil.divReserveFour(e.getCreditsTimes(), sumDataPart.getSumCreditsTimes()), 100);
+            BigDecimal creditsTimesProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getCreditsTimes(), sumDataPart.getSumCreditsTimes(), 4), 100);
             e.setCreditTimesProportion(creditsTimesProportion);
             // 出账金额占比
-            BigDecimal payoutAmountProportion = BigDecimalUtil.mul(BigDecimalUtil.divReserveFour(e.getPayoutAmount(), sumDataPart.getSumPayoutAmount()), 100);
+            BigDecimal payoutAmountProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getPayoutAmount(), sumDataPart.getSumPayoutAmount(), 4), 100);
             e.setPayoutAmountProportion(payoutAmountProportion);
             // 出账次数占比
-            BigDecimal payoutTimesProportion = BigDecimalUtil.mul(BigDecimalUtil.divReserveFour(e.getPayoutTimes(), sumDataPart.getSumPayoutTimes()), 100);
+            BigDecimal payoutTimesProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getPayoutTimes(), sumDataPart.getSumPayoutTimes(), 4), 100);
             e.setPayoutTimesProportion(payoutTimesProportion);
-        });
-    }
 
-    /**
-     * <h2> 合并排序(将自定义归类查询的数据与交易字段类型统计数据合并,内存排序) </h2>
-     */
-    public static List<TransactionFieldTypeStatisticsResult> mergeSort(TransactionFieldAnalysisRequest request, List<TransactionFieldTypeStatisticsResult> statisticsResults) {
-        SortRequest sortRequest = request.getSortRequest();
-        PageRequest pageRequest = request.getPageRequest();
-        return null;
+            if (isExport) {
+                // 用于导出,带%
+                e.setTotalAmountProportionStr(sumTradeAmountProportion + "%");
+                e.setTradeTimesProportionStr(tradeTimesProportion + "%");
+                e.setCreditsAmountProportionStr(creditsAmountProportion + "%");
+                e.setCreditTimesProportionStr(creditsTimesProportion + "%");
+                e.setPayoutAmountProportionStr(payoutAmountProportion + "%");
+                e.setPayoutTimesProportionStr(payoutTimesProportion + "%");
+            }
+        });
     }
 
     /**
@@ -225,5 +255,10 @@ public class TransactionFieldTypeStatisticsResult {
             statisticsResults.add(results);
         });
         return statisticsResults;
+    }
+
+    public static void main(String[] args) {
+        double div = NumberUtil.div(20, 268598519.1867);
+        double mul = NumberUtil.mul(div, 100);
     }
 }

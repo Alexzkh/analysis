@@ -3,8 +3,10 @@
  */
 package com.zqykj.common.util;
 
+import com.zqykj.common.util.overrideclass.BeanComparator;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -23,7 +25,8 @@ public class CompareFieldUtil {
 
         ComparatorChain<T> chain = new ComparatorChain<>();
         for (String field : fields) {
-//            chain.addComparator();
+            chain.addComparator(new BeanComparator<>(field, Comparator.nullsLast(Comparator.naturalOrder())), isReverse);
         }
+        sortData.sort(chain);
     }
 }

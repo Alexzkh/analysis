@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,31 +62,17 @@ public class AggregationParamsBuilders {
 
     public static AggregationParams terms(String aggName, String field) {
 
-        return new AggregationParams(aggName, AggsType.terms.name(), field);
+        return terms(aggName, field, "");
     }
 
     public static AggregationParams terms(String aggName, String field, String script) {
 
-        AggregationParams aggregationParams = new AggregationParams(aggName, AggsType.terms.name(), field);
-        if (null != script) {
-
-            aggregationParams.setScript(script);
-        }
-        return aggregationParams;
+        return terms(aggName, field, script, null, null);
     }
 
-    public static AggregationParams terms(String aggName, String field, @Nullable String[] include) {
+    public static AggregationParams terms(String aggName, String field, @Nullable String... include) {
 
-        AggregationParams aggregationParams = new AggregationParams(aggName, AggsType.terms.name(), field);
-        // 设置include 、exclude、script 等
-        Map<String, String[]> includeExclude = new HashMap<>();
-        if (null != include && include.length > 0) {
-            includeExclude.put("includeValues", include);
-        }
-        if (!CollectionUtils.isEmpty(includeExclude)) {
-            aggregationParams.setIncludeExclude(includeExclude);
-        }
-        return aggregationParams;
+        return terms(aggName, field, null, include, null);
     }
 
     /**
@@ -98,6 +85,11 @@ public class AggregationParamsBuilders {
     public static AggregationParams count(String aggName, String field, @Nullable String script) {
 
         return defaultAggregationParams(aggName, AggsType.count.name(), field, script);
+    }
+
+    public static AggregationParams count(String aggName, String field) {
+
+        return count(aggName, field, null);
     }
 
     /**
@@ -120,7 +112,7 @@ public class AggregationParamsBuilders {
      */
     public static AggregationParams cardinality(String aggName, String field) {
 
-        return new AggregationParams(aggName, AggsType.cardinality.name(), field);
+        return cardinality(aggName, field, null);
     }
 
     /**
@@ -143,7 +135,7 @@ public class AggregationParamsBuilders {
      */
     public static AggregationParams sum(String aggName, String field) {
 
-        return new AggregationParams(aggName, AggsType.sum.name(), field);
+        return sum(aggName, field, null);
     }
 
     /**
@@ -160,6 +152,11 @@ public class AggregationParamsBuilders {
             aggregationParams.setScript(script);
         }
         return aggregationParams;
+    }
+
+    public static AggregationParams filter(String aggName, QuerySpecialParams query) {
+
+        return filter(aggName, query, null);
     }
 
     /**
@@ -208,10 +205,10 @@ public class AggregationParamsBuilders {
      */
     public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script) {
 
-        return new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
+        return pipelineBucketScript(aggName, bucketPath, script, null);
     }
 
-    public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script, String format) {
+    public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script, @Nullable String format) {
 
         PipelineAggregationParams pipelineBucketScript = new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
         if (StringUtils.isNotBlank(format)) {
@@ -231,10 +228,10 @@ public class AggregationParamsBuilders {
      */
     public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script) {
 
-        return new PipelineAggregationParams(aggName, AggsType.bucket_selector.name(), bucketPath, script);
+        return pipelineSelector(aggName, bucketPath, script, null);
     }
 
-    public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script, String format) {
+    public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script, @Nullable String format) {
 
         PipelineAggregationParams selector = new PipelineAggregationParams(aggName, AggsType.bucket_selector.name(), bucketPath, script);
         if (StringUtils.isNotBlank(format)) {
@@ -250,7 +247,12 @@ public class AggregationParamsBuilders {
      */
     public static PipelineAggregationParams pipelineBucketSum(String aggName, String path) {
 
-        return new PipelineAggregationParams(aggName, AggsType.sum_bucket.name(), path, null);
+        return pipelineBucketSum(aggName, path, null);
+    }
+
+    public static PipelineAggregationParams pipelineBucketSum(String aggName, String path, @Nullable String format) {
+
+        return new PipelineAggregationParams(aggName, AggsType.sum_bucket.name(), path, null, format);
     }
 
     /**
@@ -275,7 +277,7 @@ public class AggregationParamsBuilders {
      */
     public static PipelineAggregationParams sort(String aggName, int from, int size) {
 
-        return new PipelineAggregationParams(aggName, AggsType.bucket_sort.name(), new Pagination(from, size));
+        return sort(aggName, Collections.emptyList(), from, size);
     }
 
 
