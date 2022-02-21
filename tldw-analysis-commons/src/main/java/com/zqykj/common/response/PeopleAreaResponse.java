@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PeopleAreaReponse {
+public class PeopleAreaResponse {
 
     /**
      * 地区
