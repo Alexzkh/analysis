@@ -15,6 +15,7 @@
 
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compiler.source>1.8</compiler.source>
         <compiler.target>1.8</compiler.target>
         <project.version>2.0-SNAPSHOT</project.version>
@@ -25,12 +26,6 @@
         <dependency>
             <groupId>com.zqykj</groupId>
             <artifactId>tldw-elasticsearch-operations</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.zqykj</groupId>
-            <artifactId>tldw-analysis-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -55,7 +55,7 @@ public class BankTransactionRecord {
      * 以上这种三种情况 , 不用着急reindex更新索引，直接更新Mapping也是可以的
      */
     @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "bank", analyzer = "ik_max_word"),
+            mainField = @Field(type = FieldType.Keyword, name = "bank"),
             otherFields = {@InnerField(suffix = "bank_wildcard", type = FieldType.Wildcard)}
     )
     private String bank;
@@ -64,7 +64,7 @@ public class BankTransactionRecord {
      * 本方姓名
      */
     @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "customer_name", analyzer = "ik_max_word"),
+            mainField = @Field(type = FieldType.Keyword, name = "customer_name"),
             otherFields = {@InnerField(suffix = "customer_name_wildcard", type = FieldType.Wildcard)}
     )
     private String customerName;
@@ -97,7 +97,7 @@ public class BankTransactionRecord {
      * 交易对方姓名
      */
     @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "transaction_opposite_name", analyzer = "ik_max_word"),
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_name"),
             otherFields = {@InnerField(suffix = "opposite_name_wildcard", type = FieldType.Wildcard)}
     )
     private String transactionOppositeName;
@@ -129,7 +129,10 @@ public class BankTransactionRecord {
     /**
      * 交易类型
      */
-    @Field(type = FieldType.Text, name = "transaction_type", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_type"),
+            otherFields = {@InnerField(suffix = "transaction_type_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionType;
 
     /**
@@ -168,7 +171,7 @@ public class BankTransactionRecord {
      * 交易对方开户行
      */
     @MultiField(
-            mainField = @Field(type = FieldType.Text, name = "transaction_opposite_account_open_bank", analyzer = "ik_max_word"),
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_account_open_bank"),
             otherFields = {@InnerField(suffix = "opposite_bank_wildcard", type = FieldType.Wildcard)}
     )
     private String transactionOppositeAccountOpenBank;
@@ -200,7 +203,10 @@ public class BankTransactionRecord {
     /**
      * 交易摘要
      */
-    @Field(type = FieldType.Text, name = "transaction_summary", analyzer = "ik_max_word")
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_summary"),
+            otherFields = {@InnerField(suffix = "transaction_summary_wildcard", type = FieldType.Wildcard)}
+    )
     private String transactionSummary;
 
     /**

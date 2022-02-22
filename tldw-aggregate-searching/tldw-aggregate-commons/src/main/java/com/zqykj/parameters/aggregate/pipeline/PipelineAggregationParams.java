@@ -123,4 +123,12 @@ public class PipelineAggregationParams {
         this.script = script;
     }
 
+    public PipelineAggregationParams(String name, String type, String bucketsPath, String script, String format) {
+        this.name = name;
+        this.type = type;
+        this.bucketsPath = bucketsPath;
+        this.script = script;
+        this.format = format;
+    }
+
 }

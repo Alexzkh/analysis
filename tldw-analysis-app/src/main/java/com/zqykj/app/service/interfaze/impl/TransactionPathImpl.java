@@ -1,5 +1,8 @@
 package com.zqykj.app.service.interfaze.impl;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xkzhangsan.time.calculator.DateTimeCalculatorUtil;
 import com.zqykj.app.service.common.service.GraphCycleAndPathCommonService;
 import com.zqykj.app.service.factory.ITransactionPathQueryRequestFactory;
@@ -21,8 +24,6 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -115,7 +116,7 @@ public class TransactionPathImpl implements ITransactionPath {
         mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
         List<TransactionPathResultVO> results = new ArrayList<>();
         try {
-            LinkedHashMap<String, Object> dataResult = mapper.readValue((String) result.get(Constants.AthenaGdbConstants.DATA), new org.codehaus.jackson.type.TypeReference<LinkedHashMap<String, Object>>() {
+            LinkedHashMap<String, Object> dataResult = mapper.readValue((String) result.get(Constants.AthenaGdbConstants.DATA), new TypeReference<LinkedHashMap<String, Object>>() {
             });
             for (Map.Entry<String, Object> entry : dataResult.entrySet()) {
                 List<List<LinkedHashMap<String, Object>>> path = (List<List<LinkedHashMap<String, Object>>>) entry.getValue();

@@ -349,11 +349,10 @@ public class FundTacticsAnalysisAggBuilderBuilderFactory extends FundTacticsComm
         accountTerms.setSize(adjustIndividualRequest.getGroupInitSize());
 
         // 调单账号次数(统计的是查询卡号去重次数)
-        AggregationParams distinctCards = AggregationParamsBuilders.cardinality("adjustAccountCount", FundTacticsAnalysisField.QUERY_CARD);
+        AggregationParams distinctCards = AggregationParamsBuilders.cardinality("local_adjust_account_count", FundTacticsAnalysisField.QUERY_CARD);
         accountTerms.setPerSubAggregation(distinctCards);
         // 交易总次数
-        AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("tradeTotal",
-                FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, null);
+        AggregationParams tradeTotalTimes = AggregationParamsBuilders.count("local_trade_total", FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, null);
         accountTerms.setPerSubAggregation(tradeTotalTimes);
         // 统计入账笔数、入账金额、出账笔数、出账金额、交易净额、交易总金额、最早交易时间、最晚交易时间
         fundTacticsPartUniversalAgg(accountTerms, null);
