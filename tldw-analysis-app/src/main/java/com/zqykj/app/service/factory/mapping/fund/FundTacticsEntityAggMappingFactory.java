@@ -7,6 +7,8 @@ import com.zqykj.app.service.annotation.*;
 import com.zqykj.app.service.field.SingleCardPortraitAnalysisField;
 import com.zqykj.app.service.factory.AggregationEntityMappingFactory;
 import com.zqykj.util.ReflectionUtils;
+import org.elasticsearch.common.Strings;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -96,41 +98,53 @@ public class FundTacticsEntityAggMappingFactory implements AggregationEntityMapp
     @Override
     public void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> entity) {
 
-        buildTradeAnalysisResultAggMapping(aggKeyMapping, entityAggKeyMapping, entity, Collections.emptyList());
+        buildTradeAnalysisResultAggMapping(aggKeyMapping, entityAggKeyMapping, entity, Strings.EMPTY_ARRAY, Strings.EMPTY_ARRAY);
     }
 
-    public void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> entity, List<String> includeFields) {
+    @Override
+    public void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> entity, String... includes) {
+        buildTradeAnalysisResultAggMapping(aggKeyMapping, entityAggKeyMapping, entity, includes, Strings.EMPTY_ARRAY);
+    }
+
+    public void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> entity,
+                                                   @Nullable String[] includes, @Nullable String[] excludes) {
         List<Field> fields = ReflectionUtils.getAllFields(entity); // 这种方式可以拿到继承父类的字段
         if (CollectionUtils.isEmpty(fields)) {
             return;
         }
-        Map<String, String> includeFieldsMap = null;
-        if (!CollectionUtils.isEmpty(includeFields)) {
-            includeFieldsMap = includeFields.stream().collect(Collectors.toMap(e -> e, e -> e, (e1, e2) -> e1));
+        // includes 和 excludes 同时存在的话, excludes 优先级最高
+        Map<String, String> includesMap = null;
+        Map<String, String> excludesMap = null;
+        if (includes != null && includes.length > 0) {
+            includesMap = Arrays.stream(includes).collect(Collectors.toMap(e -> e, e -> e, (e1, e2) -> e1));
+        }
+        if (excludes != null && excludes.length > 0) {
+            excludesMap = Arrays.stream(excludes).collect(Collectors.toMap(e -> e, e -> e, (e1, e2) -> e1));
         }
         for (Field field : fields) {
             // 检查映射包含的字段
-            if (!CollectionUtils.isEmpty(includeFieldsMap) && !includeFieldsMap.containsKey(field.getName())) {
+            if (!CollectionUtils.isEmpty(excludesMap) && excludesMap.containsKey(field.getName())) {
                 continue;
             }
-            Key key = field.getAnnotation(Key.class);
+            if (CollectionUtils.isEmpty(includesMap) || includesMap.containsKey(field.getName())) {
+                Key key = field.getAnnotation(Key.class);
+                Agg agg = field.getAnnotation(Agg.class);
 
-            Agg agg = field.getAnnotation(Agg.class);
-
-            if (null == key) {
-                continue;
-            }
-            if (null != agg) {
-                aggKeyMapping.put(agg.name(), key.name());
-                entityAggKeyMapping.put(field.getName(), agg.name());
+                if (null == key) {
+                    continue;
+                }
+                if (null != agg) {
+                    aggKeyMapping.put(agg.name(), key.name());
+                    entityAggKeyMapping.put(field.getName(), agg.name());
+                }
             }
         }
         // 取聚合名称的映射(es 特有), 其他数据源正常(field name = 聚合名称)
-        Agg entityAgg = entity.getAnnotation(Agg.class);
-        Key entityKey = entity.getAnnotation(Key.class);
-        if (null == entityKey) {
+        if (!entity.isAnnotationPresent(Key.class)) {
             return;
         }
+        Agg entityAgg = entity.getAnnotation(Agg.class);
+        Key entityKey = entity.getAnnotation(Key.class);
         if (null != entityAgg) {
             aggKeyMapping.put(entityAgg.name(), entityKey.name());
         }

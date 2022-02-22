@@ -36,7 +36,7 @@ public class TransactionFieldTypeStatisticsResult {
     @Agg(name = "field_group")
     @Key(name = "keyAsString")
     @ExcelProperty(value = "统计字段内容")
-    private String fieldGroupContent;
+    private String fieldTypeGroupContent;
 
     /**
      * 交易总金额
@@ -209,6 +209,8 @@ public class TransactionFieldTypeStatisticsResult {
         sumDataPart.setSumPayoutAmount(BigDecimalUtil.add(sumPayoutAmount, sumDataPart.getSumPayoutAmount()));
         sumDataPart.setSumPayoutTimes(sumPayoutTimes + sumDataPart.getSumPayoutTimes());
         statisticsResults.forEach(e -> {
+            // 金额保留2位
+            amountReservedTwo(e);
             // 总金额占比
             BigDecimal sumTradeAmountProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getTradeTotalAmount(), sumDataPart.getSumTradeAmount(), 4), 100);
             e.setTotalAmountProportion(sumTradeAmountProportion);
@@ -227,7 +229,6 @@ public class TransactionFieldTypeStatisticsResult {
             // 出账次数占比
             BigDecimal payoutTimesProportion = BigDecimalUtil.mul(BigDecimalUtil.div(e.getPayoutTimes(), sumDataPart.getSumPayoutTimes(), 4), 100);
             e.setPayoutTimesProportion(payoutTimesProportion);
-
             if (isExport) {
                 // 用于导出,带%
                 e.setTotalAmountProportionStr(sumTradeAmountProportion + "%");
@@ -255,6 +256,12 @@ public class TransactionFieldTypeStatisticsResult {
             statisticsResults.add(results);
         });
         return statisticsResults;
+    }
+
+    public static void amountReservedTwo(TransactionFieldTypeStatisticsResult result) {
+        result.setTradeTotalAmount(BigDecimalUtil.value(result.getTradeTotalAmount()));
+        result.setCreditsAmount(BigDecimalUtil.value(result.getCreditsAmount()));
+        result.setPayoutAmount(BigDecimalUtil.value(result.getPayoutAmount()));
     }
 
     public static void main(String[] args) {

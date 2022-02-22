@@ -30,7 +30,7 @@ public class TransactionFieldTypeProportionResults {
      */
     @Agg(name = "field_group")
     @Key(name = "keyAsString")
-    private String fieldGroupContent;
+    private String fieldTypeGroupContent;
 
     /**
      * 交易总金额

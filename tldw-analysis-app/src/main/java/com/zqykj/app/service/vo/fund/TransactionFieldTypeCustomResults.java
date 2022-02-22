@@ -20,9 +20,9 @@ import java.math.BigDecimal;
 public class TransactionFieldTypeCustomResults {
 
     /**
-     * 字段分组后的结果
+     * 字段类型分组后的结果(eg. 按查询卡号分组后得到的内容)
      */
-    private String fieldGroupContent;
+    private String fieldTypeGroupContent;
 
     /** 交易总金额汇总 */
     @Agg(name = "sum_trade_amount")

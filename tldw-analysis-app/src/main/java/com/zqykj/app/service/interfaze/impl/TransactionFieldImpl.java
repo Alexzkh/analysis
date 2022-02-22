@@ -27,7 +27,9 @@ import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.common.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -55,7 +57,8 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
         SortRequest sortRequest = request.getSortRequest();
         Future<List<TransactionFieldTypeProportionResults>> future = CompletableFuture.supplyAsync(() ->
                 tradeFieldTypeQuery(request, TransactionFieldTypeProportionResults.class, 0, pageRequest.getPageSize()), ThreadPoolConfig.getExecutor());
-        List<TransactionFieldTypeCustomResults> customResults = batchCustomCollationQuery(request, "tradeTotalAmount", "tradeTotalTimes");
+        String[] includes = new String[]{"tradeTotalAmount", "tradeTotalTimes"};
+        List<TransactionFieldTypeCustomResults> customResults = batchCustomCollationQuery(request, includes, Strings.EMPTY_ARRAY);
         List<TransactionFieldTypeProportionResults> proportionResults = future.get();
         if (!CollectionUtils.isEmpty(customResults)) {
             // 转成交易类型占比结果
@@ -73,10 +76,10 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
         PageRequest pageRequest = request.getPageRequest();
         SortRequest sortRequest = request.getSortRequest();
         request.setAggQueryType(2);
-        int limit = (pageRequest.getPage() + 1) * pageRequest.getPageSize();
         Future<List<TransactionFieldTypeStatisticsResult>> future = CompletableFuture.supplyAsync(() ->
-                tradeFieldTypeQuery(request, TransactionFieldTypeStatisticsResult.class, 0, limit), ThreadPoolConfig.getExecutor());
-        List<TransactionFieldTypeCustomResults> customResults = batchCustomCollationQuery(request);
+                tradeFieldTypeQuery(request, TransactionFieldTypeStatisticsResult.class, 0, fundThresholdConfig.getMaxAdjustCardCount()), ThreadPoolConfig.getExecutor());
+        String[] excludes = new String[]{"fieldTypeGroupContent"};
+        List<TransactionFieldTypeCustomResults> customResults = batchCustomCollationQuery(request, Strings.EMPTY_ARRAY, excludes);
         List<TransactionFieldTypeStatisticsResult> statisticsResults = future.get();
         long total = total(request);
         if (!CollectionUtils.isEmpty(customResults)) {
@@ -146,81 +149,36 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
 
         request.setAggQueryType(2);
         int total = Integer.parseInt(String.valueOf(total(request)));
-        // 还需要加上自定义查询结果size
-        if (!CollectionUtils.isEmpty(request.getCustomCollationQueryRequests())) {
-            total += request.getCustomCollationQueryRequests().size();
-        }
         if (total == 0) {
             // 生成一个sheet
             WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
             excelWriter.write(new ArrayList<>(), sheet);
             return ServerResponse.createBySuccess();
         }
-        int perRowSheetCount = exportThresholdConfig.getPerSheetRowCount();
-        if (total <= perRowSheetCount) {
-            // 单个sheet页即可
-            WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
-            writeStatisticsData(0, total, excelWriter, sheet, request);
-        } else {
-            // 多个sheet页处理
-            int limit = total;
-            if (total > exportThresholdConfig.getExcelExportThreshold()) {
-                limit = exportThresholdConfig.getExcelExportThreshold();
-            }
-            int position = 0;
-            int perSheetRowCount = exportThresholdConfig.getPerSheetRowCount();
-            // 这里就没必要在多线程了(一个sheet页假设50W,内部分批次查询,每次查询1W,就要查詢50次,若这里再开多线程分批次,ThreadPoolConfig.getExecutor()
-            // 的最大线程就这么多,剩下的只能在队列中等待)
-            int sheetNo = 0;
-            while (position < limit) {
-                int next = Math.min(position + perSheetRowCount, limit);
-                WriteSheet sheet;
-                if (sheetNo == 0) {
-                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName());
-                } else {
-                    sheet = EasyExcelUtils.generateWriteSheet(sheetNo, request.getExportFileName() + "_" + sheetNo);
-                }
-                writeStatisticsData(position, next, excelWriter, sheet, request);
-                position = next;
-                sheetNo++;
-            }
+        // 还需要加上自定义查询结果size
+        if (!CollectionUtils.isEmpty(request.getCustomCollationQueryRequests())) {
+            total += request.getCustomCollationQueryRequests().size();
         }
+        if (total > fundThresholdConfig.getMaxAdjustCardCount()) {
+            // 最大只能按照此数量处理
+            total = fundThresholdConfig.getMaxAdjustCardCount();
+        }
+        // 单个sheet页即可 (个体下的调单卡号基本不会超过这数量)
+        WriteSheet sheet = EasyExcelUtils.generateWriteSheet(request.getExportFileName());
+        writeStatisticsData(0, total, excelWriter, sheet, request);
         return ServerResponse.createBySuccess();
     }
 
     /**
      * <h2> 批量将交易汇聚结果写入到Excel中 </h2>
      */
-    private void writeStatisticsData(int position, int limit, ExcelWriter writer, WriteSheet sheet, TransactionFieldAnalysisRequest request) throws Exception {
+    private void writeStatisticsData(int from, int size, ExcelWriter writer, WriteSheet sheet, TransactionFieldAnalysisRequest request) throws Exception {
 
-        if (limit == 0) {
-            return;
-        }
-        int chunkSize = exportThresholdConfig.getPerWriteRowCount();
-        List<Future<List<TransactionFieldTypeStatisticsResult>>> futures = new ArrayList<>();
-        while (position < limit) {
-            int next = Math.min(position + chunkSize, limit);
-            int finalPosition = position;
-            Future<List<TransactionFieldTypeStatisticsResult>> future = CompletableFuture.supplyAsync(() -> {
-                        try {
-                            return tradeFieldTypeQuery(request, TransactionFieldTypeStatisticsResult.class, finalPosition, next - finalPosition);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    },
-                    ThreadPoolConfig.getExecutor());
-            position = next;
-            futures.add(future);
-        }
-        List<TransactionFieldTypeStatisticsResult> statisticsResults = new ArrayList<>();
-        for (Future<List<TransactionFieldTypeStatisticsResult>> future : futures) {
-            List<TransactionFieldTypeStatisticsResult> dataList = future.get();
-            statisticsResults.addAll(dataList);
-        }
+        List<TransactionFieldTypeStatisticsResult> statisticsResults = tradeFieldTypeQuery(request, TransactionFieldTypeStatisticsResult.class, from, size);
         // 合并自定义查询数据
         SortRequest sortRequest = request.getSortRequest();
-        List<TransactionFieldTypeCustomResults> customResults = batchCustomCollationQuery(request);
+        String[] excludes = new String[]{"fieldTypeGroupContent"};
+        List<TransactionFieldTypeCustomResults> customResults = batchCustomCollationQuery(request, Strings.EMPTY_ARRAY, excludes);
         if (!CollectionUtils.isEmpty(customResults)) {
             // 转成交易类型统计结果
             statisticsResults.addAll(TransactionFieldTypeStatisticsResult.convertStatisticsResults(customResults));
@@ -266,7 +224,8 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
     /**
      * <h2> 交易字段类型(自定义归类查询) - 包含字段类型占比/字段类型统计 </h2>
      */
-    public List<TransactionFieldTypeCustomResults> batchCustomCollationQuery(TransactionFieldAnalysisRequest request, String... includeKeyMapping) throws ExecutionException, InterruptedException {
+    public List<TransactionFieldTypeCustomResults> batchCustomCollationQuery(TransactionFieldAnalysisRequest request, @Nullable String[] includes, @Nullable String[] excludes)
+            throws ExecutionException, InterruptedException {
 
         List<TransactionFieldAnalysisRequest.CustomCollationQueryRequest> customCollationQueryRequests = request.getCustomCollationQueryRequests();
         if (CollectionUtils.isEmpty(customCollationQueryRequests)) {
@@ -277,16 +236,18 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
 
             Future<List<TransactionFieldTypeCustomResults>> future = CompletableFuture.supplyAsync(
                     () -> tradeFieldTypeCustomCollationQuery(request, customCollationQueryRequest.getContainField(), TransactionFieldTypeCustomResults.class,
-                            0, fundThresholdConfig.getGroupByThreshold(), includeKeyMapping), ThreadPoolConfig.getExecutor());
+                            0, fundThresholdConfig.getGroupByThreshold(), includes, excludes), ThreadPoolConfig.getExecutor());
             futures.add(future);
         }
         List<TransactionFieldTypeCustomResults> results = new ArrayList<>();
+        // 自定义查询的list的size 肯定只有一个,一个自定义归类查询对应一个
         int i = 0;
         for (Future<List<TransactionFieldTypeCustomResults>> future : futures) {
             List<TransactionFieldTypeCustomResults> transactionFieldTypeProportionResults = future.get();
             if (!CollectionUtils.isEmpty(transactionFieldTypeProportionResults)) {
-                TransactionFieldTypeCustomResults proportionResult = transactionFieldTypeProportionResults.get(i);
-                proportionResult.setFieldGroupContent(customCollationQueryRequests.get(i).getClassificationName());
+                TransactionFieldTypeCustomResults proportionResult = transactionFieldTypeProportionResults.get(0);
+                // 自定义归类查询的类别名称(就作为字段分组内容)
+                proportionResult.setFieldTypeGroupContent(customCollationQueryRequests.get(i).getClassificationName());
                 results.add(proportionResult);
             }
             i++;
@@ -297,33 +258,28 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
     /**
      * <h2> 交易字段类型查询- 包含字段类型占比/字段类型统计</h2>
      */
-    public <T> List<T> tradeFieldTypeQuery(TransactionFieldAnalysisRequest request, Class<T> entity, int from, int size, String... includeKeyMapping) {
-        return tradeFieldTypeCustomCollationQuery(request, null, entity, from, size, includeKeyMapping);
+    public <T> List<T> tradeFieldTypeQuery(TransactionFieldAnalysisRequest request, Class<T> entity, int from, int size) {
+        return tradeFieldTypeCustomCollationQuery(request, Collections.emptyList(), entity, from, size, Strings.EMPTY_ARRAY, Strings.EMPTY_ARRAY);
     }
 
     /**
      * <h2> 交易字段类型结果查询(属于自定义归类查询)- 包含字段类型占比/字段类型统计 </h2>
      */
     public <T> List<T> tradeFieldTypeCustomCollationQuery(TransactionFieldAnalysisRequest request, List<String> containFieldContent, Class<T> entity,
-                                                          int from, int size, String... includeKeyMapping) {
+                                                          int from, int size, @Nullable String[] includes, @Nullable String[] excludes) {
         QuerySpecialParams query;
         AggregationParams agg;
         Map<String, String> keyMapping = new LinkedHashMap<>();
         Map<String, String> entityMapping = new LinkedHashMap<>();
         if (!CollectionUtils.isEmpty(containFieldContent)) {
             query = transactionFieldQueryParamFactory.fieldTypeCustomCollationQuery(request, containFieldContent);
-            agg = transactionFieldAggParamFactory.fieldTypeProportionCustomCollationQuery(request, fundThresholdConfig.getGroupByThreshold());
-            entityMappingFactory.buildTradeAnalysisResultAggMapping(keyMapping, entityMapping, entity, Arrays.asList(includeKeyMapping));
+            agg = transactionFieldAggParamFactory.fieldTypeCustomCollationQuery(request, fundThresholdConfig.getGroupByThreshold());
         } else {
             query = transactionFieldQueryParamFactory.transactionFieldTypeQuery(request);
-            agg = transactionFieldAggParamFactory.transactionFieldTypeProportion(request, from, size, fundThresholdConfig.getGroupByThreshold());
-            entityMappingFactory.buildTradeAnalysisResultAggMapping(keyMapping, entityMapping, entity);
+            agg = transactionFieldAggParamFactory.transactionFieldType(request, from, size, fundThresholdConfig.getGroupByThreshold());
         }
+        entityMappingFactory.buildTradeAnalysisResultAggMapping(keyMapping, entityMapping, entity, includes, excludes);
         agg.setMapping(keyMapping);
-        if (!CollectionUtils.isEmpty(containFieldContent)) {
-            keyMapping.remove("field_group");
-            entityMapping.remove("fieldGroupContent");
-        }
         agg.setResultName("transactionFieldTypeResult");
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionFlow.class, request.getCaseId());
         List<List<Object>> resultList = resultMap.get(agg.getResultName());

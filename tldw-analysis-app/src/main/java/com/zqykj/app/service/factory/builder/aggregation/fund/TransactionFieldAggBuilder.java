@@ -23,7 +23,7 @@ import java.util.Map;
 @Service
 public class TransactionFieldAggBuilder extends FundTacticsCommonAggBuilder implements TransactionFieldAggParamFactory {
 
-    public AggregationParams transactionFieldTypeProportion(TransactionFieldAnalysisRequest request, int from, int size, int groupSize) {
+    public AggregationParams transactionFieldType(TransactionFieldAnalysisRequest request, int from, int size, int groupSize) {
 
         AggregationParams fieldGroup = AggregationParamsBuilders.terms("field_group", request.getStatisticsField());
         fieldGroup.setSize(groupSize);
@@ -39,13 +39,12 @@ public class TransactionFieldAggBuilder extends FundTacticsCommonAggBuilder impl
             transactionFieldTypeStatisticsPartAgg(fieldGroup);
             sumData(fieldGroup, request.getAggQueryType());
         }
-        // bucketSort(排序)
-        PipelineAggregationParams sort = fundTacticsPartUniversalAggSort(request.getSortRequest(), from, size);
-        fieldGroup.setPerSubAggregation(sort);
+//        PipelineAggregationParams sort = fundTacticsPartUniversalAggSort(request.getSortRequest(), from, size);
+//        fieldGroup.setPerSubAggregation(sort);
         return fieldGroup;
     }
 
-    public AggregationParams fieldTypeProportionCustomCollationQuery(TransactionFieldAnalysisRequest request, int groupSize) {
+    public AggregationParams fieldTypeCustomCollationQuery(TransactionFieldAnalysisRequest request, int groupSize) {
 
         AggregationParams fieldGroup = AggregationParamsBuilders.terms("field_group", request.getStatisticsField());
         fieldGroup.setSize(groupSize);
