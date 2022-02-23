@@ -238,8 +238,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
 
         // 使用自定义封装的ES构建器构建查询参数
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.filter);
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams(ConditionType.filter);
         // 精准词条匹配caseId
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(SingleCardPortraitAnalysisField.CASE_ID, caseId));
         // 多条件匹配queryCard（本方卡号和对方卡号）
@@ -257,28 +256,32 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         // 案件Id
         String caseId = adjustIndividualRequest.getCaseId();
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.filter);
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         // 指定caseId
-        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CASE_ID, caseId));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 指定开户证件号码
         if (StringUtils.isNotBlank(adjustIndividualRequest.getCustomerIdentityCard())) {
-            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
                     adjustIndividualRequest.getCustomerIdentityCard()));
         }
+        // 去除证件号码为空的
+        // 过滤 查询卡号 和 对方卡号为空的交易记录
+//        CombinationQueryParams mustNot = new CombinationQueryParams();
+//        mustNot.setType(ConditionType.must_not);
+//        mustNot.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, ""));
+//        filter.addCombinationQueryParams(mustNot);
         // 模糊查询
         if (!StringUtils.isBlank(adjustIndividualRequest.getKeyword())) {
 
-            CombinationQueryParams fuzzyQuery = new CombinationQueryParams();
-            fuzzyQuery.setType(ConditionType.should);
+            CombinationQueryParams fuzzyQuery = new CombinationQueryParams(ConditionType.should);
             fuzzyQuery.addCommonQueryParams(QueryParamsBuilders.fuzzy(adjustIndividualRequest.getKeyword(),
-                    FundTacticsAnalysisField.CUSTOMER_NAME));
+                    FundTacticsAnalysisField.CUSTOMER_NAME_WILDCARD));
             fuzzyQuery.addCommonQueryParams(QueryParamsBuilders.fuzzy(adjustIndividualRequest.getKeyword(),
-                    FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD));
+                    FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD_WILDCARD));
             // 增加模糊查询
-            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(fuzzyQuery));
+            filter.addCommonQueryParams(new CommonQueryParams(fuzzyQuery));
         }
-        querySpecialParams.addCombiningQueryParams(combinationQueryParams);
+        querySpecialParams.addCombiningQueryParams(filter);
         return querySpecialParams;
     }
 
@@ -288,8 +291,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         String caseId = individualInfoAndStatisticsRequest.getCaseId();
         String customerIdentityCard = individualInfoAndStatisticsRequest.getCustomerIdentityCard();
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.filter);
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams(ConditionType.filter);
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CASE_ID, caseId));
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CUSTOMER_IDENTITY_CARD, customerIdentityCard));
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
@@ -306,7 +308,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         DateRange dateRange = individualCardTransactionStatisticsRequest.getDateRange();
 
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams(ConditionType.filter);
         combinationQueryParams.setType(ConditionType.filter);
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CASE_ID, caseId));
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(IndividualPortraitAnalysisField.CUSTOMER_IDENTITY_CARD, customerIdentityCard));

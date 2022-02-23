@@ -45,7 +45,7 @@ public class AdjustIndividualAnalysisResult extends FundPartAnalysisResult {
      * 调单账号数量
      */
     @Agg(name = "local_adjust_account_count")
-    @Key(name = "docCount")
-    @Sort(name = "local_adjust_account_count._count")
+    @Key(name = "value")
+    @Sort(name = "local_adjust_account_count")
     private int adjustAccountCount;
 }

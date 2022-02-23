@@ -136,7 +136,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         // 构建选择个体总量参数
         AggregationParams totalAgg = aggParamFactory.buildDistinctViaField(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD);
         totalAgg.setMapping(entityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD));
-        totalAgg.setResultName("cardinality_total");
+        totalAgg.setResultName(CARDINALITY_TOTAL);
         // 添加同级聚合
         agg.addSiblingAggregation(totalAgg);
 
@@ -160,7 +160,7 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         List<AdjustIndividualAnalysisResult> adjustIndividualResults = JacksonUtils.parse(entityMapping, new TypeReference<List<AdjustIndividualAnalysisResult>>() {
         });
         // 获取总量
-        List<List<Object>> totalResults = resultMap.get(totalAgg.getResultName());
+        List<List<Object>> totalResults = resultMap.get(CARDINALITY_TOTAL);
         if (CollectionUtils.isEmpty(totalResults)) {
             return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
@@ -182,10 +182,9 @@ public class FundTacticsAnalysisImpl extends FundTacticsCommonImpl implements IF
         // 构建聚合名称到实体属性之间的映射
         Map<String, String> aggNameEntityMapping = new LinkedHashMap<>();
         entityMappingFactory.buildTradeAnalysisResultAggMapping(aggNameKeyMapping, aggNameEntityMapping, AdjustCardAnalysisResult.class);
-
+        agg.setMapping(aggNameKeyMapping);
         // 设置此聚合代表性功能名称
         agg.setResultName("adjustCards");
-
         // 获取聚合结果
         Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, request.getCaseId());
         List<List<Object>> results = resultMap.get(agg.getResultName());
