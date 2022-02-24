@@ -8,7 +8,7 @@ public enum ResponseCode {
     /**
      * 成功返回
      */
-    SUCCESS(0, "SUCCESS"),
+    SUCCESS(200, "SUCCESS"),
     /**
      * 错误返回
      */
