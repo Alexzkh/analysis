@@ -5,8 +5,8 @@ package com.zqykj.app.service.interfaze;
 
 import com.alibaba.excel.ExcelWriter;
 import com.zqykj.app.service.vo.fund.*;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.domain.bank.TradeRangeOperationRecord;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 import java.util.List;
 

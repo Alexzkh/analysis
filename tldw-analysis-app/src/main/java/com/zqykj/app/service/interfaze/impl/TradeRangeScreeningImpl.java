@@ -12,7 +12,6 @@ import com.zqykj.app.service.factory.param.query.TradeRangeScreeningQueryParamFa
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.ITradeRangeScreening;
 import com.zqykj.app.service.vo.fund.*;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.common.vo.SortRequest;
@@ -21,6 +20,7 @@ import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.TradeRangeOperationRecord;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QueryOperator;

@@ -12,8 +12,8 @@ import com.zqykj.app.service.vo.fund.IndividualCardTransactionStatisticsResponse
 import com.zqykj.app.service.vo.fund.middle.IndividualInfoAndStatistics;
 import com.zqykj.app.service.vo.fund.IndividualInfoAndStatisticsRequest;
 import com.zqykj.app.service.vo.fund.IndividualInfoAndStatisticsResponse;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.domain.bank.BankTransactionRecord;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;

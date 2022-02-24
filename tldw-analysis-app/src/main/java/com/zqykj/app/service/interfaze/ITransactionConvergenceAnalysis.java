@@ -6,7 +6,7 @@ package com.zqykj.app.service.interfaze;
 import com.alibaba.excel.ExcelWriter;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
-import com.zqykj.common.core.ServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 /**
  * <h1> 战法交易汇聚分析 业务层 </h1>

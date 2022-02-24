@@ -5,7 +5,7 @@ package com.zqykj.app.service.interfaze;
 
 import com.zqykj.app.service.vo.fund.AdjustIndividualRequest;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
-import com.zqykj.common.core.ServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 import java.util.List;
 import java.util.Map;
