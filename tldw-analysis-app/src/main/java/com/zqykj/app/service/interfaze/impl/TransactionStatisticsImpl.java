@@ -162,7 +162,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
                                                                                                                     boolean isComputeTotal) throws Exception {
 
         Map<String, Object> map;
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+        if (!CollectionUtils.isEmpty(request.getCardNum())) {
 
             request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
             map = statisticsAnalysisResultViaChosenMainCards(request, from, size, request.getCaseId(), isComputeTotal);
@@ -286,11 +286,11 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         String caseId = request.getCaseId();
         // 查询总量
         // 如果是全部查询,需要以全部调单卡号作为 查询卡号条件去查询
-        if (CollectionUtils.isEmpty(request.getCardNums())) {
+        if (CollectionUtils.isEmpty(request.getCardNum())) {
             QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
             List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (!CollectionUtils.isEmpty(adjustCards)) {
-                request.setCardNums(adjustCards);
+                request.setCardNum(adjustCards);
             }
         }
         QuerySpecialParams totalQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
@@ -405,7 +405,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
                 resultMap.put("result", new ArrayList<>());
                 return resultMap;
             }
-            request.setCardNums(adjustCards);
+            request.setCardNum(adjustCards);
             return statisticsAnalysisResultViaChosenMainCards(request, from, limit, request.getCaseId(), isComputeTotal);
         }
         // 异步执行 全部查询任务
@@ -458,7 +458,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         }
         List<TradeStatisticalAnalysisResult> statisticalAnalysisResults = new ArrayList<>();
         if (!CollectionUtils.isEmpty(queryCards)) {
-            request.setCardNums(queryCards);
+            request.setCardNum(queryCards);
             request.setGroupInitSize(queryCards.size());
             Map<String, Object> resultsMap = statisticsAnalysisResultViaChosenMainCards(request, 0, queryCards.size(), caseId, false);
             statisticalAnalysisResults = (List<TradeStatisticalAnalysisResult>) resultsMap.get("result");

@@ -6,7 +6,6 @@ package com.zqykj.app.service.factory.builder.query.fund;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
 import com.zqykj.app.service.factory.param.query.TradeStatisticalAnalysisQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
-import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.vo.fund.FundDateRequest;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
 import com.zqykj.app.service.vo.fund.TradeStatisticalAnalysisQueryRequest;
@@ -42,8 +41,8 @@ public class TradeStatisticalAnalysisQueryBuilder extends FundTacticsCommonQuery
         FundDateRequest request = (FundDateRequest) requestParam;
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         CombinationQueryParams combinationQueryParams = queryRequestParamFactory.buildCommonQueryParamsViaBankTransactionFlow(requestParam, other);
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
-            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(cardsFilter(request.getCardNums())));
+        if (!CollectionUtils.isEmpty(request.getCardNum())) {
+            combinationQueryParams.addCommonQueryParams(new CommonQueryParams(cardsFilter(request.getCardNum())));
         }
         querySpecialParams.addCombiningQueryParams(combinationQueryParams);
         return querySpecialParams;
@@ -79,8 +78,8 @@ public class TradeStatisticalAnalysisQueryBuilder extends FundTacticsCommonQuery
 
         cardNumsAndFuzzyQuery.setType(ConditionType.must);
         // 本方查询卡号(有可能是查询全部,那么卡号不为空的时候才能选用此条件)
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
-            cardNumsAndFuzzyQuery.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
+        if (!CollectionUtils.isEmpty(request.getCardNum())) {
+            cardNumsAndFuzzyQuery.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, request.getCardNum()));
         }
         // 本方需要的模糊匹配
         if (StringUtils.isNotBlank(request.getKeyword())) {

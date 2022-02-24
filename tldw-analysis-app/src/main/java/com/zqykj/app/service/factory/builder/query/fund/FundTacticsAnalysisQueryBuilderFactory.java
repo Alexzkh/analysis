@@ -43,7 +43,7 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         // 指定caseId
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 指定本方开户证件号码 与 对方开户证件号码
-        if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNums())) {
+        if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNum())) {
             combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.multiMatch(request.getIdentityCard(),
                     FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
                     FundTacticsAnalysisField.OPPOSITE_IDENTITY_CARD));
@@ -71,11 +71,11 @@ public class FundTacticsAnalysisQueryBuilderFactory implements QueryRequestParam
         // 指定caseId
         combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 指定调单卡号集合
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
-            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
+        if (!CollectionUtils.isEmpty(request.getCardNum())) {
+            combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNum()));
         }
         // 指定证件号码
-        if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNums())) {
+        if (StringUtils.isNotBlank(request.getIdentityCard()) && !CollectionUtils.isEmpty(request.getCardNum())) {
             combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, request.getIdentityCard()));
         }
         // 指定日期范围
