@@ -56,12 +56,16 @@ public interface IndexOperations {
 
     boolean exists(Class<?> entityClass);
 
+    boolean exists(String boundIndex);
+
     /**
      * <h2> 刷新此IndexOperations实例上 绑定的索引 </h2>
      */
     void refresh();
 
     void refresh(Class<?> entityClass);
+
+    void refresh(String index);
 
     /**
      * <h2> 为该 IndexOperations实例上绑定的索引创建 索引映射 </h2>

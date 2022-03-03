@@ -22,6 +22,7 @@ import com.zqykj.repository.util.DateHistogramIntervalUtil;
 import com.zqykj.support.ParseAggregationResultUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.*;
 import org.elasticsearch.search.aggregations.bucket.histogram.*;
@@ -237,6 +238,14 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         return executeAndRefresh(operations -> operations.save(entity, getIndexCoordinates(entityClass), routing), entityClass);
     }
 
+    @Override
+    public void save(Map<String, Object> data, @Nullable String routing, @NonNull String index) {
+
+        List<Map<String, ?>> values = new ArrayList<>();
+        values.add(data);
+        saveAll(values, routing, index);
+    }
+
     public <T> Iterable<T> save(Iterable<T> entities, String routing, Class<T> entityClass) {
 
         Assert.notNull(entities, "Cannot insert 'null' as a List.");
@@ -260,6 +269,12 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         Assert.notNull(values, "Cannot insert 'null' as a List.");
         String indexCoordinates = getIndexCoordinates(entityClass);
         executeAndRefresh(operations -> operations.save(values, indexCoordinates, routing), entityClass);
+    }
+
+    public void saveAll(List<Map<String, ?>> values, @Nullable String routing, @NonNull String index) {
+
+        Assert.notNull(values, "Cannot insert 'null' as a List.");
+        executeAndRefresh(operations -> operations.save(values, index, routing), index);
     }
 
 
@@ -380,6 +395,13 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
      */
     public <T> void refresh(Class<T> entityClass) {
         indexOperations.refresh(entityClass);
+    }
+
+    /**
+     * <h2> 刷新索引 - 指定索引名称 </h2>
+     */
+    public <T> void refresh(String boundIndex) {
+        indexOperations.refresh(boundIndex);
     }
 
     /**
@@ -1136,6 +1158,17 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         createIndexAndMapping(entityClass);
         R result = callback.doWithOperations(operations);
         refresh(entityClass);
+        return result;
+    }
+
+    @Nullable
+    public <R, T> R executeAndRefresh(OperationsCallback<R> callback, String boundIndex) {
+        // 检查entityClass 是否创建了索引
+        if (!indexOperations.exists(boundIndex)) {
+            throw new IndexNotFoundException(boundIndex);
+        }
+        R result = callback.doWithOperations(operations);
+        refresh(boundIndex);
         return result;
     }
 }

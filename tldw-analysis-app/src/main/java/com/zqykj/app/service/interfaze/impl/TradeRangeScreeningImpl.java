@@ -58,7 +58,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
     public ServerResponse<TradeRangeScreeningDataChartResult> getDataChartResult(TradeRangeScreeningDataChartRequest request) {
 
         // 分为全部查询与选择个体查询(实际就是一组固定数量的调单卡号集合作为条件)
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+        if (request.getAnalysisType() == 2 || request.getAnalysisType() == 3) {
             // 个体 / 一组调单卡号集合查询
             return ServerResponse.createBySuccess(selectIndividualQuery(request));
         } else {
@@ -134,20 +134,25 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         return ServerResponse.createBySuccess("成功");
     }
 
-    public ServerResponse<List<TradeRangeOperationRecord>> operationRecordsList(FundTacticsPartGeneralRequest request) {
+    public ServerResponse<FundAnalysisResultResponse<TradeRangeOperationRecord>> operationRecordsList(FundTacticsPartGeneralRequest request) {
 
         QuerySpecialParams query = queryRequestParamFactory.queryDataByCaseId(request.getCaseId());
         query.setIncludeFields(FundTacticsAnalysisField.tradeRangeScreeningQueryFields());
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         // 默认按保存日期降序排序
         SortRequest sortRequest = request.getSortRequest();
+        String[] orderProperty = new String[]{sortRequest.getProperty()};
+        // 如果排序的就是 金额范围的话
+        if (sortRequest.getProperty().equals("fund_range")) {
+            orderProperty = new String[]{"min_amount", "max_amount"};
+        }
         Page<TradeRangeOperationRecord> page = entranceRepository.findAll(PageRequest.of(pageRequest.getPage(), pageRequest.getPageSize(),
-                Sort.Direction.valueOf(sortRequest.getOrder().name()), sortRequest.getProperty()), request.getCaseId(), TradeRangeOperationRecord.class, query);
+                Sort.Direction.valueOf(sortRequest.getOrder().name()), orderProperty), request.getCaseId(), TradeRangeOperationRecord.class, query);
         List<TradeRangeOperationRecord> content = page.getContent();
         for (TradeRangeOperationRecord operationRecord : content) {
             operationRecord.setOperationDateFormat(DateFormatUtils.format(operationRecord.getOperationDate(), "yyyy-MM-dd HH:mm:ss"));
         }
-        return ServerResponse.createBySuccess(content);
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(content, page.getTotalElements(), pageRequest.getPageSize()));
     }
 
     public ServerResponse<FundAnalysisResultResponse<TradeRangeOperationDetailSeeResult>> seeOperationRecordsDetailList(FundTacticsPartGeneralRequest request, int from, int size) {
@@ -277,7 +282,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         return response.getData().getContent();
     }
 
-    public ServerResponse<List<TradeOperationIndividualBankCardsStatistical>> seeIndividualBankCardsStatisticalResult(FundTacticsPartGeneralRequest request) {
+    public ServerResponse<FundAnalysisResultResponse<TradeOperationIndividualBankCardsStatistical>> seeIndividualBankCardsStatisticalResult(FundTacticsPartGeneralRequest request) {
 
         com.zqykj.common.vo.PageRequest pageRequest = request.getPageRequest();
         int offset = com.zqykj.common.vo.PageRequest.getOffset(pageRequest.getPage(), pageRequest.getPageSize());
@@ -289,10 +294,10 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         queryAdjustCards.setIncludeFields(queryFields);
         Page<TradeRangeOperationRecord> page = entranceRepository.findAll(PageRequest.of(0, 1), request.getCaseId(), TradeRangeOperationRecord.class, queryAdjustCards);
         if (CollectionUtils.isEmpty(page.getContent())) {
-            return ServerResponse.createBySuccess(new ArrayList<>());
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         if (page.getContent().get(0).getIndividualBankCardsNumber() == -1) {
-            return ServerResponse.createBySuccess("全部查询暂不支持分析个体银行卡统计结果", new ArrayList<>());
+            throw new IllegalArgumentException("全部查询暂不支持分析个体银行卡统计结果");
         }
         // 该条操作记录保存的调单卡号集合
         List<String> adjustCards = page.getContent().get(0).getAdjustCards();
@@ -300,20 +305,22 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         // TODO 如果需求就是查询的全部,就去除操作记录的条件
         Double minAmount = page.getContent().get(0).getMinAmount();
         Double maxAmount = page.getContent().get(0).getMaxAmount();
-        int dateType = page.getContent().get(0).getDataCategory();
-        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), null, adjustCards, minAmount, maxAmount, dateType);
+        int dataType = page.getContent().get(0).getDataCategory();
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryIndividualBankCardsStatistical(request.getCaseId(), null, adjustCards, minAmount, maxAmount, dataType);
         // 设置queryFields
         query.setIncludeFields(new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK});
         AggregationParams agg = tradeRangeScreeningAggParamFactory.individualBankCardsStatisticalAgg(offset, pageRequest.getPageSize(), sortRequest.getProperty(),
                 sortRequest.getOrder().name(), adjustCards.size());
         agg.setResultName("individualBankCardsStatistical");
+        AggregationParams totalAgg = total();
         Map<String, String> aggKeyMapping = new LinkedHashMap<>();
         Map<String, String> entityAggKeyMapping = new LinkedHashMap<>();
         entityMappingFactory.buildTradeAnalysisResultAggMapping(aggKeyMapping, entityAggKeyMapping, TradeOperationIndividualBankCardsStatistical.class);
         agg.setMapping(aggKeyMapping);
+        agg.addSiblingAggregation(totalAgg);
         Map<String, List<List<Object>>> results = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, request.getCaseId());
         if (CollectionUtils.isEmpty(results) || CollectionUtils.isEmpty(results.get(agg.getResultName()))) {
-            return ServerResponse.createBySuccess(new ArrayList<>());
+            return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
         }
         List<List<Object>> result = results.get(agg.getResultName());
         List<String> entityTitles = new ArrayList<>(entityAggKeyMapping.keySet());
@@ -322,7 +329,11 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         });
         // 保留2位小数,转化科学计算方式的金额
         statisticalResults.forEach(TradeOperationIndividualBankCardsStatistical::amountReservedTwo);
-        return ServerResponse.createBySuccess(statisticalResults);
+        long total = 0;
+        if (!CollectionUtils.isEmpty(results.get(CARDINALITY_TOTAL))) {
+            total = (long) results.get(CARDINALITY_TOTAL).get(0).get(0);
+        }
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(statisticalResults, total, pageRequest.getPageSize()));
     }
 
     /**
@@ -418,5 +429,12 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         // 重新设置交易金额
         result.setTradingAmount(BigDecimalUtil.value(record.getChangeAmount()));
         return result;
+    }
+
+    private AggregationParams total() {
+        AggregationParams agg = aggParamFactory.buildDistinctViaField(FundTacticsAnalysisField.QUERY_CARD);
+        agg.setMapping(entityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.QUERY_CARD));
+        agg.setResultName(CARDINALITY_TOTAL);
+        return agg;
     }
 }

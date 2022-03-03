@@ -4,7 +4,6 @@
 package com.zqykj.app.service.interfaze.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.util.ReflectUtil;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.zqykj.app.service.config.FundTacticsThresholdConfigProperties;
@@ -39,7 +38,6 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -254,18 +252,6 @@ public abstract class FundTacticsCommonImpl {
      * <h2> 合并排序(内存排序) </h2>
      */
     protected <T> void mergeSort(List<T> results, String orderProperty, boolean isReverse) throws IllegalAccessException {
-        // 根据排序字段,获取实体的属性
-        Field[] fields = ReflectUtil.getFields(TransactionFieldTypeProportionResults.class, e -> {
-            if (e.isAnnotationPresent(com.zqykj.app.service.annotation.Sort.class)) {
-                com.zqykj.app.service.annotation.Sort sort = e.getAnnotation(com.zqykj.app.service.annotation.Sort.class);
-                return sort.name().equals(orderProperty);
-            }
-            return false;
-        });
-        if (fields.length > 1) {
-            throw new IllegalAccessException("请检查类 TransactionFieldTypeProportionResults Sort注解 排序字段名称是否有重复!");
-        }
-        Field field = fields[0];
-        CompareFieldUtil.sort(results, isReverse, field.getName());
+        CompareFieldUtil.sort(results, isReverse, orderProperty);
     }
 }

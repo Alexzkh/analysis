@@ -18,11 +18,6 @@ import java.util.List;
 public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequest {
 
     /**
-     * 分析对象描述
-     */
-    private String analysisSubject;
-
-    /**
      * 身份证
      */
     private String identityCard;

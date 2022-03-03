@@ -21,7 +21,7 @@ public interface TradeStatisticalAnalysisQueryParamFactory {
     /**
      * <h2> 构建交易统计分析查询(调单卡号) </h2>
      **/
-    <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other, Class<?> queryTable);
+    <T, V> QuerySpecialParams createTradeStatisticalAnalysisQueryRequestByMainCards(T request, V other);
 
     /**
      * <h2> 构建交易统计分析聚合展示字段查询 </h2>

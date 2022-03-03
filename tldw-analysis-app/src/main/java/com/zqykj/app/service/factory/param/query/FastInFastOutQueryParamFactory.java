@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.factory.param.query;
 
+import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.app.service.vo.fund.middle.FastInFastOutDetailRequest;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.lang.Nullable;
@@ -19,7 +20,7 @@ public interface FastInFastOutQueryParamFactory {
      * <p>
      * 其中cards 卡号作为查询卡号
      */
-    QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, int singleQuota, boolean isIn);
+    QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, FastInFastOutRequest request, boolean isIn);
 
     /**
      * <h2> 通过查询卡号与对方卡号 获取进出记录 </h2>

@@ -34,27 +34,27 @@ public class TradeOperationIndividualBankCardsStatistical {
     private String bank;
 
     // 最早交易时间
-    @Agg(name = "min_date")
+    @Agg(name = "local_min_date")
     @Key(name = "valueAsString")
-    @Sort(name = "min_date")
+    @Sort(name = "local_min_date")
     private String earliestTradingTime;
 
     // 最晚交易时间
-    @Agg(name = "max_date")
+    @Agg(name = "local_max_date")
     @Key(name = "valueAsString")
-    @Sort(name = "max_date")
+    @Sort(name = "local_max_date")
     private String latestTradingTime;
 
     // 交易笔数
-    @Agg(name = "trade_times")
+    @Agg(name = "local_trade_total")
     @Key(name = "value")
-    @Sort(name = "trade_times")
+    @Sort(name = "local_trade_total")
     private int tradeTotalTimes;
 
     // 交易金额
-    @Agg(name = "trade_amount")
+    @Agg(name = "local_trade_amount")
     @Key(name = "valueAsString")
-    @Sort(name = "trade_amount")
+    @Sort(name = "local_trade_amount")
     private BigDecimal tradeTotalAmount;
 
     public static void amountReservedTwo(TradeOperationIndividualBankCardsStatistical individualBankCardsStatistical) {

@@ -51,11 +51,12 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
 
         String caseId = request.getCaseId();
         Map<String, Object> map;
-        if (!CollectionUtils.isEmpty(request.getCardNum())) {
+        if (request.getAnalysisType() == 2 || request.getAnalysisType() == 3) {
             // 设置分组桶的大小
             request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, isComputeTotal);
         } else {
+            // 全部查询
             map = convergenceAnalysisResultViaAllMainCards(request, from, size, caseId);
         }
         if (CollectionUtils.isEmpty(map)) {

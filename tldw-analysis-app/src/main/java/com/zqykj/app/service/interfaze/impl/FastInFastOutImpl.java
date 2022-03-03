@@ -15,6 +15,7 @@ import com.zqykj.app.service.vo.fund.FastInFastOutResult;
 import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.middle.FastInFastOutDetailRequest;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
+import com.zqykj.common.util.CompareFieldUtil;
 import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.common.vo.Direction;
 import com.zqykj.common.vo.SortRequest;
@@ -40,7 +41,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -85,7 +85,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
 
     public ServerResponse<FundAnalysisResultResponse<FastInFastOutResult>> fastInFastOutAnalysis(FastInFastOutRequest request) throws Exception {
 
-        if (CollectionUtils.isEmpty(request.getCardNum())) {
+        if (request.getAnalysisType() == 1) {
             // 全部查询
             return fastInFastOutViaAllQuery(request);
         } else {
@@ -214,7 +214,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         // 中转的
         CompletableFuture<? extends Map<String, ?>> transitOrderFuture = CompletableFuture.supplyAsync(() ->
                 getTransitOrder(request, limit), ThreadPoolConfig.getExecutor());
-        // 沉淀的
+//        // 沉淀的
         CompletableFuture<? extends Map<String, ?>> depositOrderFuture = CompletableFuture.supplyAsync(() ->
                 getDepositOrder(request, limit), ThreadPoolConfig.getExecutor());
 
@@ -250,43 +250,14 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             results = results.stream().skip(skip).limit(limit).collect(Collectors.toList());
         } else {
             // 结果合并去重
-            Comparator<BigDecimal> amountComparator = Comparator.reverseOrder();
-            Comparator<Long> dateComparator = Comparator.reverseOrder();
-            if (order.isAscending()) {
-                amountComparator = Comparator.naturalOrder();
-                dateComparator = Comparator.naturalOrder();
-            }
-            if (property.equals(FundTacticsAnalysisField.FastInoutSort.INFLOW_AMOUNT)) {
-
-                results = results.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(
-                        Comparator.comparing(FastInFastOutResult::getHashId)
-                )), ArrayList::new)).stream().sorted(Comparator.comparing(FastInFastOutResult::getInflowAmount, amountComparator))
-                        .skip(skip).limit(size).collect(Collectors.toList());
-            } else if (property.equals(FundTacticsAnalysisField.FastInoutSort.OUTFLOW_AMOUNT)) {
-
-                results = results.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(
-                        Comparator.comparing(FastInFastOutResult::getHashId)
-                )), ArrayList::new)).stream().sorted(Comparator.comparing(FastInFastOutResult::getOutflowAmount, amountComparator))
-                        .skip(skip).limit(size).collect(Collectors.toList());
-            } else {
-                results = results.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(
-                        Comparator.comparing(FastInFastOutResult::getHashId)
-                )), ArrayList::new)).stream().sorted(Comparator.comparing(e -> {
-                    try {
-                        return DATE_PARSER.parse(e.getOutflowDate()).getTime();
-                    } catch (ParseException ex) {
-                        ex.printStackTrace();
-                    }
-                    return null;
-                }, dateComparator)).skip(skip).limit(size).collect(Collectors.toList());
-            }
+            results = results.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(
+                    Comparator.comparing(FastInFastOutResult::getHashId)
+            )), ArrayList::new));
+            // 内存排序分页
+            CompareFieldUtil.sort(results, order.isDescending(), property);
+            results = results.stream().skip(skip).limit(size).collect(Collectors.toList());
         }
-        FundAnalysisResultResponse<FastInFastOutResult> resultResponse = new FundAnalysisResultResponse<>();
-        resultResponse.setTotal(hashTotal.size());
-        resultResponse.setTotalPages(PageRequest.getTotalPages(hashTotal.size(), pageRequest.getPageSize()));
-        resultResponse.setSize(pageRequest.getPageSize());
-        resultResponse.setContent(results);
-        return ServerResponse.createBySuccess(resultResponse);
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(results,hashTotal.size(),pageRequest.getPageSize()));
     }
 
     /**
@@ -345,19 +316,18 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     private Map<String, ?> generateResultViaSourceInflowOrDepositOutFlow(FastInFastOutRequest request, String sortProperty, Sort.Direction direction, int limit) {
 
         List<String> adjustCards = request.getCardNum();
-        int singleQuota = request.getSingleQuota();
         long timeInterval = request.getTimeInterval();
         int characteristicRatio = request.getCharacteristicRatio();
         boolean isInFlow = isInFlow(request.getSortRequest());
         // 获取调单卡号(来源卡号)查询的是出帐、调单卡号(沉淀卡号)查询的是进账
-        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(adjustCards, request.getCaseId(), singleQuota, !isInFlow, sortProperty, direction, sortThreshold);
+        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(adjustCards, request, !isInFlow, sortProperty, direction, sortThreshold);
         if (CollectionUtils.isEmpty(sortRecords)) {
             return null;
         }
         // 去重 sortRecords 中的对方卡号,查询这些卡号的进账/出账记录
         List<String> distinctOppositeCard = sortRecords.stream().map(BankTransactionRecord::getTransactionOppositeCard).distinct().collect(Collectors.toList());
         // 获取这些卡号的进账/出账次数
-        Map<String, Integer> oppositeCardInOutTimes = getInOutTotalTimesViaLocalAndOppositeCards(distinctOppositeCard, null, request.getCaseId(), singleQuota, !isInFlow);
+        Map<String, Integer> oppositeCardInOutTimes = getInOutTotalTimesViaLocalAndOppositeCards(distinctOppositeCard, request, null, !isInFlow);
         // 取出满足 resultThreshold 数量的对方卡号
         if (CollectionUtils.isEmpty(oppositeCardInOutTimes)) {
             return null;
@@ -381,7 +351,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         }
         // 需要查询的卡号
         List<String> queryCards = new ArrayList<>(requireQueryInOutCards.keySet());
-        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, null, request.getCaseId(), singleQuota, isInFlow);
+        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, null, request, isInFlow);
         if (CollectionUtils.isEmpty(unsortedRecords)) {
             return null;
         }
@@ -400,7 +370,6 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
      */
     private Map<String, ?> generateResultViaSourceOutflowOrDepositInFlow(FastInFastOutRequest request, String sortProperty, Sort.Direction direction, int limit) {
 
-        int singleQuota = request.getSingleQuota();
         boolean isInFlow = isInFlow(request.getSortRequest());
         // 获取二跳排序的查询卡号
         List<String> twoHopSortQueryCards = getTwoHopSortQueryCards(request);
@@ -408,14 +377,14 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             return null;
         }
         //  以twoHopSortQueryCards 作为查询卡号, 查询排序的记录
-        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(twoHopSortQueryCards, request.getCaseId(), singleQuota, !isInFlow, sortProperty, direction, sortThreshold);
+        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(twoHopSortQueryCards, request, !isInFlow, sortProperty, direction, sortThreshold);
         if (CollectionUtils.isEmpty(sortRecords)) {
             return null;
         }
         // 去重sortRecords记录中的查询卡号,查询它的进账/出账记录
         List<String> distinctQueryCards = sortRecords.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
         // 获取这些卡号的进账/出账次数(对方卡号必须是调单卡号)
-        Map<String, Integer> queryCardInOutTimes = getInOutTotalTimesViaLocalAndOppositeCards(distinctQueryCards, request.getCardNum(), request.getCaseId(), singleQuota, isInFlow);
+        Map<String, Integer> queryCardInOutTimes = getInOutTotalTimesViaLocalAndOppositeCards(distinctQueryCards, request, request.getCardNum(), isInFlow);
         if (CollectionUtils.isEmpty(queryCardInOutTimes)) {
             return null;
         }
@@ -426,7 +395,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         int computeTotal = getRequireQueryCardsAndOrderRecordsAndTotal(sortRecords, requireQueryInOutCards, queryCardInOutTimes, orderRecords);
         // 需要查询的卡号
         List<String> queryCards = new ArrayList<>(requireQueryInOutCards.keySet());
-        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, request.getCardNum(), request.getCaseId(), singleQuota, isInFlow);
+        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, request.getCardNum(), request, isInFlow);
         if (CollectionUtils.isEmpty(unsortedRecords)) {
             return null;
         }
@@ -466,15 +435,13 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     private List<String> getTwoHopSortQueryCards(FastInFastOutRequest request) {
 
         List<String> adjustCards = request.getCardNum();
-        String caseId = request.getCaseId();
-        int singleQuota = request.getSingleQuota();
         boolean inFlow = isInFlow(request.getSortRequest());
         // 查询固定数量的调单卡号的进账或者出账(获取对方卡号去重)
         try {
-            List<String> oppositeCards = asyncQueryOppositeAndLocalCards(adjustCards, caseId, singleQuota, inFlow, false);
+            List<String> oppositeCards = asyncQueryOppositeAndLocalCards(adjustCards, request, inFlow, false);
             if (!CollectionUtils.isEmpty(oppositeCards)) {
                 // 继续检查这些对方卡号(以它作为查询卡号) 是否有进账或者出账(有的话,记录当前的查询卡号)
-                List<String> conditionCards = asyncQueryOppositeAndLocalCards(oppositeCards, caseId, singleQuota, !inFlow, true);
+                List<String> conditionCards = asyncQueryOppositeAndLocalCards(oppositeCards, request, !inFlow, true);
                 // 最多取一部分卡号
                 return conditionCards.stream().limit(fundThresholdConfig.getMaxAdjustCardCount()).collect(Collectors.toList());
             }
@@ -493,17 +460,15 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
      */
     private Map<String, ?> generateResultViaTransit(FastInFastOutRequest request, boolean isInflow, String sortProperty, Sort.Direction direction, int limit) {
 
-        String caseId = request.getCaseId();
-        int singleQuota = request.getSingleQuota(); // 单笔限额
         long timeInterval = request.getTimeInterval(); // 时间间隔
         int characteristicRatio = request.getCharacteristicRatio();
-        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(request.getCardNum(), caseId, singleQuota, isInflow, sortProperty, direction, sortThreshold);
+        List<BankTransactionRecord> sortRecords = getInOutRecordOrderViaQueryCards(request.getCardNum(), request, isInflow, sortProperty, direction, sortThreshold);
         if (CollectionUtils.isEmpty(sortRecords)) {
             return new HashMap<>();
         }
         // 去重 inOutflowOrder 中的查询卡号,查询这些卡号的进账/出账记录数
         List<String> distinctQueryCard = sortRecords.stream().map(BankTransactionRecord::getQueryCard).distinct().collect(Collectors.toList());
-        Map<String, Integer> queryCardInOutTimes = getInOutTotalTimesViaLocalAndOppositeCards(distinctQueryCard, null, caseId, singleQuota, !isInflow);
+        Map<String, Integer> queryCardInOutTimes = getInOutTotalTimesViaLocalAndOppositeCards(distinctQueryCard, request, null, !isInflow);
         if (CollectionUtils.isEmpty(queryCardInOutTimes)) {
             return new HashMap<>();
         }
@@ -517,7 +482,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         int computeTotal = getRequireQueryCardsAndOrderRecordsAndTotal(sortRecords, requireQueryInOutCards, queryCardInOutTimes, orderRecords);
         // 需要查询的卡号
         List<String> queryCards = new ArrayList<>(requireQueryInOutCards.keySet());
-        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, null, caseId, singleQuota, isInflow);
+        List<BankTransactionRecord> unsortedRecords = asyncQueryInOutRecord(computeTotal, queryCards, null, request, isInflow);
         if (CollectionUtils.isEmpty(unsortedRecords)) {
             return null;
         }
@@ -528,7 +493,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     /**
      * <h2> 批量查询卡号的进/出记录,获取对方卡号,然后再查询 </h2>
      */
-    private List<String> asyncQueryOppositeAndLocalCards(List<String> cards, String caseId, int singleQuota, boolean isInflow, boolean isLocal) throws ExecutionException, InterruptedException {
+    private List<String> asyncQueryOppositeAndLocalCards(List<String> cards, FastInFastOutRequest request, boolean isInflow, boolean isLocal) throws ExecutionException, InterruptedException {
 
         int position = 0;
         List<CompletableFuture<List<String>>> futures = new ArrayList<>();
@@ -536,7 +501,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             int next = Math.min(position + perAggThreshold, transitCardCount);
             int finalPosition = position;
             CompletableFuture<List<String>> future = CompletableFuture.supplyAsync(() ->
-                    getDistinctOppositeCardOrQueryCard(cards, caseId, singleQuota, isInflow, isLocal, finalPosition, next), ThreadPoolConfig.getExecutor());
+                    getDistinctOppositeCardOrQueryCard(cards, request, isInflow, isLocal, finalPosition, next), ThreadPoolConfig.getExecutor());
             position = next;
             futures.add(future);
         }
@@ -554,7 +519,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
      * <h2> 批量查询卡号的进/出记录 </h2>
      */
     private List<BankTransactionRecord> asyncQueryInOutRecord(int computeTotal, List<String> requireQueryInOutCards, @Nullable List<String> oppositeCards,
-                                                              String caseId, int singleQuota, boolean isInflow) {
+                                                              FastInFastOutRequest request, boolean isInflow) {
 
         int position = 0;
         List<CompletableFuture<List<BankTransactionRecord>>> futures = new ArrayList<>();
@@ -565,7 +530,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             // 批量查询这些卡号的进账/出账记录
             int finalPage = page;
             CompletableFuture<List<BankTransactionRecord>> future = CompletableFuture.supplyAsync(() ->
-                    getInOutRecordViaQueryCards(requireQueryInOutCards, oppositeCards, caseId, singleQuota, !isInflow, finalPage, perAggThreshold));
+                    getInOutRecordViaQueryCards(requireQueryInOutCards, oppositeCards, request, !isInflow, finalPage, perAggThreshold));
             futures.add(future);
             position = next;
             page++;
@@ -721,9 +686,10 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     /**
      * <h2> 查询cards的进账或者出账,获取它的去重对方卡号或者查询卡号集合 </h2>
      */
-    private List<String> getDistinctOppositeCardOrQueryCard(List<String> cards, String caseId, int singleQuota, boolean isIn, boolean isLocal, int from, int size) {
+    private List<String> getDistinctOppositeCardOrQueryCard(List<String> cards, FastInFastOutRequest request, boolean isIn, boolean isLocal, int from, int size) {
 
-        QuerySpecialParams query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, singleQuota, isIn);
+        String caseId = request.getCaseId();
+        QuerySpecialParams query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, request, isIn);
         AggregationParams agg;
         if (isLocal) {
             agg = aggParamFactory.groupByAndCountField(FundTacticsAnalysisField.QUERY_CARD, transitCardCount, new Pagination(from, size));
@@ -747,10 +713,10 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     /**
      * <h2> 通过查询卡号获取进出记录(根据排序) </h2>
      */
-    private List<BankTransactionRecord> getInOutRecordOrderViaQueryCards(List<String> cards, String caseId, int singleQuota,
-                                                                         boolean isIn, String property, Sort.Direction direction, int orderChunkSize) {
+    private List<BankTransactionRecord> getInOutRecordOrderViaQueryCards(List<String> cards, FastInFastOutRequest request, boolean isIn, String property, Sort.Direction direction, int orderChunkSize) {
 
-        QuerySpecialParams query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, singleQuota, isIn);
+        String caseId = request.getCaseId();
+        QuerySpecialParams query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, request, isIn);
         Page<BankTransactionRecord> recordPage = entranceRepository.findAll(PageRequest.of(0, orderChunkSize, direction, property), caseId, BankTransactionRecord.class, query);
         if (null == recordPage || CollectionUtils.isEmpty(recordPage.getContent())) {
             return null;
@@ -761,12 +727,14 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     /**
      * <h2> 通过查询卡号、对方卡号 获取进出记录(不排序) </h2>
      */
-    private List<BankTransactionRecord> getInOutRecordViaQueryCards(List<String> cards, List<String> oppositeCards, String caseId, int singleQuota,
+    private List<BankTransactionRecord> getInOutRecordViaQueryCards(List<String> cards, List<String> oppositeCards, FastInFastOutRequest request,
                                                                     boolean isIn, int from, int orderChunkSize) {
 
         QuerySpecialParams query;
+        int singleQuota = request.getSingleQuota();
+        String caseId = request.getCaseId();
         if (CollectionUtils.isEmpty(oppositeCards)) {
-            query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, singleQuota, isIn);
+            query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, request, isIn);
         } else {
             query = fastInFastOutQueryParamFactory.getInoutRecordsViaQueryAndOpposite(cards, oppositeCards, caseId, singleQuota, isIn);
         }
@@ -780,11 +748,13 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
     /**
      * <h2> 通过查询卡号 与 对方卡号(可能为空) 获取进账/出账的总次数 </h2>
      */
-    private Map<String, Integer> getInOutTotalTimesViaLocalAndOppositeCards(List<String> cards, @Nullable List<String> adjustCards, String caseId, int singleQuota, boolean isInFlow) {
+    private Map<String, Integer> getInOutTotalTimesViaLocalAndOppositeCards(List<String> cards, FastInFastOutRequest request, @Nullable List<String> adjustCards, boolean isInFlow) {
 
+        String caseId = request.getCaseId();
+        int singleQuota = request.getSingleQuota();
         QuerySpecialParams query;
         if (CollectionUtils.isEmpty(adjustCards)) {
-            query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, caseId, singleQuota, isInFlow);
+            query = fastInFastOutQueryParamFactory.getInoutRecordsViaAdjustCards(cards, request, isInFlow);
         } else {
             query = fastInFastOutQueryParamFactory.getInoutRecordsViaQueryAndOpposite(cards, adjustCards, caseId, singleQuota, isInFlow);
         }

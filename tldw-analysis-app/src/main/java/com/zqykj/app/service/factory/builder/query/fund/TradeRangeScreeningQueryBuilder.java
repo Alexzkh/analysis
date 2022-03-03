@@ -108,8 +108,15 @@ public class TradeRangeScreeningQueryBuilder extends FundTacticsCommonQueryBuild
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         // 案件Id 过滤
         filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
+        // 选择个体查询的时候
+        if (request.getAnalysisType() == SELECT_INDIVIDUAL) {
+            String identityCard = StringUtils.isBlank(request.getIdentityCard()) ? "" : request.getIdentityCard();
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, identityCard));
+        }
         // 查询卡号过滤(查询卡号)
-        filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
+        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNums()));
+        }
         setDateRange(request, filter);
         return filter;
     }

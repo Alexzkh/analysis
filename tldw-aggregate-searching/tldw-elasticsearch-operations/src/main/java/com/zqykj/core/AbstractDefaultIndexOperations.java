@@ -186,6 +186,10 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
         return doExists(getIndexCoordinatesFor(entityClass));
     }
 
+    public boolean exists(String boundIndex) {
+        return doExists(boundIndex);
+    }
+
     protected abstract boolean doExists(String index);
 
     @Override
@@ -208,6 +212,11 @@ public abstract class AbstractDefaultIndexOperations implements IndexOperations 
     @Override
     public void refresh(Class<?> entityClass) {
         doRefresh(getIndexCoordinatesFor(entityClass));
+    }
+
+    @Override
+    public void refresh(String boundIndex) {
+        doRefresh(boundIndex);
     }
 
     protected abstract void doRefresh(String index);

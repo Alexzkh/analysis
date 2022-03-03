@@ -21,6 +21,11 @@ import java.util.List;
 public class FundTacticsPartGeneralRequest {
 
     /**
+     * 分析对象描述  1: 全部查询 2: 选择个体/指定调单卡号 3: 默认分组
+     */
+    private int analysisType;
+
+    /**
      * 数据标识唯一id
      */
     private String id;

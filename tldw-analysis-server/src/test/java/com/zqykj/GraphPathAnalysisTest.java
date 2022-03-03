@@ -1,6 +1,9 @@
 package com.zqykj;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xkzhangsan.time.calculator.DateTimeCalculatorUtil;
 import com.zqykj.app.service.factory.ITransactionPathQueryRequestFactory;
 import com.zqykj.app.service.strategy.analysis.proxy.BaseAPIProxy;
@@ -21,8 +24,6 @@ import com.zqykj.infrastructure.util.hashing.LongHashFunction;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,7 +33,6 @@ import org.springframework.http.HttpHeaders;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.codehaus.jackson.type.TypeReference;
 
 import java.io.*;
 import java.math.BigDecimal;
