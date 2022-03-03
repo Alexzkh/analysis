@@ -26,16 +26,16 @@ public class TradeRangeScreeningAggBuilderBuilder extends FundTacticsCommonAggBu
         // 根据查询卡号分组
         AggregationParams groupBy = AggregationParamsBuilders.terms("groupByQueryCard", FundTacticsAnalysisField.QUERY_CARD);
         // 交易笔数统计
-        AggregationParams tradeTimes = AggregationParamsBuilders.count("trade_times", FundTacticsAnalysisField.QUERY_CARD, null);
+        AggregationParams tradeTimes = AggregationParamsBuilders.count("local_trade_total", FundTacticsAnalysisField.QUERY_CARD, null);
         groupBy.setPerSubAggregation(tradeTimes);
         // 交易金额
-        AggregationParams tradeAmount = AggregationParamsBuilders.sum("trade_amount", FundTacticsAnalysisField.CHANGE_MONEY);
+        AggregationParams tradeAmount = AggregationParamsBuilders.sum("local_trade_amount", FundTacticsAnalysisField.CHANGE_MONEY);
         groupBy.setPerSubAggregation(tradeAmount);
         // 最早交易日期
-        AggregationParams minDate = AggregationParamsBuilders.min("min_date", FundTacticsAnalysisField.TRADING_TIME, null);
+        AggregationParams minDate = AggregationParamsBuilders.min("local_min_date", FundTacticsAnalysisField.TRADING_TIME, null);
         groupBy.setPerSubAggregation(minDate);
         // 最晚交易日期
-        AggregationParams maxDate = AggregationParamsBuilders.min("max_date", FundTacticsAnalysisField.TRADING_TIME, null);
+        AggregationParams maxDate = AggregationParamsBuilders.min("local_max_date", FundTacticsAnalysisField.TRADING_TIME, null);
         groupBy.setPerSubAggregation(maxDate);
         // 聚合展示字段
         String[] showFields = new String[]{FundTacticsAnalysisField.QUERY_CARD, FundTacticsAnalysisField.BANK};

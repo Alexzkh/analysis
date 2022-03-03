@@ -31,19 +31,19 @@ public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
     // 开户名称
     @Agg(name = "customer_name", showField = true)
     @Key(name = "customer_name")
-    @ExcelProperty(value = "开户名称")
+    @ExcelProperty(value = "开户名称", order = 0)
     private String customerName;
 
     // 开户证件号码
     @Agg(name = "customer_identity_card", showField = true)
     @Key(name = "customer_identity_card")
-    @ExcelProperty(value = "开户证件号码")
+    @ExcelProperty(value = "开户证件号码", order = 1)
     private String customerIdentityCard;
 
     // 开户银行
     @Agg(name = "bank", showField = true)
     @Key(name = "bank")
-    @ExcelProperty(value = "开户银行")
+    @ExcelProperty(value = "开户银行", order = 2)
     private String bank;
 
     // 账号
@@ -55,31 +55,31 @@ public class TradeConvergenceAnalysisResult extends FundPartAnalysisResult {
     // 交易卡号
     @Agg(name = "query_card", showField = true)
     @Key(name = "query_card")
-    @ExcelProperty(value = "交易卡号")
+    @ExcelProperty(value = "交易卡号", order = 3)
     private String tradeCard;
 
     // 对方开户名称
     @Agg(name = "transaction_opposite_name", showField = true)
     @Key(name = "transaction_opposite_name")
-    @ExcelProperty(value = "对方开户名称")
+    @ExcelProperty(value = "对方开户名称", order = 4)
     private String oppositeCustomerName;
 
     // 对方开户证件号码
     @Agg(name = "transaction_opposite_certificate_number", showField = true)
     @Key(name = "transaction_opposite_certificate_number")
-    @ExcelProperty(value = "对方开户证件号码")
+    @ExcelProperty(value = "对方开户证件号码", order = 5)
     private String oppositeIdentityCard;
 
     // 对方开户银行
     @Agg(name = "transaction_opposite_account_open_bank", showField = true)
     @Key(name = "transaction_opposite_account_open_bank")
-    @ExcelProperty(value = "对方开户银行")
+    @ExcelProperty(value = "对方开户银行", order = 6)
     private String oppositeBank;
 
     // 对方卡号
     @Agg(name = "transaction_opposite_card", showField = true)
     @Key(name = "transaction_opposite_card")
-    @ExcelProperty(value = "对方卡号")
+    @ExcelProperty(value = "对方卡号", order = 7)
     private String oppositeTradeCard;
 
     // 合并卡号

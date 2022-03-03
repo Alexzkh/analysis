@@ -4,7 +4,7 @@ import com.zqykj.app.service.vo.fund.IndividualCardTransactionStatisticsRequest;
 import com.zqykj.app.service.vo.fund.IndividualCardTransactionStatisticsResponse;
 import com.zqykj.app.service.vo.fund.IndividualInfoAndStatisticsRequest;
 import com.zqykj.app.service.vo.fund.IndividualInfoAndStatisticsResponse;
-import com.zqykj.common.core.ServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 import java.util.List;
 

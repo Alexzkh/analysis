@@ -14,7 +14,6 @@ import com.zqykj.app.service.transform.NumericalConversion;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
 import com.zqykj.common.constant.Constants;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.enums.HistogramStatistic;
 import com.zqykj.common.response.*;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralPreRequest;
@@ -23,6 +22,7 @@ import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.domain.*;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.BankTransactionRecord;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.util.BigDecimalUtil;
@@ -118,7 +118,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         dateAgg.setResultName("fundSumByDate");
 
         // 构建  DateSpecificFormat对象
-        List<List<Object>> result = entranceRepository.dateGroupAgg(query, dateAgg, BankTransactionFlow.class, caseId);
+        List<List<Object>> result = entranceRepository.dateGroupAgg(query, dateAgg, BankTransactionRecord.class, caseId);
 
         TradeStatisticalAnalysisFundSumByDate groupTradeAmountSum = new TradeStatisticalAnalysisFundSumByDate();
 
@@ -162,7 +162,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
                                                                                                                     boolean isComputeTotal) throws Exception {
 
         Map<String, Object> map;
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+        if (request.getAnalysisType() == 2 || request.getAnalysisType() == 3) {
 
             request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
             map = statisticsAnalysisResultViaChosenMainCards(request, from, size, request.getCaseId(), isComputeTotal);
@@ -286,14 +286,14 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         String caseId = request.getCaseId();
         // 查询总量
         // 如果是全部查询,需要以全部调单卡号作为 查询卡号条件去查询
-        if (CollectionUtils.isEmpty(request.getCardNums())) {
+        if (CollectionUtils.isEmpty(request.getCardNum())) {
             QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
             List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (!CollectionUtils.isEmpty(adjustCards)) {
-                request.setCardNums(adjustCards);
+                request.setCardNum(adjustCards);
             }
         }
-        QuerySpecialParams totalQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+        QuerySpecialParams totalQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
         Map<String, List<List<Object>>> totalMap = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionFlow.class, caseId);
         if (CollectionUtils.isEmpty(totalMap) || CollectionUtils.isEmpty(totalMap.get(CARDINALITY_TOTAL))) {
             return 0;
@@ -308,7 +308,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     private Map<String, Object> statisticsAnalysisResultViaChosenMainCards(TradeStatisticalAnalysisQueryRequest request, int from, int size, String caseId, boolean isComputeTotal) {
 
         // 构建 交易统计分析查询请求
-        QuerySpecialParams tradeStatisticsQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
+        QuerySpecialParams tradeStatisticsQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
         // 构建 交易统计分析聚合查询请求
         AggregationParams tradeStatisticsAgg = tradeStatisticalAnalysisAggParamFactory.buildTradeStatisticsAnalysisByMainCards(request, from, size);
 
@@ -326,7 +326,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         if (isComputeTotal) {
             AggregationParams totalAgg = total(request);
             // 获取交易统计查询结果总量
-            QuerySpecialParams totalQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+            QuerySpecialParams totalQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
             totalResults = entranceRepository.compoundQueryAndAgg(totalQuery, totalAgg, BankTransactionFlow.class, caseId);
         }
         // 获取交易统计查询结果
@@ -405,14 +405,14 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
                 resultMap.put("result", new ArrayList<>());
                 return resultMap;
             }
-            request.setCardNums(adjustCards);
+            request.setCardNum(adjustCards);
             return statisticsAnalysisResultViaChosenMainCards(request, from, limit, request.getCaseId(), isComputeTotal);
         }
         // 异步执行 全部查询任务
         // 获取全部查询的总量
         AggregationParams totalAgg = total(request);
         // 构建 交易统计分析查询请求
-        QuerySpecialParams statisticsQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionFlow.class);
+        QuerySpecialParams statisticsQuery = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
         Map<String, List<List<Object>>> totalResults = entranceRepository.compoundQueryAndAgg(statisticsQuery, totalAgg, BankTransactionFlow.class, caseId);
         // 这里计算的总量其实不是正确的、但是后面拿出的分页数据是正确的
         long total = 0;
@@ -458,7 +458,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
         }
         List<TradeStatisticalAnalysisResult> statisticalAnalysisResults = new ArrayList<>();
         if (!CollectionUtils.isEmpty(queryCards)) {
-            request.setCardNums(queryCards);
+            request.setCardNum(queryCards);
             request.setGroupInitSize(queryCards.size());
             Map<String, Object> resultsMap = statisticsAnalysisResultViaChosenMainCards(request, 0, queryCards.size(), caseId, false);
             statisticalAnalysisResults = (List<TradeStatisticalAnalysisResult>) resultsMap.get("result");
@@ -476,7 +476,7 @@ public class TransactionStatisticsImpl extends FundTacticsCommonImpl implements 
     private List<String> getQueryCards(TradeStatisticalAnalysisQueryRequest request, int from, int size, String caseId) {
 
         // 构建查询请求参数
-        QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId, BankTransactionRecord.class);
+        QuerySpecialParams query = tradeStatisticalAnalysisQueryParamFactory.createTradeStatisticalAnalysisQueryRequestByMainCards(request, caseId);
         // 构建 交易汇聚分析聚合请求
         AggregationParams agg = tradeStatisticalAnalysisAggParamFactory.buildTradeStatisticalQueryCardsAgg(request, from, size);
         // 构建 mapping (聚合名称 -> 聚合属性)

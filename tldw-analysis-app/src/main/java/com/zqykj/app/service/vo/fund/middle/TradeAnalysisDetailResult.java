@@ -50,13 +50,13 @@ public class TradeAnalysisDetailResult {
     @ExcelProperty(value = "对方银行名称",index = 7)
     private String transactionOppositeAccountOpenBank;
 
-    /** 交易时间 */
-    @ExcelProperty(value = "交易时间",index = 8)
-    private String tradeTime;
-
     /** 交易金额 */
-    @ExcelProperty(value = "交易金额",index = 9)
+    @ExcelProperty(value = "交易金额",index = 8)
     private BigDecimal changeAmount;
+
+    /** 交易时间 */
+    @ExcelProperty(value = "交易时间",index = 9)
+    private String tradeTime;
 
     /** 借贷标识 */
     @ExcelProperty(value = "借贷标志",index = 10)

@@ -15,7 +15,7 @@ import java.util.List;
 @Setter
 @Getter
 @NoArgsConstructor
-public class TradeRangeScreeningDataChartRequest extends FundTacticsPartGeneralRequest {
+public class TradeRangeScreeningDataChartRequest extends FundTacticsPartGeneralPreRequest {
 
     /**
      * 卡号集合
@@ -26,6 +26,8 @@ public class TradeRangeScreeningDataChartRequest extends FundTacticsPartGeneralR
      * 选中查看的起始 交易笔数
      */
     private int startNumberOfTrade = 1;
+
+
 
     /**
      * 选中查看的结束 交易笔数

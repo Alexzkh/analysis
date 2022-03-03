@@ -40,7 +40,7 @@ public class TradeStatisticalAnalysisAggBuilderBuilder extends FundTacticsCommon
         FundDateRequest fundAnalysisDateRequest = (FundDateRequest) request;
 
         fundAnalysisDateRequest.setDateField(FundTacticsAnalysisField.TRADING_TIME);
-        fundAnalysisDateRequest.setMetricsField(FundTacticsAnalysisField.TRANSACTION_MONEY);
+        fundAnalysisDateRequest.setMetricsField(FundTacticsAnalysisField.CHANGE_MONEY);
         DateParams dateParams = new DateParams();
         // 设置format
         if (StringUtils.isNotBlank(fundAnalysisDateRequest.getFormat())) {

@@ -6,12 +6,14 @@ package com.zqykj.app.service.factory.builder.query.fund;
 import com.zqykj.app.service.factory.param.query.FastInFastOutQueryParamFactory;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
+import com.zqykj.app.service.vo.fund.FastInFastOutRequest;
 import com.zqykj.app.service.vo.fund.middle.FastInFastOutDetailRequest;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -22,17 +24,21 @@ import java.util.List;
  * <h1> 快进快出查询请求参数构建 </h1>
  */
 @Service
-public class FastInFastOutQueryBuilder implements FastInFastOutQueryParamFactory {
+public class FastInFastOutQueryBuilder extends FundTacticsCommonQueryBuilder implements FastInFastOutQueryParamFactory {
 
     @Override
-    public QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, String caseId, int singleQuota, boolean isIn) {
+    public QuerySpecialParams getInoutRecordsViaAdjustCards(List<String> cards, FastInFastOutRequest request, boolean isIn) {
         // 构建查询参数
         QuerySpecialParams querySpecialParams = new QuerySpecialParams();
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
         // 案件Id 过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
         // 金额过滤
-        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, singleQuota, QueryOperator.gte));
+        filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.CHANGE_MONEY, request.getSingleQuota(), QueryOperator.gte));
+        if (request.getAnalysisType() == SELECT_INDIVIDUAL) {
+            String identityCard = StringUtils.isBlank(request.getIdentityCard()) ? "" : request.getIdentityCard();
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, identityCard));
+        }
         // 查询卡号集合过滤
         if (!CollectionUtils.isEmpty(cards)) {
             filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, cards));

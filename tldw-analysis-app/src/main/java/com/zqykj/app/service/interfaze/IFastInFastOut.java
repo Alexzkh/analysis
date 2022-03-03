@@ -9,7 +9,7 @@ import com.zqykj.app.service.vo.fund.FastInFastOutResult;
 import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.app.service.vo.fund.middle.FastInFastOutDetailRequest;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
-import com.zqykj.common.core.ServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 /**
  * <h1> 战法快进快出 </h1>

@@ -3,9 +3,9 @@ package com.zqykj.app.service.interfaze;
 import com.alibaba.excel.ExcelWriter;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.request.TransactionStatisticsAggs;
 import com.zqykj.common.response.HistogramStatisticResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 
 /**

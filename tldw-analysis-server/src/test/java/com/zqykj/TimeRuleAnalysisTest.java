@@ -1,5 +1,7 @@
 package com.zqykj;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zqykj.app.service.factory.AggregationResultEntityParseFactory;
 import com.zqykj.app.service.factory.TimeRuleAnalysisAggRequestParamFactory;
 import com.zqykj.app.service.factory.TimeRuleAnalysisQueryRequestFactory;
@@ -20,8 +22,6 @@ import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

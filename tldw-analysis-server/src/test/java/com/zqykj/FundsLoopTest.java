@@ -1,6 +1,8 @@
 package com.zqykj;
 
-import com.zqykj.app.service.factory.ITransactionPathQueryRequestFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zqykj.app.service.factory.param.agg.FundsLoopAggParamFactory;
 import com.zqykj.app.service.factory.param.query.FundsLoopQueryRequestFactory;
 import com.zqykj.app.service.interfaze.impl.FundsLoopAnalysisImpl;
@@ -15,9 +17,6 @@ import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,8 +44,6 @@ public class FundsLoopTest {
 
     @Autowired
     private BaseAPIProxy baseAPIProxy;
-    @Autowired
-    private ITransactionPathQueryRequestFactory iTransactionPathQueryRequestFactory;
 
     @Autowired
     private EntranceRepository entranceRepository;

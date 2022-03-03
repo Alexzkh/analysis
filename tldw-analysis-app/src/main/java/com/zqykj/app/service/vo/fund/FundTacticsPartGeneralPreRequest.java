@@ -18,11 +18,6 @@ import java.util.List;
 public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequest {
 
     /**
-     * 分析对象描述
-     */
-    private String analysisSubject;
-
-    /**
      * 身份证
      */
     private String identityCard;
@@ -30,7 +25,7 @@ public class FundTacticsPartGeneralPreRequest extends FundTacticsPartGeneralRequ
     /**
      * 卡号集合
      */
-    private List<String> cardNums;
+    private List<String> cardNum;
 
     /**
      * 比较符  大于、大于等于、小于、小于等于、等于   (默认是大于等于0)

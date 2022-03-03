@@ -20,6 +20,9 @@ import java.util.List;
  */
 public abstract class FundTacticsCommonQueryBuilder {
 
+    // 代表选择个体
+    protected static final int SELECT_INDIVIDUAL = 2;
+
     protected CombinationQueryParams queryCardsAndCase(String caseId, List<String> cards) {
 
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
@@ -29,4 +32,17 @@ public abstract class FundTacticsCommonQueryBuilder {
         }
         return filter;
     }
+
+    protected CombinationQueryParams cardsFilter(List<String> cardNums) {
+
+        CombinationQueryParams combination = new CombinationQueryParams();
+        combination.setType(ConditionType.should);
+
+        if (!CollectionUtils.isEmpty(cardNums)) {
+            combination.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, cardNums));
+            combination.addCommonQueryParams(new CommonQueryParams(QueryType.terms, FundTacticsAnalysisField.QUERY_CARD, cardNums));
+        }
+        return combination;
+    }
+
 }

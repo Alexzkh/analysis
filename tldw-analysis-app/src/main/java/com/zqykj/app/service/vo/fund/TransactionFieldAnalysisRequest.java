@@ -13,7 +13,7 @@ import java.util.List;
  */
 @Setter
 @Getter
-public class TransactionFieldAnalysisRequest extends FundTacticsPartGeneralRequest {
+public class TransactionFieldAnalysisRequest extends FundTacticsPartGeneralPreRequest {
 
     /**
      * 调单卡号集合

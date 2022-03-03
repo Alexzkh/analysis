@@ -24,7 +24,7 @@ import java.util.List;
  * <h1> 交易字段分析查询参数构建 </h1>
  */
 @Service
-public class TransactionFieldQueryBuilder implements TransactionFieldQueryParamFactory {
+public class TransactionFieldQueryBuilder extends FundTacticsCommonQueryBuilder implements TransactionFieldQueryParamFactory {
 
 
     public QuerySpecialParams transactionFieldTypeQuery(TransactionFieldAnalysisRequest request) {
@@ -91,6 +91,11 @@ public class TransactionFieldQueryBuilder implements TransactionFieldQueryParamF
     }
 
     private void adjustCardsFilter(CombinationQueryParams filter, TransactionFieldAnalysisRequest request) {
+        // 选择个体查询的时候
+        if (request.getAnalysisType() == SELECT_INDIVIDUAL) {
+            String identityCard = StringUtils.isBlank(request.getIdentityCard()) ? "" : request.getIdentityCard();
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD, identityCard));
+        }
         // 调单卡号条件筛选
         if (!CollectionUtils.isEmpty(request.getCardNum())) {
             CombinationQueryParams filterCards = new CombinationQueryParams(ConditionType.should);

@@ -9,7 +9,7 @@ import com.zqykj.app.service.vo.fund.TransactionFieldAnalysisRequest;
 import com.zqykj.app.service.vo.fund.TransactionFieldTypeProportionResults;
 import com.zqykj.app.service.vo.fund.TransactionFieldTypeStatisticsResult;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
-import com.zqykj.common.core.ServerResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 import java.util.List;
 

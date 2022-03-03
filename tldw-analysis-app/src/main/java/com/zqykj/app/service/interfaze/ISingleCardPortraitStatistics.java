@@ -1,8 +1,8 @@
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.app.service.vo.fund.SingleCardPortraitRequest;
 import com.zqykj.app.service.vo.fund.SingleCardPortraitResponse;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 /**
  * @author: SunChenYu

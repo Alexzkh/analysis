@@ -24,6 +24,7 @@ import com.zqykj.domain.archive.PeopleCardInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
 import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.PeopleArea;
+import com.zqykj.domain.bank.TradeRangeOperationRecord;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
 import com.zqykj.domain.vo.TransferAccountAnalysisResultVO;
@@ -298,6 +299,24 @@ public class OriginEsOperationTest {
         maps.add(map);
 
         entranceRepository.saveAll(maps, null, PeopleCardInfo.class);
+    }
+
+    @Test
+    public void specifyIndexNameInsertData() {
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("adjust_card", Arrays.asList("0111120103290272049", "011112900214791", "6210676862224490842"));
+        map.put("operation_date", "2022-03-01 15:04:41");
+        map.put("operation_people", "测试数据插入22");
+        map.put("min_amount", 7.0);
+        map.put("max_amount", 8000.0);
+        map.put("account_name", "测试数据插入22");
+        map.put("account_id_number", "132530198111095616");
+        map.put("individual_bankCards_number", 6);
+        map.put("data_cateGory", 2);
+        map.put("remark", "");
+        map.put("case_id", "ef8307a204b24a7b9034e139c6d75252");
+        entranceRepository.save(map, "ef8307a204b24a7b9034e139c6d75252", "trade_range");
     }
 
     @Test

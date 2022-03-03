@@ -15,9 +15,9 @@ import com.zqykj.app.service.interfaze.IFundTacticsAnalysis;
 import com.zqykj.app.service.interfaze.ITransactionConvergenceAnalysis;
 import com.zqykj.app.service.vo.fund.*;
 import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
-import com.zqykj.common.core.ServerResponse;
 import com.zqykj.common.util.EasyExcelUtils;
 import com.zqykj.domain.bank.BankTransactionRecord;
+import com.zqykj.infrastructure.core.ServerResponse;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.QueryOperator;
 import com.zqykj.parameters.query.QuerySpecialParams;
@@ -51,11 +51,12 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
 
         String caseId = request.getCaseId();
         Map<String, Object> map;
-        if (!CollectionUtils.isEmpty(request.getCardNums())) {
+        if (request.getAnalysisType() == 2 || request.getAnalysisType() == 3) {
             // 设置分组桶的大小
             request.setGroupInitSize(fundThresholdConfig.getGroupByThreshold());
             map = convergenceAnalysisResultViaChosenMainCards(request, from, size, caseId, isComputeTotal);
         } else {
+            // 全部查询
             map = convergenceAnalysisResultViaAllMainCards(request, from, size, caseId);
         }
         if (CollectionUtils.isEmpty(map)) {
@@ -74,11 +75,11 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
         AggregationParams totalAgg = total(request);
         // 查询总量
         // 如果是全部查询,需要以全部调单卡号作为 查询卡号条件去查询
-        if (CollectionUtils.isEmpty(request.getCardNums())) {
+        if (CollectionUtils.isEmpty(request.getCardNum())) {
             QueryOperator operator = FundTacticsPartGeneralPreRequest.getOperator(request.getOperator());
             List<String> adjustCards = queryMaxAdjustCardsBySingleAmountDate(request.getCaseId(), request.getFund(), operator, FundTacticsPartGeneralRequest.getDateRange(request.getDateRange()));
             if (!CollectionUtils.isEmpty(adjustCards)) {
-                request.setCardNums(adjustCards);
+                request.setCardNum(adjustCards);
             }
         }
         QuerySpecialParams totalQuery = tradeConvergenceAnalysisQueryParamFactory.buildTradeConvergenceAnalysisResultMainCardsRequest(request, request.getCaseId());
@@ -294,7 +295,7 @@ public class TransactionConvergenceAnalysisImpl extends FundTacticsCommonImpl im
                 resultMap.put("result", new ArrayList<>());
                 return resultMap;
             }
-            request.setCardNums(adjustCards);
+            request.setCardNum(adjustCards);
             return convergenceAnalysisResultViaChosenMainCards(request, from, limit, request.getCaseId(), true);
         }
         // 异步执行 全部查询任务
