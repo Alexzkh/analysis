@@ -38,6 +38,4 @@ public class FastInFastOutRequest extends FundTacticsPartGeneralPreRequest {
     private long timeInterval;
 
     private String exportFileName = "快进快出";
-
-    private List<Integer> ids;
 }
