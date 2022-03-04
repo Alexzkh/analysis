@@ -147,7 +147,7 @@ public abstract class FundTacticsCommonImpl {
 
     protected ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> detail(FundTacticsPartGeneralRequest request, int from, int size, String... fuzzyFields) {
         SortRequest sortRequest = request.getSortRequest();
-        QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request.getCaseId(), request.getQueryCard(), request.getOppositeCard(), request.getKeyword(), fuzzyFields);
+        QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request, fuzzyFields);
         // 设置需要查询的字段
         if (from == 0 && size == 0) {
             query.setIncludeFields(new String[0]);
@@ -164,7 +164,7 @@ public abstract class FundTacticsCommonImpl {
     }
 
     protected long detailTotal(FundTacticsPartGeneralRequest request) {
-        QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request.getCaseId(), request.getQueryCard(), request.getOppositeCard(), request.getKeyword(), FundTacticsFuzzyQueryField.detailFuzzyFields);
+        QuerySpecialParams query = queryRequestParamFactory.queryTradeAnalysisDetail(request, FundTacticsFuzzyQueryField.detailFuzzyFields);
         return entranceRepository.count(request.getCaseId(), BankTransactionRecord.class, query);
     }
 

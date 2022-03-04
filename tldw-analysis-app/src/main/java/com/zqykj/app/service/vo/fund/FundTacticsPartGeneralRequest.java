@@ -46,11 +46,6 @@ public class FundTacticsPartGeneralRequest {
     private List<String> ids;
 
     /**
-     * 数据标识唯一id集合(数据下载导出的时候会选择某几条数据,直接根据id即可)
-     */
-    private List<String> exportIds;
-
-    /**
      * 案件Id
      */
     private String caseId;

@@ -3,6 +3,7 @@
  */
 package com.zqykj.app.service.factory;
 
+import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralRequest;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QueryOperator;
@@ -121,5 +122,5 @@ public interface QueryRequestParamFactory {
     /**
      * <h2> 查询资金交易详情 </h2>
      */
-    QuerySpecialParams queryTradeAnalysisDetail(String caseId, String queryCard, String oppositeCard, String keyword, String... detailFuzzyFields);
+    QuerySpecialParams queryTradeAnalysisDetail(FundTacticsPartGeneralRequest request, String... detailFuzzyFields);
 }

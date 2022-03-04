@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Setter
 @Getter
 @NoArgsConstructor
-public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralRequest {
+public class UnadjustedAccountAnalysisRequest extends FundTacticsPartGeneralPreRequest {
 
     /**
      * 需要展示的账户特征  来源、中转、沉淀、其他

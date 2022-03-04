@@ -132,6 +132,11 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             return ServerResponse.createByErrorMessage("导出失败,系统内部错误!");
         }
         List<FastInFastOutResult> dataList = response.getData().getContent();
+        // 是否指定了批量下载,如果是,需要先过滤数据
+        if (!CollectionUtils.isEmpty(request.getIds())) {
+            Map<Integer, Integer> idsMap = request.getIds().stream().collect(Collectors.toMap(e -> e, e -> e, (v1, v2) -> v1));
+            dataList = dataList.stream().filter(e -> idsMap.containsKey(e.getHashId())).collect(Collectors.toList());
+        }
         int perRowSheetCount = exportThresholdConfig.getPerSheetRowCount();
         if (dataList.size() <= perRowSheetCount) {
             // 生成一个sheet
@@ -257,7 +262,7 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
             CompareFieldUtil.sort(results, order.isDescending(), property);
             results = results.stream().skip(skip).limit(size).collect(Collectors.toList());
         }
-        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(results,hashTotal.size(),pageRequest.getPageSize()));
+        return ServerResponse.createBySuccess(FundAnalysisResultResponse.build(results, hashTotal.size(), pageRequest.getPageSize()));
     }
 
     /**

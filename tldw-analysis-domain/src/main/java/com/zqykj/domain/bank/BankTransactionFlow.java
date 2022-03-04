@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * @ClassName Transactions
  * @Description 银行交易流水
- * @Author zhangkehou
+ * @Author zhangkehou、machengjun
  * @Date 2021/8/20 13:50
  */
 @Data
