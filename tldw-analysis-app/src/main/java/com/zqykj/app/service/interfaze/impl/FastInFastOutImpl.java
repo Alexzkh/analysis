@@ -134,8 +134,8 @@ public class FastInFastOutImpl extends FundTacticsCommonImpl implements IFastInF
         List<FastInFastOutResult> dataList = response.getData().getContent();
         // 是否指定了批量下载,如果是,需要先过滤数据
         if (!CollectionUtils.isEmpty(request.getIds())) {
-            Map<Integer, Integer> idsMap = request.getIds().stream().collect(Collectors.toMap(e -> e, e -> e, (v1, v2) -> v1));
-            dataList = dataList.stream().filter(e -> idsMap.containsKey(e.getHashId())).collect(Collectors.toList());
+            Map<String, String> idsMap = request.getIds().stream().collect(Collectors.toMap(e -> e, e -> e, (v1, v2) -> v1));
+            dataList = dataList.stream().filter(e -> idsMap.containsKey(String.valueOf(e.getHashId()))).collect(Collectors.toList());
         }
         int perRowSheetCount = exportThresholdConfig.getPerSheetRowCount();
         if (dataList.size() <= perRowSheetCount) {
