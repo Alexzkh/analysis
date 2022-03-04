@@ -267,7 +267,10 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
 
         // TODO 超过此最大调单卡号限制的阈值的话,即便查询出来,还需要作为参数传递给es(不可能将所有的调单的卡号查询出来作为参数),查询很慢
         // TODO 可以参考交易汇聚和交易统计使用的查询全部方法
-        List<String> adjustCards = getMaxAdjustCards(request);
+        List<String> adjustCards = null;
+        if (CollectionUtils.isEmpty(request.getCardNum())) {
+            adjustCards = getMaxAdjustCards(request);
+        }
         int limit;
         // 如果是快捷选择入口,limit 需要重新计算
         if (request.getTopRange() != null) {
@@ -279,7 +282,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
                 limit = BigDecimalUtil.mul(String.valueOf(limit), BigDecimalUtil.div(request.getPercentageOfAccountNumber(), 100).toString()).intValue();
             }
         }
-        if (org.apache.commons.lang3.StringUtils.isBlank(request.getExportFileName())) {
+        if (StringUtils.isBlank(request.getExportFileName())) {
             request.setExportFileName("交易汇聚分析");
         }
         export(excelWriter, limit, adjustCards, request);
@@ -419,8 +422,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
     private List<UnadjustedAccountAnalysisResult> getAnalysisResult(UnadjustedAccountAnalysisRequest request,
                                                                     int from, int size, List<String> adjustCards) {
 
-        DateRange dateRange = FundTacticsPartGeneralRequest.getDateRange(request.getDateRange());
-        QuerySpecialParams queryUnadjusted = unadjustedAccountQueryParamFactory.queryUnadjusted(request.getCaseId(), adjustCards, request.getKeyword(), dateRange);
+        QuerySpecialParams queryUnadjusted = unadjustedAccountQueryParamFactory.queryUnadjusted(request, adjustCards);
         AggregationParams aggUnadjusted = unadjustedAccountAggParamFactory.unadjustedAccountAnalysis(request, from, size, fundThresholdConfig.getGroupByThreshold());
         Map<String, String> aggKeyMapping = new LinkedHashMap<>();
         Map<String, String> entityKeyMapping = new LinkedHashMap<>();
@@ -491,7 +493,7 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
     private int getUnadjustedCardCount(UnadjustedAccountAnalysisRequest request, List<String> adjustCards) {
 
         DateRange dateRange = FundTacticsPartGeneralRequest.getDateRange(request.getDateRange());
-        QuerySpecialParams queryUnadjusted = unadjustedAccountQueryParamFactory.queryUnadjusted(request.getCaseId(), adjustCards, request.getKeyword(), dateRange);
+        QuerySpecialParams queryUnadjusted = unadjustedAccountQueryParamFactory.queryUnadjusted(request, adjustCards);
         AggregationParams unadjustedCountAgg = aggParamFactory.buildDistinctViaField(FundTacticsAnalysisField.QUERY_CARD);
         unadjustedCountAgg.setMapping(entityMappingFactory.buildDistinctTotalAggMapping(FundTacticsAnalysisField.QUERY_CARD));
         unadjustedCountAgg.setResultName("unadjustedCount");
@@ -517,14 +519,13 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
         if (unadjustedCardCount < maxUnadjustedCardQueryCount) {
             size = unadjustedCardCount;
         }
-        DateRange dateRange = FundTacticsPartGeneralRequest.getDateRange(request.getDateRange());
         int position = 0;
         List<CompletableFuture<Long>> futures = new ArrayList<>();
         while (position < size) {
             int next = Math.min(position + fundThresholdConfig.getPerAggCount(), size);
             int finalPosition = position;
             CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> {
-                List<String> queryCards = batchGetQueryCards(request.getCaseId(), adjustCards, request.getKeyword(), dateRange, finalPosition, next - finalPosition);
+                List<String> queryCards = batchGetQueryCards(request, adjustCards, finalPosition, next - finalPosition);
                 if (CollectionUtils.isEmpty(queryCards)) {
                     return 0L;
                 }
@@ -543,13 +544,13 @@ public class UnadjustedAccountsAnalysisImpl extends FundTacticsCommonImpl implem
     /**
      * <h2> 批量获取查询卡号 </h2>
      */
-    private List<String> batchGetQueryCards(String caseId, List<String> adjustCards, String keyword, DateRange dateRange, int from, int size) {
+    private List<String> batchGetQueryCards(UnadjustedAccountAnalysisRequest request, List<String> adjustCards, int from, int size) {
 
-        QuerySpecialParams query = unadjustedAccountQueryParamFactory.queryUnadjusted(caseId, adjustCards, keyword, dateRange);
+        QuerySpecialParams query = unadjustedAccountQueryParamFactory.queryUnadjusted(request, adjustCards);
         AggregationParams agg = aggParamFactory.groupByField(FundTacticsAnalysisField.QUERY_CARD, fundThresholdConfig.getGroupByThreshold(), new Pagination(from, size));
         agg.setMapping(entityMappingFactory.buildGroupByAggMapping(FundTacticsAnalysisField.QUERY_CARD));
         agg.setResultName("getQueryCard");
-        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, caseId);
+        Map<String, List<List<Object>>> resultMap = entranceRepository.compoundQueryAndAgg(query, agg, BankTransactionRecord.class, request.getCaseId());
         if (CollectionUtils.isEmpty(resultMap) || CollectionUtils.isEmpty(resultMap.get(agg.getResultName()))) {
             return null;
         }

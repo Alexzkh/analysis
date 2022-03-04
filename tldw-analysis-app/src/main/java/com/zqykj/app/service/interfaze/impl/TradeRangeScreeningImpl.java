@@ -167,7 +167,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
         Double maxAmount = tradeRangeOperationRecord.getMaxAmount();
         int dateType = tradeRangeOperationRecord.getDataCategory();
         List<String> adjustCards = null;
-        if (CollectionUtils.isEmpty(request.getExportIds())) {
+        if (CollectionUtils.isEmpty(request.getIds())) {
             if (tradeRangeOperationRecord.getIndividualBankCardsNumber() == -1) {
                 // 查询最大调单卡号
                 // TODO 不可能全部查询出来作为参数,当然你可以去 表 BankTransactionRecord 查询,然后查询的记录, 去看它的查询卡号 在 表 BankTransactionFlow 的查询卡号中是否存在
@@ -180,7 +180,7 @@ public class TradeRangeScreeningImpl extends FundTacticsCommonImpl implements IT
                 return ServerResponse.createBySuccess(FundAnalysisResultResponse.empty());
             }
         }
-        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), request.getExportIds(), adjustCards, minAmount, maxAmount, dateType);
+        QuerySpecialParams query = tradeRangeScreeningQueryParamFactory.queryAdjustCardsTradeRecord(request.getCaseId(), request.getIds(), adjustCards, minAmount, maxAmount, dateType);
         // 设置queryFields
         if (from == 0 && size == 0) {
             query.setIncludeFields(new String[0]);

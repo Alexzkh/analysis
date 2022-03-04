@@ -13,11 +13,11 @@ elasticsearch:
       username:
       # password if elasticsearch open ssl
       password:
-      max_connect_total: 30
-      max_connect_per_route: 10
-      connection_request_timeout_millis: 2000
-      socket_timeout_millis: 30000
-      connect_timeout_millis: 2000
+      max_connect_total: 900
+      max_connect_per_route: 300
+      connection_request_timeout_millis: 8000
+      socket_timeout_millis: 60000
+      connect_timeout_millis: 8000
       prefix:
 
 ## **********************************************************

@@ -64,8 +64,15 @@ public class TransactionFieldQueryBuilder extends FundTacticsCommonQueryBuilder 
         addCommonParams(filter, request);
         adjustCardsFilter(filter, request);
         // 统计字段,指定内容查询
-        if (StringUtils.isNotBlank(request.getStatisticsFieldContent())) {
-            filter.addCommonQueryParams(QueryParamsBuilders.terms(request.getStatisticsField(), request.getStatisticsFieldContent()));
+        if (!CollectionUtils.isEmpty(request.getStatisticsFieldContent())) {
+            if (request.getStatisticsFieldContent().size() == 1) {
+                filter.addCommonQueryParams(QueryParamsBuilders.term(request.getStatisticsField(), request.getStatisticsFieldContent()));
+            } else {
+                filter.addCommonQueryParams(QueryParamsBuilders.terms(request.getStatisticsField(), request.getStatisticsFieldContent()));
+            }
+        }
+        if (!CollectionUtils.isEmpty(request.getIds())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField._ID, request.getIds()));
         }
         // 增加模糊查询
         if (StringUtils.isNotBlank(request.getKeyword())) {

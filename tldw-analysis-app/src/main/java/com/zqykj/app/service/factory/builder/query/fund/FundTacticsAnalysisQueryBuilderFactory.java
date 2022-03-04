@@ -263,10 +263,8 @@ public class FundTacticsAnalysisQueryBuilderFactory extends FundTacticsCommonQue
         // 指定caseId
         filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
         // 指定开户证件号码
-        if (StringUtils.isNotBlank(adjustIndividualRequest.getCustomerIdentityCard())) {
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
-                    adjustIndividualRequest.getCustomerIdentityCard()));
-        }
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CUSTOMER_IDENTITY_CARD,
+                adjustIndividualRequest.getCustomerIdentityCard()));
         // 去除证件号码为空的
         // 过滤 查询卡号 和 对方卡号为空的交易记录
 //        CombinationQueryParams mustNot = new CombinationQueryParams();
@@ -397,21 +395,24 @@ public class FundTacticsAnalysisQueryBuilderFactory extends FundTacticsCommonQue
         return query;
     }
 
-    public QuerySpecialParams queryTradeAnalysisDetail(String caseId, String queryCard, String oppositeCard, String keyword, String... detailFuzzyFields) {
+    public QuerySpecialParams queryTradeAnalysisDetail(FundTacticsPartGeneralRequest request, String... detailFuzzyFields) {
         QuerySpecialParams query = new QuerySpecialParams();
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
-        if (StringUtils.isNotBlank(queryCard)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.QUERY_CARD, queryCard));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
+        if (StringUtils.isNotBlank(request.getQueryCard())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.QUERY_CARD, request.getQueryCard()));
         }
-        if (StringUtils.isNotBlank(oppositeCard)) {
-            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, oppositeCard));
+        if (StringUtils.isNotBlank(request.getOppositeCard())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.TRANSACTION_OPPOSITE_CARD, request.getOppositeCard()));
+        }
+        if (!CollectionUtils.isEmpty(request.getIds())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField._ID, request.getIds()));
         }
         // 增加模糊查询
-        if (StringUtils.isNotBlank(keyword)) {
+        if (StringUtils.isNotBlank(request.getKeyword())) {
             CombinationQueryParams detailFuzzy = new CombinationQueryParams(ConditionType.should);
             for (String fuzzyField : detailFuzzyFields) {
-                detailFuzzy.addCommonQueryParams(new CommonQueryParams(QueryType.wildcard, fuzzyField, keyword));
+                detailFuzzy.addCommonQueryParams(new CommonQueryParams(QueryType.wildcard, fuzzyField, request.getKeyword()));
             }
             filter.addCombinationQueryParams(detailFuzzy);
         }

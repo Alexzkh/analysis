@@ -7,6 +7,7 @@ import com.zqykj.app.service.factory.param.query.UnadjustedAccountQueryParamFact
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.field.FundTacticsFuzzyQueryField;
 import com.zqykj.app.service.vo.fund.FundTacticsPartGeneralRequest;
+import com.zqykj.app.service.vo.fund.UnadjustedAccountAnalysisRequest;
 import com.zqykj.builder.QueryParamsBuilders;
 import com.zqykj.common.enums.ConditionType;
 import com.zqykj.common.enums.QueryType;
@@ -16,6 +17,7 @@ import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.DateRange;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -26,22 +28,28 @@ import java.util.List;
 public class UnadjustedAccountQueryBuilder implements UnadjustedAccountQueryParamFactory {
 
 
-    public QuerySpecialParams queryUnadjusted(String caseId, List<String> adjustCards, String keyword, DateRange dateRange) {
+    public QuerySpecialParams queryUnadjusted(UnadjustedAccountAnalysisRequest request, List<String> adjustCards) {
 
+        DateRange dateRange = FundTacticsPartGeneralRequest.getDateRange(request.getDateRange());
         QuerySpecialParams query = new QuerySpecialParams();
         CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
-        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, caseId));
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, request.getCaseId()));
         if (null != dateRange) {
             filter.addCommonQueryParams(QueryParamsBuilders.range(FundTacticsAnalysisField.TRADING_TIME, dateRange));
         }
         CombinationQueryParams mustNot = new CombinationQueryParams(ConditionType.must_not);
-        mustNot.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, adjustCards));
+        if (!CollectionUtils.isEmpty(adjustCards)) {
+            mustNot.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, adjustCards));
+        }
+        if (!CollectionUtils.isEmpty(request.getCardNum())) {
+            filter.addCommonQueryParams(QueryParamsBuilders.terms(FundTacticsAnalysisField.QUERY_CARD, request.getCardNum()));
+        }
         // 去除查询卡号为 "" 的情况
         mustNot.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.QUERY_CARD, ""));
         filter.addCombinationQueryParams(mustNot);
         // 增加模糊查询
-        if (StringUtils.isNotBlank(keyword)) {
-            CombinationQueryParams fuzzyQuery = unadjustedFuzzyQuery(keyword);
+        if (StringUtils.isNotBlank(request.getKeyword())) {
+            CombinationQueryParams fuzzyQuery = unadjustedFuzzyQuery(request.getKeyword());
             filter.addCombinationQueryParams(fuzzyQuery);
         }
         query.addCombiningQueryParams(filter);

@@ -178,6 +178,21 @@ public class TransactionFieldImpl extends FundTacticsCommonImpl implements ITran
         // 合并自定义查询数据
         SortRequest sortRequest = request.getSortRequest();
         String[] excludes = new String[]{"fieldTypeGroupContent"};
+        // 查看 statisticsFieldContent 是否为空
+        List<String> statisticsFieldContent = request.getStatisticsFieldContent();
+        if (!CollectionUtils.isEmpty(statisticsFieldContent)) {
+            List<TransactionFieldAnalysisRequest.CustomCollationQueryRequest> customCollationQueryRequests = request.getCustomCollationQueryRequests();
+            if (!CollectionUtils.isEmpty(customCollationQueryRequests)) {
+                Map<String, TransactionFieldAnalysisRequest.CustomCollationQueryRequest> customMaps = customCollationQueryRequests.stream().collect(Collectors.toMap(TransactionFieldAnalysisRequest.CustomCollationQueryRequest::getClassificationName, e -> e, (v1, v2) -> v1));
+                List<TransactionFieldAnalysisRequest.CustomCollationQueryRequest> finalCustomCollationQueryRequests = new ArrayList<>();
+                statisticsFieldContent.forEach(e -> {
+                    if (customMaps.containsKey(e)) {
+                        finalCustomCollationQueryRequests.add(customMaps.get(e));
+                    }
+                });
+                request.setCustomCollationQueryRequests(finalCustomCollationQueryRequests);
+            }
+        }
         List<TransactionFieldTypeCustomResults> customResults = batchCustomCollationQuery(request, Strings.EMPTY_ARRAY, excludes);
         if (!CollectionUtils.isEmpty(customResults)) {
             // 转成交易类型统计结果

@@ -4,6 +4,7 @@
 package com.zqykj.app.service.vo.fund;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.zqykj.app.service.annotation.Agg;
 import com.zqykj.app.service.annotation.Key;
 import com.zqykj.app.service.annotation.Sort;
@@ -18,6 +19,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @Agg(name = "local_hits")
 @Key
 public class AdjustIndividualAnalysisResult extends FundPartAnalysisResult {

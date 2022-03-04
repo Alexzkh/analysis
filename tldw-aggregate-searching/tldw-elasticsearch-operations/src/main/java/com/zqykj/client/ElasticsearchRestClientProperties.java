@@ -37,12 +37,12 @@ public class ElasticsearchRestClientProperties {
     /**
      * The maximum number of connections in the connection pool.
      */
-    private int maxConnectTotal = 1000;
+    private int maxConnectTotal = 900;
 
     /**
      * The number of requests that a service can receive in parallel each time.
      */
-    private int maxConnectPerRoute = 330;
+    private int maxConnectPerRoute = 300;
 
     /**
      * Get a connection timeout from the connection pool in http client.
