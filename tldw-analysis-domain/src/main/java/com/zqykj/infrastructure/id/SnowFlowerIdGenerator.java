@@ -1,5 +1,6 @@
 package com.zqykj.infrastructure.id;
 
+import cn.hutool.core.util.IdUtil;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -168,4 +169,10 @@ public class SnowFlowerIdGenerator implements IdGenerator {
         return time;
     }
 
+    public static void main(String[] args) {
+        SnowFlowerIdGenerator ss = new SnowFlowerIdGenerator();
+        long l = ss.nextId();
+        System.out.println(l);
+        System.out.println(IdUtil.getSnowflake().nextId());
+    }
 }

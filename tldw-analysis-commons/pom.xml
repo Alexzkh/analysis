@@ -24,8 +24,6 @@
         <guava.version>30.1.1-jre</guava.version>
         <easyexcel.version>3.0.5</easyexcel.version>
         <lombok.version>1.18.20</lombok.version>
-        <!-- Jackson从2.0开始改用新的包名fasterxml,1.x版本的包名是codehaus,新项目，建议直接用2x -->
-        <fasterxml.jackson.version>2.13.1</fasterxml.jackson.version>
         <cglib.version>3.2.2</cglib.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <!-- 目前此版本还无漏洞 -->
@@ -71,10 +69,10 @@
             <version>${lombok.version}</version>
         </dependency>
 
+        <!-- Jackson从2.0开始改用新的包名fasterxml,1.x版本的包名是codehaus,新项目，建议直接用2x -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${fasterxml.jackson.version}</version>
         </dependency>
 
         <!-- 跟随spring-boot版本 -->
