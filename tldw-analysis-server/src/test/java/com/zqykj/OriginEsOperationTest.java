@@ -3,6 +3,8 @@
  */
 package com.zqykj;
 
+import cn.hutool.core.lang.Snowflake;
+import cn.hutool.core.util.IdUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
@@ -429,5 +431,12 @@ public class OriginEsOperationTest {
         int h;
         h = today.get(ChronoField.HOUR_OF_DAY);
         System.out.println("当天时间点(小时): " + h);
+    }
+
+    @Test
+    public void snowTest() {
+        System.out.println(IdUtil.getSnowflake().nextId());
+        System.out.println(System.currentTimeMillis());
+//        System.out.println(IdUtil.getSnowflake().nextId());
     }
 }
