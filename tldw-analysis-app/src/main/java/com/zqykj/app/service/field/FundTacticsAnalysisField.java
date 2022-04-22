@@ -36,7 +36,7 @@ public interface FundTacticsAnalysisField {
     /**
      * 客户身份证(模糊查询专用)
      */
-    String CUSTOMER_IDENTITY_CARD_WILDCARD = "customer_identity_card.customer_identity_card_wildcard";
+    String CUSTOMER_IDENTITY_CARD_WILDCARD = "customer_identity_card";
 
     /**
      * 交易时间
@@ -81,7 +81,7 @@ public interface FundTacticsAnalysisField {
     /**
      * 开户名称(模糊查询专用)
      */
-    String CUSTOMER_NAME_WILDCARD = "customer_name.customer_name_wildcard";
+    String CUSTOMER_NAME_WILDCARD = "customer_name";
 
     /**
      * 对方开户名称
@@ -113,7 +113,7 @@ public interface FundTacticsAnalysisField {
      */
     String OPPOSITE_IDENTITY_CARD = "transaction_opposite_certificate_number";
 
-    String OPPOSITE_IDENTITY_CARD_WILDCARD = "transaction_opposite_card.opposite_card_wildcard";
+    String OPPOSITE_IDENTITY_CARD_WILDCARD = "transaction_opposite_card";
 
     String LOAN_FLAG_OUT = "出";
     String LOAN_FLAG_OUT_EN = "pay_out";

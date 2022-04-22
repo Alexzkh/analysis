@@ -39,28 +39,19 @@ public class SuggestAdjusted {
     /**
      * 对方卡号(建议调单账号)
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "opposite_card"),
-            otherFields = {@InnerField(suffix = "opposite_card_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "opposite_card"))
     private String oppositeCard;
 
     /**
      * 账户开户名称
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "account_name"),
-            otherFields = {@InnerField(suffix = "account_name_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "account_name"))
     private String accountName;
 
     /**
      * 对方开户行
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "bank"),
-            otherFields = {@InnerField(suffix = "bank_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "bank"))
     private String bank;
 
     /**
@@ -102,10 +93,7 @@ public class SuggestAdjusted {
     /**
      * 账户特征(可能有多个) eg. 来源 中转(同时存在)
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "account_feature"),
-            otherFields = {@InnerField(suffix = "account_feature_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "account_feature"))
     private String accountFeature;
 
     /**

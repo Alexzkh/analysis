@@ -54,28 +54,19 @@ public class BankTransactionRecord {
      * fields 多字段类型在 mapping 创建之后, 是可以继续更新的(另外Object 对象也可以添加新的属性, 字段还可以添加 ignore_above属性)
      * 以上这种三种情况 , 不用着急reindex更新索引，直接更新Mapping也是可以的
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "bank"),
-            otherFields = {@InnerField(suffix = "bank_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "bank"))
     private String bank;
 
     /**
      * 本方姓名
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "customer_name"),
-            otherFields = {@InnerField(suffix = "customer_name_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "customer_name"))
     private String customerName;
 
     /**
      * 本方开户人证件号码
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "customer_identity_card"),
-            otherFields = {@InnerField(suffix = "customer_identity_card_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "customer_identity_card"))
     private String customerIdentityCard;
 
     /**
@@ -87,28 +78,19 @@ public class BankTransactionRecord {
     /**
      * 查询卡号
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "query_card"),
-            otherFields = {@InnerField(suffix = "query_card_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "query_card"))
     private String queryCard;
 
     /**
      * 交易对方姓名
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_name"),
-            otherFields = {@InnerField(suffix = "opposite_name_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_name"))
     private String transactionOppositeName;
 
     /**
      * 交易对方证件号码
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
-            otherFields = {@InnerField(suffix = "opposite_certificate_number_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_certificate_number"))
     private String transactionOppositeCertificateNumber;
 
     /**
@@ -120,19 +102,13 @@ public class BankTransactionRecord {
     /**
      * 交易对方卡号
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_card"),
-            otherFields = {@InnerField(suffix = "opposite_card_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_card"))
     private String transactionOppositeCard;
 
     /**
      * 交易类型
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "transaction_type"),
-            otherFields = {@InnerField(suffix = "transaction_type_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_type"))
     private String transactionType;
 
     /**
@@ -170,10 +146,7 @@ public class BankTransactionRecord {
     /**
      * 交易对方开户行
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_account_open_bank"),
-            otherFields = {@InnerField(suffix = "opposite_bank_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_account_open_bank"))
     private String transactionOppositeAccountOpenBank;
 
     /**
@@ -203,10 +176,7 @@ public class BankTransactionRecord {
     /**
      * 交易摘要
      */
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword, name = "transaction_summary"),
-            otherFields = {@InnerField(suffix = "transaction_summary_wildcard", type = FieldType.Wildcard)}
-    )
+    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_summary"))
     private String transactionSummary;
 
     /**
