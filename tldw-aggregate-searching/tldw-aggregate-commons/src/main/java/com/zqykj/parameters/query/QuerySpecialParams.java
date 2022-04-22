@@ -3,6 +3,9 @@
  */
 package com.zqykj.parameters.query;
 
+import com.zqykj.builder.QueryParamsBuilders;
+import com.zqykj.common.enums.ConditionType;
+import com.zqykj.common.enums.QueryType;
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
 import lombok.*;
@@ -13,6 +16,8 @@ import java.util.List;
 
 /**
  * <h1> 查询参数 </h1>
+ * <p>
+ * 具体使用方式: 请看该类的 main 方法
  */
 @Setter
 @Getter
@@ -80,5 +85,50 @@ public class QuerySpecialParams {
     public String queryTypeConvert(String type) {
 
         return type;
+    }
+
+    /**
+     * <h2> 使用方式 </h2>
+     */
+    public static void main(String[] args) {
+
+        // 1. 定义一个普通查询
+        QuerySpecialParams commonQuery = new QuerySpecialParams();
+        // 具体含义为 select .... from ... where field = value
+        commonQuery.addCommonQueryParams(QueryParamsBuilders.term("field", "value"));
+        // 或者定义成   QueryParamsBuilders.term("field", "value") 等价于 new CommonQueryParams(QueryType.term, "field", "value")
+        // QueryParamsBuilders 做了一些简单的封装
+        commonQuery.addCommonQueryParams(new CommonQueryParams(QueryType.term, "field", "value"));
+
+        //2. 定义组合查询
+        QuerySpecialParams combinationQuery = new QuerySpecialParams();
+
+        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
+
+        // 定义组合查询类型 and or filter !=
+        // and 示例  field1 = value1 and field2 = value2
+        combinationQueryParams.setType(ConditionType.must);
+        // 组合多个单个查询
+        // 查询1
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term("field1", "value1"));
+        // 查询2
+        combinationQueryParams.addCommonQueryParams(QueryParamsBuilders.term("field2", "value2"));
+        // 包装组合查询
+        combinationQuery.addCombiningQueryParams(combinationQueryParams);
+
+        // 单个查询嵌套组合查询
+        // 示例 or   field3 = value3 or (field1 = value1 and field2 = value2)
+        QuerySpecialParams combinationQuery2 = new QuerySpecialParams();
+        CombinationQueryParams combinationQueryParams2 = new CombinationQueryParams();
+        combinationQueryParams2.setType(ConditionType.should);
+
+        // 条件 field3 = value3
+        combinationQueryParams2.addCommonQueryParams(QueryParamsBuilders.term("field3", "value3"));
+
+        // 单个条件继续组合查询 条件 field1 = value1 and field2 = value2
+        combinationQueryParams2.addCommonQueryParams(new CommonQueryParams(combinationQueryParams));
+
+        // 包装组合查询
+        combinationQuery2.addCombiningQueryParams(combinationQueryParams2);
     }
 }

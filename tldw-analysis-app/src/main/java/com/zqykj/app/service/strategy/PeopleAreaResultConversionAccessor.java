@@ -1,7 +1,7 @@
 package com.zqykj.app.service.strategy;
 
 import com.zqykj.common.enums.TacticsTypeEnum;
-import com.zqykj.common.response.PeopleAreaReponse;
+import com.zqykj.common.response.PeopleAreaResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -22,16 +22,16 @@ public class PeopleAreaResultConversionAccessor {
     /**
      * 解析人员地域返回的result.
      */
-    private static final Function<List<List<Object>>, List<PeopleAreaReponse>> PEOPLE_AREA_CONVERSION =
+    private static final Function<List<List<Object>>, List<PeopleAreaResponse>> PEOPLE_AREA_CONVERSION =
             lists -> {
-                List<PeopleAreaReponse> responses = new ArrayList<>();
+                List<PeopleAreaResponse> responses = new ArrayList<>();
 
                 lists.forEach(rowData -> {
-                    PeopleAreaReponse peopleAreaReponse = PeopleAreaReponse.builder()
+                    PeopleAreaResponse peopleAreaResponse = PeopleAreaResponse.builder()
                             .region((String) rowData.get(0))
                             .number((Long) rowData.get(1))
                             .build();
-                    responses.add(peopleAreaReponse);
+                    responses.add(peopleAreaResponse);
                 });
                 return responses;
             };

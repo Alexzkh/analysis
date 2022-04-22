@@ -10,7 +10,6 @@ import com.zqykj.core.mapping.ElasticsearchPersistentProperty;
 import com.zqykj.core.query.FetchSourceFilter;
 import com.zqykj.domain.Sort;
 import com.zqykj.repository.query.*;
-import com.zqykj.util.JacksonUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -26,7 +25,6 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -477,6 +475,9 @@ public class RequestFactory {
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
         sourceBuilder.version(true);
         sourceBuilder.trackScores(query.getTrackScores());
+        if (query.getTrackTotalHits()) {
+            sourceBuilder.trackTotalHits(query.getTrackTotalHits());
+        }
 
         if (query.getSourceFilter() != null) {
             SourceFilter sourceFilter = query.getSourceFilter();
@@ -535,16 +536,13 @@ public class RequestFactory {
 
         }
 
-        if (query.getTrackTotalHits() != null) {
-            sourceBuilder.trackTotalHits(query.getTrackTotalHits());
-        } else if (query.getTrackTotalHitsUpTo() != null) {
+        if (query.getTrackTotalHitsUpTo() != null) {
             sourceBuilder.trackTotalHitsUpTo(query.getTrackTotalHitsUpTo());
         }
 
         if (StringUtils.hasLength(query.getRoute())) {
             request.routing(query.getRoute());
         }
-
         request.source(sourceBuilder);
         return request;
     }

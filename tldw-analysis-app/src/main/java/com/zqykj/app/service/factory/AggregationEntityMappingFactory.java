@@ -3,6 +3,9 @@
  */
 package com.zqykj.app.service.factory;
 
+import org.springframework.lang.Nullable;
+
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,39 +18,91 @@ import java.util.Map;
  */
 public interface AggregationEntityMappingFactory {
 
-    /**
-     * <h2> 构建交易统计分析结果 聚合与实体属性映射 </h2>
-     */
-    @Deprecated
-    void buildTradeStatisticsAnalysisResultAggMapping(Map<String, Map<String, String>> aggKeyMapping, Map<String, Map<String, String>> entityAggKeyMapping, Class<?> mappingEntity);
 
     /**
-     * <h2> 构建交易统计分析按时间汇总交易金额聚合与实体属性映射 </h2>
+     * <h2> 构建资金交易分析 结果 聚合映射 </h2>
      */
-    void buildTradeStatisticsFundTimeAggMapping(Map<String, String> mapping, Class<?> mappingEntity);
+    void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Class<?> mappingEntity);
+
+    void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Class<?> mappingEntity, List<String> includeFields);
 
     /**
-     * <h2> 构建交易汇聚分析 / 交易统计分析 结果 聚合与实体属性映射 </h2>
+     * <h2> 构建资金交易分析 结果 聚合与实体属性映射 </h2>
      */
     void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
 
-    /**
-     * <h2> 构建资金战法计算去重总数据量 聚合名称 - 聚合属性映射 </h2>
-     */
-    Map<String, String> buildFundTacticsAnalysisResultTotalAggMapping();
+    void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity, String... includes);
+
+    void buildTradeAnalysisResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity, @Nullable String[] includes, @Nullable String[] excludes);
 
     /**
-     * <h2> 构建批量获取调单卡号集合 聚合名称 - 聚合属性映射 </h2>
+     * <h2> 构建资金交易分析 结果(本方) 聚合与实体属性映射 </h2>
      */
-    Map<String, String> buildGetCardNumsInBatchesAggMapping();
+    void buildTradeAnalysisResultMappingLocal(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
 
     /**
-     * <h2> 构建获取调单卡号总量 聚合名称 - 聚合属性映射 </h2>
+     * <h2> 构建资金交易分析 结果(对方) 聚合与实体属性映射 </h2>
      */
-    Map<String, String> buildGetCardNumsTotalAggMapping();
+    void buildTradeAnalysisResultMappingOpposite(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * <h2> 构建去重总数据量 聚合名称 - 聚合属性映射 </h2>
+     */
+    Map<String, String> buildDistinctTotalAggMapping(String field);
 
     /**
      * <h2> 构建groupBy 聚合名称 - 聚合属性映射  </h2>
+     * <p>
+     * 可以获取分组后的属性集合
      */
-    Map<String, String> buildGetGroupByAggMapping();
+    Map<String, String> buildGroupByAggMapping(String field);
+
+    /**
+     * <h2> 构建groupBy 聚合名称 - 聚合属性映射  </h2>
+     * <p>
+     * 可以获取分组后的属性集合、以及数量
+     */
+    Map<String, String> buildGroupByAggDocCountMapping(String field);
+
+    /**
+     * <h2> 构建聚合显示字段 聚合名称 - 聚合属性映射  </h2>
+     */
+    Map<String, String> buildShowFieldsAggMapping();
+
+    /**
+     * <h2> 构建单个聚合映射 </h2>
+     */
+    Map<String, String> buildSingleAggKeyMapping(String aggName, String key);
+
+    /**
+     * 构建单卡画像分析结果,聚合和实体属性映射
+     *
+     * @param aggKeyMapping       聚合名称-聚合属性Map
+     * @param entityAggKeyMapping 实体属性-聚合名称Map
+     * @param mappingEntity       实体类
+     */
+    void buildSingleCardPortraitResultAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * 构建个人画像-基本信息和统计，查询聚合名称-聚合属性映射
+     *
+     * @param aggKeyMapping       aggKeyMapping
+     * @param entityAggKeyMapping entityAggKeyMapping
+     * @param mappingEntity       mappingEntity
+     */
+    void buildIndividualInfoAndStatisticsAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * 构建个人画像-名下卡交易统计，查询聚合名称-聚合属性映射
+     *
+     * @param aggKeyMapping       aggKeyMapping
+     * @param entityAggKeyMapping entityAggKeyMapping
+     * @param mappingEntity       mappingEntity
+     */
+    void buildIndividualCardTransactionStatisticsAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping, Class<?> mappingEntity);
+
+    /**
+     * <h2> 构建未调单账户分析聚合映射 </h2>
+     */
+    void buildUnadjustedAccountAnalysisAggMapping(Map<String, String> aggKeyMapping, Map<String, String> entityAggKeyMapping);
 }

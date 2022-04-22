@@ -19,8 +19,6 @@ public class PageImpl<T> implements Serializable, Page<T> {
     private static final long serialVersionUID = -8643594973304287900L;
     private final List<T> content = new ArrayList<>();
     private final Pageable pageable;
-    private final long total;
-
     public PageImpl(List<T> content, Pageable pageable, long total) {
 
         Assert.notNull(content, "Content must not be null!");
@@ -33,6 +31,8 @@ public class PageImpl<T> implements Serializable, Page<T> {
                 .map(it -> it.getOffset() + content.size())
                 .orElse(total);
     }
+
+    private final long total;
 
     public PageImpl(List<T> content) {
         this(content, Pageable.unpaged(), null == content ? 0 : content.size());

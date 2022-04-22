@@ -3,33 +3,15 @@
  */
 package com.zqykj.app.service.factory;
 
+import com.zqykj.parameters.FieldSort;
+import com.zqykj.parameters.Pagination;
 import com.zqykj.parameters.aggregate.AggregationParams;
+import org.springframework.lang.Nullable;
 
 /**
  * <h1> 公共聚合请求参数构建工厂 </h1>
  */
 public interface AggregationRequestParamFactory {
-
-    /**
-     * 构建获取交易统计分析总数的聚合参数.
-     *
-     * @param request: 交易统计查询请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildTradeStatisticsAnalysisTotalAgg(T request);
-
-    /**
-     * <h2> 构建交易统计分析结果查询参数(用户明确给定一组调单卡号集合) 、全部查询不适用此方法 </h2>
-     */
-    <T> AggregationParams buildTradeStatisticsAnalysisByMainCards(T request, int from, int size);
-
-    /**
-     * 构建获取交易统计分析根据时间类型获取结果的聚合参数.
-     *
-     * @param request: 交易统计按时间类型统计请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildTradeStatisticsAnalysisFundByTimeType(T request);
 
     /**
      * 构建获取资产分析的聚合参数.
@@ -48,24 +30,6 @@ public interface AggregationRequestParamFactory {
     <T> AggregationParams createPeopleAreaQueryAgg(T request);
 
     /**
-     * 构建资金来源去向中来源的topN
-     *
-     * @param request: 资金来源去向查询请求体
-     * @return: com.zqykj.parameters.aggregate.AggregationParams
-     **/
-    <T> AggregationParams buildFundsSourceTopNAgg(T request);
-
-    /**
-     * <h2>  构建交易汇聚分析结果聚合请求(基于选中一组调单卡号集合为查询条件) </h2>
-     */
-    <T> AggregationParams buildTradeConvergenceAnalysisResultMainCardsAgg(T request, int from, int size);
-
-    /**
-     * <h2> 获取交易汇聚分析结果查询总数据量 </h2>
-     */
-    <T> AggregationParams buildTradeConvergenceAnalysisResultTotalAgg(T request);
-
-    /**
      * <h2> 批量获取调单卡号集合 </h2>
      * <p>
      * 基于表 {@link com.zqykj.domain.bank.BankTransactionFlow} 查询
@@ -76,12 +40,86 @@ public interface AggregationRequestParamFactory {
     AggregationParams buildGetCardNumsInBatchesAgg(int from, int size);
 
     /**
-     * <h2> 获取调单卡号总量 </h2>
+     * <h2> 按指定字段groupBy且分页操作 </h2>
+     *
+     * @param field      分组字段
+     * @param groupSize  group by 结果的size eg. 例如实际有20000个,如果不设置默认只返回10个,后续一些sum操作,都是基于这个size操作的
+     * @param pagination 分页参数: from: 起始位置 (从0开始) 、 size: 返回结果条件
      */
-    <T> AggregationParams getCardNumsTotal(T request);
+    AggregationParams groupByField(String field, int groupSize, @Nullable Pagination pagination);
+
+    AggregationParams groupByAndCountField(String field, int groupSize, @Nullable Pagination pagination);
 
     /**
-     * <h2> 按指定字段groupBy </h2>
+     * <h2> 聚合展示字段并且按某个字段排序 </h2>
      */
-    AggregationParams groupByField(String field, int size);
+    AggregationParams showFields(@Nullable FieldSort sort, String... fields);
+
+
+    /**
+     * 构建单卡画像最早交易时间聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildSingleCardPortraitEarliestTimeAgg(T request);
+
+    /**
+     * 构建单卡画像最晚交易时间聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildSingleCardPortraitLatestTimeAgg(T request);
+
+    /**
+     * 构建单卡画像本方卡号分桶聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildSingleCardPortraitAgg(T request);
+
+    /**
+     * <h2> 构建选择个体聚合 </h2>
+     */
+    <T> AggregationParams buildAdjustIndividualAgg(T request);
+
+    /**
+     * <h2> 构建调单卡号聚合 </h2>
+     */
+    <T> AggregationParams buildAdjustCardsAgg(T request);
+
+    /**
+     * <h2> 构建去重请求 根据去重字段 </h2>
+     *
+     * @param distinctField 去重字段
+     */
+    AggregationParams buildDistinctViaField(String distinctField);
+
+    /**
+     * <h2> 获取对方卡号去重总数量 以及 对方卡号 </h2>
+     */
+    AggregationParams getCardGroupByAndDistinct(String field);
+
+    /**
+     * 构建个体画像-基本信息和统计聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildIndividualInfoAndStatisticsAgg(T request);
+
+    /**
+     * 构建个体画像-名下卡交易统计聚合查询参数
+     *
+     * @param request
+     * @param <T>
+     * @return
+     */
+    <T> AggregationParams buildIndividualCardTransactionStatisticsAgg(T request);
 }

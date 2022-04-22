@@ -5,7 +5,7 @@ import com.zqykj.app.service.strategy.PeopleAreaResultConversionAccessor;
 import com.zqykj.common.enums.TacticsTypeEnum;
 import com.zqykj.common.request.PeopleAreaDetailRequest;
 import com.zqykj.common.request.PeopleAreaRequest;
-import com.zqykj.common.response.PeopleAreaReponse;
+import com.zqykj.common.response.PeopleAreaResponse;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
 import com.zqykj.domain.Sort;
@@ -44,7 +44,7 @@ public class PeopleAreaStatisticsImpl implements IPeopleAreaStatistics {
     private final PeopleAreaResultConversionAccessor peopleAreaResultConversionAccessor;
 
     @Override
-    public List<PeopleAreaReponse> accessPeopleAreaStatisticsData(PeopleAreaRequest peopleAreaRequest, String caseId) {
+    public List<PeopleAreaResponse> accessPeopleAreaStatisticsData(PeopleAreaRequest peopleAreaRequest, String caseId) {
         /**
          * 构建人员地域数据聚合统计公共查询请求
          * */
@@ -67,7 +67,7 @@ public class PeopleAreaStatisticsImpl implements IPeopleAreaStatistics {
         /**
          * 根据聚合模块返回的数据,进行封装返回给业务层
          * */
-        List<PeopleAreaReponse> responses = (List<PeopleAreaReponse>) peopleAreaResultConversionAccessor.access(result.get(aggregationParams.getResultName()), TacticsTypeEnum.PEOPLE_AREA);
+        List<PeopleAreaResponse> responses = (List<PeopleAreaResponse>) peopleAreaResultConversionAccessor.access(result.get(aggregationParams.getResultName()), TacticsTypeEnum.PEOPLE_AREA);
 
         return responses;
     }
@@ -79,7 +79,7 @@ public class PeopleAreaStatisticsImpl implements IPeopleAreaStatistics {
                 peopleAreaDetailRequest.getQueryRequest().getPaging().getPageSize(),
                 peopleAreaDetailRequest.getQueryRequest().getSorting().getOrder().isAscending() ? Sort.Direction.ASC : Sort.Direction.DESC,
                 peopleAreaDetailRequest.getQueryRequest().getSorting().getProperty());
-        Page<PeopleArea> result = (Page<PeopleArea>) entranceRepository.compoundQueryWithoutAgg(pageRequest, querySpecialParams, PeopleArea.class, caseId);
+        Page<PeopleArea> result = entranceRepository.findAll(pageRequest, caseId, PeopleArea.class, querySpecialParams);
         return result;
     }
 }

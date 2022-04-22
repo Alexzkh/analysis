@@ -3,16 +3,34 @@
  */
 package com.zqykj.app.service.interfaze;
 
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisResultResponse;
-import com.zqykj.app.service.vo.fund.TradeConvergenceAnalysisQueryRequest;
-import com.zqykj.common.core.ServerResponse;
-
-import java.util.concurrent.ExecutionException;
+import com.alibaba.excel.ExcelWriter;
+import com.zqykj.app.service.vo.fund.*;
+import com.zqykj.app.service.vo.fund.middle.TradeAnalysisDetailResult;
+import com.zqykj.infrastructure.core.ServerResponse;
 
 /**
  * <h1> 战法交易汇聚分析 业务层 </h1>
  */
 public interface ITransactionConvergenceAnalysis {
 
-    ServerResponse<TradeConvergenceAnalysisResultResponse> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, String caseId) throws ExecutionException, InterruptedException;
+    /**
+     * <h2> 交易汇聚分析结果 </h2>
+     */
+    ServerResponse<FundAnalysisResultResponse<TradeConvergenceAnalysisResult>> convergenceAnalysisResult(TradeConvergenceAnalysisQueryRequest request, int from, int size,
+                                                                                                         boolean isComputeTotal) throws Exception;
+
+    /**
+     * <h2> 交易汇聚分析结果详情 </h2>
+     */
+    ServerResponse<FundAnalysisResultResponse<TradeAnalysisDetailResult>> getDetail(FundTacticsPartGeneralRequest request);
+
+    /**
+     * <h2> 交易汇聚分析结果详情导出 </h2>
+     */
+    ServerResponse<String> detailExport(ExcelWriter excelWriter, FundTacticsPartGeneralRequest request) throws Exception;
+
+    /**
+     * <h2> 交易汇聚分析结果导出 </h2>
+     */
+    ServerResponse<String> convergenceAnalysisResultExport(ExcelWriter excelWriter, TradeConvergenceAnalysisQueryRequest request) throws Exception;
 }

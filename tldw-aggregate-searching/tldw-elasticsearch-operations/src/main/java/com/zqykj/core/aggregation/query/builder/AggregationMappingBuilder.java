@@ -104,6 +104,7 @@ public class AggregationMappingBuilder {
         Object aggregationInstance = AggregationMappingBuilder.buildAggregationInstance(null, parameters);
 
         if (log.isDebugEnabled()) {
+            assert aggregationInstance != null;
             log.debug("aggregation = {} ", aggregationInstance.toString());
         }
         return aggregationInstance;
@@ -196,10 +197,7 @@ public class AggregationMappingBuilder {
         if (null != field.getAnnotation(NotResolve.class)) {
             return;
         }
-        if (CommonAggregationParams.class.isAssignableFrom(field.getType())) {
-
-            addGeneraParametersMapping(target, parameters.getCommonAggregationParams(), aggregationClass, field, field.getType());
-        } else if (DateParams.class.isAssignableFrom(field.getType())) {
+        if (DateParams.class.isAssignableFrom(field.getType())) {
 
             addDateParametersMapping(target, parameters.getDateParams(), aggregationClass, field, field.getType());
         } else if (List.class.isAssignableFrom(field.getType())) {
@@ -258,17 +256,16 @@ public class AggregationMappingBuilder {
                 throw new IllegalArgumentException("could not find this aggregation type!");
             }
             Optional<Constructor<?>> constructor;
-            Object target = null;
+            Object target;
             // 分2类, 一类是不需要script , 一类是需要的
             if (StringUtils.isNotBlank(parameters.getBucketsPath())
                     && !CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
                 log.error("Cannot use [bucketsPath] with [bucketsPaths] configuration option");
             }
+            if (StringUtils.isBlank(parameters.getBucketsPath()) && CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
+                return buildSpecialPipelineAggregation(aggregationClass, parameters);
+            }
             if (StringUtils.isBlank(parameters.getScript())) {
-
-                if (CollectionUtils.isEmpty(parameters.getBucketsPathMap())) {
-                    return buildSpecialPipelineAggregation(aggregationClass, parameters);
-                }
 
                 constructor = ReflectionUtils.findConstructor(aggregationClass, parameters.getName(), parameters.getBucketsPath());
                 if (constructor.isPresent()) {
@@ -285,7 +282,14 @@ public class AggregationMappingBuilder {
                     target = ReflectionUtils.getTargetInstanceViaReflection(constructor, aggregationClass, parameters.getName(), parameters.getBucketsPathMap(), script);
                 } else {
                     // TODO 可能存在一些不太统一的构造函数情况,等到发现的时候再去处理
-
+                    return buildSpecialPipelineAggregation(aggregationClass, parameters);
+                }
+            }
+            // 可选参数处理
+            List<Field> fields = ReflectionUtils.getTheSpecifiedAnnotationFields(parameters.getClass(), OptionalParam.class);
+            if (!CollectionUtils.isEmpty(fields)) {
+                for (Field field : fields) {
+                    applyDefaultField(target, aggregationClass, field, parameters);
                 }
             }
             return target;
@@ -337,14 +341,24 @@ public class AggregationMappingBuilder {
         });
     }
 
+    /**
+     * <h2> 可选参数处理 </h2>
+     */
     private static void addOptionalParameterMapping(Object target, Class<?> aggregationClass,
                                                     Field field, Object parameters) {
 
         if (field.isAnnotationPresent(OptionalParam.class)) {
 
-            if (aggregationClass.isAssignableFrom(TermsAggregationBuilder.class) && field.getName().equals("includeExclude")) {
-
-                applyIncludeExclude(target, aggregationClass, field, parameters);
+            // 特殊处理 TermsAggregationBuilder 的一些方法
+            if (aggregationClass.isAssignableFrom(TermsAggregationBuilder.class)) {
+                if (field.getName().equals("includeExclude")) {
+                    applyIncludeExclude(target, aggregationClass, field, parameters);
+                } else if (field.getName().equals(COLLECT_MODE)) {
+                    applyCollectMode(target, aggregationClass, field, parameters);
+                } else {
+                    // 默认处理
+                    applyDefaultField(target, aggregationClass, field, parameters);
+                }
             } else {
                 // 默认处理
                 applyDefaultField(target, aggregationClass, field, parameters);
@@ -369,6 +383,7 @@ public class AggregationMappingBuilder {
                 Object subTarget = buildAggregationInstance(target, subParameter);
 
                 // 设置子聚合
+                assert subTarget != null;
                 applySubAggregation(target, aggregationClass, subTarget);
             }
         }
@@ -421,21 +436,6 @@ public class AggregationMappingBuilder {
         Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, field.getName(), String.class, SortOrder.class);
         optionalMethod.ifPresent(method -> {
             org.springframework.util.ReflectionUtils.invokeMethod(method, target, sort.getField(), SortOrder.fromString(sort.getDirection()));
-        });
-    }
-
-    private static void addGeneraParametersMapping(Object target, CommonAggregationParams parameters,
-                                                   Class<?> aggregationClass, Field field, Class<?> fieldClass) {
-
-        if (null == parameters) {
-            return;
-        }
-        // 处理GeneraParameters 中的每一个字段
-        org.springframework.util.ReflectionUtils.doWithFields(fieldClass, subField -> {
-
-            // 根据field name 默认处理 (AggregationParameters 定义的field name 都是匹配 aggregationClass 的方法名称)
-            // 后面如果mongodb 方法名称根据当前es 的不一致, 中间加一层转换即可
-            applyDefaultField(target, aggregationClass, subField, parameters);
         });
     }
 
@@ -523,13 +523,6 @@ public class AggregationMappingBuilder {
             org.springframework.util.ReflectionUtils.makeAccessible(subField);
             Object value = org.springframework.util.ReflectionUtils.getField(subField, parameters);
             if (null != value) {
-                if (subField.getName().equals(COLLECT_MODE)) {
-                    if (value.toString().equals(DEPTH_FIRST)) {
-                        value = Aggregator.SubAggCollectionMode.DEPTH_FIRST;
-                    } else if (value.toString().equals(BREADTH_FIRST)) {
-                        value = Aggregator.SubAggCollectionMode.BREADTH_FIRST;
-                    }
-                }
                 org.springframework.util.ReflectionUtils.invokeMethod(method, target, value);
             }
         });
@@ -539,10 +532,28 @@ public class AggregationMappingBuilder {
 
         Map<String, String[]> includeExcludeMap = ((AggregationParams) parameters).getIncludeExclude();
         if (!CollectionUtils.isEmpty(includeExcludeMap)) {
-            IncludeExclude includeExclude = new IncludeExclude(includeExcludeMap.get("includeValues"), includeExcludeMap.get("excludeValues"));
+            String[] includeValues = includeExcludeMap.get("includeValues");
+            String[] excludeValues = includeExcludeMap.get("excludeValues");
+            IncludeExclude includeExclude = new IncludeExclude(includeValues, excludeValues);
             Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), TERMS_INCLUDE_EXCLUDE_CLASS);
             // 开始调用此聚合类的方法, 为target 赋值
             optionalMethod.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, includeExclude));
+        }
+    }
+
+    private static void applyCollectMode(Object target, Class<?> aggregationClass, Field subField, Object parameters) {
+        org.springframework.util.ReflectionUtils.makeAccessible(subField);
+        Object value = org.springframework.util.ReflectionUtils.getField(subField, parameters);
+        if (null != value) {
+            if (value.toString().equals(DEPTH_FIRST)) {
+                value = Aggregator.SubAggCollectionMode.DEPTH_FIRST;
+            } else if (value.toString().equals(BREADTH_FIRST)) {
+                value = Aggregator.SubAggCollectionMode.BREADTH_FIRST;
+            }
+            Optional<Method> optionalMethod = ReflectionUtils.findMethod(aggregationClass, subField.getName(), Aggregator.SubAggCollectionMode.class);
+            // 开始调用此聚合类的方法, 为target 赋值
+            Object finalValue = value;
+            optionalMethod.ifPresent(method -> org.springframework.util.ReflectionUtils.invokeMethod(method, target, finalValue));
         }
     }
 
@@ -552,6 +563,22 @@ public class AggregationMappingBuilder {
         optionalMethod.ifPresent(method -> {
             Object intervalObject = ReflectionUtils.getTargetInstanceViaReflection(SCRIPT_TYPE, scriptValue);
             org.springframework.util.ReflectionUtils.invokeMethod(optionalMethod.get(), target, intervalObject);
+        });
+    }
+
+    @Deprecated
+    private static void addGeneraParametersMapping(Object target, CommonAggregationParams parameters,
+                                                   Class<?> aggregationClass, Field field, Class<?> fieldClass) {
+
+        if (null == parameters) {
+            return;
+        }
+        // 处理GeneraParameters 中的每一个字段
+        org.springframework.util.ReflectionUtils.doWithFields(fieldClass, subField -> {
+
+            // 根据field name 默认处理 (AggregationParameters 定义的field name 都是匹配 aggregationClass 的方法名称)
+            // 后面如果mongodb 方法名称根据当前es 的不一致, 中间加一层转换即可
+            applyDefaultField(target, aggregationClass, subField, parameters);
         });
     }
 

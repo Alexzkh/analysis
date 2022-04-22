@@ -8,12 +8,13 @@ import com.zqykj.common.enums.QueryType;
 import com.zqykj.parameters.query.*;
 import com.zqykj.core.aggregation.util.ClassNameForBeanClass;
 import com.zqykj.core.aggregation.util.query.QueryNameForBeanClass;
-import com.zqykj.util.JacksonUtils;
 import com.zqykj.util.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
@@ -191,19 +192,31 @@ public class QueryMappingBuilder {
         // TODO 后续需要将 parameters.getType() 翻译成 es 的 查询类型
         // 获取query class
         Class<?> queryClass = getQueryTypeClass(common.getType().toString());
-
         // 获取一个查询类的实例
         return getQueryTypeInstance(queryClass, common);
     }
 
+    /**
+     * <h2> 脚本处理 </h2>
+     */
+    private static Object applyScriptField(Class<?> queryClass, CommonQueryParams.Script common) {
+
+        Script script = new Script(ScriptType.valueOf(common.getScriptType()), common.getLang(), common.getIdOrCode(), common.getOptions(), common.getParams());
+        return ReflectionUtils.getTargetInstanceViaReflection(queryClass, script);
+    }
+
     private static Object getQueryTypeInstance(Class<?> queryClass, CommonQueryParams common) {
 
+        // 检查是否使用了脚本查询(脚本查询比较特殊,不需要其他任何参数,只需要脚本特定参数)
+        if (common.getScript() != null) {
+            return applyScriptField(queryClass, common.getScript());
+        }
         Optional<Constructor<?>> constructor;
         if (null != common.getFields()) {
-            // 单字段处理
+            // 多字段处理
             constructor = ReflectionUtils.findConstructor(queryClass, common.getValue(), common.getFields());
         } else {
-            // 多字段处理
+            // 单字段处理
             constructor = ReflectionUtils.findConstructor(queryClass, common.getField(), common.getValue());
         }
         Object target;
@@ -237,15 +250,19 @@ public class QueryMappingBuilder {
                 target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
 
                 applyDateRange(queryClass, dateRange, target);
-            } else if (null != common.getQueryOperator()) {
+            } else {
 
                 // 数值类的范围查询
                 QueryOperator queryOperator = common.getQueryOperator();
                 target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
                 applyNumericalValueRange(queryClass, queryOperator, target, common.getValue());
             }
+        } else if (null == common.getValue()) {
+            Optional<Constructor<?>> constructor = ReflectionUtils.findConstructor(queryClass, common.getField());
+            if (constructor.isPresent()) {
+                target = ReflectionUtils.getTargetInstanceViaReflection(queryClass, common.getField());
+            }
         }
-
         return target;
     }
 

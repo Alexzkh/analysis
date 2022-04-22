@@ -8,21 +8,27 @@ public enum ResponseCode {
     /**
      * 成功返回
      */
-    SUCCESS(0, "SUCCESS"),
+    SUCCESS(200, "SUCCESS"),
     /**
      * 错误返回
      */
-    ERROR(10001, "ERROR"), NEED_LOGIN(10002, "NEED_LOGIN"),
+    ERROR(10001, "ERROR"),
     /**
      * 未登录
      */
+    NEED_LOGIN(10002, "NEED_LOGIN"),
+    /**
+     * 参数错误
+     */
     ILLEGAL_ARGUMENT(10003, "ILLEGAL_ARGUMENT"),
 
-    /** 资金战法*/
-    ACCESS_DATA(30001,"数据获取失败"),
+    /**
+     * 资金战法
+     */
+    ACCESS_DATA(30001, "数据获取失败"),
 
     /**
-     * 请求服务异常
+     * 系统内部错误
      */
     SERVER_ERROR(500, "Server Error");
 

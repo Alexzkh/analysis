@@ -37,6 +37,8 @@ public class NativeSearchQueryBuilder {
     @Nullable
     private HighlightBuilder.Field[] highlightFields;
     private Pageable pageable = Pageable.unpaged();
+    private int from = 0;
+    private int size = 10_000;
     @Nullable
     private String[] fields;
     @Nullable
@@ -49,6 +51,7 @@ public class NativeSearchQueryBuilder {
     private List<IndexBoost> indicesBoost;
     private float minScore;
     private boolean trackScores;
+    private boolean trackTotalHits;
     @Nullable
     private Collection<String> ids;
     @Nullable
@@ -110,6 +113,16 @@ public class NativeSearchQueryBuilder {
         return this;
     }
 
+    public NativeSearchQueryBuilder withFrom(int from) {
+        this.from = from;
+        return this;
+    }
+
+    public NativeSearchQueryBuilder withSize(int size) {
+        this.size = size;
+        return this;
+    }
+
     public NativeSearchQueryBuilder withFields(String... fields) {
         this.fields = fields;
         return this;
@@ -137,6 +150,11 @@ public class NativeSearchQueryBuilder {
      */
     public NativeSearchQueryBuilder withTrackScores(boolean trackScores) {
         this.trackScores = trackScores;
+        return this;
+    }
+
+    public NativeSearchQueryBuilder withTrackTotalHits(boolean trackTotalHits) {
+        this.trackTotalHits = trackTotalHits;
         return this;
     }
 
@@ -172,6 +190,7 @@ public class NativeSearchQueryBuilder {
 
         nativeSearchQuery.setPageable(pageable);
         nativeSearchQuery.setTrackScores(trackScores);
+        nativeSearchQuery.setTrackTotalHits(trackTotalHits);
 
         if (fields != null) {
             nativeSearchQuery.addFields(fields);

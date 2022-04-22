@@ -98,6 +98,16 @@ public final class JacksonUtils {
         return parse(json, null, type);
     }
 
+    public static <T> T parse(Object fromValue, TypeReference<T> type) {
+
+        return objectMapper.convertValue(fromValue, type);
+    }
+
+    public static <T> T parse(Object fromValue, Class<T> clazz) {
+
+        return objectMapper.convertValue(fromValue, clazz);
+    }
+
     /**
      * json => 对象处理方法
      * <br>

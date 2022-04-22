@@ -1,6 +1,7 @@
 package com.zqykj.common.request;
 
 import com.zqykj.common.enums.AmountOperationSymbol;
+import com.zqykj.common.enums.FundsResultType;
 import com.zqykj.common.enums.FundsSourceAndDestinationStatisticsType;
 import com.zqykj.common.enums.FundsSourceAndDestinationTrendType;
 import com.zqykj.common.vo.DateRangeRequest;
@@ -59,6 +60,11 @@ public class FundsSourceAndDestinationStatisticsRequest {
     private FundsSourceAndDestinationStatisticsType fundsSourceAndDestinationStatisticsType;
 
     /**
+     * 列表数据来源、去向
+     */
+    private FundsResultType fundsResultType;
+
+    /**
      * 资金来源去向趋势依据
      */
     private FundsSourceAndDestinationTrendType fundsSourceAndDestinationTrendType;
@@ -67,6 +73,11 @@ public class FundsSourceAndDestinationStatisticsRequest {
      * 查询参数（这其中包括模糊搜索,分页和排序参数）
      */
     private QueryRequest queryRequest;
+
+    /**
+     * 时间排序（1d）
+     */
+    private String dateType = "d";
 
 
 }

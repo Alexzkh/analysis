@@ -3,6 +3,8 @@
  */
 package com.zqykj.core.aggregation.parse;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -10,6 +12,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation.Bucket;
 
+import org.elasticsearch.search.aggregations.pipeline.ParsedSimpleValue;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -19,6 +22,7 @@ import java.util.*;
 /**
  * <h1> 聚合结果解析器 </h1>
  */
+@Slf4j
 public class AggregationParser {
 
     private final static String BUCKET_KEY = "buckets";
@@ -26,9 +30,13 @@ public class AggregationParser {
     private final static String AGG_TERMS = "terms";
     private final static String AGG_METHOD_PREFIX = "get";
     private final static String AGG_DATE_HISTOGRAM = "date_histogram";
+    private final static String GET_VALUE_METHOD = "getValue";
+    private final static String VALUE_METHOD = "value";
 
     /**
      * <h2> 解析多组聚合结果 </h2>
+     * <p>
+     * TODO 后续将继续优化此取值算法
      */
     public static List<List<Object>> parseMulti(Aggregations aggregations, Map<String, String> map, boolean isConvert) {
 
@@ -37,8 +45,14 @@ public class AggregationParser {
         List<List<Object>> result = new ArrayList<>();
         map.forEach((key, value) -> {
 
-            List<Object> parse = parse(aggregations, value, key);
+            List<Object> parse = parse(aggregations, key, value);
+            // 不处理空结果
+            if (CollectionUtils.isEmpty(parse)) {
 
+                if (log.isDebugEnabled()) {
+                    log.debug("聚合名称 = {} , 取值属性 = {}, 取值结果个数 = {}", key, value, 0);
+                }
+            }
             result.add(parse);
         });
 
@@ -86,7 +100,12 @@ public class AggregationParser {
                 } else {
                     // 填充的个数跟 size 一致 (因为有的跟terms 同级查询的,比如去重返回结果只有一个,而terms有3个,为了保证这里程序正确,
                     // 需要继续填充剩下2个冗余的数据(跟第一个数据一致)
-                    newOne.add(oldOne.get(0));
+                    // 若newOne 为空,自动补充一个
+                    if (CollectionUtils.isEmpty(oldOne)) {
+                        newOne.add(null);
+                    } else {
+                        newOne.add(oldOne.get(0));
+                    }
                 }
             }
             newResult.add(newOne);
@@ -98,8 +117,10 @@ public class AggregationParser {
     /**
      * <h2> 解析聚合结果 </h2>
      */
-    public static List<Object> parse(Aggregations aggregations, String key, String aggregationName) {
+    public static List<Object> parse(Aggregations aggregations, String aggregationName, String key) {
 
+        // 支持下划线驼峰处理
+        key = applyCamelCase(key);
         // 讲首字母大写然后拼接上 get
         key = applyFirstChartUpperCase(key);
 
@@ -125,9 +146,9 @@ public class AggregationParser {
 
         Class<? extends Aggregation> aClass = aggregation.getClass();
 
-        Method[] methods = aClass.getMethods();
+        List<Method> methods = com.zqykj.util.ReflectionUtils.getAllMethods(aClass);
 
-        if (methods.length == 0) {
+        if (CollectionUtils.isEmpty(methods)) {
             return;
         }
 
@@ -137,14 +158,20 @@ public class AggregationParser {
 
 
             // 桶聚合
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+            Optional<Method> methodOptional = methods.stream().filter(method ->
                     method.getName().endsWith(applyFirstChartUpperCase(BUCKET_KEY))).findFirst();
             methodOptional.ifPresent(method -> parseBucketAggregation(result, aClass, (MultiBucketsAggregation) aggregation,
                     aggMethodKey, aggregationName));
 
 
         } else if (aggregation.getName().equals(aggregationName) && !type.endsWith(AGG_TERMS)) {
-            Optional<Method> optionalMethod = getAggregationMethod(aggMethodKey, methods);
+            String newKey = aggMethodKey;
+            // ParsedSimpleValue 只有 getValueAsString() 方法,没有getValue方法,而是value() 方法. 由于一开始我们给 aggMethodKey 统一加上了get前缀
+            // 导致调用的方法不存在
+            if (ParsedSimpleValue.class.isAssignableFrom(aClass) && aggMethodKey.equals(GET_VALUE_METHOD)) {
+                newKey = VALUE_METHOD;
+            }
+            Optional<Method> optionalMethod = getAggregationMethod(newKey, methods);
 
             if (optionalMethod.isPresent()) {
 
@@ -154,7 +181,7 @@ public class AggregationParser {
             }
         } else {
             // 子聚合处理
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method ->
+            Optional<Method> methodOptional = methods.stream().filter(method ->
                     method.getName().equals(applyFirstChartUpperCase(SUB_AGGREGATION))).findFirst();
             methodOptional.ifPresent(method -> {
 
@@ -187,7 +214,7 @@ public class AggregationParser {
                 List<? extends Bucket> buckets = (List<? extends Bucket>) value;
                 for (Bucket bucket : buckets) {
                     Class<? extends Bucket> aClass = bucket.getClass();
-                    Method[] methods = aClass.getMethods();
+                    List<Method> methods = com.zqykj.util.ReflectionUtils.getAllMethods(aClass);
                     Aggregations aggregations = bucket.getAggregations();
                     // 首先找这一层的相关属性, 找不到看看是否有子聚合(继续下钻处理)
                     if (aggregation.getName().equals(aggregationName)) {
@@ -216,8 +243,8 @@ public class AggregationParser {
         }
     }
 
-    private static Optional<Method> getAggregationMethod(String aggMethodKey, Method[] methods) {
-        return Arrays.stream(methods).filter(method -> method.getName().equals(aggMethodKey)).findFirst();
+    private static Optional<Method> getAggregationMethod(String aggMethodKey, List<Method> methods) {
+        return methods.stream().filter(method -> method.getName().equals(aggMethodKey)).findFirst();
     }
 
     /**
@@ -234,4 +261,25 @@ public class AggregationParser {
         return AGG_METHOD_PREFIX + key.substring(0, 1).toUpperCase() + key.substring(1);
     }
 
+    /**
+     * <h2> 将下划线转成驼峰 </h2>
+     */
+    private static String applyCamelCase(String underscoreStr) {
+        String[] split = StringUtils.split(underscoreStr, "_");
+        if (null == split || split.length == 0) {
+            return underscoreStr;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < split.length; i++) {
+            String str = split[i];
+            if (i == 0) {
+                builder.append(str);
+            } else {
+                // 首字母大写
+                String toUpper = str.substring(0, 1).toUpperCase() + str.substring(1);
+                builder.append(toUpper);
+            }
+        }
+        return builder.toString();
+    }
 }

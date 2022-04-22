@@ -160,6 +160,10 @@ public class MappingElasticsearchConverter implements ElasticsearchConverter, In
 
                     if (property.hasPropertyConverter()) {
 
+                        Object firstValue = map.get(property.getFieldName());
+                        if (null == firstValue) {
+                            continue;
+                        }
                         Object value = propertyConverterWrite(property, map.get(property.getFieldName()));
                         map.put(property.getFieldName(), value);
                     }

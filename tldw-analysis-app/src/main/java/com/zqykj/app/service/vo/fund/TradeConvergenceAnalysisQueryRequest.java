@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.BeanUtils;
 
+import java.util.List;
+
 /**
  * <h1> 战法交易汇聚查询请求 </h1>
  */
@@ -15,6 +17,13 @@ import org.springframework.beans.BeanUtils;
 @Getter
 @NoArgsConstructor
 public class TradeConvergenceAnalysisQueryRequest extends FundTacticsPartGeneralPreRequest {
+
+    /**
+     * 合并卡号集合过滤
+     */
+    private List<String> mergeCards;
+
+    private String exportFileName = "交易汇聚分析";
 
     public FundTacticsPartGeneralPreRequest convertFrom(TradeConvergenceAnalysisQueryRequest from) {
 

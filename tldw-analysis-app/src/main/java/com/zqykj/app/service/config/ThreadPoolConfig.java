@@ -28,11 +28,11 @@ public class ThreadPoolConfig {
     public ThreadPoolTaskExecutor commonThreadPool() {
         executor = new ThreadPoolTaskExecutor();
         // 核心线程数量
-        executor.setCorePoolSize(8);
+        executor.setCorePoolSize(12);
         // 最大线程数量
-        executor.setMaxPoolSize(10);
+        executor.setMaxPoolSize(20);
         // 队列中最大任务数
-        executor.setQueueCapacity(20);
+        executor.setQueueCapacity(1000);
         // 线程名称前缀
         executor.setThreadNamePrefix("ThreadPool-Tactics-");
         // 当达到最大线程数时如何处理新任务

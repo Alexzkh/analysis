@@ -10,9 +10,11 @@ import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.aggregate.FetchSource;
 import com.zqykj.parameters.aggregate.pipeline.PipelineAggregationParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,31 +62,17 @@ public class AggregationParamsBuilders {
 
     public static AggregationParams terms(String aggName, String field) {
 
-        return new AggregationParams(aggName, AggsType.terms.name(), field);
+        return terms(aggName, field, "");
     }
 
     public static AggregationParams terms(String aggName, String field, String script) {
 
-        AggregationParams aggregationParams = new AggregationParams(aggName, AggsType.terms.name(), field);
-        if (null != script) {
-
-            aggregationParams.setScript(script);
-        }
-        return aggregationParams;
+        return terms(aggName, field, script, null, null);
     }
 
-    public static AggregationParams terms(String aggName, String field, @Nullable String[] include) {
+    public static AggregationParams terms(String aggName, String field, @Nullable String... include) {
 
-        AggregationParams aggregationParams = new AggregationParams(aggName, AggsType.terms.name(), field);
-        // 设置include 、exclude、script 等
-        Map<String, String[]> includeExclude = new HashMap<>();
-        if (null != include && include.length > 0) {
-            includeExclude.put("includeValues", include);
-        }
-        if (!CollectionUtils.isEmpty(includeExclude)) {
-            aggregationParams.setIncludeExclude(includeExclude);
-        }
-        return aggregationParams;
+        return terms(aggName, field, null, include, null);
     }
 
     /**
@@ -97,6 +85,11 @@ public class AggregationParamsBuilders {
     public static AggregationParams count(String aggName, String field, @Nullable String script) {
 
         return defaultAggregationParams(aggName, AggsType.count.name(), field, script);
+    }
+
+    public static AggregationParams count(String aggName, String field) {
+
+        return count(aggName, field, null);
     }
 
     /**
@@ -119,7 +112,7 @@ public class AggregationParamsBuilders {
      */
     public static AggregationParams cardinality(String aggName, String field) {
 
-        return new AggregationParams(aggName, AggsType.cardinality.name(), field);
+        return cardinality(aggName, field, null);
     }
 
     /**
@@ -142,7 +135,7 @@ public class AggregationParamsBuilders {
      */
     public static AggregationParams sum(String aggName, String field) {
 
-        return new AggregationParams(aggName, AggsType.sum.name(), field);
+        return sum(aggName, field, null);
     }
 
     /**
@@ -159,6 +152,11 @@ public class AggregationParamsBuilders {
             aggregationParams.setScript(script);
         }
         return aggregationParams;
+    }
+
+    public static AggregationParams filter(String aggName, QuerySpecialParams query) {
+
+        return filter(aggName, query, null);
     }
 
     /**
@@ -198,6 +196,8 @@ public class AggregationParamsBuilders {
 
     /**
      * <h2> 管道脚本聚合 </h2>
+     * <p>
+     * 对已经存在定义的聚合结果度量值 进行二次的计算生成一个新的聚合结果度量值
      *
      * @param aggName    聚合名称
      * @param bucketPath 聚合路径
@@ -205,7 +205,54 @@ public class AggregationParamsBuilders {
      */
     public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script) {
 
-        return new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
+        return pipelineBucketScript(aggName, bucketPath, script, null);
+    }
+
+    public static PipelineAggregationParams pipelineBucketScript(String aggName, Map<String, String> bucketPath, String script, @Nullable String format) {
+
+        PipelineAggregationParams pipelineBucketScript = new PipelineAggregationParams(aggName, AggsType.bucket_script.name(), bucketPath, script);
+        if (StringUtils.isNotBlank(format)) {
+            pipelineBucketScript.setFormat(format);
+        }
+        return pipelineBucketScript;
+    }
+
+    /**
+     * <h2> 管道聚合筛选 </h2>
+     * <p>
+     * 对已经存在定义的聚合结果度量值 进行过滤筛选(留下符合条件的统计结果)
+     *
+     * @param aggName    聚合名称
+     * @param bucketPath 聚合路径
+     * @param script     聚合脚本
+     */
+    public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script) {
+
+        return pipelineSelector(aggName, bucketPath, script, null);
+    }
+
+    public static PipelineAggregationParams pipelineSelector(String aggName, Map<String, String> bucketPath, String script, @Nullable String format) {
+
+        PipelineAggregationParams selector = new PipelineAggregationParams(aggName, AggsType.bucket_selector.name(), bucketPath, script);
+        if (StringUtils.isNotBlank(format)) {
+            selector.setFormat(format);
+        }
+        return selector;
+    }
+
+    /**
+     * <h2> 管道聚合再次求和 </h2>
+     * <p>
+     * 对第一次的统计结果再次求和 (eg. 对卡号分组然后对金额求和, 使用此方法可以求和所用卡的交易总金额)
+     */
+    public static PipelineAggregationParams pipelineBucketSum(String aggName, String path) {
+
+        return pipelineBucketSum(aggName, path, null);
+    }
+
+    public static PipelineAggregationParams pipelineBucketSum(String aggName, String path, @Nullable String format) {
+
+        return new PipelineAggregationParams(aggName, AggsType.sum_bucket.name(), path, null, format);
     }
 
     /**
@@ -230,7 +277,7 @@ public class AggregationParamsBuilders {
      */
     public static PipelineAggregationParams sort(String aggName, int from, int size) {
 
-        return new PipelineAggregationParams(aggName, AggsType.bucket_sort.name(), new Pagination(from, size));
+        return sort(aggName, Collections.emptyList(), from, size);
     }
 
 

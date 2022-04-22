@@ -19,7 +19,7 @@ import java.util.Optional;
  * <T>  the domain type the operations manages
  * <ID> the type of the id of the entity the operations manages
  *
- * @Author zhangkehou
+ * @Author machengjun、zhangkehou
  * @Date 2021/8/17
  */
 @NoRepositoryBean
@@ -29,17 +29,26 @@ public interface CrudRepository extends Repository {
      * <h2> 保存 / 更新(需要指定Id) 给定的数据 </h2>
      *
      * @param entity      实体数据 must not be {@literal null}.
-     * @param routing     路由参数 (也可以在entity 中 添加一个property {@link Routing) 指明路由
+     * @param routing     路由参数 (也可以在entity 中 添加一个property {@link Routing } 指明路由
      * @param entityClass 实体类   must not be {@literal null}.
      */
     <T> T save(T entity, @Nullable String routing, @NonNull Class<T> entityClass);
 
     /**
+     * <h2> 保存 / 更新(需要指定Id) 给定的数据 </h2>
+     *
+     * @param data    map数据 must not be {@literal null}.
+     * @param routing 路由参数
+     * @param index   指定的索引名称
+     */
+    void save(Map<String, Object> data, @Nullable String routing, @NonNull String index);
+
+    /**
      * <h2> 保存 / 更新(需要指定Id) 给定的一组数据集合 </h2>
      *
      * @param entities    一组实体数据集合   must not be {@literal null}.
-     * @param routing     路由参数 (也可以在entities 的一个实体 中 添加一个property {@link Routing) 指明路由
-     * @param entityClass 实体类            must not be {@literal null}.
+     * @param routing     路由参数 (也可以在entities 的一个实体 中 添加一个property {@link Routing } 指明路由
+     * @param entityClass 实体类   must not be {@literal null}.
      */
     <T> Iterable<T> saveAll(Iterable<T> entities, @Nullable String routing, @NonNull Class<T> entityClass);
 
@@ -47,9 +56,19 @@ public interface CrudRepository extends Repository {
      * <h2> 保存/更新(需要指定Id) 给定一组数据集合</h2>
      *
      * @param values      一组map的数据集合
+     * @param routing     路由 (也可以在entities 的一个实体 中 添加一个property {@link Routing } 指明路由
      * @param entityClass 索引实体
      */
     <T> void saveAll(List<Map<String, ?>> values, @Nullable String routing, @NonNull Class<T> entityClass);
+
+    /**
+     * <h2> 保存/更新(需要指定Id) 给定一组数据集合</h2>
+     *
+     * @param values  一组map的数据集合
+     * @param routing 路由
+     * @param index   指定的索引名称
+     */
+    void saveAll(List<Map<String, ?>> values, @Nullable String routing, @NonNull String index);
 
     /**
      * <h2> 根据 Id检索数据 </h2>
@@ -165,6 +184,15 @@ public interface CrudRepository extends Repository {
      * @param entityClass 实体类    must not be {@literal null}.
      */
     <T, ID> void deleteAll(Iterable<ID> ids, @Nullable String routing, @NonNull Class<T> entityClass);
+
+    /**
+     * <h2> 根据条件删除 </h2>
+     *
+     * @param routing     路由
+     * @param entityClass 索引类
+     * @param condition   删除条件
+     */
+    <T> void delete(@Nullable String routing, @NonNull Class<T> entityClass, @Nullable QuerySpecialParams condition);
 
     /**
      * <h2> 删除数据 </h2>

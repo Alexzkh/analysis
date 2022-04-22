@@ -24,7 +24,6 @@
         <compiler.target>1.8</compiler.target>
         <springboot.plugins.version>2.4.4-RELEASE</springboot.plugins.version>
         <project.version>2.0-SNAPSHOT</project.version>
-        <jackson-databind.version>2.11.4</jackson-databind.version>
     </properties>
 
     <dependencies>
@@ -52,11 +51,6 @@
 
         </dependency>
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-databind.version}</version>
-        </dependency>
     </dependencies>
 
     <distributionManagement>

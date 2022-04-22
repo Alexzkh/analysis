@@ -23,8 +23,8 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Arrays;
 
 /**
- *  <h1> {@link EnableAutoConfiguration Auto-configuration} for Elasticsearch REST clients. </h1>
- * */
+ * <h1> {@link EnableAutoConfiguration Auto-configuration} for Elasticsearch REST clients. </h1>
+ */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(RestHighLevelClient.class)
 @EnableConfigurationProperties(value = ElasticsearchRestClientProperties.class)
@@ -36,7 +36,7 @@ public class ElasticsearchRestClientAutoConfiguration {
     static class RestClientBuilderConfiguration {
 
         @Bean
-        RestClientBuilder elasticsearchRestClientBuilder(ElasticsearchRestClientProperties properties) {
+        RestClientBuilder restClientBuilder(ElasticsearchRestClientProperties properties) {
 
             String hosts = properties.getHost();
             hosts = hosts.contains("http://") ? hosts.replace("http://", "") : hosts;
@@ -53,7 +53,6 @@ public class ElasticsearchRestClientAutoConfiguration {
                 credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(properties.getUserName(), properties.getPassword()));
                 builder.setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
             }
-
             // 异步连接延时配置
             builder.setRequestConfigCallback(requestConfigBuilder -> {
                 requestConfigBuilder.setConnectTimeout(properties.getConnectTimeoutMillis());
@@ -64,7 +63,9 @@ public class ElasticsearchRestClientAutoConfiguration {
 
             // 异步连接数配置
             builder.setHttpClientConfigCallback(httpClientBuilder -> {
+                // 设置es 连接池中最大连接数
                 httpClientBuilder.setMaxConnTotal(properties.getMaxConnectTotal());
+                // 设置es 服务每次可以并行接收的请求数
                 httpClientBuilder.setMaxConnPerRoute(properties.getMaxConnectPerRoute());
                 return httpClientBuilder;
             });
@@ -78,8 +79,8 @@ public class ElasticsearchRestClientAutoConfiguration {
     static class RestHighLevelClientConfiguration {
 
         @Bean
-        RestHighLevelClient restHighLevelClient(RestClientBuilder elasticsearchRestClientBuilder) {
-            return new RestHighLevelClient(elasticsearchRestClientBuilder);
+        RestHighLevelClient restHighLevelClient(RestClientBuilder restClientBuilder) {
+            return new RestHighLevelClient(restClientBuilder);
         }
 
     }

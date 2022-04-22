@@ -5,6 +5,7 @@ package com.zqykj.parameters.aggregate.pipeline;
 
 import com.zqykj.parameters.FieldSort;
 import com.zqykj.parameters.Pagination;
+import com.zqykj.parameters.annotation.OptionalParam;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -61,6 +62,12 @@ public class PipelineAggregationParams {
      */
     private Pagination pagination;
 
+    /**
+     * 金额格式化(处理小数点) 默认保留所有整数部位, 小数保留4位
+     */
+    @OptionalParam
+    private String format;
+
     public void setPerFieldSort(FieldSort fieldSort) {
         if (CollectionUtils.isEmpty(this.fieldSort)) {
             this.fieldSort = new ArrayList<>();
@@ -114,6 +121,14 @@ public class PipelineAggregationParams {
         this.type = type;
         this.bucketsPath = bucketsPath;
         this.script = script;
+    }
+
+    public PipelineAggregationParams(String name, String type, String bucketsPath, String script, String format) {
+        this.name = name;
+        this.type = type;
+        this.bucketsPath = bucketsPath;
+        this.script = script;
+        this.format = format;
     }
 
 }

@@ -39,7 +39,7 @@ public enum AggsType {
 
     /**
      * group by多字段
-     * */
+     */
     multiTerms,
 
     /**
@@ -76,5 +76,10 @@ public enum AggsType {
     /**
      * 去重
      */
-    cardinality
+    cardinality,
+
+    /**
+     * 管道聚合--求和
+     */
+    sum_bucket
 }

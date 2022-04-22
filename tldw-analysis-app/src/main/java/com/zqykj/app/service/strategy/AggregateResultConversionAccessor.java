@@ -4,7 +4,6 @@ import com.zqykj.common.enums.TacticsTypeEnum;
 import com.zqykj.common.request.AssetTrendsRequest;
 import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.app.service.tools.SplicingStringTools;
-import com.zqykj.common.response.PeopleAreaReponse;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

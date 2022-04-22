@@ -9,7 +9,6 @@ import com.zqykj.core.document.DocumentAdapters;
 import com.zqykj.core.document.SearchDocumentResponse;
 import com.zqykj.core.mapping.ElasticsearchPersistentEntity;
 import com.zqykj.domain.Pageable;
-import com.zqykj.parameters.Pagination;
 import com.zqykj.repository.query.*;
 import com.zqykj.support.SearchHitsUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -210,7 +209,6 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
         Assert.notNull(query, "query must not be null");
         Assert.notNull(index, "index must not be null");
 
-        query.setTrackTotalHits(true);
         SearchRequest searchRequest = requestFactory.searchRequest(query, clazz, index);
 
         searchRequest.source().size(0);
@@ -221,6 +219,7 @@ public class ElasticsearchRestTemplate extends AbstractElasticsearchTemplate {
     @Override
     public <T> SearchHits<T> search(Query query, Class<T> clazz, String index) {
         SearchRequest searchRequest = requestFactory.searchRequest(query, clazz, index);
+
         SearchResponse response = execute(client -> client.search(searchRequest, RequestOptions.DEFAULT));
 
         SearchDocumentResponseCallback<SearchHits<T>> callback = new ReadSearchDocumentResponseCallback<>(clazz);

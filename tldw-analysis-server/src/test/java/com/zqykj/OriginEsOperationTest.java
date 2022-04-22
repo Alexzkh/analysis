@@ -3,31 +3,36 @@
  */
 package com.zqykj;
 
-
+import cn.hutool.core.lang.Snowflake;
+import cn.hutool.core.util.IdUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.zqykj.app.service.field.FundTacticsAnalysisField;
 import com.zqykj.app.service.interfaze.IAssetTrendsTactics;
-import com.zqykj.app.service.interfaze.ITransactionStatistics;
+import com.zqykj.app.service.interfaze.IFastInFastOut;
 import com.zqykj.app.service.factory.AggregationRequestParamFactory;
 import com.zqykj.app.service.factory.QueryRequestParamFactory;
+import com.zqykj.app.service.interfaze.ITransferAccountAnalysis;
+import com.zqykj.app.service.vo.fund.FundAnalysisResultResponse;
 import com.zqykj.builder.QueryParamsBuilders;
-import com.zqykj.app.service.strategy.AggregateResultConversionAccessor;
 import com.zqykj.common.enums.ConditionType;
-import com.zqykj.common.enums.QueryType;
 import com.zqykj.common.request.*;
 import com.zqykj.common.response.AssetTrendsResponse;
 import com.zqykj.common.enums.AmountOperationSymbol;
 import com.zqykj.common.vo.DateRangeRequest;
 import com.zqykj.domain.Page;
 import com.zqykj.domain.PageRequest;
+import com.zqykj.domain.Sort;
 import com.zqykj.domain.archive.PeopleCardInfo;
 import com.zqykj.domain.bank.BankTransactionFlow;
+import com.zqykj.domain.bank.BankTransactionRecord;
 import com.zqykj.domain.bank.PeopleArea;
+import com.zqykj.domain.bank.TradeRangeOperationRecord;
 import com.zqykj.domain.graph.EntityGraph;
 import com.zqykj.domain.graph.LinkGraph;
+import com.zqykj.domain.vo.TransferAccountAnalysisResultVO;
 import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.CommonQueryParams;
-import com.zqykj.parameters.query.DefaultQueryParam;
 import com.zqykj.parameters.query.QuerySpecialParams;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
@@ -39,6 +44,8 @@ import org.springframework.util.StopWatch;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
 import java.util.*;
 
 @SpringBootTest
@@ -49,19 +56,19 @@ public class OriginEsOperationTest {
     private EntranceRepository entranceRepository;
 
     @Autowired
-    private ITransactionStatistics iTransactionStatistics;
-
-    @Autowired
     private IAssetTrendsTactics iAssetTrendsTactics;
-
-    @Autowired
-    private AggregateResultConversionAccessor aggregateResultConversionAccessor;
 
     @Autowired
     QueryRequestParamFactory queryRequestParamFactory;
 
     @Autowired
     AggregationRequestParamFactory aggregationRequestParamFactory;
+
+    @Autowired
+    IFastInFastOut iFastInFastOut;
+
+    @Autowired
+    private ITransferAccountAnalysis iTransferAccountAnalysis;
 
 
     @Test
@@ -193,7 +200,7 @@ public class OriginEsOperationTest {
                 "60138216660044814",
                 "60138216660046214",
                 "60138216660047614"));
-        request.setDateRange(new DateRangeRequest("", ""));
+        request.setDateRange(new DateRangeRequest("", "", "", ""));
         request.setFund("0");
         request.setOperator(AmountOperationSymbol.gte);
         request.setPaging(new PagingRequest(0, 25));
@@ -233,69 +240,6 @@ public class OriginEsOperationTest {
 //            Object data = serverResponse.getData();
 //
 //        }
-    }
-
-
-    @Test
-    public void testRegionDetailsQueryAndAggs() {
-
-//        PeopleAreaRequest peopleAreaRequest = new PeopleAreaRequest();
-//        peopleAreaRequest.setField("province");
-//        peopleAreaRequest.setName("");
-//
-//
-//        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery().must(QueryBuilders.termsQuery("customer_name", "b690f6b8f960462e8bb4c0f609d04830"))
-//                .should(QueryBuilders.regexpQuery("account_card", "*马*"))
-//                .minimumShouldMatch(1);
-//
-//        peopleAreaRequest.setPaging(new PagingRequest(0,10));
-//        peopleAreaRequest.setSorting(new SortingRequest("String", SortingRequest.Direction.DESC));
-//
-//        QuerySpecialParams querySpecialParams = queryRequestParamFactory.
-//                bulidPeopleAreaAnalysisRequest(peopleAreaRequest,"457eea4b3ebe46aabc604b9183a83920");
-//
-//        AggregationParams aggregationParams =aggregationRequestParamFactory.createPeopleAreaQueryAgg(peopleAreaRequest);
-//
-//        List<List<Object>> result = entranceRepository.compoundQueryAndAgg(querySpecialParams, aggregationParams, PeopleArea.class, "457eea4b3ebe46aabc604b9183a83920");
-//        // 转换结果数据然后返回给前台
-//        System.out.println("********************");
-//        //        if (serverResponse.isSuccess()) {
-////
-////            Object data = serverResponse.getData();
-////
-////        }
-
-
-        QuerySpecialParams querySpecialParams1 = new QuerySpecialParams();
-
-        List<CombinationQueryParams> combiningQuery = new ArrayList<>();
-
-        CombinationQueryParams combinationQueryParams = new CombinationQueryParams();
-        combinationQueryParams.setType(ConditionType.must);
-        CommonQueryParams commonQueryParams1 = new CommonQueryParams();
-        commonQueryParams1.setType(QueryType.term);
-        commonQueryParams1.setField("case_id");
-        commonQueryParams1.setValue("b690f6b8f960462e8bb4c0f609d04830");
-        combinationQueryParams.addCommonQueryParams(commonQueryParams1);
-        combiningQuery.add(combinationQueryParams);
-
-        CombinationQueryParams combinationQueryParams1 = new CombinationQueryParams();
-        combinationQueryParams1.setType(ConditionType.should);
-        CommonQueryParams commonQueryParams111 = new CommonQueryParams();
-        commonQueryParams111.setType(QueryType.wildcard);
-        commonQueryParams111.setField("province.province_wildcard");
-        commonQueryParams111.setValue("*安*");
-        combinationQueryParams1.addCommonQueryParams(commonQueryParams111);
-        combiningQuery.add(combinationQueryParams1);
-
-        querySpecialParams1.setCombiningQuery(combiningQuery);
-
-        querySpecialParams1.setDefaultParam(new DefaultQueryParam());
-
-
-//        entranceRepository.compoundQueryWithoutAgg(querySpecialParams1,PeopleArea.class,"b690f6b8f960462e8bb4c0f609d04830");
-
-
     }
 
     @Test
@@ -360,6 +304,24 @@ public class OriginEsOperationTest {
     }
 
     @Test
+    public void specifyIndexNameInsertData() {
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("adjust_card", Arrays.asList("0111120103290272049", "011112900214791", "6210676862224490842"));
+        map.put("operation_date", "2022-03-01 15:04:41");
+        map.put("operation_people", "测试数据插入22");
+        map.put("min_amount", 7.0);
+        map.put("max_amount", 8000.0);
+        map.put("account_name", "测试数据插入22");
+        map.put("account_id_number", "132530198111095616");
+        map.put("individual_bankCards_number", 6);
+        map.put("data_cateGory", 2);
+        map.put("remark", "");
+        map.put("case_id", "ef8307a204b24a7b9034e139c6d75252");
+        entranceRepository.save(map, "ef8307a204b24a7b9034e139c6d75252", "trade_range");
+    }
+
+    @Test
     public void testCount() {
 
         QuerySpecialParams params = new QuerySpecialParams();
@@ -384,6 +346,20 @@ public class OriginEsOperationTest {
         Iterable<PeopleCardInfo> all = entranceRepository.findAll(PeopleCardInfo.class, null, params);
     }
 
+    @Test
+    public void testaccessTransferAccountAnalysis() {
+
+        String caseId = "ffe471270eb6429ebfcc9dba92e06cf5";
+        TransferAccountAnalysisRequest request = new TransferAccountAnalysisRequest();
+        request.setCharacteristicRatio(new CharacteristicRatio(80, 5, 80));
+        request.setOther(true);
+        request.setPrecipitate(true);
+        request.setTransfer(true);
+        request.setSource(true);
+        request.setQueryRequest(new QueryRequest(null, new PagingRequest(1, 25), new SortingRequest("tradeTotalAmount", SortingRequest.Direction.DESC)));
+        FundAnalysisResultResponse<TransferAccountAnalysisResultVO> response11 = iTransferAccountAnalysis.accessTransferAccountAnalysis(request, caseId);
+
+    }
 
     @Test
     public void deleteAllByCondition() {
@@ -414,21 +390,53 @@ public class OriginEsOperationTest {
     }
 
     @Test
-    public void saveAll() {
+    public void scriptQuery() {
 
-        List<Map<String, ?>> maps = new ArrayList<>();
+        QuerySpecialParams query = new QuerySpecialParams();
 
-        Map<String, Object> map = new HashMap<>();
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, "d5a1a617103a4a61a809dd5b142b931e"));
+        filter.addCommonQueryParams(QueryParamsBuilders.script("doc['trading_time'].value.get(ChronoField.ALIGNED_WEEK_OF_YEAR)== 47"));
+        query.addCombiningQueryParams(filter);
+        Page<BankTransactionRecord> page =
+                entranceRepository.findAll(PageRequest.of(0, 10, Sort.Direction.ASC, FundTacticsAnalysisField.TRADING_TIME),
+                        "d5a1a617103a4a61a809dd5b142b931e", BankTransactionRecord.class, query);
+        System.out.println(page.getTotalElements());
+    }
 
-        map.put("trading_time", new Date());
-        map.put("id", "772221");
+    @Test
+    public void scriptQuery2() {
 
-        System.out.println(map.get("trading_time"));
+        QuerySpecialParams query = new QuerySpecialParams();
 
-        maps.add(map);
+        CombinationQueryParams filter = new CombinationQueryParams(ConditionType.filter);
+        filter.addCommonQueryParams(QueryParamsBuilders.term(FundTacticsAnalysisField.CASE_ID, "d5a1a617103a4a61a809dd5b142b931e"));
+        filter.addCommonQueryParams(QueryParamsBuilders.script("doc['trading_time'].value.get(ChronoField.HOUR_OF_DAY) == " + 00));
+        query.addCombiningQueryParams(filter);
+        Page<BankTransactionRecord> page =
+                entranceRepository.findAll(PageRequest.of(0, 10, Sort.Direction.ASC, FundTacticsAnalysisField.TRADING_TIME),
+                        "d5a1a617103a4a61a809dd5b142b931e", BankTransactionRecord.class, query);
+        System.out.println(page.getTotalElements());
+    }
 
-        entranceRepository.saveAll(maps, "123123", BankTransactionFlow.class);
+    @Test
+    public void testTime() {
+        LocalDateTime today = LocalDateTime.now();
+        int day;
+        day = today.get(ChronoField.DAY_OF_MONTH);
+        System.out.println("今天是本月的第" + day + "天");
+        int month;
+        month = today.get(ChronoField.MONTH_OF_YEAR);
+        System.out.println("今天是本年的第" + month + "月");
+        int h;
+        h = today.get(ChronoField.HOUR_OF_DAY);
+        System.out.println("当天时间点(小时): " + h);
+    }
 
-        System.out.println(map.get("trading_time"));
+    @Test
+    public void snowTest() {
+        System.out.println(IdUtil.getSnowflake().nextId());
+        System.out.println(System.currentTimeMillis());
+//        System.out.println(IdUtil.getSnowflake().nextId());
     }
 }

@@ -69,8 +69,63 @@ public class Constants {
 
         /**
          * 聚合卡号
-         * */
+         */
         String TERMS_ACCOUNT_CARD = "terms_account_card";
     }
 
+    /**
+     * 图相关常量定义
+     */
+    public interface AthenaGdbConstants {
+
+        /**
+         * 老图库id链接符
+         */
+        String OLD_GRAPH_ID_CONNECTOR = "~`#";
+
+        /**
+         * 银行卡实体
+         */
+        String BANK_CARD = "bank_card";
+
+        /**
+         * 银行卡交易实体
+         */
+        String BANK_CARD_TRADE = "bank_card_trade";
+
+        /**
+         * 新图schema
+         */
+        String SCHEMA = "tldw";
+
+        /**
+         * 获取图idAPI --{/graph/{gsKey}/{gKey}/graphByKey},gsKey:schema, gKey:案件编号
+         */
+        String GRAPH_ID_API = "/graph/%s/%s/graphByKey";
+
+        /**
+         * 根据图id获取交易路径 -->/graph/{gid}/allpaths gid:图id
+         */
+        String Path_API = "/graph/%s/allpaths";
+
+        /**
+         * 获取回路 -->/graph/%s/cycleDetect gid:图id
+         */
+        String CYCLE_DETECT = "/graph/%s/cycleDetect";
+
+        /**
+         * 图接口返回的路径数据中对应的总表的数据的主键id的key名称
+         */
+        String DATA_ROWS_ID = "__DATAROWID";
+
+        /**
+         * 图接口返回边对应总表数据的key名称
+         */
+        String DATA_ROWS = "DataRows";
+
+        /**
+         * 图接口返回的数据data集合的key名称
+         */
+        String DATA = "data";
+    }
 }
