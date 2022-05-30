@@ -36,17 +36,13 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ConcurrentReferenceHashMap;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -74,7 +70,7 @@ public class AggregationMappingBuilder {
     // 日期直方图 设置时区方法参数类型
     private static final Class<?> DATE_ZONE_CLASS = ZoneId.class;
 
-    private static Map<String, Class<?>> aggregateNameForClass = new ConcurrentReferenceHashMap<>(256);
+    private static Map<String, Class<?>> aggregateNameForClass = new HashMap<>(256);
 
     @PostConstruct
     public void init() {
@@ -151,7 +147,7 @@ public class AggregationMappingBuilder {
             Class<?> aggregationClass = aggregateNameForClass.get(parameters.getType());
             //
             if (null == aggregationClass) {
-                log.warn("could not find this aggregation type!");
+                log.warn("could not find this aggregation type, aggregateNameForClass size = {}", aggregateNameForClass.size());
                 throw new IllegalArgumentException("could not find this aggregation type!");
             }
 

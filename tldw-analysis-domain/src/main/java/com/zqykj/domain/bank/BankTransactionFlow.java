@@ -55,19 +55,28 @@ public class BankTransactionFlow {
      * fields 多字段类型在 mapping 创建之后, 是可以继续更新的(另外Object 对象也可以添加新的属性, 字段还可以添加 ignore_above属性)
      * 以上这种三种情况 , 不用着急reindex更新索引，直接更新Mapping也是可以的
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "bank"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "bank"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String bank;
 
     /**
      * 本方姓名(客户名称)
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "customer_name"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "customer_name"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String customerName;
 
     /**
      * 本方开户人证件号码(客户证件号码)
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "customer_identity_card"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "customer_identity_card"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String customerIdentityCard;
 
     /**
@@ -79,19 +88,28 @@ public class BankTransactionFlow {
     /**
      * 查询卡号
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "query_card"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "query_card"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String queryCard;
 
     /**
      * 交易对方姓名(交易对方名称)
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_name"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_name"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionOppositeName;
 
     /**
      * 交易对方证件号码
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_certificate_number"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_certificate_number"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionOppositeCertificateNumber;
 
     /**
@@ -103,13 +121,19 @@ public class BankTransactionFlow {
     /**
      * 交易对方卡号
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_card"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_card"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionOppositeCard;
 
     /**
      * 交易类型
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_type"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_type"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionType;
 
     /**
@@ -139,7 +163,8 @@ public class BankTransactionFlow {
     /**
      * 交易时间
      */
-    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.custom, pattern = "yyyy-MM-dd HH:mm:ss")
+//    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.custom, pattern = "yyyy-MM-dd HH:mm:ss")
+    @Field(type = FieldType.Date, name = "trading_time", format = DateFormat.epoch_millis)
     private Date tradingTime;
 
     /**
@@ -157,19 +182,28 @@ public class BankTransactionFlow {
     /**
      * 交易对方开户行
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_opposite_account_open_bank"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_opposite_account_open_bank"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionOppositeAccountOpenBank;
 
     /**
      * 交易摘要
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_summary"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_summary"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionSummary;
 
     /**
      * 交易网点名称
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_network_name"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_network_name"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionNetworkName;
 
     /**
@@ -223,7 +257,10 @@ public class BankTransactionFlow {
     /**
      * 交易发生地
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_place"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_place"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionPlace;
 
     /**
@@ -235,7 +272,10 @@ public class BankTransactionFlow {
     /**
      * 商户名称
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "merchant_name"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "merchant_name"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String merchantName;
 
     /**
@@ -271,31 +311,46 @@ public class BankTransactionFlow {
     /**
      * 交易渠道
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "transaction_channel"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_channel"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionChannel;
 
     /**
      * 备注
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "note"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "note"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String note;
 
     /**
      * 摘要备注
      */
-    @MultiField(mainField = @Field(type = FieldType.Wildcard, name = "summary_notes"))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "summary_notes"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String summaryNotes;
 
     /**
      * 交易场所
      */
-    @MultiField(mainField = @Field(name = "transaction_places", type = FieldType.Wildcard))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "transaction_places"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String transactionPlaces;
 
     /**
      * 渠道
      */
-    @MultiField(mainField = @Field(name = "channel", type = FieldType.Wildcard))
+    @MultiField(
+            mainField = @Field(type = FieldType.Keyword, name = "channel"),
+            otherFields = {@InnerField(type = FieldType.Wildcard, suffix = "wildcard")}
+    )
     private String channel;
 
     /**

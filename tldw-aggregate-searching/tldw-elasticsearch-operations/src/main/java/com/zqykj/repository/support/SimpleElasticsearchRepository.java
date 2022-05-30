@@ -128,7 +128,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
     @Override
     public <T> Page<T> findAll(Pageable pageable, String routing, @NonNull Class<T> entityClass) {
 
-        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withTrackTotalHits(true).withPageable(pageable).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(matchAllQuery()).withTrackTotalHits(true).withPageable(pageable).withRoute(routing).build();
 
         SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)));
 
@@ -141,9 +141,16 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (null != condition) {
 
             QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
-            NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder)
+            QueryBuilder secondQueryBuilder = null;
+            if (null != condition.getPostFilter()) {
+                secondQueryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition.getPostFilter());
+            }
+            NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(queryBuilder).withFilter(secondQueryBuilder)
                     .withFields(condition.getIncludeFields()).withExcludeFields(condition.getExcludeFields()).withTrackTotalHits(true)
-                    .withPageable(pageable).build();
+                    .withPageable(pageable)
+                    // TODO 王伟那边es入库需要指定路由(后期需要找他)
+//                    .withRoute(routing)
+                    .build();
             SearchHits<T> searchHits = execute(operations -> operations.search(query, entityClass, getIndexCoordinates(entityClass)));
 
             AggregatedPage<SearchHit<T>> page = SearchHitSupport.page(searchHits, query.getPageable());
@@ -299,7 +306,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         if (null != condition) {
 
             QueryBuilder queryBuilder = (QueryBuilder) QueryMappingBuilder.buildDslQueryBuilderMapping(condition);
-            Query query = new NativeSearchQueryBuilder().withQuery(queryBuilder).build();
+            Query query = new NativeSearchQueryBuilder().withQuery(queryBuilder).withRoute(routing).build();
             String indexCoordinates = getIndexCoordinates(entityClass);
             executeAndRefresh((OperationsCallback<Void>) operations -> {
                 operations.delete(query, entityClass, indexCoordinates);
@@ -325,7 +332,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
             return;
         }
 
-        Query query = new NativeSearchQueryBuilder().withQuery(idsQueryBuilder).build();
+        Query query = new NativeSearchQueryBuilder().withQuery(idsQueryBuilder).withRoute(routing).build();
 
         executeAndRefresh((OperationsCallback<Void>) operations -> {
             operations.delete(query, entityClass, indexCoordinates);
@@ -511,7 +518,7 @@ public class SimpleElasticsearchRepository implements EntranceRepository {
         TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms(bucket).field(bucketAliasName);
         termsAggregationBuilder.order(BucketOrder.count(false));
         termsAggregationBuilder.subAggregation(AggregationBuilders.stats(metricsName)
-                .field(metricsAliasName))
+                        .field(metricsAliasName))
                 .size(Integer.MAX_VALUE);
         SearchRequest searchRequest = new SearchRequest(indexName);
         if (StringUtils.isNotEmpty(routing)) {
