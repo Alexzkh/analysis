@@ -99,4 +99,17 @@ public class DateRange {
         dateRange.setGt(from);
         return dateRange;
     }
+
+    /**
+     * <h2> between 包含边界 </h2>
+     */
+    public static DateRange between(Object from, Object to, boolean isIncludeBound) {
+        if (isIncludeBound) {
+            return new DateRange(from, to);
+        }
+        DateRange dateRange = new DateRange();
+        dateRange.setGt(from);
+        dateRange.setLt(to);
+        return dateRange;
+    }
 }

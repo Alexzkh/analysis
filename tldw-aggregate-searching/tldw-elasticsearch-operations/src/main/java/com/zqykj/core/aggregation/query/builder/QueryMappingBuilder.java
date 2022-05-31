@@ -17,7 +17,6 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ConcurrentReferenceHashMap;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.Constructor;
@@ -32,7 +31,7 @@ import java.util.*;
 @Component
 public class QueryMappingBuilder {
 
-    private static Map<String, Class<?>> dslNameForClass = new ConcurrentReferenceHashMap<>(256);
+    private static Map<String, Class<?>> dslNameForClass = new HashMap<>(256);
 
     private static final Class<?> COMBINATION_QUERY_METHOD_TYPE = QueryBuilder.class;
 

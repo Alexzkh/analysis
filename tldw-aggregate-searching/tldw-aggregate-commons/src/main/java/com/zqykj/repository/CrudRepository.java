@@ -23,7 +23,7 @@ import java.util.Optional;
  * @Date 2021/8/17
  */
 @NoRepositoryBean
-public interface CrudRepository extends Repository {
+public interface CRUDRepository extends Repository {
 
     /**
      * <h2> 保存 / 更新(需要指定Id) 给定的数据 </h2>

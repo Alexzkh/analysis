@@ -32,11 +32,13 @@ import com.zqykj.parameters.aggregate.AggregationParams;
 import com.zqykj.parameters.query.CombinationQueryParams;
 import com.zqykj.parameters.query.CommonQueryParams;
 import com.zqykj.parameters.query.QuerySpecialParams;
+import com.zqykj.repository.CRUDRepository;
 import com.zqykj.repository.EntranceRepository;
 import com.zqykj.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.StopWatch;
 
@@ -45,6 +47,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.function.Consumer;
 
 @SpringBootTest
 @Slf4j
@@ -52,6 +55,9 @@ public class OriginEsOperationTest {
 
     @Autowired
     private EntranceRepository entranceRepository;
+
+    @Autowired
+    private CRUDRepository crudRepository;
 
     @Autowired
     private IAssetTrendsTactics iAssetTrendsTactics;
@@ -435,8 +441,16 @@ public class OriginEsOperationTest {
      * <h2> 测试文本查询 </h2>
      */
     @Test
-    public void testTextQuery() {
+    public void queryEsTest() throws Exception {
+        QuerySpecialParams query = new QuerySpecialParams();
+        query.addCommonQueryParams(QueryParamsBuilders.term("case_id", "a4f80e60-0aef-4d56-adb9-fd6443fb4f2e"));
+        query.addCommonQueryParams(QueryParamsBuilders.term("_id", "68315276"));
+        Iterable<BankTransactionFlow> all = entranceRepository.findAll(PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "transaction_money")), "a4f80e60-0aef-4d56-adb9-fd6443fb4f2e", BankTransactionFlow.class, query);
+        Optional<BankTransactionFlow> byId = entranceRepository.findById("68315276", "a4f80e60-0aef-4d56-adb9-fd6443fb4f2e", BankTransactionFlow.class);
+    }
 
+    @Test
+    public void testForEach() {
 
     }
 }

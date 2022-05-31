@@ -10,6 +10,6 @@ package com.zqykj.repository;
  * @author zhangkehou
  * @author machengjun
  */
-public interface ElasticsearchRepository<T, ID> extends CrudRepository {
+public interface ElasticsearchRepository<T, ID> extends CRUDRepository {
 
 }

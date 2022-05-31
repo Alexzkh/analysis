@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Primary;
  * <h1> 提供给外部使用的公共入口Repository </h1>
  */
 @Primary
-public interface EntranceRepository extends CrudRepository {
+public interface EntranceRepository extends CRUDRepository {
 
     /**
      * @param metricsName: the field of aggrating ,the same as domain field name ;

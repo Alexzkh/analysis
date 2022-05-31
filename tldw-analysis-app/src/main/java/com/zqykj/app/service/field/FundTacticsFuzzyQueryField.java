@@ -18,21 +18,21 @@ public interface FundTacticsFuzzyQueryField {
 
     // 以上字段都是 wildcard类型,专门用来模糊匹配
 
-    String[] localFuzzyFields = new String[]{"customer_name", "customer_identity_card", "bank", "query_card"};
-    String[] oppositeFuzzyFields = new String[]{"transaction_opposite_name", "transaction_opposite_certificate_number", "transaction_opposite_card", "transaction_opposite_account_open_bank"};
+    String[] localFuzzyFields = new String[]{"customer_name.wildcard", "customer_identity_card.wildcard", "bank.wildcard", "query_card.wildcard"};
+    String[] oppositeFuzzyFields = new String[]{"transaction_opposite_name.wildcard", "transaction_opposite_certificate_number.wildcard", "transaction_opposite_card.wildcard", "transaction_opposite_account_open_bank.wildcard"};
 
     /**
      * <h2> 未调单分析模糊字段 </h2>
      */
-    String[] unadjustedAnalysisFuzzyFields = new String[]{"query_card", "customer_name", "bank"};
+    String[] unadjustedAnalysisFuzzyFields = new String[]{"query_card.wildcard", "customer_name.wildcard", "bank.wildcard"};
 
     /**
      * <h2> 建议调单模糊字段 </h2>
      */
-    String[] suggestAdjustedFuzzyFields = new String[]{"opposite_card", "account_name", "bank"};
+    String[] suggestAdjustedFuzzyFields = new String[]{"opposite_card.wildcard", "account_name.wildcard", "bank.wildcard"};
 
     /**
      * <h2> 详情模糊字段 </h2>
      */
-    String[] detailFuzzyFields = new String[]{"customer_name", "customer_identity_card", "bank", "query_card", "transaction_opposite_name", "transaction_opposite_certificate_number", "transaction_opposite_card", "transaction_opposite_account_open_bank"};
+    String[] detailFuzzyFields = new String[]{"customer_name.wildcard", "customer_identity_card.wildcard", "bank.wildcard", "query_card.wildcard", "transaction_opposite_name.wildcard", "transaction_opposite_certificate_number.wildcard", "transaction_opposite_card.wildcard", "transaction_opposite_account_open_bank.wildcard"};
 }

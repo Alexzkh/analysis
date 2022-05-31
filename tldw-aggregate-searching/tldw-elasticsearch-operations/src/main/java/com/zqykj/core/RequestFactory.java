@@ -10,6 +10,7 @@ import com.zqykj.core.mapping.ElasticsearchPersistentProperty;
 import com.zqykj.core.query.FetchSourceFilter;
 import com.zqykj.domain.Sort;
 import com.zqykj.repository.query.*;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -39,7 +40,6 @@ import org.elasticsearch.search.sort.*;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -239,7 +239,7 @@ public class RequestFactory {
         IndexRequest indexRequest;
 
         if (!CollectionUtils.isEmpty(values)) {
-            String id = StringUtils.isEmpty(values.get(ID)) ? null : String.valueOf(values.get(ID));
+            String id = StringUtils.isEmpty(values.get(ID).toString()) ? null : String.valueOf(values.get(ID));
             // If we have a query id and a document id, do not ask ES to generate one.
             if (id != null) {
                 indexRequest = new IndexRequest(indexName).id(id);
@@ -540,7 +540,7 @@ public class RequestFactory {
             sourceBuilder.trackTotalHitsUpTo(query.getTrackTotalHitsUpTo());
         }
 
-        if (StringUtils.hasLength(query.getRoute())) {
+        if (StringUtils.isNotBlank(query.getRoute())) {
             request.routing(query.getRoute());
         }
         request.source(sourceBuilder);

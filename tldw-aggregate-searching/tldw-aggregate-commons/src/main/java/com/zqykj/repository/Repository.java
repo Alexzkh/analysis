@@ -8,11 +8,11 @@ import org.springframework.stereotype.Indexed;
  * classpath scanning for easy Spring bean creation.
  * <p>
  * Domain operations extending this interface can selectively expose CRUD methods by simply declaring methods of the
- * same signature as those declared in {@link CrudRepository}.
+ * same signature as those declared in {@link CRUDRepository}.
  *
  * @Author zhangkehou
  * @Date 2021/8/17
- * @see CrudRepository
+ * @see CRUDRepository
  */
 @Indexed
 public interface Repository {
