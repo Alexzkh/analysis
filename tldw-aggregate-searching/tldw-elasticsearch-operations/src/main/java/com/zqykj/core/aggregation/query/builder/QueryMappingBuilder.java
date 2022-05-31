@@ -77,7 +77,7 @@ public class QueryMappingBuilder {
             }
             return object;
         } catch (Exception e) {
-            log.error("could not build dsl query, error msg = {}", e.getMessage());
+            log.error("could not build dsl query, dslNameForClass size = {}, error msg = {}", dslNameForClass.size(), e.getMessage());
             throw new ElasticsearchException("could not build dsl query", e);
         }
     }
