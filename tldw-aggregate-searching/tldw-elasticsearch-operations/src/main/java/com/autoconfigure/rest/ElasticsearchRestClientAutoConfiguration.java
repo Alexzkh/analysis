@@ -5,11 +5,13 @@ package com.autoconfigure.rest;
 
 import com.zqykj.client.ElasticsearchRestClientProperties;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.net.util.Base64;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -38,6 +40,7 @@ public class ElasticsearchRestClientAutoConfiguration {
         @Bean
         RestClientBuilder restClientBuilder(ElasticsearchRestClientProperties properties) {
 
+            String auth = null;
             String hosts = properties.getHost();
             hosts = hosts.contains("http://") ? hosts.replace("http://", "") : hosts;
             // 拆分地址
@@ -49,6 +52,7 @@ public class ElasticsearchRestClientAutoConfiguration {
 
             // 若账号密码存在,使用账号密码链接
             if (StringUtils.isNotBlank(properties.getPassword())) {
+                auth = Base64.encodeBase64String((properties.getUserName() + ":" + properties.getPassword()).getBytes());
                 CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
                 credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(properties.getUserName(), properties.getPassword()));
                 builder.setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
@@ -69,6 +73,12 @@ public class ElasticsearchRestClientAutoConfiguration {
                 httpClientBuilder.setMaxConnPerRoute(properties.getMaxConnectPerRoute());
                 return httpClientBuilder;
             });
+            // 设置header
+            if (StringUtils.isNotBlank(auth)) {
+                builder.setDefaultHeaders(new BasicHeader[]{
+                        new BasicHeader("Authorization", "Basic " + auth)
+                });
+            }
             return builder;
         }
     }
